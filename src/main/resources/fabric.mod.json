@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "maple_flavored",
+	"version": "${version}",
+	"name": "Maple Flavored",
+	"description": "A slow-paced progression overhaul inspired by Matcha Flavoured and Raspberry Flavoured.",
+	"authors": ["jackson"],
+	"license": "CC-BY-NC-SA-4.0",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["mapleflavored.MapleFlavored"],
+		"client": ["mapleflavored.client.MapleFlavoredClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
