@@ -9,7 +9,7 @@ How does Matcha Flavoured's heart system work exactly? Cover heart loss on death
 
 ## Answer
 
-From reading Matcha 1.12.9's files, not from playing it. Full findings: `research/matcha-heart-system.md` on branch `research/matcha-heart-system`.
+From reading Matcha 1.12.9's files, not from playing it. Full findings: [docs/research/matcha-heart-system.md](../../../docs/research/matcha-heart-system.md).
 
 - Death removes 1 heart (2 on Hard), clamped to a floor. The Heartbreaker Wither timer does the same without a death.
 - The floor is fixed at 10 hearts on Easy. On Normal and Hard it's a per-player score that starts at 10 and falls by 1 per seven progression advancements, down to 3. The fifth step also switches a Normal world to Hard, for everyone.

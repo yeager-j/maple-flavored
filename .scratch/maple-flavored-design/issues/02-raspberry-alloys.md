@@ -9,7 +9,7 @@ How does Raspberry Flavoured design its alloys, materials and progression, inclu
 
 ## Answer
 
-From the pack's files and public pages, not from playing it. Full findings, including nine options for a system without Create: `research/raspberry-alloys.md` on branch `research/raspberry-alloys`.
+From the pack's files and public pages, not from playing it. Full findings, including nine options for a system without Create: [docs/research/raspberry-alloys.md](../../../docs/research/raspberry-alloys.md).
 
 - Divine Fragments are Matcha's item, not Raspberry's. The closest equivalents are probably Stardust (crushed Nether Star) and Soul Beads (destroyed spawners), and neither goes into alloys. This is an inference.
 - Raspberry also hosts alloys on base materials: Rose Gold and Steel on iron are stated, while Electrum, Necromium and Netherite on diamond are inferred.
