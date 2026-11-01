@@ -33,7 +33,7 @@ Standing choices:
 - [What Matcha's heart system does](issues/01-matcha-heart-system.md): death costs 1 heart down to a per-player floor that falls from 10 to 3 with progress; Crystal Hearts add 1, up to 30.
 - [How Raspberry Flavoured designs alloys and progression](issues/02-raspberry-alloys.md): alloys also sit on host materials, with traits replacing removed enchantments, uses beyond gear, and durability independent of tier.
 - [Hearts and death](issues/03-hearts-and-death.md): death costs hearts, not items, down to a Heart Floor that falls from 10 to 3 over seven Milestones; Crystal Hearts come from one-time boss kills, chests and crafting with Pith; Wither temporarily withers hearts until you return to the Overworld.
-- [Material roles and alloys](issues/06-material-roles-and-alloys.md): Steel, Electrum, Shakudo and Adamant are made from Netherite, storage blocks and Ancient Embers from Piglin Brutes; each beats Netherite differently, with set bonuses and Armored Elytra.
+- [Material roles and alloys](issues/06-material-roles-and-alloys.md): Steel, Electrum, Shakudo, Adamant and Orichalcum are made from Netherite, storage blocks and Ancient Embers from Piglin Brutes; each beats Netherite differently, with set bonuses and Armored Elytra.
 
 ## Not yet specified
 

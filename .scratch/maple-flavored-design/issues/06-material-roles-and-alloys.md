@@ -21,7 +21,7 @@ Numbers are starting values that balance work can change. The rules are fixed. T
 ### Making Alloys
 
 - The Alloy Furnace smelts 1 Netherite Ingot + 1 storage block + 1 Ancient Ember into 1 Alloy ingot in 10 seconds. It has a normal crafting recipe that needs no Ember, works with hoppers, and has no other use.
-- Steel uses a block of iron, Electrum gold, Shakudo copper and Adamant diamond.
+- Steel uses a block of iron, Electrum gold, Shakudo copper, Adamant diamond and Orichalcum emerald.
 - Piglin Brutes drop an Ancient Ember at 25%, plus 5% per Looting level, using vanilla's killed-by-player condition. It rolls separately from Pith.
 - Brutes don't respawn, so Alloy ingots can't be automated, though their inputs can. Not everything has to be renewable.
 - An Alloy ingot smelts back to a Netherite Ingot in any furnace, losing the block and Ember.
@@ -34,12 +34,17 @@ Numbers are starting values that balance work can change. The rules are fixed. T
 
 | Alloy | Tools and weapons | Armor, per piece | Full set bonus |
 |---|---|---|---|
-| **Steel** | +50% durability, more weapon knockback | +50% durability, more knockback resistance, 10% less magic, indirect magic and sonic boom damage | Complete knockback and Levitation immunity |
+| **Steel** | +50% durability, more weapon knockback | +50% durability, more knockback resistance, 10% less sonic boom and explosion damage | Complete knockback and Levitation immunity |
 | **Electrum** | Fortune or Looting one level above the cap | 15% less fire damage; Piglins treat it as gold | Complete fire and lava immunity; a Withered Heart takes 10 seconds instead of 5 |
 | **Shakudo** | +25% mining speed, +10% attack speed | +2.5% movement speed | No slowdown from soul sand, honey, cobwebs or powder snow |
 | **Adamant** | +1 damage | +1 armor toughness | 25% of melee damage ignores armor points, but not Protection |
+| **Orichalcum** | Better enchanting | Better enchanting, 10% less magic and indirect magic damage; Illagers are neutral | A lethal hit is survived with Totem effects, then this recharges over 30 minutes of play |
 
-Vanilla facts behind these: Evoker Fangs deal 6 indirect magic damage, which ignores armor but not Protection. A Warden's sonic boom deals 10 damage and ignores both, so Steel is the only gear that reduces it apart from Resistance.
+Better enchanting means enchantability 30, and the Enchanting Table offers each enchantment at the highest level its power allows. If the Enchanting ticket fixes the table for all gear, this perk needs replacing.
+
+Illager neutrality needs only 1 piece, like gold with Piglins, and ends during Raids or once you attack one. The set bonus timer is stored on the player, fires before a held Totem or Crystal Heart, and is disabled in Hardcore.
+
+Vanilla facts behind these: Evoker Fangs deal 6 indirect magic damage, which ignores armor but not Protection, so Orichalcum reduces it. A Warden's sonic boom deals 10 damage and ignores both, so Steel is the only gear that reduces it apart from Resistance.
 
 ### Armored Elytra
 
