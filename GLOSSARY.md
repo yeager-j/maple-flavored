@@ -40,3 +40,12 @@ The block that smelts a Netherite Ingot and a storage block into an Alloy ingot,
 **Ancient Ember**:
 The Alloy Furnace's fuel, dropped by Piglin Brutes when a player kills them. One makes one Alloy ingot.
 _Avoid_: Brute Ember
+
+### World
+
+**Blood Moon**:
+A periodic red full moon that brings back mobs that structures don't otherwise replace.
+
+**Restored**:
+Said of a structure whose mobs have returned after a Blood Moon.
+_Avoid_: Respawned

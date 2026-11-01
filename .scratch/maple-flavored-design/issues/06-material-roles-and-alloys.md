@@ -23,7 +23,7 @@ Numbers are starting values that balance work can change. The rules are fixed. T
 - The Alloy Furnace smelts 1 Netherite Ingot + 1 storage block + 1 Ancient Ember into 1 Alloy ingot in 10 seconds. It has a normal crafting recipe that needs no Ember, works with hoppers, and has no other use.
 - Steel uses a block of iron, Electrum gold, Shakudo copper, Adamant diamond and Orichalcum emerald.
 - Piglin Brutes drop an Ancient Ember at 25%, plus 5% per Looting level, using vanilla's killed-by-player condition. It rolls separately from Pith.
-- Brutes don't respawn, so Alloy ingots can't be automated, though their inputs can. Not everything has to be renewable.
+- Brutes only return with a [Blood Moon](15-blood-moons.md) and Embers need a player kill, so Alloy ingots can't be automated, though their inputs can.
 - An Alloy ingot smelts back to a Netherite Ingot in any furnace, losing the block and Ember.
 
 ### Alloy gear
