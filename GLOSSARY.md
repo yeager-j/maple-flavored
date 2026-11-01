@@ -26,5 +26,17 @@ A heart made temporarily unusable by the Wither effect. It doesn't reduce Max He
 _Avoid_: Broken heart, gloom
 
 **Pith**:
-A rare material crafted with diamonds into a Crystal Heart.
+A rare material used to craft Crystal Hearts and Netherite Ingots.
 _Avoid_: Divine Fragment
+
+### Materials
+
+**Alloy**:
+A material made from a Netherite Ingot and a storage block: Steel from iron, Electrum from gold, Shakudo from copper, or Adamant from diamond. Each improves on Netherite in its own way.
+
+**Alloy Furnace**:
+The block that smelts a Netherite Ingot and a storage block into an Alloy ingot, using an Ancient Ember as fuel.
+
+**Ancient Ember**:
+The Alloy Furnace's fuel, dropped by Piglin Brutes when a player kills them. One makes one Alloy ingot.
+_Avoid_: Brute Ember
