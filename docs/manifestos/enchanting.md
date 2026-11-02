@@ -39,13 +39,14 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 
 The Bastion's book is Fire Aspect. It has only 2 levels, so you don't need to clear many Bastions, which are very difficult structures. It's also a better enchantment than Fire Protection, the other contender, which would be too lame a prize for a structure that tough.
 
-Vanilla Bastions come in four layouts, and only one has a treasure room, so each layout holds its own prize: Fire Aspect in the treasure room, Soul Speed on the bridge and Flame in the housing units. The hoglin stables still need theirs.
+Vanilla Bastions come in four layouts, and only one has a treasure room, so each layout holds its own prize: Fire Aspect in the treasure room, Soul Speed on the bridge, Flame in the housing units and Thorns in the hoglin stables.
 
 ## Where books are found
 
 The full list lives in the [Enchantment Sources](https://claude.ai/artifact/F42Mxw4d32XTQbe5wwaUWf) spreadsheet. Some placements carry a reason worth keeping:
 
 - **Unbreaking is in Strongholds.** Vanilla's first ring has only 3, so Unbreaking III's fourth book means heading out to the second ring. It also gives Eyes of Ender a use after the End Portal is lit.
+- **End Cities hold two books.** Feather Falling is in the city's buildings, and Zephyr is on the End Ship, beside the Elytra. Both are about moving through the air, and they give End Cities more reason to be explored in full.
 - **Fire Protection is in Nether Fortresses.** They're common and full of fire, which suits an enchantment that takes 8 books.
 - **Fortune is in Woodland Mansions, on purpose.** Mansions are rare, but 26.3's Explorer Maps lead to structures, and Abandoned Camps, also new in 26.3, carry them as loot.
 - **Specialized enchantments come early and general ones later.** Smite and Bane come from Dungeons, Blast Protection from Desert Pyramids and Projectile Protection from Pillager Outposts. Sharpness and Protection come later. Early gear has real tradeoffs, and a narrow enchantment is the best you can get for a while rather than a dud.
@@ -60,6 +61,7 @@ A few enchantments come from elsewhere, each from the activity it belongs to:
 - **Ominous Trial Chamber vaults** give the Mace's enchantment books. Vaults already give each player their loot once.
 - **Illagers** drop some books as chance drops, such as Sharpness from Vindicators and Protection from Evokers. Strongholds are filled with Illagers, which gives these books a home outside raids and gives empty Strongholds a purpose. Illagers spawned by a raid don't drop books, except a few that are raid-only, like Knockback from Ravagers. Pillager Captains drop books too: they come from outposts and patrols, which are hard to farm and dangerous. Evokers can have several drops, since they're incredibly tough.
 - **Grabbing a Stronghold's book alerts every Illager nearby.** It turns them hostile even to Orichalcum, and Evokers attack through walls, so it's super nasty.
+- **Reaching the End Portal is a challenge, finally.** Every player has to get through a Stronghold full of Illagers. Blood Moons Restore Stronghold and mansion Illagers, so their books stay slowly renewable without a farm.
 
 Found enchanted gear is removed. Gear from mobs, chests, fishing and bartering is just normal gear.
 
@@ -185,10 +187,3 @@ Repairing two copies of a tool in the anvil needs a rule for which enchantments 
 - Where Zephyr is found, and how the Mending rework changes the Raid reward
 - How Electrum's one level above the Fortune and Looting caps works with found books
 - Which structure holds each enchantment, and what grabbing each book wakes
-
-### Strongholds full of Illagers
-
-Two questions remain about Strongholds:
-
-- **The End Portal is inside.** Every player has to go through a Stronghold, so this puts a hard fight in front of the End.
-- **Blood Moons.** Adding Strongholds to the Blood Moon list would make their Illager books slowly renewable without a farm. The Blood Moons ticket is resolved, so this would amend it.
