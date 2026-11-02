@@ -184,6 +184,7 @@ Repairing two copies of a tool in the anvil needs a rule for which enchantments 
 
 ### Still to place
 
-- Where Zephyr is found, and how the Mending rework changes the Raid reward
+- How the Mending rework changes the Raid reward
 - How Electrum's one level above the Fortune and Looting caps works with found books
-- Which structure holds each enchantment, and what grabbing each book wakes
+- What grabbing each structure's book wakes
+- Whether the curses stay, now that found gear is plain
