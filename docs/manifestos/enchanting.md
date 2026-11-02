@@ -47,7 +47,7 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 
 A book is an item that fits in a Chiseled Bookshelf and powers a nearby enchanting table. The table can offer an enchantment shelved nearby, at that book's level, and the book isn't used up. Anyone can use the table, so a group shares one library.
 
-Sharpness V still takes 16 found books, but you and your friends can combine your efforts. One library enchants everything in the base, and a broken tool loses only the ingots paid to enchant it, never the books.
+Sharpness V still takes 16 found books, but you and your friends can combine your efforts. One library enchants everything in the base, and a broken tool loses only the ingot paid to enchant it, never the books.
 
 ## Level sets how many enchantments you can apply
 
@@ -65,19 +65,35 @@ Vanilla's XP curve makes each slot cost much more than the last:
 | 4 | 120 | 47,520 |
 | 5 | 150 | 79,095 |
 
+The highest-level player becomes the group's enchanter, and maybe charges a fee. That's a fine way for players to stand apart, so the limit is only checked at the table.
+
 Orichalcum tools get 1 extra enchantment slot. This replaces Orichalcum's Better enchanting perk, as the Material roles ticket expected.
 
-## Enchanting is paid with the item's material
+## Paying for enchanting
 
-Enchanting no longer costs XP. You pay with an ingot of the item's own material: an iron pickaxe takes an iron ingot, and an Adamant pickaxe takes an Adamant ingot.
+Enchanting no longer costs XP.
 
-The grindstone removes enchantments and gives the ingot back. So the ingot is a deposit stored in the item rather than a spend, and it's only lost if the item breaks.
+- **One ingot of the item's material per session.** Open the table, give your pickaxe four enchantments, and pay one ingot. An iron pickaxe takes an iron ingot, and an Adamant pickaxe takes an Adamant ingot.
+- **One lapis per enchantment.** Four enchantments use up 4 lapis.
+- **The grindstone removes the enchantments and gives the ingot back.** The lapis isn't returned. So the ingot is a deposit stored in the item and only lost if the item breaks, while lapis is the real cost.
+
+Items with no ingot get sensible defaults later. Vanilla's repair materials cover most of them: planks for wood and shields, cobblestone for stone, leather, diamonds, phantom membrane for Elytra, a breeze rod for the Mace, and scutes for turtle shells and wolf armor. Bows, crossbows, tridents, fishing rods, shears, and flint and steel have no repair material, so each needs one.
+
+## Enchanted gear can't be upgraded
+
+Smithing refuses enchanted gear. Otherwise, enchanting a diamond pickaxe with a diamond, upgrading it to Netherite and grinding it would turn a diamond into a Netherite ingot.
+
+This sounds like a horrible idea until you remember that enchanting is now nearly free. Grind your diamond pickaxe to get the diamond back, upgrade it, then pick your enchantments again and pay with a Netherite ingot.
+
+## The anvil keeps its XP costs
+
+The anvil still costs levels, which now also lowers your enchantment slots. Combining books is a powerful move, so it should cost something that matters.
 
 ## The enchanting table
 
-The table should be upgraded permanently by spending XP, and fully upgrading it should take a large amount of XP, far more than vanilla's 3 levels. Fifteen bookshelves isn't a real gate. This gives XP a real job, which Matcha took away, and makes XP farms a reward.
+The table is no longer upgraded with XP, because level already gives XP its job. The table's job is to read the library: it offers any enchantment shelved nearby.
 
-Using level to set enchantment slots may replace this, since it gives XP a job without spending it. That conflict is an open question below.
+The 3-slot random offer goes. A level choice is dominant if it's deterministic, so the table always gives the highest level available.
 
 ## Open questions
 
@@ -90,23 +106,13 @@ If one found book is level I and combining doubles, a level n book needs 2^(n-1)
 - **Lower the max levels.** Fewer levels mean fewer doublings.
 - **Match the source to the max level.** Enchantments with high max levels come from common structures, and Ancient Cities and Bastions hold single-level or low-level prizes.
 
-### What the table does
+### Anvil costs at high levels
 
-The table's job is now to read the library. Its XP upgrades need a role that books don't already fill, or they go. Options:
+Vanilla's anvil charges levels, not points, and higher levels hold more XP. A level costs 112 points at level 30 but 922 at level 120, so the same combine costs the group's enchanter about 8 times as much XP as a newer player. Charging points instead would make the cost the same for everyone. Repairs cost levels too, so a high-level player may prefer making a new tool to repairing an old one.
 
-- Upgrades cap the level the table can read from its shelves. This gates levels twice, by books and by XP, which may be one gate too many.
-- Upgrades add range or shelf capacity, so a bigger library needs a stronger table.
-- Upgrades go. Enchanting is paid in ingots, and level already sets your slots.
+### Re-enchanting
 
-Upgrading with XP alone only costs time once you have a farm. Each upgrade tier could also need one material that only progression gets you, so the table's upgrade path follows the game.
-
-### XP as a rank or a currency
-
-If level sets your enchantment slots, spending XP lowers your rank. That makes every XP cost feel bad, including table upgrades, anvil repairs and combining books. The cleanest rule is that XP is never spent, and only Mending competes with your level, by eating orbs before you collect them. This belongs to the Role of XP ticket too.
-
-### When the slot limit is checked
-
-If the limit is checked only at the table, the highest-level player can enchant everyone's gear, and communal books plus shared enchanting erase the differences between players. Checking it while the item is in use keeps players distinct. Enchantments past the holder's limit would go dormant, most recently applied first, and show greyed out. It's more complex, but it's the version that does what the slot limit is for.
+The rule for adding to an already-enchanted item is open. A new session could require grinding first, cost a second ingot, or reuse the ingot already stored.
 
 ### The step size
 
@@ -116,16 +122,9 @@ How many slots matter depends on how many enchantments an item wants. A sword ca
 
 The Material roles ticket gives Orichalcum's armor Better enchanting too, so its armor probably gets the extra slot as well. An extra slot may be stronger than other Alloys' perks, such as Adamant's +1 damage, since it can hold any enchantment. Design rule 5 says no gear is strictly best, so this needs checking against the others.
 
-### Paying in ingots
+### Plain bookshelves
 
-- **Per enchantment or per enchanting?** One ingot per enchantment makes a four-enchantment Adamant pickaxe cost 4 Adamant ingots, which is 36 diamonds held in one tool.
-- **Items with no ingot.** Vanilla's repair material is a natural rule: planks for wood and shields, cobblestone for stone, leather, diamonds, phantom membrane for Elytra, a breeze rod for the Mace, scutes for turtle shells and wolf armor. Bows, crossbows, tridents, fishing rods, shears, and flint and steel have no repair material, so each needs one.
-- **Smithing upgrades.** Upgrading an enchanted diamond pickaxe to Netherite keeps its enchantments. If the grindstone returned the current material, enchanting in diamonds and grinding as Netherite would turn diamonds into Netherite. The item should record what was paid, so the grindstone returns exactly that.
-- **Lapis loses its job.** Design rule 5 says every material has a use, so lapis needs a new one or stays as a second cost.
-
-Whatever its role, the 3-slot random offer goes. A level choice is dominant if it's deterministic, so the table always gives the highest level available. This replaces Orichalcum's Better enchanting perk, as the Material roles ticket expects.
-
-Vanilla Chiseled Bookshelves don't power tables, so this is a change. Plain bookshelves need a decision too: whether they still add power, or are only decoration.
+Vanilla Chiseled Bookshelves don't power tables, so the library is a change. Plain bookshelves need a decision: whether they still do anything, or are only decoration.
 
 ### Combining in the anvil or on the shelf
 
@@ -157,7 +156,7 @@ If Efficiency or Unbreaking needs an Ancient City, the early game gets worse tha
 
 ### The anvil's prior-work penalty
 
-Vanilla's prior-work penalty limits stacking through repeated combining. Found books now do that job. With the penalty, repaired gear eventually hits "Too Expensive!" The penalty probably goes or changes for repairs, though re-enchanting a fresh tool is now an alternative. If XP is never spent, the anvil also needs a cost other than levels.
+Vanilla's prior-work penalty limits stacking through repeated combining. Found books now do that job. With the penalty, repaired gear eventually hits "Too Expensive!" The penalty probably goes or changes for repairs, though re-enchanting a fresh tool is now an alternative.
 
 ### Repairing with two tools
 

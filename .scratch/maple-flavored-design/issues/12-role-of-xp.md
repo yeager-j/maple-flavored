@@ -9,4 +9,4 @@ What should XP be spent on, given the enchanting decision, and how does it inter
 
 ## Comments
 
-From [the enchanting manifesto](../../../docs/manifestos/enchanting.md): level may set how many enchantments an item can hold, 1 at level 30 and 1 more every 30 levels, with enchanting paid in the item's own material. If so, spending XP lowers a player's rank, which argues for XP never being spent. That affects table upgrades, anvil costs and Mending.
+From [the enchanting manifesto](../../../docs/manifestos/enchanting.md): level sets how many enchantments an item can hold, 1 at level 30 and 1 more every 30 levels. Enchanting is paid with one ingot of the item's material per session and one lapis per enchantment, not XP. The table has no XP upgrades. Anvils keep their XP costs, which now also lower a player's enchantment slots.
