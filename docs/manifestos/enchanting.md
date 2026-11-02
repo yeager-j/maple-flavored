@@ -36,6 +36,16 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
   - **Ancient City:** the book floats in the middle of the city, in front of the portal. Grabbing it spawns a Warden, and you have to sneak around it to escape. Its [domain](boss-domains.md) stops you from flying away.
   - **Bastion:** the book floats in the treasure room. Grabbing it angers every Piglin in the structure. Good luck.
 
+The Bastion's book is Fire Aspect. It has only 2 levels, so you don't need to clear many Bastions, which are very difficult structures. It's also a better enchantment than Fire Protection, the other contender, which would be too lame a prize for a structure that tough.
+
+## Sources outside structures
+
+A few enchantments come from elsewhere, each from the activity it belongs to:
+
+- **Fishing** gives Luck of the Sea and Lure books. Every other enchanted book is removed from fishing loot.
+- **Raids** give Mending. Librarians award a Mending book for defeating a level 5 Raid.
+- **Librarians buy books instead of selling them.** That gives extra books a use once an enchantment is maxed out.
+
 ## Books and the anvil
 
 - **Every book found in the wild is level I.**
@@ -129,9 +139,19 @@ Shelved books are a base's most valuable items. Fire, creepers and griefers coul
 
 Players may clear a Bastion before grabbing its book, so nothing is left to anger. That may be fine, since the fight still happens either way. A Blood Moon Restores Bastion mobs, but books never return. A Warden spawned on grab can't be avoided this way, though digging and pillaring may still cheese it.
 
-### Bypasses
+### Soul Speed
 
-Anything else that hands out enchanted books gets around found books. That means librarian trades, chest loot, fishing treasure and Piglin bartering. Enchanted gear dropped by mobs or found in chests also needs a rule, even if it can't be combined.
+Soul Speed could be an ultra-rare barter, so unlocking it takes a lot of gold, or another structure's book. Bartering spends gold on each random roll, which is the loot box from the start of this manifesto, though a gold farm makes the rolls cheap. Vanilla Bastions come in four layouts, and only one has a treasure room. The other three, the bridge, hoglin stables and housing units, need a book spot too. One of them could hold Soul Speed, so each layout has its own prize.
+
+### Fire Protection
+
+Fire Protection needs a home now that the Bastion holds Fire Aspect. Nether Fortresses are common and full of fire, which suits an enchantment with 4 levels.
+
+### Remaining bypasses
+
+- **Chest loot.** Enchanted books in other structures' chests would need to go, as with fishing.
+- **Trial Chamber vaults** give enchanted books, including the Mace's enchantments. Vaults already give each player their loot once, so they could stay the Mace enchantments' source.
+- **Enchanted gear** from mobs, chests and fishing can carry enchantments you haven't found. It's a bonus, but the grindstone gives back no ingot, since none was paid. The checklist table also needs a rule for pre-selected enchantments that aren't on your shelves.
 
 ### Bad enchantments become bad finds
 
@@ -151,6 +171,6 @@ Repairing two copies of a tool in the anvil needs a rule for which enchantments 
 
 ### Still to place
 
-- Where Mending, after its rework, and Zephyr are found
+- Where Zephyr is found, and how the Mending rework changes the Raid reward
 - How Electrum's one level above the Fortune and Looting caps works with found books
 - Which structure holds each enchantment, and what grabbing each book wakes
