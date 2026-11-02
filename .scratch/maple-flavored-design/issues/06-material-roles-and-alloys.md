@@ -53,4 +53,4 @@ Vanilla facts behind these: Evoker Fangs deal 6 indirect magic damage, which ign
 
 ## Comments
 
-From [the enchanting manifesto](../../../docs/manifestos/enchanting.md): Orichalcum's Better enchanting becomes 1 extra enchantment slot on tools and armor. Electrum's Fortune or Looting one level above the cap becomes a flat +50% drop bonus that stacks with them. Alloy gear is repaired with 1 ingot of its own Alloy.
+From [the enchanting manifesto](../../../docs/manifestos/enchanting.md): Orichalcum's Better enchanting becomes 1 extra enchantment slot on tools and armor. Electrum's Fortune or Looting one level above the cap becomes a flat +50% drop bonus, added to Fortune and Looting, on only the drops they affect, skipping Ancient Embers, Pith and enchanted books. Alloy gear is repaired with 1 ingot of its own Alloy.

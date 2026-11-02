@@ -62,6 +62,13 @@ The curses are removed. Found gear is plain, so they'd have no source, and they 
 - **Fortune is in Woodland Mansions, on purpose.** Mansions are rare, but 26.3's Explorer Maps lead to structures, and Abandoned Camps, also new in 26.3, carry them as loot.
 - **Specialized enchantments come early and general ones later.** Smite and Bane come from Dungeons, Blast Protection from Desert Pyramids and Projectile Protection from Pillager Outposts. Sharpness and Protection come later. Early gear has real tradeoffs, and a narrow enchantment is the best you can get for a while rather than a dud.
 
+## Electrum's drop bonus
+
+Electrum tools no longer go one level above the Fortune and Looting caps. Instead, they give a flat +50% drop bonus, added to Fortune and Looting rather than multiplied. Fortune III averages 2.2 times the drops on ores, so an Electrum pickaxe with it averages 2.7 times, almost exactly the old Fortune IV's 2.67. Without Fortune, it still gives 1.5 times.
+
+- **Only drops Fortune or Looting already affect.** Otherwise an Electrum pickaxe would duplicate a mined diamond block, or ores mined with Silk Touch.
+- **Rare drops are skipped.** Ancient Embers, Pith and enchanted books are rare on purpose, so Electrum doesn't become the way to farm them. Embers keep their own +5% per Looting level.
+
 ## Mending is the library's capstone
 
 The table offers Mending only while its library is fully maxed: every other enchantment shelved at its max level. Mending isn't found anywhere else.
@@ -210,14 +217,6 @@ If Efficiency or Unbreaking needs an Ancient City, the early game gets worse tha
 ### Repair materials
 
 Items with no simple recipe need a repair material: Elytra, tridents, the Mace, shields, bows, crossbows, fishing rods, shears, and flint and steel. Sensible defaults can come later, alongside the enchanting materials.
-
-### Electrum's drop bonus
-
-Electrum tools no longer go one level above the Fortune and Looting caps. Instead, they give a flat +50% drop bonus that stacks with Fortune and Looting. Fortune III averages 2.2 times the drops on ores, so the extra 50% is always relevant, and it works on an Electrum tool with no Fortune at all. Open:
-
-- **Adding or multiplying.** Adding it to Fortune III gives 2.7 times, almost exactly the old Fortune IV's 2.67. Multiplying gives 3.3 times, half again on non-renewable diamonds, which feed Crystal Hearts and Adamant.
-- **Which drops count.** It should apply only to drops that Fortune or Looting already affect. Applied to every drop, an Electrum pickaxe would duplicate a mined diamond block, or ores mined with Silk Touch.
-- **Rare drops.** Ancient Embers, Pith and the enchanted books Illagers drop are rare on purpose. The bonus could skip them, or Electrum becomes the way to farm them.
 
 ### Still to place
 
