@@ -56,12 +56,14 @@ A player who logs out while trapped could leave the Warden with no one to hear, 
 
 The Wither's domain is an open barrier, like Sukuna's: there's no wall, and you can come and go. Running away isn't how players cheese the Wither, so the domain doesn't need to trap anyone. Its job is the aura from the Hearts and death ticket: Withered Hearts don't recover while you're inside it, even in the Overworld.
 
-The Wither's real cheese is trapping it under bedrock so it suffocates. To stop that, the Wither moves through blocks, like the Ender Dragon.
+The Wither's real cheese is trapping it under bedrock so it can't move. To stop that, the Wither is immune to suffocation and passes through bedrock and obsidian, the blocks it can't break. Everything else it already destroys. Full noclip, like the Ender Dragon's, would let it hide inside stone where nothing can reach it.
 
-### Open questions
+- **Where:** a fixed area centred where the Wither is summoned, with a radius of 100 blocks.
+- **The Wither stays near the centre.** Its AI keeps it within 50 blocks of the centre. The Wither is very mobile, so this leaves room to run around and fight it.
+- **No automatic Wither effect.** The domain only blocks heart recovery. The Wither's skulls already apply the effect.
+- **Overlap is harmless.** An open domain has no wall, so two Wither domains can overlap without trapping anyone.
 
-- **Hiding inside terrain.** The Ender Dragon moving through blocks works because the End is open. A Wither that moves through any block could sit inside stone, where arrows and melee can't reach it. Two narrower options: it's immune to suffocation and passes only through the blocks it can't break, such as bedrock and obsidian; or it teleports to open air near its target when it's been stuck for a few seconds.
-- **The domain's size and effect.** The size is open, and so is whether the domain does more than block recovery, for example applying the Wither effect to everyone inside.
+Stepping out of the domain lets your hearts recover in the Overworld, but the Wither heals while you're gone, so it's a trade rather than a cheese. In the Nether and the End, hearts don't recover anyway, so the domain matters most in the Overworld.
 
 ## Relation to auras
 
