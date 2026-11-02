@@ -44,7 +44,7 @@ Domains never overlap. Overlapping domains would trap players between two barrie
 
 - **Triggered inside a domain's sphere:** the new Warden spawns inside that domain and joins it.
 - **Triggered outside, with no overlap:** the Warden opens its own domain as normal.
-- **Triggered outside, where its domain would overlap:** the new domain is pushed away from the existing one until the two touch without overlapping. The shrieker that set it off ends up inside the new domain, so the consequence lands on whoever triggered it.
+- **Triggered outside, where its domain would overlap:** the new domain is pushed away from the existing one until the two touch without overlapping. The shrieker that set it off ends up inside the new domain, so the consequence lands on whoever triggered it. Only the domain moves: the Warden still spawns in vanilla's box near the shrieker, limited to spots inside its own domain. It doesn't need to be at the centre, since it's aware of the whole domain, and a pushed centre may be inside stone, over lava or in open air.
 - **Grabbing the book always makes a Warden**, even if one is already within 24 blocks. This skips vanilla's check, and the same overlap rules apply. If no valid domain could open, the book can't be taken until one can, so taking it always traps you.
 - **No valid domain:** the shriek fails to summon. This covers a shrieker inside a domain's cylinder but outside its sphere, where no pushed domain could contain it, and a cluster of domains where no position touches without overlapping. It extends vanilla's rule that no Warden emerges with another one nearby.
 
@@ -55,9 +55,3 @@ A player who logs out while trapped could leave the Warden with no one to hear, 
 ## Relation to auras
 
 The Hearts and death ticket already has enemy auras that block Withered Heart recovery. A domain is the same mechanic with a boundary, so the two are designed together in the Mob changes ticket.
-
-## Open questions
-
-### Where the pushed Warden stands
-
-Pushing the domain's centre can put it inside solid stone, over lava or in open air. Moving the domain, not the Warden, avoids this: the Warden spawns in vanilla's box near the shrieker, limited to spots inside its own domain. It doesn't need to be at the centre, since it's aware of the whole domain anyway.
