@@ -51,7 +51,11 @@ The full list lives in the [Enchantment Sources](https://claude.ai/artifact/F42M
 
 Zephyr goes on boots and gives a double jump, like Torrent's in Elden Ring. Each level makes the second jump higher. As in Elden Ring, fall damage counts the whole fall, from where it started to where you next touch the ground, so the double jump does nothing to prevent it. Vanilla only adds to fall distance while you move down, so the drop after the second jump would count on top: the height the jump regains should come off again, so the double jump is neutral. The double jump also "clutches": it cuts the distance you've fallen so far by 10% at level I, 15% at II and 25% at III. Only the distance before the jump is cut, so the later you jump, the more you save, and jumping just before landing cuts nearly the whole fall. That makes it a skill with no timing window to check. It stays well below Feather Falling IV's 48%. Matcha's version also gives a higher sneak jump and slow falling, which makes Feather Falling obsolete, so Maple leaves those out.
 
-Withered is a new enchantment, taken from Matcha Flavoured with credit. It goes on the same weapons as Fire Aspect, can't be combined with it, and has 2 levels. Hitting a mob gives it the Wither effect. The Wither drops its books, one per kill, so the two bosses each drop their own enchantment. Fire Aspect cooks food drops, while Withered still works on fire-immune mobs, which makes it the better choice in the Nether, though not against Wither Skeletons or the Wither.
+Blight is a new enchantment, taken from Matcha Flavoured with credit, and named so it isn't confused with Withered Hearts. It goes on the same weapons as Fire Aspect, can't be combined with it, and has 2 levels. Hitting a mob gives it the Wither effect. The Wither drops its books, one per kill, so the two bosses each drop their own enchantment.
+
+Blight deals less damage than Fire Aspect, to keep them balanced. Fire Aspect burns for 4 seconds per level at 1 damage a second. Blight gives Wither I for the same 4 seconds per level, and Wither I hurts once every 2 seconds, so it deals about half as much. In exchange, Blight works on fire-immune mobs, which makes it the better choice in the Nether, though not against Wither Skeletons or the Wither, and water doesn't put it out. Fire Aspect cooks food drops.
+
+Against players, Blight withers hearts. That mostly matters in the Nether and within the Wither's own domain, so it isn't a problem for PvP elsewhere.
 
 The curses are removed. Found gear is plain, so they'd have no source, and they don't have a use anyway.
 - **Fire Protection is in Nether Fortresses.** They're common and full of fire, which suits an enchantment that takes 8 books.
@@ -206,10 +210,6 @@ If Efficiency or Unbreaking needs an Ancient City, the early game gets worse tha
 ### Repair materials
 
 Items with no simple recipe need a repair material: Elytra, tridents, the Mace, shields, bows, crossbows, fishing rods, shears, and flint and steel. Sensible defaults can come later, alongside the enchanting materials.
-
-### Withered against players
-
-The Wither effect causes Withered Hearts on players, which stay until they return to the Overworld. A Withered weapon in PvP would wither another player's hearts. That may be intended, but it's a lot stronger than Fire Aspect against players. The name also sits close to Withered Heart in the glossary, so the enchantment may need a distinct name.
 
 ### Still to place
 
