@@ -34,10 +34,10 @@ A vanilla Warden is aware of every entity in a 50 by 50 box around itself. It sl
 
 ### Multiple Wardens
 
-Vanilla puts no limit on Wardens in one place. A shrieker tries to spawn one in an 11 by 13 box, with no check for an existing Warden.
+A shrieker tries to spawn a Warden in an 11 by 13 box, and only if no other Warden is within 24 blocks. A 50 block domain is much wider than that, so a shrieker far enough from the current Warden can still summon a second one inside the domain.
 
 - **A Warden spawned near an active domain joins it.** If a shrieker's spawn box overlaps an active domain, the new Warden spawns inside the existing domain rather than opening a second one.
-- **Grabbing the book always makes a Warden**, even if one is already around.
+- **Grabbing the book always makes a Warden**, even if one is already within 24 blocks. This skips vanilla's check.
 
 ### Logging out
 
@@ -65,7 +65,3 @@ The joining rule checks the shrieker's spawn box, but a new Warden opens a domai
 ### Shape
 
 The barrier's shape is open: a cylinder, a sphere, or a box. Underground, the sculk skybox is mostly how the barrier looks from inside.
-
-### A vanilla fact to confirm
-
-I remembered vanilla refusing to warn from a shrieker when a Warden is within about 48 blocks. Jackson's understanding is that there's no such check. Confirm it in 26.3's code before balancing anything that depends on it.
