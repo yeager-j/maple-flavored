@@ -46,7 +46,8 @@ Vanilla Bastions come in four layouts, and only one has a treasure room, so each
 The full list lives in the [Enchantment Sources](https://claude.ai/artifact/F42Mxw4d32XTQbe5wwaUWf) spreadsheet. Some placements carry a reason worth keeping:
 
 - **Unbreaking is in Strongholds.** Vanilla's first ring has only 3, so Unbreaking III's fourth book means heading out to the second ring. It also gives Eyes of Ender a use after the End Portal is lit.
-- **End Cities hold two books.** Feather Falling is in the city's buildings, and Zephyr is on the End Ship, beside the Elytra. Both are about moving through the air, and they give End Cities more reason to be explored in full.
+- **Feather Falling is in End City buildings.**
+- **Zephyr drops from the Ender Dragon.** You use it until you find an Elytra, so it makes exploring the End easier. Putting it on the End Ship would hand out two movement upgrades at once. Each kill should drop a book, since Zephyr III takes 4 and respawning the Dragon costs End Crystals.
 - **Fire Protection is in Nether Fortresses.** They're common and full of fire, which suits an enchantment that takes 8 books.
 - **Fortune is in Woodland Mansions, on purpose.** Mansions are rare, but 26.3's Explorer Maps lead to structures, and Abandoned Camps, also new in 26.3, carry them as loot.
 - **Specialized enchantments come early and general ones later.** Smite and Bane come from Dungeons, Blast Protection from Desert Pyramids and Projectile Protection from Pillager Outposts. Sharpness and Protection come later. Early gear has real tradeoffs, and a narrow enchantment is the best you can get for a while rather than a dud.
