@@ -47,13 +47,37 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 
 A book is an item that fits in a Chiseled Bookshelf and powers a nearby enchanting table. The table can offer an enchantment shelved nearby, at that book's level, and the book isn't used up. Anyone can use the table, so a group shares one library.
 
-Sharpness V still takes 16 found books, but you and your friends can combine your efforts. One library enchants everything in the base, and a broken tool loses only the cost of enchanting it again, never the books.
+Sharpness V still takes 16 found books, but you and your friends can combine your efforts. One library enchants everything in the base, and a broken tool loses only the ingots paid to enchant it, never the books.
+
+## Level sets how many enchantments you can apply
+
+Communal books mean everyone in a group can reach the same enchantments, so players need another way to stand apart. Your level sets how many enchantments an item can hold: 1 at level 30, and 1 more every 30 levels.
+
+This isn't as brutal as it sounds. Keep Inventory is on by default, so you don't lose XP when you die.
+
+Vanilla's XP curve makes each slot cost much more than the last:
+
+| Enchantments | Level | Total XP |
+| --- | --- | --- |
+| 1 | 30 | 1,395 |
+| 2 | 60 | 8,670 |
+| 3 | 90 | 24,045 |
+| 4 | 120 | 47,520 |
+| 5 | 150 | 79,095 |
+
+Orichalcum tools get 1 extra enchantment slot. This replaces Orichalcum's Better enchanting perk, as the Material roles ticket expected.
+
+## Enchanting is paid with the item's material
+
+Enchanting no longer costs XP. You pay with an ingot of the item's own material: an iron pickaxe takes an iron ingot, and an Adamant pickaxe takes an Adamant ingot.
+
+The grindstone removes enchantments and gives the ingot back. So the ingot is a deposit stored in the item rather than a spend, and it's only lost if the item breaks.
 
 ## The enchanting table
 
 The table should be upgraded permanently by spending XP, and fully upgrading it should take a large amount of XP, far more than vanilla's 3 levels. Fifteen bookshelves isn't a real gate. This gives XP a real job, which Matcha took away, and makes XP farms a reward.
 
-How the table fits with books found in the wild is an open question below.
+Using level to set enchantment slots may replace this, since it gives XP a job without spending it. That conflict is an open question below.
 
 ## Open questions
 
@@ -72,9 +96,32 @@ The table's job is now to read the library. Its XP upgrades need a role that boo
 
 - Upgrades cap the level the table can read from its shelves. This gates levels twice, by books and by XP, which may be one gate too many.
 - Upgrades add range or shelf capacity, so a bigger library needs a stronger table.
-- Upgrades go, and XP is spent each time you enchant instead. Books never run out, so this is the ongoing XP sink.
+- Upgrades go. Enchanting is paid in ingots, and level already sets your slots.
 
 Upgrading with XP alone only costs time once you have a farm. Each upgrade tier could also need one material that only progression gets you, so the table's upgrade path follows the game.
+
+### XP as a rank or a currency
+
+If level sets your enchantment slots, spending XP lowers your rank. That makes every XP cost feel bad, including table upgrades, anvil repairs and combining books. The cleanest rule is that XP is never spent, and only Mending competes with your level, by eating orbs before you collect them. This belongs to the Role of XP ticket too.
+
+### When the slot limit is checked
+
+If the limit is checked only at the table, the highest-level player can enchant everyone's gear, and communal books plus shared enchanting erase the differences between players. Checking it while the item is in use keeps players distinct. Enchantments past the holder's limit would go dormant, most recently applied first, and show greyed out. It's more complex, but it's the version that does what the slot limit is for.
+
+### The step size
+
+How many slots matter depends on how many enchantments an item wants. A sword can take about six (Sharpness, Looting, Sweeping Edge, Unbreaking, Mending, Fire Aspect), a pickaxe about four, and an armor piece four or five. Merging the bad enchantments lowers these. With a step of 30 levels, 4 slots needs about 47,500 XP, a few hours at a good farm.
+
+### Orichalcum's extra slot
+
+The Material roles ticket gives Orichalcum's armor Better enchanting too, so its armor probably gets the extra slot as well. An extra slot may be stronger than other Alloys' perks, such as Adamant's +1 damage, since it can hold any enchantment. Design rule 5 says no gear is strictly best, so this needs checking against the others.
+
+### Paying in ingots
+
+- **Per enchantment or per enchanting?** One ingot per enchantment makes a four-enchantment Adamant pickaxe cost 4 Adamant ingots, which is 36 diamonds held in one tool.
+- **Items with no ingot.** Vanilla's repair material is a natural rule: planks for wood and shields, cobblestone for stone, leather, diamonds, phantom membrane for Elytra, a breeze rod for the Mace, scutes for turtle shells and wolf armor. Bows, crossbows, tridents, fishing rods, shears, and flint and steel have no repair material, so each needs one.
+- **Smithing upgrades.** Upgrading an enchanted diamond pickaxe to Netherite keeps its enchantments. If the grindstone returned the current material, enchanting in diamonds and grinding as Netherite would turn diamonds into Netherite. The item should record what was paid, so the grindstone returns exactly that.
+- **Lapis loses its job.** Design rule 5 says every material has a use, so lapis needs a new one or stays as a second cost.
 
 Whatever its role, the 3-slot random offer goes. A level choice is dominant if it's deterministic, so the table always gives the highest level available. This replaces Orichalcum's Better enchanting perk, as the Material roles ticket expects.
 
@@ -110,7 +157,7 @@ If Efficiency or Unbreaking needs an Ancient City, the early game gets worse tha
 
 ### The anvil's prior-work penalty
 
-Vanilla's prior-work penalty limits stacking through repeated combining. Found books now do that job. With the penalty, repaired gear eventually hits "Too Expensive!" The penalty probably goes or changes for repairs, though re-enchanting a fresh tool is now an alternative.
+Vanilla's prior-work penalty limits stacking through repeated combining. Found books now do that job. With the penalty, repaired gear eventually hits "Too Expensive!" The penalty probably goes or changes for repairs, though re-enchanting a fresh tool is now an alternative. If XP is never spent, the anvil also needs a cost other than levels.
 
 ### Repairing with two tools
 
