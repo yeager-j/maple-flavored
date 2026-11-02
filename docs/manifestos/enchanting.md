@@ -38,7 +38,16 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 
 The Bastion's book is Fire Aspect. It has only 2 levels, so you don't need to clear many Bastions, which are very difficult structures. It's also a better enchantment than Fire Protection, the other contender, which would be too lame a prize for a structure that tough.
 
-Vanilla Bastions come in four layouts, and only one has a treasure room. Soul Speed's book is in the hoglin stables, so different layouts hold different prizes. The bridge and housing units layouts still need theirs.
+Vanilla Bastions come in four layouts, and only one has a treasure room, so each layout holds its own prize: Fire Aspect in the treasure room, Soul Speed on the bridge and Flame in the housing units. The hoglin stables still need theirs.
+
+## Where books are found
+
+The full list lives in the [Enchantment Sources](https://claude.ai/artifact/F42Mxw4d32XTQbe5wwaUWf) spreadsheet. Some placements carry a reason worth keeping:
+
+- **Unbreaking is in Strongholds.** Vanilla's first ring has only 3, so Unbreaking III's fourth book means heading out to the second ring. It also gives Eyes of Ender a use after the End Portal is lit.
+- **Fire Protection is in Nether Fortresses.** They're common and full of fire, which suits an enchantment that takes 8 books.
+- **Fortune is in Woodland Mansions, on purpose.** Mansions are rare, but 26.3's Explorer Maps lead to structures, and Abandoned Camps, also new in 26.3, carry them as loot.
+- **Specialized enchantments come early and general ones later.** Smite and Bane come from Dungeons, Blast Protection from Desert Pyramids and Projectile Protection from Pillager Outposts. Sharpness and Protection come later. Early gear has real tradeoffs, and a narrow enchantment is the best you can get for a while rather than a dud.
 
 ## Sources outside structures
 
@@ -147,10 +156,6 @@ Shelved books are a base's most valuable items. Fire, creepers and griefers coul
 ### Clearing the structure first
 
 Players may clear a Bastion before grabbing its book, so nothing is left to anger. That may be fine, since the fight still happens either way. A Blood Moon Restores Bastion mobs, but books never return. A Warden spawned on grab can't be avoided this way, though digging and pillaring may still cheese it.
-
-### Fire Protection
-
-Fire Protection needs a home now that the Bastion holds Fire Aspect. Nether Fortresses are common and full of fire, which suits an enchantment with 4 levels.
 
 ### Diamonds from chests
 
