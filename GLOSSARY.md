@@ -49,3 +49,27 @@ A periodic red full moon that brings back mobs that structures don't otherwise r
 **Restored**:
 Said of a structure whose mobs have returned after a Blood Moon.
 _Avoid_: Respawned
+
+### Enchanting
+
+**Library**:
+The enchanted books shelved in Chiseled Bookshelves around an enchanting table, which set the enchantments and levels it can apply.
+_Avoid_: Collection, book collection
+
+**Full Library**:
+A Library holding every enchantment except Mending at its max level. Only a table with one offers Mending.
+_Avoid_: Complete library, maxed library
+
+**Enchantment Slot**:
+Room for one enchantment on an item, set by the level of the player who enchants it: one at level 30, and one more every 30 levels.
+_Avoid_: Enchant limit, capacity
+
+**Blight**:
+A weapon enchantment that gives a struck mob the Wither effect.
+_Avoid_: Withered, Withering
+
+**Zephyr**:
+A boots enchantment that gives a double jump.
+
+**Clutch**:
+A Zephyr double jump during a fall, which cuts the distance fallen so far.

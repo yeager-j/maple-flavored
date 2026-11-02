@@ -34,7 +34,8 @@ Standing choices:
 - [How Raspberry Flavoured designs alloys and progression](issues/02-raspberry-alloys.md): alloys also sit on host materials, with traits replacing removed enchantments, uses beyond gear, and durability independent of tier.
 - [Hearts and death](issues/03-hearts-and-death.md): death costs hearts, not items, down to a Heart Floor that falls from 10 to 3 over seven Milestones; Crystal Hearts come from one-time boss kills, chests and crafting with Pith; Wither temporarily withers hearts until you return to the Overworld.
 - [Material roles and alloys](issues/06-material-roles-and-alloys.md): Steel, Electrum, Shakudo, Adamant and Orichalcum are made from Netherite, storage blocks and Ancient Embers from Piglin Brutes; each beats Netherite differently, with set bonuses and Armored Elytra.
-- [Blood moons](issues/15-blood-moons.md): every 32 days, bastion, monument, End city and mansion mobs return to their original spots if the right blocks remain, making Embers and Pith slowly renewable; blocks and loot never return.
+- [Blood moons](issues/15-blood-moons.md): every 32 days, bastion, monument, End city, mansion and Stronghold mobs return to their original spots if the right blocks remain, making Embers and Pith slowly renewable; blocks and loot never return.
+- [Enchanting](issues/10-enchanting.md): books are found once per structure, combine from level I, and are shared through a Library around the table; level sets Enchantment Slots, enchanting costs the item's material and lapis, and Mending needs a Full Library.
 
 ## Not yet specified
 

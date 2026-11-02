@@ -20,6 +20,7 @@ Blood Moons Restore mobs, never blocks or loot.
 - Ocean Monuments: Elder Guardians
 - End cities: Shulkers
 - Woodland mansions: Vindicators and Evokers
+- Strongholds: their Illagers, added by the Enchanting ticket
 
 Allays, chests and broken spawners don't return. Diamonds stay non-renewable, so Crystal Heart crafting keeps its limit, and a broken spawner's 1 Pith stays a one-time reward.
 
@@ -35,6 +36,7 @@ The spot must still be clear, and the right block must still be there:
 | Elder Guardian | In water, with prismarine family beneath |
 | Shulker | Attached to purpur family or end stone bricks |
 | Mansion illagers | Birch planks, cobblestone or smooth stone slab beneath |
+| Stronghold illagers | Stone bricks family beneath (proposed) |
 
 So tearing down a bastion or draining a monument ends its Restoring. Restoring never replaces a block, and no mob appears within 32 blocks of an online player. A base inside an intact bastion can still get visitors.
 
@@ -56,3 +58,7 @@ Ancient Embers stay killed-by-player, so Alloy ingots still can't be fully autom
 - End cities use `Sentry` markers, and mansions use `Warrior`, `Mage` and `Group of Allays` markers.
 - Elder Guardians aren't in templates: 3 hardcoded `spawnElder` calls set their spots.
 - Saved structure data keeps each piece's template and position, so spots should be recoverable. This was read from the jar, not tested in a world.
+
+## Comments
+
+From [the enchanting manifesto](../../../docs/manifestos/enchanting.md): Strongholds are filled with Illagers that drop enchanted books, and Blood Moons Restore them like mansion Illagers. The stone bricks condition is a proposal to confirm.

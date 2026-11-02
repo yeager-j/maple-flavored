@@ -50,3 +50,7 @@ Vanilla facts behind these: Evoker Fangs deal 6 indirect magic damage, which ign
 
 - An Elytra + an Alloy chestplate at a Smithing Table gives an Armored Elytra, permanently, with that chestplate's armor and effects. Plain Netherite chestplates don't qualify. It counts as the chest piece for set bonuses.
 - It flies worse than a plain Elytra: horizontal glide drag is multiplied by 0.995 per tick, and Firework Rocket boost is reduced by 25%.
+
+## Comments
+
+From [the enchanting manifesto](../../../docs/manifestos/enchanting.md): Orichalcum's Better enchanting becomes 1 extra enchantment slot on tools and armor. Electrum's Fortune or Looting one level above the cap becomes a flat +50% drop bonus, added to Fortune and Looting, on only the drops they affect, skipping Ancient Embers, Pith and enchanted books. Alloy gear is repaired with 1 ingot of its own Alloy.
