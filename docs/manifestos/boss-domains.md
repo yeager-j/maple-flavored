@@ -72,4 +72,4 @@ A shrieker can be inside a domain's cylinder but outside its sphere, above or be
 - **The shriek fails to summon.** This extends vanilla's own rule that no Warden emerges with another one nearby. The player who triggered it gets away, but the gap is small and rare.
 - **The Warden joins the existing domain.** Then the players already trapped there pay for someone else's noise, and the Warden can't reach the player who triggered it.
 
-Failing to summon is the simpler and fairer choice.
+Failing to summon looks simpler and fairer, and it could also be the fallback for several domains nearby.
