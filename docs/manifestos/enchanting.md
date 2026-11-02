@@ -51,6 +51,8 @@ A few enchantments come from elsewhere, each from the activity it belongs to:
 
 Found enchanted gear is removed. Gear from mobs, chests, fishing and bartering is just normal gear.
 
+Enchanted books are removed from all other loot tables, and their chest entries are replaced with diamonds so chests aren't entirely lame. Vault pools keep only the Mace's books. Bartering loses its Soul Speed books and iron boots without replacements, since the higher weights for the useful drops are good enough. Fishing's book entry becomes Luck of the Sea and Lure books.
+
 Bartering stays a game of chance. It's technically a loot box, but most of its results are really useful, and the only real duds are things like water bottles and iron boots. Vanilla enchanting is different: Smite and Bane really are pointless, and nobody wants them.
 
 ## Books and the anvil
@@ -150,11 +152,9 @@ Players may clear a Bastion before grabbing its book, so nothing is left to ange
 
 Fire Protection needs a home now that the Bastion holds Fire Aspect. Nether Fortresses are common and full of fire, which suits an enchantment with 4 levels.
 
-### Remaining bypasses
+### Diamonds from chests
 
-- **Chest loot.** Enchanted books in other structures' chests would need to go, as with fishing.
-- **Other vault books.** Regular vaults and the rest of the ominous vault pool also give enchanted books. Those go, unless they're one of the Mace's.
-- **Bartering's enchanted items.** Soul Speed books and Soul Speed iron boots are in vanilla's barter pool. With Soul Speed in the hoglin stables and found gear plain, the book goes and the boots become plain iron boots. That adds another dud to the pool, so those entries could be replaced.
+Diamonds are non-renewable, which is what limits Crystal Hearts and Adamant. Chests don't refill, so diamonds stay non-renewable, but the count matters. Some chests are mostly books, such as stronghold libraries and Ancient City chests, so replacing each book entry with a diamond could add a lot of diamonds. The amount per entry should be set with the Structures ticket's Crystal Heart and Pith odds. Fishing must never give diamonds, since AFK fish farms would make them renewable.
 
 ### Bad enchantments become bad finds
 
