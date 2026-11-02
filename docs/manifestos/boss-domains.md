@@ -38,6 +38,8 @@ A Warden is aware of everything inside its domain, so it can always pathfind tow
 
 A shrieker tries to spawn a Warden in an 11 by 13 box, and only if no other Warden is within 24 blocks. A 50 block domain is much wider than that, so a shrieker far enough from the current Warden can still summon a second one.
 
+A domain is a sphere for its barrier and skybox, but a cylinder from bedrock to the build limit for spawning rules. Two domains count as overlapping if their circles overlap, which keeps the rules simple and stops domains stacking vertically. Spheres can't overlap if their cylinders don't, so the invariant holds.
+
 Domains never overlap. Overlapping domains would trap players between two barriers, so this is an invariant, not a balance choice.
 
 - **Triggered inside a domain:** the new Warden spawns inside that domain and joins it.
@@ -63,6 +65,11 @@ Pushing the domain's centre can put it inside solid stone, over lava or in open 
 
 Pushing away from one domain can push into another, and with three or more close together there may be no spot that touches without overlapping. The rule needs a fallback, such as the Warden joining the nearest domain, or the shriek failing to summon at all.
 
-### Shape
+### The gap between the sphere and the cylinder
 
-The barrier's shape is open: a cylinder, a sphere, or a box. Underground, the sculk skybox is mostly how the barrier looks from inside. Cylinders from bedrock to the build limit make the overlap rule simplest, because two domains overlap only if their circles do, and pushing is a step along the line between their centres.
+A shrieker can be inside a domain's cylinder but outside its sphere, above or below it, or in a corner. The push rule can't trap that player: a domain pushed clear of the cylinder is always more than one radius from them. The options:
+
+- **The shriek fails to summon.** This extends vanilla's own rule that no Warden emerges with another one nearby. The player who triggered it gets away, but the gap is small and rare.
+- **The Warden joins the existing domain.** Then the players already trapped there pay for someone else's noise, and the Warden can't reach the player who triggered it.
+
+Failing to summon is the simpler and fairer choice.
