@@ -49,7 +49,7 @@ The full list lives in the [Enchantment Sources](https://claude.ai/artifact/F42M
 - **Feather Falling is in End City buildings.**
 - **Zephyr drops from the Ender Dragon.** You use it until you find an Elytra, so it makes exploring the End easier. Putting it on the End Ship would hand out two movement upgrades at once. Every kill drops a book, since Zephyr III takes 4 and respawning the Dragon costs End Crystals.
 
-Zephyr goes on boots and gives a double jump, like Torrent's in Elden Ring. Each level makes the second jump higher. Matcha's version also gives a higher sneak jump and slow falling, which makes Feather Falling obsolete, so Maple leaves those out.
+Zephyr goes on boots and gives a double jump, like Torrent's in Elden Ring. Each level makes the second jump higher. As in Elden Ring, fall damage counts the whole fall, from where it started to where you next touch the ground, so the double jump does nothing to prevent it. Vanilla only adds to fall distance while you move down, so the drop after the second jump would count on top: the height the jump regains should come off again, so the double jump is neutral. "Clutching" is open: the double jump could reduce some fall damage at higher levels, as long as it stays well below Feather Falling IV's 48%. Matcha's version also gives a higher sneak jump and slow falling, which makes Feather Falling obsolete, so Maple leaves those out.
 
 The curses are removed. Found gear is plain, so they'd have no source, and they don't have a use anyway.
 - **Fire Protection is in Nether Fortresses.** They're common and full of fire, which suits an enchantment that takes 8 books.
