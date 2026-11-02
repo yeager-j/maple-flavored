@@ -154,7 +154,7 @@ Fire Protection needs a home now that the Bastion holds Fire Aspect. Nether Fort
 
 ### Diamonds from chests
 
-Diamonds are non-renewable, which is what limits Crystal Hearts and Adamant. Chests don't refill, so diamonds stay non-renewable, but the count matters. Some chests are mostly books, such as stronghold libraries and Ancient City chests, so replacing each book entry with a diamond could add a lot of diamonds. The amount per entry should be set with the Structures ticket's Crystal Heart and Pith odds. Fishing must never give diamonds, since AFK fish farms would make them renewable.
+Diamonds are non-renewable, which is what limits Crystal Hearts and Adamant. Chests don't refill, so diamonds stay non-renewable, but the count matters. Some chests weight enchanted books heavily, so swapping each entry one for one could add a lot of diamonds. The real weights need checking. The amount per entry should be set with the Structures ticket's Crystal Heart and Pith odds. Fishing must never give diamonds, since AFK fish farms would make them renewable.
 
 ### Bad enchantments become bad finds
 
