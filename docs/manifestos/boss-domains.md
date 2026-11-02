@@ -12,7 +12,7 @@ When a boss appears, it opens a domain: an area you can't leave, which applies a
 
 This matters for enchanting. Grabbing the Ancient City's book spawns a Warden, and without a domain an Elytra makes that encounter trivial.
 
-Domains start with the Warden. Other bosses come later, once their own cheeses are identified.
+Domains start with the Warden. The Wither is next, and other bosses come later, once their own cheeses are identified.
 
 ## The Warden's domain
 
@@ -51,6 +51,17 @@ Domains never overlap. Overlapping domains would trap players between two barrie
 ### Logging out
 
 A player who logs out while trapped could leave the Warden with no one to hear, ending the domain. That's no worse than switching to Creative or teleporting away, so it isn't solved.
+
+## The Wither's domain
+
+The Wither's domain is an open barrier, like Sukuna's: there's no wall, and you can come and go. Running away isn't how players cheese the Wither, so the domain doesn't need to trap anyone. Its job is the aura from the Hearts and death ticket: Withered Hearts don't recover while you're inside it, even in the Overworld.
+
+The Wither's real cheese is trapping it under bedrock so it suffocates. To stop that, the Wither moves through blocks, like the Ender Dragon.
+
+### Open questions
+
+- **Hiding inside terrain.** The Ender Dragon moving through blocks works because the End is open. A Wither that moves through any block could sit inside stone, where arrows and melee can't reach it. Two narrower options: it's immune to suffocation and passes only through the blocks it can't break, such as bedrock and obsidian; or it teleports to open air near its target when it's been stuck for a few seconds.
+- **The domain's size and effect.** The size is open, and so is whether the domain does more than block recovery, for example applying the Wither effect to everyone inside.
 
 ## Relation to auras
 
