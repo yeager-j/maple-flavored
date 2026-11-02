@@ -70,7 +70,7 @@ A few enchantments come from elsewhere, each from the activity it belongs to:
 
 Found enchanted gear is removed. Gear from mobs, chests, fishing and bartering is just normal gear.
 
-Enchanted books are removed from all other loot tables, and their chest entries are replaced with diamonds so chests aren't entirely lame. Vault pools keep only the Mace's books. Bartering loses its Soul Speed books and iron boots without replacements, since the higher weights for the useful drops are good enough. Fishing's book entry becomes Luck of the Sea and Lure books.
+Enchanted books are removed from all other loot tables, and each chest entry is replaced with a single diamond. It isn't very impactful, but it keeps chests from being lame. Vault pools keep only the Mace's books. Bartering loses its Soul Speed books and iron boots without replacements, since the higher weights for the useful drops are good enough. Fishing's book entry becomes Luck of the Sea and Lure books.
 
 Bartering stays a game of chance. It's technically a loot box, but most of its results are really useful, and the only real duds are things like water bottles and iron boots. Vanilla enchanting is different: Smite and Bane really are pointless, and nobody wants them.
 
@@ -180,9 +180,14 @@ Communal books suit one book per structure per world. Vanilla's Trial Chamber va
 
 Players may clear a Bastion before grabbing its book, so nothing is left to anger. That may be fine, since the fight still happens either way. A Blood Moon Restores Bastion mobs, but books never return. A Warden spawned on grab can't be avoided this way, though digging and pillaring may still cheese it.
 
-### Diamonds from chests
+### Library rewards
 
-Diamonds are non-renewable, which is what limits Crystal Hearts and Adamant. Chests don't refill, so diamonds stay non-renewable, but the count matters. Some chests weight enchanted books heavily, so swapping each entry one for one could add a lot of diamonds. The real weights need checking. The amount per entry should be set with the Structures ticket's Crystal Heart and Pith odds. Fishing must never give diamonds, since AFK fish farms would make them renewable.
+The idea: the enchanting table rewards you as its library grows, with a progress bar and rewards along the way, and Mending at the top. It turns finding books into a collection, so even Bane of Arthropods counts towards something. How it works in multiplayer is open.
+
+- **What counts.** Counting distinct enchantments rewards exploring every kind of structure. Counting total levels lets one structure type, such as 16 mineshafts, fill the bar.
+- **Where progress lives.** A one-time reward that drops when a book is first shelved can be repeated by building more tables, or by passing books between players and tables. Mending books could be duplicated that way.
+- **A possible answer: rewards as live conditions of the library.** The table offers Mending while its shelves hold enough distinct enchantments, rather than handing out a Mending book once. There's nothing to record, nothing to farm, and moving the books moves the reward with them. It fits communal books: lending your books is lending your library.
+- **Mending's other source.** Mending already comes from level 5 Raids, so this would replace that source or sit beside it.
 
 ### Bad enchantments become bad finds
 
