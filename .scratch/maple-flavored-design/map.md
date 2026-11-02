@@ -38,12 +38,13 @@ Standing choices:
 - [Enchanting](issues/10-enchanting.md): books are found once per structure, combine from level I, and are shared through a Library around the table; level sets Enchantment Slots, enchanting costs the item's material and lapis, and Mending needs a Full Library.
 - [Early-game tiers](issues/07-early-game-tiers.md): no early-only steps; stone tools are removed so wood mines copper ore; gold and Electrum gear get +1 Enchantment Slot, with Orichalcum taking the drop bonus; a Master Armorer template Reinforces any armor with chainmail for +1 toughness.
 - [Getting villagers and removing villages](issues/08-villagers-and-villages.md): every village is abandoned and 5.5x rarer; villagers are earned only by curing, with Weakness brewed from Strength and an enchanted golden apple made at the table from 15% Library Progress and level 30, its effects picked like enchantments.
+- [Healing and food](issues/04-healing-and-food.md): vanilla food, hunger and natural regeneration stay for now, since no design beat them; the enchanted golden apple's effects moved to Brewing.
 
 ## Not yet specified
 
 - Nether and End progression, including whether bosses need new rewards
 - Trading economy details
-- New recipes and foods
+- New recipes
 - Armor and combat changes beyond alloys, including the shield
 
 ## Out of scope

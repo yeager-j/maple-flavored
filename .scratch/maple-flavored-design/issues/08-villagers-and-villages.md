@@ -38,7 +38,7 @@ Curing is the only way to get a villager. It takes a splash potion of Weakness a
 
 **Enchanted golden apples** are made at the enchanting table, like gear.
 
-- A plain golden apple is the base and has no effects, just food, like an unenchanted pickaxe. Its food value belongs to Healing and food.
+- A plain golden apple is the base and has no effects, just food, like an unenchanted pickaxe. It keeps vanilla's food value.
 - An enchanted golden apple is a golden apple carrying one or more effects. The table offers effects the way it offers enchantments, and each effect takes an Enchantment Slot. Gold's extra Enchantment Slot doesn't apply, because that's for tools and armor.
 - Saving costs 1 lapis per effect, and the first save also takes a block of gold as the material unit. The grindstone removes the effects and returns the golden apple and the block of gold, but not the lapis.
 - Regeneration II is the first effect, unlocked at 15% Library Progress. Further effects unlock as Library Progress grows, and once unlocked, any combination can be chosen. No effect is required.
@@ -60,7 +60,7 @@ So a player's first villagers come after the Nether, a modest Library and level 
 
 ### Handed on
 
-- [Healing and food](04-healing-and-food.md): the enchanted golden apple's effect list, the unlock thresholds, effect strengths and durations, and the plain golden apple's food value.
+- [Brewing](11-brewing.md): the enchanted golden apple's effect list, the unlock thresholds, and effect strengths and durations. The plain golden apple keeps vanilla's food value.
 - [Brewing](11-brewing.md): the Weakness recipe.
 - [Farm pacing](09-farm-pacing.md): when villagers become available, and the absence of iron golems in villages.
 - [Structures](14-structures.md): village chest contents and the trimmed village pieces.
