@@ -33,7 +33,7 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 - **Structures, not mob kills.** Unlocks are tied to structures for the most part, to encourage exploration over farming.
 - **A fixed place, not a chest roll.** A random 5% chest drop just moves the loot box into the chest. The book should be in a known spot, guaranteed to be there.
 - **One book per structure.** Some common structures can hold one of several enchantments, such as Pillager Outposts, Ocean Ruins, Dungeons and Buried Treasure. These have trash loot in vanilla. Each one is given a single book from its list, and you're guaranteed to get it.
-- **Taking the book wakes the structure.** Each book is a floating book in the structure's most important spot, and grabbing it triggers that structure's own danger, turned up. Two examples:
+- **Some books wake the structure.** Each book is a floating book in the structure's most important spot. Not every structure needs to wake: for some, the challenge is finding them. Where grabbing the book does wake the structure, it triggers that structure's own danger, turned up. In Strongholds and Woodland Mansions, it angers every Illager. The Ancient City is the first real event, and the system can grow from there. Two examples:
   - **Ancient City:** the book floats in the middle of the city, in front of the portal. Grabbing it spawns a Warden, and you have to sneak around it to escape. Its [domain](boss-domains.md) stops you from flying away.
   - **Bastion:** the book floats in the treasure room. Grabbing it angers every Piglin in the structure. Good luck.
 
@@ -47,7 +47,11 @@ The full list lives in the [Enchantment Sources](https://claude.ai/artifact/F42M
 
 - **Unbreaking is in Strongholds.** Vanilla's first ring has only 3, so Unbreaking III's fourth book means heading out to the second ring. It also gives Eyes of Ender a use after the End Portal is lit.
 - **Feather Falling is in End City buildings.**
-- **Zephyr drops from the Ender Dragon.** You use it until you find an Elytra, so it makes exploring the End easier. Putting it on the End Ship would hand out two movement upgrades at once. Each kill should drop a book, since Zephyr III takes 4 and respawning the Dragon costs End Crystals.
+- **Zephyr drops from the Ender Dragon.** You use it until you find an Elytra, so it makes exploring the End easier. Putting it on the End Ship would hand out two movement upgrades at once. Every kill drops a book, since Zephyr III takes 4 and respawning the Dragon costs End Crystals.
+
+Zephyr goes on boots and gives a double jump, like Torrent's in Elden Ring. Each level makes the second jump higher. Matcha's version also gives a higher sneak jump and slow falling, which makes Feather Falling obsolete, so Maple leaves those out.
+
+The curses are removed. Found gear is plain, so they'd have no source, and they don't have a use anyway.
 - **Fire Protection is in Nether Fortresses.** They're common and full of fire, which suits an enchantment that takes 8 books.
 - **Fortune is in Woodland Mansions, on purpose.** Mansions are rare, but 26.3's Explorer Maps lead to structures, and Abandoned Camps, also new in 26.3, carry them as loot.
 - **Specialized enchantments come early and general ones later.** Smite and Bane come from Dungeons, Blast Protection from Desert Pyramids and Projectile Protection from Pillager Outposts. Sharpness and Protection come later. Early gear has real tradeoffs, and a narrow enchantment is the best you can get for a while rather than a dud.
@@ -80,6 +84,10 @@ Bartering stays a game of chance. It's technically a loot box, but most of its r
 ## Books are communal
 
 A book is an item that fits in a Chiseled Bookshelf and powers a nearby enchanting table. The table can offer an enchantment shelved nearby, at that book's level, and the book isn't used up. Anyone can use the table, so a group shares one library.
+
+The table still needs 15 bookshelves around it, as in vanilla, and any of them can be a Chiseled Bookshelf. That's room for 90 books. Books are combined in the anvil, one book per enchantment, so a complete library of 42 enchantments fits in 7 Chiseled Bookshelves. Without combining, it would take about 250 found books, far more than the shelves hold.
+
+Books resist fire and explosions, like Netherite. Griefers aren't worth protecting against: if they can't burn a book, they'll just steal it.
 
 Sharpness V still takes 16 found books, but you and your friends can combine your efforts. One library enchants everything in the base, and a broken tool loses only the ingot paid to enchant it, never the books.
 
@@ -143,21 +151,9 @@ Changing enchantments is cheap, so situational ones become worth having. You can
 
 These came up in discussion and are left for the Enchanting ticket.
 
-### Plain bookshelves
-
-Vanilla Chiseled Bookshelves don't power tables, so the library is a change. Plain bookshelves need a decision: whether they still do anything, or are only decoration.
-
-### Combining in the anvil or on the shelf
-
-Books could be combined in the anvil into one book per level, as above, or the table could count several level I books on its shelves. Combining keeps the library small, since a Chiseled Bookshelf holds 6 books. Counting avoids a merged book holding 16 finds' worth of work in one item.
-
 ### Who gets each book
 
 Communal books suit one book per structure per world. Vanilla's Trial Chamber vaults give each player their loot once, but a per-player book would multiply finds on a server, which fights the shared library.
-
-### Protecting the library
-
-Shelved books are a base's most valuable items. Fire, creepers and griefers could take 16 structures' worth of work in one go. Books could resist fire and explosions, like Netherite, or drop when their shelf is destroyed.
 
 ### Clearing the structure first
 
@@ -187,5 +183,4 @@ Repairing two copies of a tool in the anvil needs a rule for which enchantments 
 
 - How the Mending rework changes the Raid reward
 - How Electrum's one level above the Fortune and Looting caps works with found books
-- What grabbing each structure's book wakes
-- Whether the curses stay, now that found gear is plain
+- Which other structures wake when their book is taken, as the system grows
