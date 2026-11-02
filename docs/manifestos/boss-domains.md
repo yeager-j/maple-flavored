@@ -45,7 +45,7 @@ Domains never overlap. Overlapping domains would trap players between two barrie
 - **Triggered inside a domain's sphere:** the new Warden spawns inside that domain and joins it.
 - **Triggered outside, with no overlap:** the Warden opens its own domain as normal.
 - **Triggered outside, where its domain would overlap:** the new domain is pushed away from the existing one until the two touch without overlapping. The shrieker that set it off ends up inside the new domain, so the consequence lands on whoever triggered it.
-- **Grabbing the book always makes a Warden**, even if one is already within 24 blocks. This skips vanilla's check, and the same overlap rules apply.
+- **Grabbing the book always makes a Warden**, even if one is already within 24 blocks. This skips vanilla's check, and the same overlap rules apply. If no valid domain could open, the book can't be taken until one can, so taking it always traps you.
 - **No valid domain:** the shriek fails to summon. This covers a shrieker inside a domain's cylinder but outside its sphere, where no pushed domain could contain it, and a cluster of domains where no position touches without overlapping. It extends vanilla's rule that no Warden emerges with another one nearby.
 
 ### Logging out
@@ -61,7 +61,3 @@ The Hearts and death ticket already has enemy auras that block Withered Heart re
 ### Where the pushed Warden stands
 
 Pushing the domain's centre can put it inside solid stone, over lava or in open air. Moving the domain, not the Warden, avoids this: the Warden spawns in vanilla's box near the shrieker, limited to spots inside its own domain. It doesn't need to be at the centre, since it's aware of the whole domain anyway.
-
-### The book with no valid domain
-
-Grabbing the book always makes a Warden, but failing to summon means no Warden. The two clash if the book sits where no valid domain exists, such as in another domain's gap between sphere and cylinder. The book's Warden could join the nearest domain, or the book could be held in place until a domain can open.
