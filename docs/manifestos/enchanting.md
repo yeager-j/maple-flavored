@@ -33,7 +33,7 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 - **Structures, not mob kills.** Unlocks are tied to structures for the most part, to encourage exploration over farming.
 - **A fixed place, not a chest roll.** A random 5% chest drop just moves the loot box into the chest. The book should be in a known spot, guaranteed to be there.
 - **Taking the book wakes the structure.** Each book is a floating book in the structure's most important spot, and grabbing it triggers that structure's own danger, turned up. Two examples:
-  - **Ancient City:** the book floats in the middle of the city, in front of the portal. Grabbing it spawns a Warden, and you have to sneak around it to escape.
+  - **Ancient City:** the book floats in the middle of the city, in front of the portal. Grabbing it spawns a Warden, and you have to sneak around it to escape. Its [domain](boss-domains.md) stops you from flying away.
   - **Bastion:** the book floats in the treasure room. Grabbing it angers every Piglin in the structure. Good luck.
 
 ## Books and the anvil
