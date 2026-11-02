@@ -43,6 +43,12 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 - **The anvil combines books** to upgrade them, and still repairs tools and armor.
 - **Tools can no longer be combined** to raise their enchantment levels. Found books are the only source of levels.
 
+## Books are communal
+
+A book is an item that fits in a Chiseled Bookshelf and powers a nearby enchanting table. The table can offer an enchantment shelved nearby, at that book's level, and the book isn't used up. Anyone can use the table, so a group shares one library.
+
+Sharpness V still takes 16 found books, but you and your friends can combine your efforts. One library enchants everything in the base, and a broken tool loses only the cost of enchanting it again, never the books.
+
 ## The enchanting table
 
 The table should be upgraded permanently by spending XP, and fully upgrading it should take a large amount of XP, far more than vanilla's 3 levels. Fifteen bookshelves isn't a real gate. This gives XP a real job, which Matcha took away, and makes XP farms a reward.
@@ -55,35 +61,36 @@ These came up in discussion and are left for the Enchanting ticket.
 
 ### How many books it takes
 
-If one found book is level I and combining doubles, a level n book needs 2^(n-1) finds. If books are used up when applied, that's per item:
+If one found book is level I and combining doubles, a level n book needs 2^(n-1) finds. Communal books make this a cost per library rather than per item or per player, so Sharpness V is 16 finds for the whole group. A solo player still needs all 16, and the map's balance assumes a shared world, so it's open whether that's acceptable alone. Options if it isn't:
 
-| Goal | Books |
-| --- | --- |
-| Sharpness V on one sword | 16 |
-| Protection IV on a full armor set | 32 |
-| Efficiency V on a pickaxe, shovel and axe | 48 |
-
-On a server, every player needs their own. Ancient Cities are rare, so this is probably too many unless something changes:
-
-- **Copy, don't consume.** A found book teaches something, such as the table or a library, and copies are made from it for XP and lapis. Combining found books raises what can be copied. Then four Sharpness finds means Sharpness III on all your gear.
 - **Lower the max levels.** Fewer levels mean fewer doublings.
 - **Match the source to the max level.** Enchantments with high max levels come from common structures, and Ancient Cities and Bastions hold single-level or low-level prizes.
 
 ### What the table does
 
-If books come from the wild and levels come from the anvil, the XP-upgraded table needs a role. Options:
+The table's job is now to read the library. Its XP upgrades need a role that books don't already fill, or they go. Options:
 
-- It copies books you've found, up to a level its upgrades allow. This pairs with "copy, don't consume".
-- It holds a library: Chiseled Bookshelves nearby hold found books, the table can only offer what's shelved, and XP upgrades set how high it can go. This keeps vanilla's vocabulary, stores progress in the world rather than hidden data, and works for a shared base.
-- It's dropped, and the anvil does everything.
+- Upgrades cap the level the table can read from its shelves. This gates levels twice, by books and by XP, which may be one gate too many.
+- Upgrades add range or shelf capacity, so a bigger library needs a stronger table.
+- Upgrades go, and XP is spent each time you enchant instead. Books never run out, so this is the ongoing XP sink.
 
 Upgrading with XP alone only costs time once you have a farm. Each upgrade tier could also need one material that only progression gets you, so the table's upgrade path follows the game.
 
 Whatever its role, the 3-slot random offer goes. A level choice is dominant if it's deterministic, so the table always gives the highest level available. This replaces Orichalcum's Better enchanting perk, as the Material roles ticket expects.
 
+Vanilla Chiseled Bookshelves don't power tables, so this is a change. Plain bookshelves need a decision too: whether they still add power, or are only decoration.
+
+### Combining in the anvil or on the shelf
+
+Books could be combined in the anvil into one book per level, as above, or the table could count several level I books on its shelves. Combining keeps the library small, since a Chiseled Bookshelf holds 6 books. Counting avoids a merged book holding 16 finds' worth of work in one item.
+
 ### Who gets each book
 
-In a shared world, a book that can be taken once gives the prize to whoever gets there first. Vanilla's Trial Chamber vaults give each player their loot once. A floating book could work the same way, waking the structure again for each player.
+Communal books suit one book per structure per world. Vanilla's Trial Chamber vaults give each player their loot once, but a per-player book would multiply finds on a server, which fights the shared library.
+
+### Protecting the library
+
+Shelved books are a base's most valuable items. Fire, creepers and griefers could take 16 structures' worth of work in one go. Books could resist fire and explosions, like Netherite, or drop when their shelf is destroyed.
 
 ### Clearing the structure first
 
@@ -103,11 +110,11 @@ If Efficiency or Unbreaking needs an Ancient City, the early game gets worse tha
 
 ### The anvil's prior-work penalty
 
-Vanilla's prior-work penalty limits stacking through repeated combining. Found books now do that job. With the penalty, repaired gear eventually hits "Too Expensive!", which is harsh when its enchantments took dozens of books. The penalty probably goes or changes for repairs.
+Vanilla's prior-work penalty limits stacking through repeated combining. Found books now do that job. With the penalty, repaired gear eventually hits "Too Expensive!" The penalty probably goes or changes for repairs, though re-enchanting a fresh tool is now an alternative.
 
-### Losing enchanted gear
+### Repairing with two tools
 
-A broken tool takes its books with it. This makes durability and repair much more important, so it depends on the Mending rework and Steel's durability bonus. Repairing two copies of a tool in the anvil also needs a rule for which enchantments survive.
+Repairing two copies of a tool in the anvil needs a rule for which enchantments survive.
 
 ### Still to place
 
