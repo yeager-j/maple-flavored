@@ -111,3 +111,7 @@ Read [the enchanting manifesto](../../../docs/manifestos/enchanting.md) first. I
 Zephyr goes on boots. Matcha's version is probably too strong: holding sneak on the ground and jumping goes much higher, holding sneak in the air gives slow falling, and charging sneak before a jump allows a double jump. Slow falling makes Feather Falling obsolete. Maple's Zephyr is just a double jump, like Torrent's in Elden Ring. Each level makes the second jump higher, and every Ender Dragon kill drops a Zephyr book. The second jump doesn't reset fall distance; fall damage counts the whole fall, as in Elden Ring. The double jump clutches, cutting the distance fallen so far by 10%, 15% and 25% at levels I to III, so jumping later saves more.
 
 From [Early-game tiers](07-early-game-tiers.md): the extra Enchantment Slot moved from Orichalcum to Electrum, and the drop bonus from Electrum to Orichalcum. Gold gear also gets the extra slot, carrying vanilla's high enchantability into the new system. The manifesto's Electrum-versus-Orichalcum pickaxe example still holds with the names swapped.
+
+From [Getting villagers and removing villages](08-villagers-and-villages.md):
+
+- The Library progress bar now has a defined measure, Library Progress: the sum of the highest level shelved for each enchantment, over a Full Library's 130. Its first reward before Mending is the enchanted golden apple's Regeneration II at 15%, with more apple effects to follow (see Healing and food). The table also takes golden apples, with a block of gold as their material unit.

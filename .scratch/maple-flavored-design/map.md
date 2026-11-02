@@ -37,6 +37,7 @@ Standing choices:
 - [Blood moons](issues/15-blood-moons.md): every 32 days, bastion, monument, End city, mansion and Stronghold mobs return to their original spots if the right blocks remain, making Embers and Pith slowly renewable; blocks and loot never return.
 - [Enchanting](issues/10-enchanting.md): books are found once per structure, combine from level I, and are shared through a Library around the table; level sets Enchantment Slots, enchanting costs the item's material and lapis, and Mending needs a Full Library.
 - [Early-game tiers](issues/07-early-game-tiers.md): no early-only steps; stone tools are removed so wood mines copper ore; gold and Electrum gear get +1 Enchantment Slot, with Orichalcum taking the drop bonus; a Master Armorer template Reinforces any armor with chainmail for +1 toughness.
+- [Getting villagers and removing villages](issues/08-villagers-and-villages.md): every village is abandoned and 5.5x rarer; villagers are earned only by curing, with Weakness brewed from Strength and an enchanted golden apple made at the table from 15% Library Progress and level 30, its effects picked like enchantments.
 
 ## Not yet specified
 

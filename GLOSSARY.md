@@ -50,6 +50,10 @@ _Avoid_: Plated, chained
 **Blood Moon**:
 A periodic red full moon that brings back mobs that structures don't otherwise replace.
 
+**Abandoned Village**:
+The only kind of village: populated by zombie villagers, with no iron golems, so every villager is earned by curing.
+_Avoid_: Ruined village, zombie village
+
 **Restored**:
 Said of a structure whose mobs have returned after a Blood Moon.
 _Avoid_: Respawned
@@ -63,6 +67,10 @@ _Avoid_: Collection, book collection
 **Full Library**:
 A Library holding every enchantment except Mending at its max level. Only a table with one offers Mending.
 _Avoid_: Complete library, maxed library
+
+**Library Progress**:
+How close a Library is to Full: the sum of the highest level shelved for each enchantment, as a share of a Full Library's. It unlocks enchanted golden apple effects before Mending.
+_Avoid_: Collection progress, completion
 
 **Enchantment Slot**:
 Room for one enchantment on an item, set by the level of the player who enchants it: one at level 30, and one more every 30 levels.

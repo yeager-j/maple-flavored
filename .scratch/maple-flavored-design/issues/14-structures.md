@@ -15,3 +15,9 @@ From [the enchanting manifesto](../../../docs/manifestos/enchanting.md):
 
 - Every structure holds one floating book, and grabbing it wakes the structure's danger. The sources are in the Enchantment Sources spreadsheet linked from the manifesto.
 - Strongholds might be filled with Illagers, giving Sharpness and Protection a home outside raids. Consider adding Strongholds to the Blood Moon list if so.
+
+From [Getting villagers and removing villages](08-villagers-and-villages.md):
+
+- Villages are all abandoned, at spacing 80 and separation 50. Hay bales and brewing stands are removed. Crops, beds, bells and the other workstations stay. Village chests never hold diamonds, obsidian or iron gear: decide their exact contents.
+- The igloo basement's villager becomes a zombie villager.
+- Every enchanted golden apple in a loot table becomes a plain golden apple.
