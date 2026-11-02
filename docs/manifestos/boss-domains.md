@@ -16,7 +16,7 @@ Domains start with the Warden. Other bosses come later, once their own cheeses a
 
 ## The Warden's domain
 
-- **Where:** a fixed area centred where the Warden spawns, with a radius of about 50 blocks. It doesn't move with the Warden. The size is meant to keep the Warden always able to pathfind to the player (see open questions).
+- **Where:** a fixed area centred where the Warden spawns, with a radius of about 50 blocks. It doesn't move with the Warden.
 - **Effect:** Darkness and gravity. Gravity stops you from flying away, so you have to deal with the Warden by sneaking and hiding.
 - **Barrier:** a physical wall like a world border. Players can't enter or exit, and you can't dig out.
 - **Ending:** the domain ends when its Wardens go away, which in vanilla happens after a minute without being disturbed. The win condition is staying unheard for a minute.
@@ -32,12 +32,18 @@ When the Warden spawns, sculk spreads from it to cover the ground of the domain,
 
 A vanilla Warden is aware of every entity in a 50 by 50 box around itself. It slowly pathfinds towards the closest one, preferring players, unless it detects a vibration within 15 blocks. Pathfinding towards a player isn't the same as knowing where they are: sniffing is what raises its anger.
 
+A Warden is aware of everything inside its domain, so it can always pathfind towards you wherever you hide. Vanilla's box reaches only about 25 blocks from the Warden, and two points in a 50 block domain can be 100 blocks apart. With this rule, the domain's size is chosen for how much room there is to sneak. Anger still comes only from sniffing.
+
 ### Multiple Wardens
 
-A shrieker tries to spawn a Warden in an 11 by 13 box, and only if no other Warden is within 24 blocks. A 50 block domain is much wider than that, so a shrieker far enough from the current Warden can still summon a second one inside the domain.
+A shrieker tries to spawn a Warden in an 11 by 13 box, and only if no other Warden is within 24 blocks. A 50 block domain is much wider than that, so a shrieker far enough from the current Warden can still summon a second one.
 
-- **A Warden spawned near an active domain joins it.** If a shrieker's spawn box overlaps an active domain, the new Warden spawns inside the existing domain rather than opening a second one.
-- **Grabbing the book always makes a Warden**, even if one is already within 24 blocks. This skips vanilla's check.
+Domains never overlap. Overlapping domains would trap players between two barriers, so this is an invariant, not a balance choice.
+
+- **Triggered inside a domain:** the new Warden spawns inside that domain and joins it.
+- **Triggered outside, with no overlap:** the Warden opens its own domain as normal.
+- **Triggered outside, where its domain would overlap:** the new domain is pushed away from the existing one until the two touch without overlapping. The shrieker that set it off ends up inside the new domain, so the consequence lands on whoever triggered it.
+- **Grabbing the book always makes a Warden**, even if one is already within 24 blocks. This skips vanilla's check, and the same overlap rules apply.
 
 ### Logging out
 
@@ -49,19 +55,14 @@ The Hearts and death ticket already has enemy auras that block Withered Heart re
 
 ## Open questions
 
-### Domain size and the Warden's awareness
+### Where the pushed Warden stands
 
-Vanilla's awareness box is 50 blocks across, so it reaches about 25 blocks from the Warden in each direction. The domain is centred on the spawn point, not on the Warden, so a Warden at one edge and a player at the other can be a full diameter apart. A 50 block radius allows up to 100 blocks between them, which is outside the box. The options:
+Pushing the domain's centre can put it inside solid stone, over lava or in open air. Moving the domain, not the Warden, avoids this: the Warden spawns in vanilla's box near the shrieker, limited to spots inside its own domain. It doesn't need to be at the centre, since it's aware of the whole domain anyway.
 
-- **Make the Warden aware of everything in its domain.** Then the domain's size can be chosen for how much room there is to sneak, rather than to fit vanilla's box. Anger still comes only from sniffing.
-- **Shrink the domain** until its diameter fits the box. That's a radius of about 12 blocks, which is a small, intense arena.
+### Several domains nearby
 
-The box is also about 25 blocks tall, so the domain's height matters as well.
-
-### Domains that would overlap
-
-The joining rule checks the shrieker's spawn box, but a new Warden opens a domain much larger than that box. A shrieker just outside an active domain could still open a second domain that overlaps the first, trapping players between two barriers. The same goes for grabbing a book near an active domain. Checking whether the new domain would overlap, rather than the spawn box, closes this: any Warden whose domain would overlap an active one joins it.
+Pushing away from one domain can push into another, and with three or more close together there may be no spot that touches without overlapping. The rule needs a fallback, such as the Warden joining the nearest domain, or the shriek failing to summon at all.
 
 ### Shape
 
-The barrier's shape is open: a cylinder, a sphere, or a box. Underground, the sculk skybox is mostly how the barrier looks from inside.
+The barrier's shape is open: a cylinder, a sphere, or a box. Underground, the sculk skybox is mostly how the barrier looks from inside. Cylinders from bedrock to the build limit make the overlap rule simplest, because two domains overlap only if their circles do, and pushing is a step along the line between their centres.
