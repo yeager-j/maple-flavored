@@ -211,8 +211,15 @@ If Efficiency or Unbreaking needs an Ancient City, the early game gets worse tha
 
 Items with no simple recipe need a repair material: Elytra, tridents, the Mace, shields, bows, crossbows, fishing rods, shears, and flint and steel. Sensible defaults can come later, alongside the enchanting materials.
 
+### Electrum's drop bonus
+
+Electrum tools no longer go one level above the Fortune and Looting caps. Instead, they give a flat +50% drop bonus that stacks with Fortune and Looting. Fortune III averages 2.2 times the drops on ores, so the extra 50% is always relevant, and it works on an Electrum tool with no Fortune at all. Open:
+
+- **Adding or multiplying.** Adding it to Fortune III gives 2.7 times, almost exactly the old Fortune IV's 2.67. Multiplying gives 3.3 times, half again on non-renewable diamonds, which feed Crystal Hearts and Adamant.
+- **Which drops count.** It should apply only to drops that Fortune or Looting already affect. Applied to every drop, an Electrum pickaxe would duplicate a mined diamond block, or ores mined with Silk Touch.
+- **Rare drops.** Ancient Embers, Pith and the enchanted books Illagers drop are rare on purpose. The bonus could skip them, or Electrum becomes the way to farm them.
+
 ### Still to place
 
 - What the level 5 Raid rewards now that Mending comes from the library
-- How Electrum's one level above the Fortune and Looting caps works with found books
 - Which other structures wake when their book is taken, as the system grows
