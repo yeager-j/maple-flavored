@@ -56,12 +56,21 @@ The curses are removed. Found gear is plain, so they'd have no source, and they 
 - **Fortune is in Woodland Mansions, on purpose.** Mansions are rare, but 26.3's Explorer Maps lead to structures, and Abandoned Camps, also new in 26.3, carry them as loot.
 - **Specialized enchantments come early and general ones later.** Smite and Bane come from Dungeons, Blast Protection from Desert Pyramids and Projectile Protection from Pillager Outposts. Sharpness and Protection come later. Early gear has real tradeoffs, and a narrow enchantment is the best you can get for a while rather than a dud.
 
+## Mending is the library's capstone
+
+The table offers Mending only while its library is fully maxed: every other enchantment shelved at its max level. Mending isn't found anywhere else.
+
+Mending invalidates a lot of gameplay. Unbreaking becomes obsolete, diamonds stop mattering, and Bastions stop being worth raiding. So you should be entirely finished with your save before you get it: "congrats, you 100%'d Minecraft." That's the Mending rework the Enchanting ticket asked for.
+
+It's a live condition of the library, not a one-time reward. Nothing is recorded, so there's nothing to farm or duplicate, and moving the books moves Mending with them. Lending your books lends your library, which fits communal books. Mending already on gear stays if the library later shrinks. The table shows a progress bar towards it.
+
+A full library is about 250 found books, including 16 each for the level V enchantments, 4 Ender Dragon kills for Zephyr and 4 Woodland Mansions for Fortune. The 41 maxed books fit in 7 Chiseled Bookshelves.
+
 ## Sources outside structures
 
 A few enchantments come from elsewhere, each from the activity it belongs to:
 
 - **Fishing** gives Luck of the Sea and Lure books. Every other enchanted book is removed from fishing loot.
-- **Raids** give Mending. Librarians award a Mending book for defeating a level 5 Raid.
 - **Librarians buy books instead of selling them.** That gives extra books a use once an enchantment is maxed out.
 - **Ominous Trial Chamber vaults** give the Mace's enchantment books. Vaults already give each player their loot once.
 - **Illagers** drop some books as chance drops, such as Sharpness from Vindicators and Protection from Evokers. Strongholds are filled with Illagers, which gives these books a home outside raids and gives empty Strongholds a purpose. Illagers spawned by a raid don't drop books, except a few that are raid-only, like Knockback from Ravagers. Pillager Captains drop books too: they come from outposts and patrols, which are hard to farm and dangerous. Evokers can have several drops, since they're incredibly tough.
@@ -111,7 +120,7 @@ The highest-level player becomes the group's enchanter, and maybe charges a fee.
 
 Orichalcum tools and armor get 1 extra enchantment slot. This replaces Orichalcum's Better enchanting perk, as the Material roles ticket expected.
 
-The extra slot doesn't make Orichalcum strictly best, because the other Alloys' perks compete with whole enchantments. At level 60, a pickaxe fits Efficiency and Fortune III. Electrum gives Fortune one level above the cap, while an Orichalcum pickaxe fits Unbreaking or Mending as well, and there's no correct answer. Raiding an End City at level 60, your armor has Protection and probably Unbreaking. A full Steel set makes you immune to Levitation, while Orichalcum adds a slot for something like Feather Falling. The choice is non-trivial and non-arbitrary.
+The extra slot doesn't make Orichalcum strictly best, because the other Alloys' perks compete with whole enchantments. At level 60, a pickaxe fits Efficiency and Fortune III. Electrum gives Fortune one level above the cap, while an Orichalcum pickaxe fits Unbreaking as well, and there's no correct answer. Raiding an End City at level 60, your armor has Protection and probably Unbreaking. A full Steel set makes you immune to Levitation, while Orichalcum adds a slot for something like Feather Falling. The choice is non-trivial and non-arbitrary.
 
 ## Paying for enchanting
 
@@ -182,12 +191,7 @@ Players may clear a Bastion before grabbing its book, so nothing is left to ange
 
 ### Library rewards
 
-The idea: the enchanting table rewards you as its library grows, with a progress bar and rewards along the way, and Mending at the top. It turns finding books into a collection, so even Bane of Arthropods counts towards something. How it works in multiplayer is open.
-
-- **What counts.** Counting distinct enchantments rewards exploring every kind of structure. Counting total levels lets one structure type, such as 16 mineshafts, fill the bar.
-- **Where progress lives.** A one-time reward that drops when a book is first shelved can be repeated by building more tables, or by passing books between players and tables. Mending books could be duplicated that way.
-- **A possible answer: rewards as live conditions of the library.** The table offers Mending while its shelves hold enough distinct enchantments, rather than handing out a Mending book once. There's nothing to record, nothing to farm, and moving the books moves the reward with them. It fits communal books: lending your books is lending your library.
-- **Mending's other source.** Mending already comes from level 5 Raids, so this would replace that source or sit beside it.
+The bar's earlier tiers are open. They could be perks the table gives while its library is big enough, following the same live-condition rule as Mending, or the bar could simply show progress towards Mending.
 
 ### Bad enchantments become bad finds
 
@@ -195,7 +199,7 @@ Clearing a structure to find Bane of Arthropods brings the eye-rolling back. The
 
 ### Early-game pacing
 
-If Efficiency or Unbreaking needs an Ancient City, the early game gets worse than vanilla. The essentials need early structures such as mineshafts or ruined portals, or a small starter set the table offers from the start. Mending and Looting can sit late.
+If Efficiency or Unbreaking needs an Ancient City, the early game gets worse than vanilla. The essentials need early structures such as mineshafts or ruined portals, or a small starter set the table offers from the start. Looting can sit late.
 
 ### Repair materials
 
@@ -203,6 +207,6 @@ Items with no simple recipe need a repair material: Elytra, tridents, the Mace, 
 
 ### Still to place
 
-- How the Mending rework changes the Raid reward
+- What the level 5 Raid rewards now that Mending comes from the library
 - How Electrum's one level above the Fortune and Looting caps works with found books
 - Which other structures wake when their book is taken, as the system grows
