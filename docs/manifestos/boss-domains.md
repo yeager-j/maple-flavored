@@ -42,10 +42,11 @@ A domain is a sphere for its barrier and skybox, but a cylinder from bedrock to 
 
 Domains never overlap. Overlapping domains would trap players between two barriers, so this is an invariant, not a balance choice.
 
-- **Triggered inside a domain:** the new Warden spawns inside that domain and joins it.
+- **Triggered inside a domain's sphere:** the new Warden spawns inside that domain and joins it.
 - **Triggered outside, with no overlap:** the Warden opens its own domain as normal.
 - **Triggered outside, where its domain would overlap:** the new domain is pushed away from the existing one until the two touch without overlapping. The shrieker that set it off ends up inside the new domain, so the consequence lands on whoever triggered it.
 - **Grabbing the book always makes a Warden**, even if one is already within 24 blocks. This skips vanilla's check, and the same overlap rules apply.
+- **No valid domain:** the shriek fails to summon. This covers a shrieker inside a domain's cylinder but outside its sphere, where no pushed domain could contain it, and a cluster of domains where no position touches without overlapping. It extends vanilla's rule that no Warden emerges with another one nearby.
 
 ### Logging out
 
@@ -61,15 +62,6 @@ The Hearts and death ticket already has enemy auras that block Withered Heart re
 
 Pushing the domain's centre can put it inside solid stone, over lava or in open air. Moving the domain, not the Warden, avoids this: the Warden spawns in vanilla's box near the shrieker, limited to spots inside its own domain. It doesn't need to be at the centre, since it's aware of the whole domain anyway.
 
-### Several domains nearby
+### The book with no valid domain
 
-Pushing away from one domain can push into another, and with three or more close together there may be no spot that touches without overlapping. The rule needs a fallback, such as the Warden joining the nearest domain, or the shriek failing to summon at all.
-
-### The gap between the sphere and the cylinder
-
-A shrieker can be inside a domain's cylinder but outside its sphere, above or below it, or in a corner. The push rule can't trap that player: a domain pushed clear of the cylinder is always more than one radius from them. The options:
-
-- **The shriek fails to summon.** This extends vanilla's own rule that no Warden emerges with another one nearby. The player who triggered it gets away, but the gap is small and rare.
-- **The Warden joins the existing domain.** Then the players already trapped there pay for someone else's noise, and the Warden can't reach the player who triggered it.
-
-Failing to summon looks simpler and fairer, and it could also be the fallback for several domains nearby.
+Grabbing the book always makes a Warden, but failing to summon means no Warden. The two clash if the book sits where no valid domain exists, such as in another domain's gap between sphere and cylinder. The book's Warden could join the nearest domain, or the book could be held in place until a domain can open.
