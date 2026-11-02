@@ -58,6 +58,8 @@ A few enchantments come from elsewhere, each from the activity it belongs to:
 - **Raids** give Mending. Librarians award a Mending book for defeating a level 5 Raid.
 - **Librarians buy books instead of selling them.** That gives extra books a use once an enchantment is maxed out.
 - **Ominous Trial Chamber vaults** give the Mace's enchantment books. Vaults already give each player their loot once.
+- **Illagers** drop some books as chance drops, such as Sharpness from Vindicators and Protection from Evokers. Strongholds are filled with Illagers, which gives these books a home outside raids and gives empty Strongholds a purpose. Illagers spawned by a raid don't drop books, except a few that are raid-only, like Knockback from Ravagers. Pillager Captains drop books too: they come from outposts and patrols, which are hard to farm and dangerous. Evokers can have several drops, since they're incredibly tough.
+- **Grabbing a Stronghold's book alerts every Illager nearby.** It turns them hostile even to Orichalcum, and Evokers attack through walls, so it's super nasty.
 
 Found enchanted gear is removed. Gear from mobs, chests, fishing and bartering is just normal gear.
 
@@ -184,12 +186,9 @@ Repairing two copies of a tool in the anvil needs a rule for which enchantments 
 - How Electrum's one level above the Fortune and Looting caps works with found books
 - Which structure holds each enchantment, and what grabbing each book wakes
 
-### Books from Illagers
+### Strongholds full of Illagers
 
-Sharpness, Protection and several bow enchantments drop from Illagers. Raid farms would make them farmable, though 26.3's Ominous Bottles make raid farms much harder, and villages and raids may change anyway. If Illagers in raids don't drop books, Illagers need another home. One idea is filling Strongholds with them, since Strongholds are oddly empty. Questions this raises:
+Two questions remain about Strongholds:
 
-- **The End Portal is inside.** Every player has to go through a Stronghold, so this puts a fight in front of the End.
-- **Blood Moons.** Adding Strongholds to the Blood Moon list would make their Illager books slowly renewable without a farm.
-- **Raid-only mobs.** Ravagers only appear in raids, so Knockback needs another source, or Ravagers in Strongholds. Pillager Captains also lead patrols, which can be farmed.
-- **Orichalcum.** One piece makes Illagers neutral, so an Orichalcum player walks through until they attack. Grabbing the Stronghold's Unbreaking book could count as attacking.
-- **Evoker drops.** Evokers drop Pith and Totems, so Strongholds would supply both.
+- **The End Portal is inside.** Every player has to go through a Stronghold, so this puts a hard fight in front of the End.
+- **Blood Moons.** Adding Strongholds to the Blood Moon list would make their Illager books slowly renewable without a farm. The Blood Moons ticket is resolved, so this would amend it.
