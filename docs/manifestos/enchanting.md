@@ -95,6 +95,10 @@ The table is no longer upgraded with XP, because level already gives XP its job.
 
 The 3-slot random offer goes. A level choice is dominant if it's deterministic, so the table always gives the highest level available.
 
+The table works like a checklist. You insert a tool, and if it's already enchanted, its enchantments are pre-selected. You add or change which ones are applied, then click Save, and the Lapis is spent when you save. The first save on an unenchanted item also takes its ingot.
+
+Changing enchantments is cheap, so situational ones become worth having. You can consider Smite or Fire Protection if you know you're going somewhere they'll be useful, then switch back when you get home. That's planning for the next trip, which is the sandbox's game, not managing a loadout mid-fight.
+
 ## Open questions
 
 These came up in discussion and are left for the Enchanting ticket.
@@ -110,9 +114,13 @@ If one found book is level I and combining doubles, a level n book needs 2^(n-1)
 
 Vanilla's anvil charges levels, not points, and higher levels hold more XP. A level costs 112 points at level 30 but 922 at level 120, so the same combine costs the group's enchanter about 8 times as much XP as a newer player. Charging points instead would make the cost the same for everyone. Repairs cost levels too, so a high-level player may prefer making a new tool to repairing an old one.
 
-### Re-enchanting
+### Lapis when editing
 
-The rule for adding to an already-enchanted item is open. A new session could require grinding first, cost a second ingot, or reuse the ingot already stored.
+When you change one enchantment on a four-enchantment tool, the Lapis could cost one per enchantment added, or one per enchantment in the saved list. Charging only for added enchantments makes swapping cheap, which is what makes situational enchantments worth having. Removing an enchantment probably costs nothing.
+
+### Whose level counts when editing
+
+The slot limit is checked against the player who clicks Save. If the group's enchanter gave your sword four enchantments and you have two slots, the rule for your edits is open. You could be allowed to swap only within your own slots, or only to remove, so bigger edits need the enchanter. Either keeps the enchanter's role.
 
 ### The step size
 
@@ -148,7 +156,7 @@ Anything else that hands out enchanted books gets around found books. That means
 
 ### Bad enchantments become bad finds
 
-Clearing a structure to find Bane of Arthropods brings the eye-rolling back. Players are never forced to take bad enchantments now, but they shouldn't be the prize. Merging them has a gameplay reason: the elemental Protections into Protection, and Smite and Bane into Sharpness. Their niches could also move to Alloy traits.
+Clearing a structure to find Bane of Arthropods brings the eye-rolling back. The checklist table helps a lot: cheap swaps make Smite before a Wither fight or Fire Protection before a Nether trip a real choice. That may be enough to keep them, and to keep vanilla's vocabulary. If some stay unwanted even then, merging has a gameplay reason: the elemental Protections into Protection, and Smite and Bane into Sharpness. Their niches could also move to Alloy traits.
 
 ### Early-game pacing
 
