@@ -39,7 +39,7 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 ## Books and the anvil
 
 - **Every book found in the wild is level I.**
-- **Two books of the same level combine into the next level**, following vanilla's anvil rules. A level III book takes four found books, so higher levels are a serious prize.
+- **Two books of the same level combine into the next level**, following vanilla's anvil rules. A level III book takes four found books, so higher levels are a serious prize. Sharpness V takes 16, even alone, and that isn't too many: 8 books already make Sharpness IV, so 16 is the step from IV to V, not the unlock. It's a gradual climb in power that slows the game down on purpose.
 - **The anvil combines books** to upgrade them, and still repairs tools and armor.
 - **Tools can no longer be combined** to raise their enchantment levels. Found books are the only source of levels.
 
@@ -55,7 +55,7 @@ Communal books mean everyone in a group can reach the same enchantments, so play
 
 This isn't as brutal as it sounds. Keep Inventory is on by default, so you don't lose XP when you die.
 
-Vanilla's XP curve makes each slot cost much more than the last:
+A step of 30 levels is fine, because XP is plentiful: most of what you do earns it, and you no longer lose it on death. An XP farm can reach level 150 in a few hours. Vanilla's XP curve makes each slot cost much more than the last:
 
 | Enchantments | Level | Total XP |
 | --- | --- | --- |
@@ -67,7 +67,9 @@ Vanilla's XP curve makes each slot cost much more than the last:
 
 The highest-level player becomes the group's enchanter, and maybe charges a fee. That's a fine way for players to stand apart, so the limit is only checked at the table.
 
-Orichalcum tools get 1 extra enchantment slot. This replaces Orichalcum's Better enchanting perk, as the Material roles ticket expected.
+Orichalcum tools and armor get 1 extra enchantment slot. This replaces Orichalcum's Better enchanting perk, as the Material roles ticket expected.
+
+The extra slot doesn't make Orichalcum strictly best, because the other Alloys' perks compete with whole enchantments. At level 60, a pickaxe fits Efficiency and Fortune III. Electrum gives Fortune one level above the cap, while an Orichalcum pickaxe fits Unbreaking or Mending as well, and there's no correct answer. Raiding an End City at level 60, your armor has Protection and probably Unbreaking. A full Steel set makes you immune to Levitation, while Orichalcum adds a slot for something like Feather Falling. The choice is non-trivial and non-arbitrary.
 
 ## Paying for enchanting
 
@@ -87,7 +89,9 @@ This sounds like a horrible idea until you remember that enchanting is now nearl
 
 ## The anvil keeps its XP costs
 
-The anvil still costs levels, which now also lowers your enchantment slots. Combining books is a powerful move, so it should cost something that matters.
+The anvil still costs XP, which can now also lower your enchantment slots. Combining books is a powerful move, so it should cost something that matters.
+
+The anvil charges XP points, not levels. Higher levels hold more points, at 112 points per level at level 30 and 922 at level 120, so a cost in levels would charge the group's enchanter about 8 times as much as a newer player. Points make the same job cost everyone the same.
 
 ## The enchanting table
 
@@ -104,25 +108,6 @@ Changing enchantments is cheap, so situational ones become worth having. You can
 ## Open questions
 
 These came up in discussion and are left for the Enchanting ticket.
-
-### How many books it takes
-
-If one found book is level I and combining doubles, a level n book needs 2^(n-1) finds. Communal books make this a cost per library rather than per item or per player, so Sharpness V is 16 finds for the whole group. A solo player still needs all 16, and the map's balance assumes a shared world, so it's open whether that's acceptable alone. Options if it isn't:
-
-- **Lower the max levels.** Fewer levels mean fewer doublings.
-- **Match the source to the max level.** Enchantments with high max levels come from common structures, and Ancient Cities and Bastions hold single-level or low-level prizes.
-
-### Anvil costs at high levels
-
-Vanilla's anvil charges levels, not points, and higher levels hold more XP. A level costs 112 points at level 30 but 922 at level 120, so the same combine costs the group's enchanter about 8 times as much XP as a newer player. Charging points instead would make the cost the same for everyone. Repairs cost levels too, so a high-level player may prefer making a new tool to repairing an old one.
-
-### The step size
-
-How many slots matter depends on how many enchantments an item wants. A sword can take about six (Sharpness, Looting, Sweeping Edge, Unbreaking, Mending, Fire Aspect), a pickaxe about four, and an armor piece four or five. Merging the bad enchantments lowers these. With a step of 30 levels, 4 slots needs about 47,500 XP, a few hours at a good farm.
-
-### Orichalcum's extra slot
-
-The Material roles ticket gives Orichalcum's armor Better enchanting too, so its armor probably gets the extra slot as well. An extra slot may be stronger than other Alloys' perks, such as Adamant's +1 damage, since it can hold any enchantment. Design rule 5 says no gear is strictly best, so this needs checking against the others.
 
 ### Plain bookshelves
 
