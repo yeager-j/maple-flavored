@@ -63,7 +63,7 @@ The Wither's real cheese is trapping it under bedrock so it can't move. To stop 
 - **No automatic Wither effect.** The domain only blocks heart recovery. The Wither's skulls already apply the effect.
 - **Overlap is harmless.** An open domain has no wall, so two Wither domains can overlap without trapping anyone.
 
-Stepping out of the domain lets your hearts recover in the Overworld, but the Wither heals while you're gone, so it's a trade rather than a cheese. In the Nether and the End, hearts don't recover anyway, so the domain matters most in the Overworld.
+Below half health, the Wither's armor stops arrows and other projectiles, so fighting from outside the domain can't finish it: at some point you have to go in and swing a sword. Stepping out lets your hearts recover in the Overworld, but the Wither heals while you're gone, so it's a trade rather than a cheese. In the Nether and the End, hearts don't recover anyway, so the domain matters most in the Overworld.
 
 ## Relation to auras
 
