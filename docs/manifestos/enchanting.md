@@ -95,7 +95,7 @@ The table is no longer upgraded with XP, because level already gives XP its job.
 
 The 3-slot random offer goes. A level choice is dominant if it's deterministic, so the table always gives the highest level available.
 
-The table works like a checklist. You insert a tool, and if it's already enchanted, its enchantments are pre-selected. You add or change which ones are applied, then click Save, and the Lapis is spent when you save. The first save on an unenchanted item also takes its ingot.
+The table works like a checklist. You insert a tool, and if it's already enchanted, its enchantments are pre-selected. You add or change which ones are applied, then click Save. Saving costs one Lapis per selected enchantment, so going from 4 to 3 costs 3. Lapis is plentiful, so this hardly matters. The first save on an unenchanted item also takes its ingot.
 
 Changing enchantments is cheap, so situational ones become worth having. You can consider Smite or Fire Protection if you know you're going somewhere they'll be useful, then switch back when you get home. That's planning for the next trip, which is the sandbox's game, not managing a loadout mid-fight.
 
@@ -114,13 +114,14 @@ If one found book is level I and combining doubles, a level n book needs 2^(n-1)
 
 Vanilla's anvil charges levels, not points, and higher levels hold more XP. A level costs 112 points at level 30 but 922 at level 120, so the same combine costs the group's enchanter about 8 times as much XP as a newer player. Charging points instead would make the cost the same for everyone. Repairs cost levels too, so a high-level player may prefer making a new tool to repairing an old one.
 
-### Lapis when editing
-
-When you change one enchantment on a four-enchantment tool, the Lapis could cost one per enchantment added, or one per enchantment in the saved list. Charging only for added enchantments makes swapping cheap, which is what makes situational enchantments worth having. Removing an enchantment probably costs nothing.
-
 ### Whose level counts when editing
 
-The slot limit is checked against the player who clicks Save. If the group's enchanter gave your sword four enchantments and you have two slots, the rule for your edits is open. You could be allowed to swap only within your own slots, or only to remove, so bigger edits need the enchanter. Either keeps the enchanter's role.
+The slot limit is checked against the player who clicks Save. The leaning rule is that you can't save until the item fits your level. At level 60, a sword with 5 enchantments has to drop to 2 before you can save, so rearranging it means asking the enchanter.
+
+- **For:** it's the price of using gear above your level, and the answer is to go get more XP. It's one rule the table can show plainly. It keeps level mattering after the enchanter has done their work, and the gear still works if they're offline or quit.
+- **Against:** it adds friction, and an absent enchanter means you can't re-spec, for example for a Wither fight.
+
+The alternative is letting players swap one enchantment for another without adding any. That would make the enchanter's slots permanent for whoever holds the item, so level would only matter once per item.
 
 ### The step size
 
