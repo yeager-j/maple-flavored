@@ -35,12 +35,12 @@ Numbers are starting values that balance work can change. The rules are fixed. T
 | Alloy | Tools and weapons | Armor, per piece | Full set bonus |
 |---|---|---|---|
 | **Steel** | +50% durability, more weapon knockback | +50% durability, more knockback resistance, 10% less sonic boom and explosion damage | Complete knockback and Levitation immunity |
-| **Electrum** | Fortune or Looting one level above the cap | 15% less fire damage; Piglins treat it as gold | Complete fire and lava immunity; a Withered Heart takes 10 seconds instead of 5 |
+| **Electrum** | +1 Enchantment Slot | +1 Enchantment Slot, 15% less fire damage; Piglins treat it as gold | Complete fire and lava immunity; a Withered Heart takes 10 seconds instead of 5 |
 | **Shakudo** | +25% mining speed, +10% attack speed | +2.5% movement speed | No slowdown from soul sand, honey, cobwebs or powder snow |
 | **Adamant** | +1 damage | +1 armor toughness | 25% of melee damage ignores armor points, but not Protection |
-| **Orichalcum** | Better enchanting | Better enchanting, 10% less magic and indirect magic damage; Illagers are neutral | A lethal hit is survived with Totem effects, then this recharges over 30 minutes of play |
+| **Orichalcum** | +50% to drops that Fortune or Looting affect | 10% less magic and indirect magic damage; Illagers are neutral | A lethal hit is survived with Totem effects, then this recharges over 30 minutes of play |
 
-Better enchanting means enchantability 30, and the Enchanting Table offers each enchantment at the highest level its power allows. If the Enchanting ticket fixes the table for all gear, this perk needs replacing.
+The drop bonus is added to Fortune and Looting rather than multiplied, on only the drops they affect, skipping Ancient Embers, Pith and enchanted books.
 
 Illager neutrality needs only 1 piece, like gold with Piglins, and ends during Raids or once you attack one. The set bonus timer is stored on the player, fires before a held Totem or Crystal Heart, and is disabled in Hardcore.
 
@@ -54,3 +54,5 @@ Vanilla facts behind these: Evoker Fangs deal 6 indirect magic damage, which ign
 ## Comments
 
 From [the enchanting manifesto](../../../docs/manifestos/enchanting.md): Orichalcum's Better enchanting becomes 1 extra enchantment slot on tools and armor. Electrum's Fortune or Looting one level above the cap becomes a flat +50% drop bonus, added to Fortune and Looting, on only the drops they affect, skipping Ancient Embers, Pith and enchanted books. Alloy gear is repaired with 1 ingot of its own Alloy.
+
+From [Early-game tiers](07-early-game-tiers.md): Electrum and Orichalcum swap two perks, so each Alloy takes on its storage block's vanilla identity. Gold is vanilla's enchantable metal, and gold gear now has 1 extra Enchantment Slot, so Electrum tools and armor carry the extra slot. Emerald is the wealth metal, so Orichalcum tools carry the +50% drop bonus. The table above shows the swap; set bonuses are unchanged.

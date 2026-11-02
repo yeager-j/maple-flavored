@@ -41,6 +41,10 @@ The block that smelts a Netherite Ingot and a storage block into an Alloy ingot,
 The Alloy Furnace's fuel, dropped by Piglin Brutes when a player kills them. One makes one Alloy ingot.
 _Avoid_: Brute Ember
 
+**Reinforced**:
+Said of an armor piece given +1 armor toughness by smithing it with chainmail and a Reinforcement template.
+_Avoid_: Plated, chained
+
 ### World
 
 **Blood Moon**:
