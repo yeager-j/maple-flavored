@@ -10,7 +10,7 @@ A complete design spec for Maple Flavored, covering the whole game from first ni
 
 Domain: a Fabric mod for Minecraft 26.3, required on client and server, for new worlds only, using real registered items and blocks. It stands alone, with no required content mods; library and API mods are fine.
 
-Every grilling ticket uses the `grilling` and `domain-modeling` skills.
+Every grilling ticket uses the `grilling` and `domain-modeling` skills, and reads [the Matcha manifesto](../../docs/manifestos/matcha-flavoured.md) for the opinions behind the design.
 
 **Start from vanilla.** This isn't a port of Matcha Flavoured. Vanilla is the baseline, and each feature is included on purpose, so the spec records what we add or change, never what we chose not to copy. Matcha mechanics can be reused with credit.
 

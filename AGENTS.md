@@ -4,6 +4,10 @@ A Fabric mod for Minecraft 26.3, inspired by Matcha Flavoured and Raspberry Flav
 
 There's no system-wide Java. Set `JAVA_HOME` to the JDK named in `gradle.properties` before running `gradlew`.
 
+## Design
+
+The design is being worked out on the map at `.scratch/maple-flavored-design/map.md`. Jackson's opinions behind it are in `docs/manifestos/`, and research findings are in `docs/research/`.
+
 ## Agent skills
 
 ### Issue tracker
