@@ -14,3 +14,5 @@ Orichalcum gear has enchantability 30 and only gets offered the highest level it
 ## Comments
 
 Read [the enchanting manifesto](../../../docs/manifestos/enchanting.md) first. It sets the direction: enchantments are found as level I books in fixed spots in structures, grabbing a book wakes that structure's danger, books combine in the anvil, and tools no longer combine. Its open questions are this ticket's starting agenda, especially how many books it takes and what the XP-upgraded table does.
+
+Zephyr goes on boots and has 3 levels. Sneaking makes you jump much higher, and holding sneak lets you double jump.
