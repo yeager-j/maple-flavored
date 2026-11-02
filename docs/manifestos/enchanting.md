@@ -135,6 +135,25 @@ The anvil still costs XP, which can now also lower your enchantment slots. Combi
 
 The anvil charges XP points, not levels. Higher levels hold more points, at 112 points per level at level 30 and 922 at level 120, so a cost in levels would charge the group's enchanter about 8 times as much as a newer player. Points make the same job cost everyone the same.
 
+There's no prior-work penalty. In vanilla it stopped players stacking enchantments by combining items over and over, and found books and level slots do that job now. All it would still do is block repairs after about five, and grinding, repairing and re-enchanting gets around that, so it would only add steps. Anvil costs are flat.
+
+## Repairing
+
+Two tools can no longer be combined to repair them. It doesn't make sense: are you duct-taping them together? Items are repaired with their material instead.
+
+- **An item takes one less unit than its recipe to repair fully, and at least 1.** A pickaxe takes 3 to craft, so 2 repair it, each restoring 50%. A shovel or sword takes 1.
+- **One Netherite or Alloy ingot repairs any item fully.**
+
+| Item | Recipe | Units to repair fully |
+| --- | --- | --- |
+| Pickaxe, axe | 3 | 2 |
+| Sword, hoe | 2 | 1 |
+| Shovel | 1 | 1 |
+| Helmet | 5 | 4 |
+| Chestplate | 8 | 7 |
+| Leggings | 7 | 6 |
+| Boots | 4 | 3 |
+
 ## The enchanting table
 
 The table is no longer upgraded with XP, because level already gives XP its job. The table's job is to read the library: it offers any enchantment shelved nearby.
@@ -171,13 +190,12 @@ Clearing a structure to find Bane of Arthropods brings the eye-rolling back. The
 
 If Efficiency or Unbreaking needs an Ancient City, the early game gets worse than vanilla. The essentials need early structures such as mineshafts or ruined portals, or a small starter set the table offers from the start. Mending and Looting can sit late.
 
-### The anvil's prior-work penalty
+### Repair costs
 
-Vanilla's prior-work penalty limits stacking through repeated combining. Found books now do that job. With the penalty, repaired gear eventually hits "Too Expensive!" The penalty probably goes or changes for repairs, though re-enchanting a fresh tool is now an alternative.
-
-### Repairing with two tools
-
-Repairing two copies of a tool in the anvil needs a rule for which enchantments survive.
+- **Armor costs more to repair than in vanilla, where any item takes 4 units.** A full diamond set takes 20 diamonds, and diamonds are non-renewable, so this competes with Crystal Hearts and Adamant. Tools cost less than in vanilla.
+- **Alloy repairs are expensive.** An Adamant ingot holds a Netherite Ingot, a diamond block and an Ancient Ember, so repairing a full Adamant set uses 36 diamonds and 4 Embers. Steel's +50% durability matters much more as a result, which the Enchanting ticket asked to check. Repairing Alloy gear with a plain Netherite Ingot would keep this from getting out of hand.
+- **Items with no simple recipe** need a repair material: Elytra, tridents, the Mace, shields, bows, crossbows, fishing rods, shears, and flint and steel. Sensible defaults can come later, alongside the enchanting materials.
+- **Mending.** Cheap anvil repair makes Mending a convenience rather than a necessity, which helps its rework.
 
 ### Still to place
 
