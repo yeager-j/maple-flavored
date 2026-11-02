@@ -1,6 +1,6 @@
 # What I want from enchanting
 
-Jackson's opinions on enchanting, worked out in discussion. They're a summary of intent rather than a quote, and they set the direction for [the Enchanting ticket](../../.scratch/maple-flavored-design/issues/10-enchanting.md). Where a resolved ticket on the design map differs, the ticket wins. The open questions at the end aren't decided.
+Jackson's opinions on enchanting, worked out in discussion. They're a summary of intent rather than a quote, and they set the direction for [the Enchanting ticket](../../.scratch/maple-flavored-design/issues/10-enchanting.md). Where a resolved ticket on the design map differs, the ticket wins. The [Enchanting ticket](../../.scratch/maple-flavored-design/issues/10-enchanting.md) records the decisions. The open questions at the end aren't decided.
 
 ## The problem
 
@@ -32,7 +32,7 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 
 - **Structures, not mob kills.** Unlocks are tied to structures for the most part, to encourage exploration over farming.
 - **A fixed place, not a chest roll.** A random 5% chest drop just moves the loot box into the chest. The book should be in a known spot, guaranteed to be there.
-- **One book per structure.** Some common structures can hold one of several enchantments, such as Pillager Outposts, Ocean Ruins, Dungeons and Buried Treasure. These have trash loot in vanilla. Each one is given a single book from its list, and you're guaranteed to get it.
+- **One book per structure, per world.** Books are shared through the Library, so a per-player book would only multiply finds on a server. Some common structures can hold one of several enchantments, such as Pillager Outposts, Ocean Ruins, Dungeons and Buried Treasure. These have trash loot in vanilla. Each one is given a single book from its list, and you're guaranteed to get it.
 - **Some books wake the structure.** Each book is a floating book in the structure's most important spot. Not every structure needs to wake: for some, the challenge is finding them. Where grabbing the book does wake the structure, it triggers that structure's own danger, turned up. In Strongholds and Woodland Mansions, it angers every Illager. The Ancient City is the first real event, and the system can grow from there. Two examples:
   - **Ancient City:** the book floats in the middle of the city, in front of the portal. Grabbing it spawns a Warden, and you have to sneak around it to escape. Its [domain](boss-domains.md) stops you from flying away.
   - **Bastion:** the book floats in the treasure room. Grabbing it angers every Piglin in the structure. Good luck.
@@ -48,19 +48,22 @@ The full list lives in the [Enchantment Sources](https://claude.ai/artifact/F42M
 - **Unbreaking is in Strongholds.** Vanilla's first ring has only 3, so Unbreaking III's fourth book means heading out to the second ring. It also gives Eyes of Ender a use after the End Portal is lit.
 - **Feather Falling is in End City buildings.**
 - **Zephyr drops from the Ender Dragon.** You use it until you find an Elytra, so it makes exploring the End easier. Putting it on the End Ship would hand out two movement upgrades at once. Every kill drops a book, since Zephyr III takes 4 and respawning the Dragon costs End Crystals.
+- **Blight drops from the Wither**, one book per kill.
+- **Fire Protection is in Nether Fortresses.** They're common and full of fire, which suits an enchantment that takes 8 books.
+- **Fortune is in Woodland Mansions, on purpose.** Mansions are rare, but 26.3's Explorer Maps lead to structures, and Abandoned Camps, also new in 26.3, carry them as loot.
+- **Specialized enchantments come early and general ones later.** Smite and Bane come from Dungeons, Blast Protection from Desert Pyramids and Projectile Protection from Pillager Outposts. Sharpness and Protection come later. Early gear has real tradeoffs, and a narrow enchantment is the best you can get for a while rather than a dud.
 
-Zephyr goes on boots and gives a double jump, like Torrent's in Elden Ring. Each level makes the second jump higher. As in Elden Ring, fall damage counts the whole fall, from where it started to where you next touch the ground, so the double jump does nothing to prevent it. Vanilla only adds to fall distance while you move down, so the drop after the second jump would count on top: the height the jump regains should come off again, so the double jump is neutral. The double jump also "clutches": it cuts the distance you've fallen so far by 10% at level I, 15% at II and 25% at III. Only the distance before the jump is cut, so the later you jump, the more you save, and jumping just before landing cuts nearly the whole fall. That makes it a skill with no timing window to check. It stays well below Feather Falling IV's 48%. Matcha's version also gives a higher sneak jump and slow falling, which makes Feather Falling obsolete, so Maple leaves those out.
+## New and removed enchantments
 
-Blight is a new enchantment, taken from Matcha Flavoured with credit, and named so it isn't confused with Withered Hearts. It goes on the same weapons as Fire Aspect, can't be combined with it, and has 2 levels. Hitting a mob gives it the Wither effect. The Wither drops its books, one per kill, so the two bosses each drop their own enchantment.
+**Zephyr** goes on boots and gives a double jump, like Torrent's in Elden Ring. Each level makes the second jump higher. As in Elden Ring, fall damage counts the whole fall, from where it started to where you next touch the ground, so the double jump does nothing to prevent it. Vanilla only adds to fall distance while you move down, so the drop after the second jump would count on top: the height the jump regains should come off again, so the double jump is neutral. The double jump also "clutches": it cuts the distance you've fallen so far by 10% at level I, 15% at II and 25% at III. Only the distance before the jump is cut, so the later you jump, the more you save, and jumping just before landing cuts nearly the whole fall. That makes it a skill with no timing window to check. It stays well below Feather Falling IV's 48%. Matcha's version also gives a higher sneak jump and slow falling, which makes Feather Falling obsolete, so Maple leaves those out.
+
+**Blight** is a new enchantment, taken from Matcha Flavoured with credit, and named so it isn't confused with Withered Hearts. It goes on the same weapons as Fire Aspect, can't be combined with it, and has 2 levels. Hitting a mob gives it the Wither effect. The Wither drops its books, one per kill, so the two bosses each drop their own enchantment.
 
 Blight deals less damage than Fire Aspect, to keep them balanced. Fire Aspect burns for 4 seconds per level at 1 damage a second. Blight gives Wither I for the same 4 seconds per level, and Wither I hurts once every 2 seconds, so it deals about half as much. In exchange, Blight works on fire-immune mobs, which makes it the better choice in the Nether, though not against Wither Skeletons or the Wither, and water doesn't put it out. Fire Aspect cooks food drops.
 
 Against players, Blight withers hearts. That mostly matters in the Nether and within the Wither's own domain, so it isn't a problem for PvP elsewhere.
 
-The curses are removed. Found gear is plain, so they'd have no source, and they don't have a use anyway.
-- **Fire Protection is in Nether Fortresses.** They're common and full of fire, which suits an enchantment that takes 8 books.
-- **Fortune is in Woodland Mansions, on purpose.** Mansions are rare, but 26.3's Explorer Maps lead to structures, and Abandoned Camps, also new in 26.3, carry them as loot.
-- **Specialized enchantments come early and general ones later.** Smite and Bane come from Dungeons, Blast Protection from Desert Pyramids and Projectile Protection from Pillager Outposts. Sharpness and Protection come later. Early gear has real tradeoffs, and a narrow enchantment is the best you can get for a while rather than a dud.
+**The curses are removed.** Found gear is plain, so they'd have no source, and they don't have a use anyway.
 
 ## Electrum's drop bonus
 
@@ -133,7 +136,7 @@ The highest-level player becomes the group's enchanter, and maybe charges a fee.
 
 Orichalcum tools and armor get 1 extra enchantment slot. This replaces Orichalcum's Better enchanting perk, as the Material roles ticket expected.
 
-The extra slot doesn't make Orichalcum strictly best, because the other Alloys' perks compete with whole enchantments. At level 60, a pickaxe fits Efficiency and Fortune III. Electrum gives Fortune one level above the cap, while an Orichalcum pickaxe fits Unbreaking as well, and there's no correct answer. Raiding an End City at level 60, your armor has Protection and probably Unbreaking. A full Steel set makes you immune to Levitation, while Orichalcum adds a slot for something like Feather Falling. The choice is non-trivial and non-arbitrary.
+The extra slot doesn't make Orichalcum strictly best, because the other Alloys' perks compete with whole enchantments. At level 60, a pickaxe fits Efficiency and Fortune III. Electrum adds 50% to its drops, while an Orichalcum pickaxe fits Unbreaking as well, and there's no correct answer. Raiding an End City at level 60, your armor has Protection and probably Unbreaking. A full Steel set makes you immune to Levitation, while Orichalcum adds a slot for something like Feather Falling. The choice is non-trivial and non-arbitrary.
 
 ## Paying for enchanting
 
@@ -190,35 +193,23 @@ You can't save until the item fits your level. At level 60, a sword with 5 encha
 
 Changing enchantments is cheap, so situational ones become worth having. You can consider Smite or Fire Protection if you know you're going somewhere they'll be useful, then switch back when you get home. That's planning for the next trip, which is the sandbox's game, not managing a loadout mid-fight.
 
+## Settled along the way
+
+- **Clearing a structure first is fine.** The fight happens either way, and Blood Moons bring the mobs back while the book never returns.
+- **Bad enchantments stay.** Cheap swaps at the checklist table make situational ones a real choice, specialized enchantments are the best you can get early on, and every book counts towards the Full Library. None need merging.
+- **Early-game pacing comes from placement.** Efficiency is in Mineshafts, Smite and Bane in Dungeons, and Blast and Projectile Protection in Desert Pyramids and Pillager Outposts, so the essentials are early without a starter set.
+- **Raids stay as they are.** Hero of the Village and Illager drops are already good rewards.
+
 ## Open questions
-
-These came up in discussion and are left for the Enchanting ticket.
-
-### Who gets each book
-
-Communal books suit one book per structure per world. Vanilla's Trial Chamber vaults give each player their loot once, but a per-player book would multiply finds on a server, which fights the shared library.
-
-### Clearing the structure first
-
-Players may clear a Bastion before grabbing its book, so nothing is left to anger. That may be fine, since the fight still happens either way. A Blood Moon Restores Bastion mobs, but books never return. A Warden spawned on grab can't be avoided this way, though digging and pillaring may still cheese it.
 
 ### Library rewards
 
-The bar's earlier tiers are open. They could be perks the table gives while its library is big enough, following the same live-condition rule as Mending, or the bar could simply show progress towards Mending.
+The bar's earlier tiers are open. They could be perks the table gives while its Library is big enough, following the same live-condition rule as Mending, or the bar could simply show progress towards Mending.
 
-### Bad enchantments become bad finds
+### Materials for items without an ingot
 
-Clearing a structure to find Bane of Arthropods brings the eye-rolling back. The checklist table helps a lot: cheap swaps make Smite before a Wither fight or Fire Protection before a Nether trip a real choice. That may be enough to keep them, and to keep vanilla's vocabulary. If some stay unwanted even then, merging has a gameplay reason: the elemental Protections into Protection, and Smite and Bane into Sharpness. Their niches could also move to Alloy traits.
+Items with no ingot or simple recipe need an enchanting and repair material: Elytra, tridents, the Mace, shields, bows, crossbows, fishing rods, shears, and flint and steel. Sensible defaults can come later.
 
-### Early-game pacing
+### Waking more structures
 
-If Efficiency or Unbreaking needs an Ancient City, the early game gets worse than vanilla. The essentials need early structures such as mineshafts or ruined portals, or a small starter set the table offers from the start. Looting can sit late.
-
-### Repair materials
-
-Items with no simple recipe need a repair material: Elytra, tridents, the Mace, shields, bows, crossbows, fishing rods, shears, and flint and steel. Sensible defaults can come later, alongside the enchanting materials.
-
-### Still to place
-
-- What the level 5 Raid rewards now that Mending comes from the library
-- Which other structures wake when their book is taken, as the system grows
+Which other structures wake when their book is taken, as the system grows from the Ancient City, Strongholds, Woodland Mansions and Bastions.
