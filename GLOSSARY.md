@@ -54,6 +54,9 @@ A periodic red full moon that brings back mobs that structures don't otherwise r
 The only kind of village: populated by zombie villagers, with no iron golems, so every villager is earned by curing.
 _Avoid_: Ruined village, zombie village
 
+**Cleared**:
+A spawner whose mobs have died enough times, 12 plus 2 per additional player, so it can be broken.
+
 **Restored**:
 Said of a structure whose mobs have returned after a Blood Moon.
 _Avoid_: Respawned

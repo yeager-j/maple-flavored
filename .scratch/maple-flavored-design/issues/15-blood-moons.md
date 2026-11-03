@@ -36,7 +36,7 @@ The spot must still be clear, and the right block must still be there:
 | Elder Guardian | In water, with prismarine family beneath |
 | Shulker | Attached to purpur family or end stone bricks |
 | Mansion illagers | Birch planks, cobblestone or smooth stone slab beneath |
-| Stronghold illagers | Stone bricks family beneath (proposed) |
+| Stronghold illagers | Stone bricks family beneath |
 
 So tearing down a bastion or draining a monument ends its Restoring. Restoring never replaces a block, and no mob appears within 32 blocks of an online player. A base inside an intact bastion can still get visitors.
 
