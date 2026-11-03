@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] A GameTest source set and Gradle task exist, and a failing GameTest fails the build
-- [ ] One smoke test passes: it spawns a mock player in a test structure and checks a vanilla fact
-- [ ] The README says how to run the tests, including the JAVA_HOME note
+- [x] A GameTest source set and Gradle task exist, and a failing GameTest fails the build
+- [x] One smoke test passes: it spawns a mock player in a test structure and checks a vanilla fact
+- [x] The README says how to run the tests, including the JAVA_HOME note

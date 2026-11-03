@@ -1,0 +1,15 @@
+{
+	"schemaVersion": 1,
+	"id": "maple_flavored_gametest",
+	"version": "${version}",
+	"name": "Maple Flavored GameTests",
+	"license": "CC-BY-NC-SA-4.0",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": ["mapleflavored.gametest.SmokeGameTests"]
+	},
+	"depends": {
+		"maple_flavored": "*",
+		"fabric-gametest-api-v1": "*"
+	}
+}
