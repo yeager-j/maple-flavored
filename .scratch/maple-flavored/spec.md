@@ -421,12 +421,12 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Village chests lose diamonds, obsidian and iron gear, with no replacements.
 - New chest rolls, one item per success unless noted: Ancient City Crystal Heart 9%, Pith 18%; Stronghold corridor 12.5%, 6%; Bastion treasure 25%, 5%; other Bastion chests Pith 5%; Woodland Mansion Crystal Heart 12.5%; Dungeon Pith 5%; Mineshaft Pith 5%; ominous vault Pith 10% per opening; End City Crystal Heart 15%, Pith 50% giving 1 or 2.
 - Dungeons: 15 placement attempts per chunk above Y 0 and 8 below, each with a single spawner.
-- Strongholds gain Illagers at generation, with their spots recorded for Blood Moons.
+- Strongholds gain Illagers at generation, with their spots recorded for Blood Moons. Only Vindicators, Pillagers and Evokers, never Pillager Captains or Ravagers. By piece: portal room 1 Evoker and 2 Vindicators; library 1 Evoker and 1 Vindicator; room crossing 2 rolls; prison hall 1 Vindicator; five-way crossing 1 roll; corridors, turns and stairs a 25% chance of 1 roll; starting staircase none. A roll is a Vindicator or a Pillager, 50/50. Counts are starting values for playtesting. A spot needs the stone bricks family beneath it and a clear 1×2×1 space above, no two spots share a block, and none sits in a doorway. The Illagers are persistent and wander like mansion Illagers. The silverfish spawner and infested blocks stay vanilla.
 
 **Blood Moons.** World-level state: a fixed schedule on every 4th full moon (every 32 in-game days).
 - At generation, Restorable structures record each mob spot and the mob it rolled: Bastion Piglins, Piglin Brutes and Hoglins; Ocean Monument Elder Guardians; End City Shulkers; Woodland Mansion Vindicators and Evokers; Stronghold Illagers.
 - Each original mob is tagged with its spot. A spot becomes empty only when its mob is gone for good: killed, converted (such as a Piglin turning into a Zombified Piglin) or despawned. A mob that wanders off or sits in an unloaded chunk still holds its spot. Restored mobs keep the original's persistence.
-- A spot that was empty when a Blood Moon rose fills the first time its chunk is loaded while the spot is clear, no online player is within 32 blocks, and the required block holds (Bastion: blackstone family or basalt beneath; Elder Guardian: in water with prismarine family beneath; Shulker: attached to purpur family or end stone bricks; Mansion: birch planks, cobblestone or smooth stone slab beneath; Stronghold: stone bricks family beneath). Until then the spot stays pending: it retries each time its chunk loads, and every few seconds while its chunk stays loaded, until it fills. A pending spot doesn't expire at dawn; it stays pending until filled. A mob that dies after a Blood Moon leaves a spot that waits for the next Blood Moon. Each spot holds at most one mob, so pending spots never overfill. Missed Blood Moons don't stack. No chunks load for the event.
+- A spot that was empty when a Blood Moon rose fills the first time its chunk is loaded while the spot is clear, no online player is within 32 blocks, and the required block holds (Bastion: blackstone family or basalt beneath; Elder Guardian: in water with prismarine family beneath; Shulker: attached to purpur family or end stone bricks; Mansion: birch planks, cobblestone or smooth stone slab beneath; Stronghold: stone bricks family beneath, meaning stone bricks, cracked, mossy and chiseled stone bricks, their slabs and stairs, and the infested variants of all four). Until then the spot stays pending: it retries each time its chunk loads, and every few seconds while its chunk stays loaded, until it fills. A pending spot doesn't expire at dawn; it stays pending until filled. A mob that dies after a Blood Moon leaves a spot that waits for the next Blood Moon. Each spot holds at most one mob, so pending spots never overfill. Missed Blood Moons don't stack. No chunks load for the event.
 - The night: a red moon and sky on the client, one chat message in every dimension, sleeping allowed, no extra spawns.
 
 **Potions and brewing.** Potions, splash potions, lingering potions and water bottles stack to 16. Splash and lingering throws by players share a 1-second cooldown. Dispensers are not affected. Brewing stand slots still hold one bottle each. A fermented spider eye turns Strength into Weakness (1:30), Long Strength into Long Weakness (4:00) and Strength II into Weakness, and does nothing to a water bottle.
@@ -520,7 +520,6 @@ The design left these small points open. This spec picks a default for each, and
 
 These are design decisions, not tuning, so they need a short grilling ticket on the design map before the build tickets that depend on them:
 
-- **Stronghold Illagers:** which Illagers fill a Stronghold, how many, and where. Blocks the Stronghold, Blood Moon (Stronghold part) and Illager book drop tickets.
 - **Illager book drops:** the odds behind "uncommon" and "rare", whether Looting helps, and how many books an Evoker can drop. Blocks the Mobs book drop ticket.
 - **Librarian book trades:** which books Librarians buy, at which levels and for how many emeralds. Blocks the Trades ticket.
 
@@ -528,7 +527,7 @@ These are design decisions, not tuning, so they need a short grilling ticket on 
 
 - Grounded's Ender Pearl gravity multiplier, which Mob changes left to playtesting.
 - The sculk spread rate inside a Warden Subspace.
-- The exact book spot in each structure, chosen in that structure's build ticket by the manifesto's rule: the structure's most important spot, fixed and visible. Buried Treasure, Trail Ruins, Abandoned Camps and Shipwrecks need a spot chosen with care.
+- The exact book spot in each structure other than the Stronghold, whose book is in the portal room, chosen in that structure's build ticket by the manifesto's rule: the structure's most important spot, fixed and visible. Buried Treasure, Trail Ruins, Abandoned Camps and Shipwrecks need a spot chosen with care.
 - The Warden spawn search: the tickets say it widens "within the Subspace", which doesn't exist until the Warden spawns. This spec reads it as up to 50 blocks from the player.
 
 ### Unverified facts

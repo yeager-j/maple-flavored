@@ -4,10 +4,14 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human
+**Status:** resolved
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] Mob types, counts and placement rules per Stronghold piece are decided
-- [ ] The answer works with Blood Moon Restoring (stone bricks family beneath each spot)
-- [ ] The spec is updated with the decision
+- [x] Mob types, counts and placement rules per Stronghold piece are decided
+- [x] The answer works with Blood Moon Restoring (stone bricks family beneath each spot)
+- [x] The spec is updated with the decision
+
+## Comments
+
+Resolved in [Stronghold Illagers](../../maple-flavored-design/issues/18-stronghold-illagers.md) on the design map. The spec's Loot and worldgen data and Blood Moons modules now carry the placement table and the stone bricks family.

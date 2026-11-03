@@ -47,6 +47,7 @@ Standing choices:
 - [Structures](issues/14-structures.md): spawners ignore light and must be Cleared (12 deaths plus 2 per extra player) before breaking; the Fortress book unlocks once its Blaze spawners are Cleared; dungeons are more common; Crystal Hearts and Pith sit in guarded chests at half Matcha's rates or less.
 - [Trading, combat and recipes](issues/16-trading-combat-and-recipes.md): villagers sell plain gear; armor and combat stay vanilla apart from Reinforcement; a Nether Star crafts into 9 Pith; the Alloy Furnace mirrors the blast furnace with gold and polished blackstone bricks; each Alloy has a block that works as a beacon base.
 - [Advancements](issues/17-advancements.md): vanilla's tabs stay, with 22 new advancements that teach each system; the seven Milestones are advancements that set the Heart Floor; Crystal Hearts come from four boss advancements, the Warden's for surviving it; only But why?, an all-Alloy beacon, is hidden.
+- [Stronghold Illagers](issues/18-stronghold-illagers.md): Vindicators, Pillagers and 1 to 3 Evokers fill each Stronghold by piece, about 12 to 20 in all, with the strongest guard and the book in the portal room; no Captains or Ravagers; spots sit only on the stone bricks family, infested variants included, so every one can be Restored.
 
 ## Not yet specified
 
