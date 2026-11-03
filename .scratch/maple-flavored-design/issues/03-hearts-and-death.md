@@ -38,3 +38,5 @@ Numbers are starting values that balance work can change. The rules are fixed. T
 ## Comments
 
 From [The role of XP](12-role-of-xp.md): death also drops all your XP as a Remnant. Inventory stays, and a Crystal Heart or Totem save drops nothing.
+
+From [Advancements](17-advancements.md): the Warden's Crystal Heart goes to every player inside its Subspace when it digs back down or is killed, rather than for a first kill. The four boss hearts are advancement rewards, and the Heart Floor is calculated from the seven Milestone advancements a player holds.

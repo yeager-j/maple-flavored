@@ -45,7 +45,7 @@ Difficulty remains the world's chosen vanilla setting. Hardcore keeps vanilla's 
 
 **Crystal Hearts** restore or increase Max Hearts. Consuming one takes about 1.6 seconds and adds one Max Heart, up to 30. At the cap, use is refused without consuming it. A Crystal Heart held in either hand can instead save you from a lethal hit like a Totem of Undying; that uses it without adding a heart. A Totem or Crystal Heart save is not a death and costs neither hearts nor experience.
 
-Each player earns a Crystal Heart for their first kill of an Elder Guardian, Wither, Warden, and Ender Dragon, with nearby players sharing credit. More come from guarded structure chests or crafting eight diamonds around one **Pith**. Fishing and villagers do not supply Crystal Hearts.
+Each player earns a Crystal Heart for their first kill of an Elder Guardian, Wither, and Ender Dragon, and for surviving a Warden until it digs back down, with nearby players sharing credit. These come as advancement rewards. More come from guarded structure chests or crafting eight diamonds around one **Pith**. Fishing and villagers do not supply Crystal Hearts.
 
 Pith connects health to equipment progression. A broken normal spawner gives one, an Elder Guardian gives two, an Evoker has a 25% chance to give one, and a Piglin Brute has a separate 10% chance to give one. A Nether Star also crafts into nine Pith, with no reverse recipe. Pith can become renewable, but diamonds do not, so crafting Crystal Hearts still requires exploration and mining.
 
