@@ -39,6 +39,7 @@ Standing choices:
 - [Early-game tiers](issues/07-early-game-tiers.md): no early-only steps; stone tools are removed so wood mines copper ore; gold and Electrum gear get +1 Enchantment Slot, with Orichalcum taking the drop bonus; a Master Armorer template Reinforces any armor with chainmail for +1 toughness.
 - [Getting villagers and removing villages](issues/08-villagers-and-villages.md): every village is abandoned and 5.5x rarer; villagers are earned only by curing, with Weakness brewed from Strength and an enchanted golden apple made at the table from 15% Library Progress and level 30, its effects picked like enchantments.
 - [Healing and food](issues/04-healing-and-food.md): vanilla food, hunger and natural regeneration stay for now, since no design beat them; the enchanted golden apple's effects moved to Brewing.
+- [Mob changes](issues/05-mob-changes.md): fast, frail zombies and lower health on skeletons, creepers and others; creepers don't spawn above sea level; mobs drop gear but not enchantments; the Warden and Wither open Subspaces, and Wardens summon near a player in Warden Territory, which closes the Warden switch.
 
 ## Not yet specified
 

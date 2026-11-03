@@ -12,3 +12,10 @@ When should iron farms and mob farms become possible, and what gates them, so th
 From [Getting villagers and removing villages](08-villagers-and-villages.md):
 
 - Villages are abandoned and have no iron golems. Every villager is earned by curing, which needs Weakness (from the Nether), and an enchanted golden apple (15% Library Progress and level 30). Breeding stays vanilla after that, so an iron farm is possible from about that point unless this ticket gates golems further.
+
+## Comments
+
+From [Mob changes](05-mob-changes.md):
+
+- Adult zombies step up a full block on Normal and Hard, so check common mob farm designs against that.
+- Creepers don't spawn naturally at Y 63 or above, so gunpowder farms using creepers must sit below sea level.

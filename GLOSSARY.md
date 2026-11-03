@@ -58,6 +58,18 @@ _Avoid_: Ruined village, zombie village
 Said of a structure whose mobs have returned after a Blood Moon.
 _Avoid_: Respawned
 
+**Subspace**:
+An area a boss opens around itself to shut down the cheapest way of avoiding its fight. A Sealed Subspace has a wall you can't cross. An Open Subspace has none, but stops Withered Hearts from recovering inside it.
+_Avoid_: Domain, aura
+
+**Grounded**:
+An effect that makes gliding and Firework Rockets much weaker, and stops Riptide and Zephyr's double jump.
+_Avoid_: Heavy, gravity
+
+**Warden Territory**:
+An Ancient City's bounds or the Deep Dark biome: the only places a shriek applies to a player.
+_Avoid_: Warden zone
+
 ### Enchanting
 
 **Library**:

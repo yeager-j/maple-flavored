@@ -34,7 +34,7 @@ Enchantments are found in the world, much like Skyrim's words of power. Vanilla 
 - **A fixed place, not a chest roll.** A random 5% chest drop just moves the loot box into the chest. The book should be in a known spot, guaranteed to be there.
 - **One book per structure, per world.** Books are shared through the Library, so a per-player book would only multiply finds on a server. Some common structures can hold one of several enchantments, such as Pillager Outposts, Ocean Ruins, Dungeons and Buried Treasure. These have trash loot in vanilla. Each one is given a single book from its list, and you're guaranteed to get it.
 - **Some books wake the structure.** Each book is a floating book in the structure's most important spot. Not every structure needs to wake: for some, the challenge is finding them. Where grabbing the book does wake the structure, it triggers that structure's own danger, turned up. In Strongholds and Woodland Mansions, it angers every Illager. The Ancient City is the first real event, and the system can grow from there. Two examples:
-  - **Ancient City:** the book floats in the middle of the city, in front of the portal. Grabbing it spawns a Warden, and you have to sneak around it to escape. Its [domain](boss-domains.md) stops you from flying away.
+  - **Ancient City:** the book floats in the middle of the city, in front of the portal. Grabbing it spawns a Warden, and you have to sneak around it to escape. Its [Subspace](boss-subspaces.md) stops you from flying away.
   - **Bastion:** the book floats in the treasure room. Grabbing it angers every Piglin in the structure. Good luck.
 
 The Bastion's book is Fire Aspect. It has only 2 levels, so you don't need to clear many Bastions, which are very difficult structures. It's also a better enchantment than Fire Protection, the other contender, which would be too lame a prize for a structure that tough.
@@ -61,7 +61,7 @@ The full list lives in the [Enchantment Sources](https://claude.ai/artifact/F42M
 
 Blight deals less damage than Fire Aspect, to keep them balanced. Fire Aspect burns for 4 seconds per level at 1 damage a second. Blight gives Wither I for the same 4 seconds per level, and Wither I hurts once every 2 seconds, so it deals about half as much. In exchange, Blight works on fire-immune mobs, which makes it the better choice in the Nether, though not against Wither Skeletons or the Wither, and water doesn't put it out. Fire Aspect cooks food drops.
 
-Against players, Blight withers hearts. That mostly matters in the Nether and within the Wither's own domain, so it isn't a problem for PvP elsewhere.
+Against players, Blight withers hearts. That mostly matters in the Nether and within the Wither's own Subspace, so it isn't a problem for PvP elsewhere.
 
 **The curses are removed.** Found gear is plain, so they'd have no source, and they don't have a use anyway.
 

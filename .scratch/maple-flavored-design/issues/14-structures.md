@@ -21,3 +21,5 @@ From [Getting villagers and removing villages](08-villagers-and-villages.md):
 - Villages are all abandoned, at spacing 80 and separation 50. Hay bales and brewing stands are removed. Crops, beds, bells and the other workstations stay. Village chests never hold diamonds, obsidian or iron gear: decide their exact contents.
 - The igloo basement's villager becomes a zombie villager.
 - Every enchanted golden apple in a loot table becomes a plain golden apple.
+
+From [Mob changes](05-mob-changes.md): the Warden switch is closed by the new summoning rules, so Ancient City rewards don't need to allow for it. Warden Territory uses the Ancient City's bounds.
