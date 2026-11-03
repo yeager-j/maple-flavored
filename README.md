@@ -28,7 +28,7 @@ Run only the GameTests:
 ./gradlew runGameTest
 ```
 
-Results are written as JUnit XML to `build/gametest/report.xml`.
+Results are written as JUnit XML to `build/gametest/report.xml`. CI runs the same build on every pull request and push to `main`, and uploads that report.
 
 ## License
 
