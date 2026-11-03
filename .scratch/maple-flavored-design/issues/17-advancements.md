@@ -1,6 +1,7 @@
 # Advancements
 
 Type: grilling
+Status: claimed
 
 ## Question
 
