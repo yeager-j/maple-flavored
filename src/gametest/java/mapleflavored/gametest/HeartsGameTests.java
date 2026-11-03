@@ -1,5 +1,10 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.MockPlayers.assertMaxHearts;
+import static mapleflavored.gametest.MockPlayers.dieAndRespawn;
+import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
+import static mapleflavored.gametest.MockPlayers.runCommand;
+
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.Optional;
 import mapleflavored.gamerules.MapleGameRules;
@@ -9,13 +14,11 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
-import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.gamerules.GameRules;
@@ -163,13 +166,6 @@ public class HeartsGameTests {
 		helper.succeed();
 	}
 
-	// Runs with the server's operator permission, as the given player so @s targets them.
-	private static void runCommand(GameTestHelper helper, ServerPlayer player, String command) {
-		var server = helper.getLevel().getServer();
-
-		server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withEntity(player), command);
-	}
-
 	private static void assertDeathCost(GameTestHelper helper, int maxHeartsBefore, int maxHeartsAfter) {
 		ServerPlayer player = playerWithMaxHearts(helper, maxHeartsBefore);
 		ServerPlayer respawned = dieAndRespawn(helper, player);
@@ -177,34 +173,6 @@ public class HeartsGameTests {
 		assertMaxHearts(helper, respawned, maxHeartsAfter);
 		helper.assertValueEqual(respawned.getHealth(), respawned.getMaxHealth(), "health after respawn");
 		helper.succeed();
-	}
-
-	private static void assertMaxHearts(GameTestHelper helper, ServerPlayer player, int maxHearts) {
-		helper.assertValueEqual(Hearts.maxHearts(player), maxHearts, "Max Hearts");
-		helper.assertValueEqual(player.getMaxHealth(), maxHearts * 2.0F, "max health");
-	}
-
-	private static ServerPlayer playerWithMaxHearts(GameTestHelper helper, int maxHearts) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		finishLoading(player);
-
-		while (Hearts.maxHearts(player) < maxHearts) {
-			Hearts.addMaxHeart(player);
-		}
-
-		return player;
-	}
-
-	// Vanilla keeps a player invulnerable until their client reports it has loaded the world, which a mock never does.
-	private static void finishLoading(ServerPlayer player) {
-		player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
-	}
-
-	private static ServerPlayer dieAndRespawn(GameTestHelper helper, ServerPlayer player) {
-		player.kill(helper.getLevel());
-
-		return helper.getLevel().getServer().getPlayerList().respawn(player, false, Entity.RemovalReason.KILLED);
 	}
 
 	// Mirrors how vanilla's PrepareSpawnTask loads a joining player's saved data before placing them.

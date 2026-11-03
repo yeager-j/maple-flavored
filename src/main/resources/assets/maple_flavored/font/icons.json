@@ -1,0 +1,12 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "maple_flavored:font/broken_heart.png",
+      "ascent": 7,
+      "chars": [
+        "\uE000"
+      ]
+    }
+  ]
+}

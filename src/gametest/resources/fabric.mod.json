@@ -8,7 +8,8 @@
 	"entrypoints": {
 		"fabric-gametest": [
 			"mapleflavored.gametest.SmokeGameTests",
-			"mapleflavored.gametest.HeartsGameTests"
+			"mapleflavored.gametest.HeartsGameTests",
+			"mapleflavored.gametest.HeartFloorGameTests"
 		]
 	},
 	"depends": {

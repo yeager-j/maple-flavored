@@ -1,0 +1,40 @@
+{
+  "parent": "minecraft:nether/obtain_ancient_debris",
+  "criteria": {
+    "netherite_ingot": {
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:netherite_ingot"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": [
+      "",
+      {
+        "text": "\uE000",
+        "color": "red",
+        "font": "maple_flavored:icons"
+      },
+      " ",
+      {
+        "translate": "advancements.maple_flavored.nether.obtain_netherite_ingot.description"
+      }
+    ],
+    "icon": {
+      "id": "minecraft:netherite_ingot"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.nether.obtain_netherite_ingot.title"
+    }
+  },
+  "requirements": [
+    [
+      "netherite_ingot"
+    ]
+  ]
+}

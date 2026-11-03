@@ -3,7 +3,9 @@
 	"package": "mapleflavored.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"GameRulesMixin"
+		"GameRulesMixin",
+		"MinecraftServerMixin",
+		"PlayerAdvancementsMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

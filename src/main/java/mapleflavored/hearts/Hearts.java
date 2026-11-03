@@ -2,6 +2,7 @@ package mapleflavored.hearts;
 
 import com.mojang.serialization.Codec;
 import mapleflavored.MapleFlavored;
+import mapleflavored.advancements.Milestones;
 import mapleflavored.gamerules.MapleGameRules;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
@@ -11,6 +12,8 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
@@ -27,6 +30,7 @@ public final class Hearts {
 	private static final int STARTING_MAX_HEARTS = 10;
 	static final int MAX_HEARTS_CAP = 30;
 	private static final int BASE_HEART_FLOOR = 10;
+	private static final int LOWEST_HEART_FLOOR = 3;
 	private static final int DEATH_LOSS = 1;
 	private static final int HARD_DEATH_LOSS = 2;
 
@@ -60,9 +64,28 @@ public final class Hearts {
 		return player.getAttachedOrCreate(MAX_HEARTS);
 	}
 
-	/** The lowest the player's Max Hearts can fall through death. */
+	/** The lowest the player's Max Hearts can fall through death: 10, less one per Milestone held on Normal and Hard. */
 	public static int heartFloor(ServerPlayer player) {
-		return BASE_HEART_FLOOR;
+		return heartFloor(player.level().getDifficulty(), Milestones.held(player));
+	}
+
+	/**
+	 * Tells the player their new Heart Floor in chat if it is now below {@code previousHeartFloor}.
+	 *
+	 * <p>Call after anything that can lower the floor, with the floor read just before it.
+	 */
+	public static void announceHeartFloorDrop(ServerPlayer player, int previousHeartFloor) {
+		if (player.level().getServer().isHardcore()) return;
+
+		int heartFloor = heartFloor(player);
+
+		if (heartFloor < previousHeartFloor) {
+			Component boldHeartFloor = Component.literal(String.valueOf(heartFloor)).withStyle(ChatFormatting.BOLD);
+
+			player.sendSystemMessage(
+				Component.translatable("chat.maple_flavored.heart_floor_lowered", boldHeartFloor).withStyle(ChatFormatting.RED)
+			);
+		}
 	}
 
 	/**
@@ -101,6 +124,14 @@ public final class Hearts {
 
 		// Vanilla fills health before this event, while max health is still the 20 of a fresh player.
 		if (!alive) newPlayer.setHealth(newPlayer.getMaxHealth());
+	}
+
+	private static int heartFloor(Difficulty difficulty, int milestonesHeld) {
+		boolean milestonesCount = difficulty == Difficulty.NORMAL || difficulty == Difficulty.HARD;
+
+		if (!milestonesCount) return BASE_HEART_FLOOR;
+
+		return Math.max(LOWEST_HEART_FLOOR, BASE_HEART_FLOOR - milestonesHeld);
 	}
 
 	private static int maxHeartsAfterDeath(int maxHearts, int heartFloor, Difficulty difficulty) {
