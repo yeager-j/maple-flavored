@@ -11,6 +11,7 @@
 		"main": ["mapleflavored.MapleFlavored"],
 		"client": ["mapleflavored.client.MapleFlavoredClient"]
 	},
+	"mixins": ["maple_flavored.mixins.json"],
 	"depends": {
 		"fabricloader": ">=0.20.1",
 		"minecraft": "~26.3",

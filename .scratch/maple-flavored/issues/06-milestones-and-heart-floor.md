@@ -14,3 +14,4 @@ Spec: the Maple Flavored spec in this folder.
 - [ ] Heart Floor is 10 minus Milestones held, minimum 3, on Normal and Hard; 10 on Peaceful and Easy; revoking a Milestone raises it again
 - [ ] A plain chat message announces each new floor
 - [ ] GameTests cover granting, revoking and difficulty, and a death after Milestones
+- [ ] A GameTest covers a death with Max Hearts below the Heart Floor (after a revoked Milestone or a switch to Easy): it costs nothing and never raises Max Hearts
