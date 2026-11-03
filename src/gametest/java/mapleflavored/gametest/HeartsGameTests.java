@@ -124,6 +124,52 @@ public class HeartsGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void deathBelowTheHeartFloorNeverRaisesMaxHearts(GameTestHelper helper) {
+		ServerPlayer player = playerWithMaxHearts(helper, 10);
+
+		runCommand(helper, player, "maxhearts set @s 8");
+
+		ServerPlayer respawned = dieAndRespawn(helper, player);
+
+		assertMaxHearts(helper, respawned, 8);
+		helper.succeed();
+	}
+
+	@GameTest
+	public void maxHeartsCommandSetsAndAddsHearts(GameTestHelper helper) {
+		ServerPlayer player = playerWithMaxHearts(helper, 10);
+
+		runCommand(helper, player, "maxhearts set @s 15");
+		assertMaxHearts(helper, player, 15);
+
+		runCommand(helper, player, "maxhearts add @s -3");
+		assertMaxHearts(helper, player, 12);
+		helper.succeed();
+	}
+
+	@GameTest
+	public void maxHeartsCommandKeepsHeartsBetweenOneAndThirty(GameTestHelper helper) {
+		ServerPlayer player = playerWithMaxHearts(helper, 10);
+
+		runCommand(helper, player, "maxhearts add @s 50");
+		assertMaxHearts(helper, player, 30);
+
+		runCommand(helper, player, "maxhearts add @s -50");
+		assertMaxHearts(helper, player, 1);
+
+		runCommand(helper, player, "maxhearts set @s 0");
+		assertMaxHearts(helper, player, 1);
+		helper.succeed();
+	}
+
+	// Runs with the server's operator permission, as the given player so @s targets them.
+	private static void runCommand(GameTestHelper helper, ServerPlayer player, String command) {
+		var server = helper.getLevel().getServer();
+
+		server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withEntity(player), command);
+	}
+
 	private static void assertDeathCost(GameTestHelper helper, int maxHeartsBefore, int maxHeartsAfter) {
 		ServerPlayer player = playerWithMaxHearts(helper, maxHeartsBefore);
 		ServerPlayer respawned = dieAndRespawn(helper, player);

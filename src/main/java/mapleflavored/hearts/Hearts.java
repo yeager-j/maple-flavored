@@ -5,6 +5,7 @@ import mapleflavored.MapleFlavored;
 import mapleflavored.gamerules.MapleGameRules;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.Event;
@@ -24,7 +25,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  */
 public final class Hearts {
 	private static final int STARTING_MAX_HEARTS = 10;
-	private static final int MAX_HEARTS_CAP = 30;
+	static final int MAX_HEARTS_CAP = 30;
 	private static final int BASE_HEART_FLOOR = 10;
 	private static final int DEATH_LOSS = 1;
 	private static final int HARD_DEATH_LOSS = 2;
@@ -51,9 +52,10 @@ public final class Hearts {
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof ServerPlayer player) onDeath(player);
 		});
+		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> MaxHeartsCommand.register(dispatcher));
 	}
 
-	/** The player's Max Hearts, from 10 at the start up to 30. */
+	/** The player's Max Hearts, up to 30. */
 	public static int maxHearts(ServerPlayer player) {
 		return player.getAttachedOrCreate(MAX_HEARTS);
 	}
@@ -108,7 +110,7 @@ public final class Hearts {
 		return Math.min(maxHearts, clampedToFloor);
 	}
 
-	private static void setMaxHearts(ServerPlayer player, int maxHearts) {
+	static void setMaxHearts(ServerPlayer player, int maxHearts) {
 		player.setAttached(MAX_HEARTS, maxHearts);
 		applyMaxHealth(player);
 	}
