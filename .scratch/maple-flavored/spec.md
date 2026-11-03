@@ -35,12 +35,12 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 7. As a player, I want entering the Nether and entering the End to be Milestones, so that dangerous trips count as progress.
 8. As a player, I want Milestones to count in any order, so that I can progress my own way.
 9. As a player, I want a lower Heart Floor to remove no hearts by itself, so that progress never punishes me directly.
-10. As a player, I want a plain chat message when my Heart Floor drops, so that I know what my next death can cost.
+10. As a player, I want a chat message when my Heart Floor drops, so that I know what my next death can cost.
 11. As a player, I want the death screen to show the Max Hearts I lost, so that the cost of each death is clear.
 12. As a player on Peaceful or Easy, I want to lose 1 heart per death with my Heart Floor fixed at 10, so that the gentle difficulties stay gentle.
 13. As a player on Hard, I want to lose 2 hearts per death, so that Hard has higher stakes than Normal.
 14. As a Hardcore player, I want vanilla's death rule, so that Hardcore keeps its meaning.
-15. As a player, I want each Milestone advancement to say that it lowers my Heart Floor, so that I can see which steps raise the stakes.
+15. As a player, I want each Milestone advancement marked with a broken heart, so that I can see which steps raise the stakes.
 16. As a player, I want a Crystal Heart to add 1 Max Heart when I consume it, up to 30, so that I can recover lost hearts and grow past 10.
 17. As a player at 30 Max Hearts, I want a Crystal Heart to be refused without being used up, so that I never waste one.
 18. As a player, I want a Crystal Heart in either hand to save me from a lethal hit like a Totem of Undying, so that I choose between more health and a safety net.
@@ -306,7 +306,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Per-player state: Max Hearts (starting at 10, never below 3 through death, at most 30) and the Withered Heart count. Max Hearts apply as a max health attribute modifier. Usable hearts are Max Hearts minus Withered Hearts.
 - The Heart Floor is computed, not stored: on Normal and Hard it is 10 minus the Milestone advancements held, minimum 3. On Peaceful and Easy it is 10. Revoking a Milestone raises it again.
 - On death: lose 1 heart (2 on Hard), never below the Heart Floor, and never raising Max Hearts. Hardcore uses vanilla's death rule. Keep Hearts on skips the loss.
-- A drop in the Heart Floor sends a plain chat message. The death screen shows the Max Hearts lost, so the client gets that number.
+- A drop in the Heart Floor sends a red chat message with the new floor in bold. The death screen shows the Max Hearts lost, so the client gets that number.
 - Lethal-hit order: the Orichalcum set save first, then a held Totem or Crystal Heart in vanilla's hand order. Any save is not a death.
 - Withered Hearts: one forms every 5 seconds under the Wither effect (10 with a full Electrum set), down to 1 usable heart. The timer starts when the effect starts and resets whenever the effect ends, so a single short exposure withers nothing. Re-applying Wither while it lasts (such as repeated Blight hits) keeps the effect, and the timer, running; check that vanilla's effect refresh already does this. The interval follows the armor worn at each moment, so swapping Electrum on or off changes it straight away. Timer progress is saved through logout. All return at once when the player has no Wither effect, is not in the Nether and is not inside any Wither Subspace. Death clears them. They persist through logout and sync to the client for darkened rendering.
 - Interface: read Max Hearts, usable hearts and Heart Floor; add a Max Heart (refused at 30); a death hook; a lethal-hit hook.
@@ -323,7 +323,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - The Recovery Compass stays vanilla and points to the player's recorded last death location. When a Remnant is moved to safe ground, that recorded location is set to the Remnant's spot, so the compass leads to it.
 
 **Milestones and advancements.** Advancement data for the 22 new advancements, the reparented vanilla ones and the changed criteria.
-- Milestones are seven advancements: Acquire Hardware, Diamonds!, We Need to Go Deeper and The End?, plus new ones for a copper ingot, a Netherite Ingot and an Eye of Ender. Each description ends with "Milestone: lowers your Heart Floor by 1 on Normal and Hard". The Hearts module reads which Milestones a player holds.
+- Milestones are seven advancements: Acquire Hardware, Diamonds!, We Need to Go Deeper and The End?, plus new ones for a copper ingot, a Netherite Ingot and an Eye of Ender. Each description starts with a red broken heart icon, as in Matcha Flavoured, and the chat message when one lowers the floor begins "[Milestone]". The Hearts module reads which Milestones a player holds.
 - New advancements, parents, frames and rewards follow the table in the Advancements decision. Custom criteria triggers cover: shelving a book in a Library, a Full Library, making an enchanted golden apple, Reinforcing a piece, getting an Ancient Ember, smelting an Alloy ingot, wearing each full Alloy set at any time, getting a Withered Heart back, an all-Alloy level 4 beacon, getting an Armored Elytra, breaking a Cleared spawner (to the breaker), consuming a Crystal Heart, being saved by one, reaching 30 Max Hearts, killing the Wither (every player inside its Subspace), killing an Elder Guardian (every player within 64 blocks), surviving the Warden (every player inside its Subspace when it digs back down or dies), collecting your own Remnant, and being in the Overworld when a Blood Moon rises.
 - Crystal Hearts come only from Kill the Wither, Kill an Elder Guardian, Survive the Warden and Free the End, as advancement reward loot. New challenges give 100 XP. Only But why? is hidden.
 - Vanilla changes: Getting an Upgrade asks for a copper pickaxe. Stone Age keeps its criterion, so the stone tool materials tag stays. Postmortal still counts only a Totem. Enchanter still fires on vanilla's enchanted item trigger. Getting an Upgrade, Enchanter, Zombie Doctor, Eye Spy and Cover Me in Debris move under their new parents. Subspace Bubble and Respecting the Remnants keep their titles.

@@ -13,9 +13,18 @@
     }
   },
   "display": {
-    "description": {
-      "translate": "advancements.maple_flavored.nether.obtain_netherite_ingot.description"
-    },
+    "description": [
+      "",
+      {
+        "text": "\uE000",
+        "color": "red",
+        "font": "maple_flavored:icons"
+      },
+      " ",
+      {
+        "translate": "advancements.maple_flavored.nether.obtain_netherite_ingot.description"
+      }
+    ],
     "icon": {
       "id": "minecraft:netherite_ingot"
     },

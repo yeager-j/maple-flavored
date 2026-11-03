@@ -13,6 +13,8 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,6 +33,7 @@ public class HeartFloorGameTests {
 		"minecraft:story/enter_the_end",
 		"maple_flavored:nether/obtain_netherite_ingot"
 	);
+	private static final FontDescription BROKEN_HEART_FONT = new FontDescription.Resource(Identifier.parse("maple_flavored:icons"));
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void eachMilestoneLowersTheHeartFloorOnNormal(GameTestHelper helper) {
@@ -98,6 +101,20 @@ public class HeartFloorGameTests {
 	}
 
 	@GameTest
+	public void eachMilestoneDescriptionStartsWithABrokenHeart(GameTestHelper helper) {
+		for (String milestone : MILESTONES) {
+			Component description = advancement(helper, milestone).value().display().orElseThrow().description();
+			boolean startsWithBrokenHeart = description.getSiblings().getFirst().getContents() instanceof PlainTextContents text
+				&& text.text().equals("")
+				&& description.getSiblings().getFirst().getStyle().getFont().equals(BROKEN_HEART_FONT);
+
+			helper.assertTrue(startsWithBrokenHeart, milestone + "'s description starts with a broken heart");
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest
 	public void milestonesTakeTheParentsOfTheAdvancementsTheyLeadTo(GameTestHelper helper) {
 		assertParent(helper, "minecraft:story/upgrade_tools", "maple_flavored:story/obtain_copper_ingot");
 		assertParent(helper, "maple_flavored:story/obtain_copper_ingot", "minecraft:story/mine_stone");
@@ -119,7 +136,7 @@ public class HeartFloorGameTests {
 		revoke(helper, player, MILESTONES.get(1));
 		grant(helper, player, MILESTONES.get(1));
 
-		helper.assertValueEqual(announcedHeartFloors(chat), List.of(9, 8, 8), "announced Heart Floors");
+		helper.assertValueEqual(announcedHeartFloors(chat), List.of("9", "8", "8"), "announced Heart Floors");
 		helper.succeed();
 	}
 
@@ -188,13 +205,13 @@ public class HeartFloorGameTests {
 		helper.succeed();
 	}
 
-	private static List<Object> announcedHeartFloors(List<Component> chat) {
+	private static List<String> announcedHeartFloors(List<Component> chat) {
 		return chat.stream()
 			.map(Component::getContents)
 			.filter(TranslatableContents.class::isInstance)
 			.map(TranslatableContents.class::cast)
 			.filter(contents -> contents.getKey().equals("chat.maple_flavored.heart_floor_lowered"))
-			.map(contents -> contents.getArgs()[0])
+			.map(contents -> ((Component) contents.getArgs()[0]).getString())
 			.toList();
 	}
 

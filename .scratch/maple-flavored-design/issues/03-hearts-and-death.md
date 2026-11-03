@@ -19,7 +19,7 @@ Numbers are starting values that balance work can change. The rules are fixed. T
 - Each player has a Heart Floor that starts at 10 and falls by 1 per Milestone, down to 3. Lowering it removes no hearts by itself.
 - Milestones count in any order, as soon as the item is in the player's inventory, however it got there: copper ingot, iron ingot, diamond, netherite ingot, Eye of Ender. Entering the Nether and entering the End also count.
 - Peaceful and Easy cost 1 heart per death with the Heart Floor fixed at 10. Normal costs 1 and Hard costs 2, both following Milestones. Hardcore stays vanilla.
-- A plain chat message announces each Heart Floor drop, with no lore text, and the death screen shows the Max Hearts lost.
+- A red chat message announces each Heart Floor drop, with no lore text, and the death screen shows the Max Hearts lost.
 
 ### Crystal Hearts and Pith
 

@@ -28,8 +28,8 @@ Advancements guide players through Maple Flavored inside vanilla's own tabs. Eac
   - four from vanilla: Acquire Hardware (iron ingot), Diamonds!, We Need to Go Deeper and The End?
   - three new ones: copper ingot, Netherite Ingot and Eye of Ender
 - The Heart Floor is calculated as 10 minus the number of Milestones the player holds, with a minimum of 3, on Normal and Hard. Revoking a Milestone raises the floor again, and nothing counts twice.
-- Each Milestone's description ends with "Milestone: lowers your Heart Floor by 1 on Normal and Hard", including the vanilla four.
-- The plain chat message from [Hearts and death](03-hearts-and-death.md) still announces the new floor alongside the advancement message.
+- Each Milestone's description starts with a red broken heart icon, as in Matcha Flavoured, including the vanilla four.
+- The chat message from [Hearts and death](03-hearts-and-death.md) still announces the new floor alongside the advancement message.
 
 ### New advancements
 

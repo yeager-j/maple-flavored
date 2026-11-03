@@ -33,7 +33,7 @@ Each player has a **Heart Floor**, the lowest their Max Hearts can fall through 
 - Obtain a copper ingot, iron ingot, diamond, Netherite Ingot, or Eye of Ender.
 - Enter the Nether or the End.
 
-The item Milestones count as soon as the item enters your inventory, however you obtained it. They can happen in any order. Lowering the Heart Floor does not remove hearts; it increases what future deaths can cost. A plain chat message announces each drop, and the death screen shows the Max Hearts lost.
+The item Milestones count as soon as the item enters your inventory, however you obtained it. They can happen in any order. Lowering the Heart Floor does not remove hearts; it increases what future deaths can cost. A red chat message announces each drop, and the death screen shows the Max Hearts lost.
 
 | Difficulty | Max Hearts lost per death | Heart Floor |
 | --- | --- | --- |

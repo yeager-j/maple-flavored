@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -79,7 +80,11 @@ public final class Hearts {
 		int heartFloor = heartFloor(player);
 
 		if (heartFloor < previousHeartFloor) {
-			player.sendSystemMessage(Component.translatable("chat.maple_flavored.heart_floor_lowered", heartFloor));
+			Component boldHeartFloor = Component.literal(String.valueOf(heartFloor)).withStyle(ChatFormatting.BOLD);
+
+			player.sendSystemMessage(
+				Component.translatable("chat.maple_flavored.heart_floor_lowered", boldHeartFloor).withStyle(ChatFormatting.RED)
+			);
 		}
 	}
 
