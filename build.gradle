@@ -17,6 +17,18 @@ loom {
 	}
 }
 
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "maple_flavored_gametest"
+		enableClientGameTests = false
+	}
+}
+
+loom.runs.named("gameTest") {
+	vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.file("gametest/report.xml").get().asFile}"
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -24,7 +36,7 @@ dependencies {
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
-processResources {
+tasks.matching { it.name in ["processResources", "processGametestResources"] }.configureEach {
 	def version = project.version
 	inputs.property "version", version
 
