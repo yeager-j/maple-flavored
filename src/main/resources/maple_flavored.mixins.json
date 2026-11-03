@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "mapleflavored.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"GameRulesMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
