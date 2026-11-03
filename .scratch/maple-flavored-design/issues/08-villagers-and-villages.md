@@ -56,7 +56,7 @@ So a player's first villagers come after the Nether, a modest Library and level 
 - No villager sells raw diamonds, as in vanilla, so Crystal Heart crafting keeps its limit.
 - Master Armorers stay reachable through curing, so Reinforcement stays reachable.
 - Toolsmiths sell copper tools instead of stone ones, as Early-game tiers decided.
-- Cure discounts and trades of enchanted gear stay with trading economy details, still in the map's fog.
+- Villagers sell plain gear instead of enchanted gear, and cure discounts stay vanilla, as [Trading, combat and recipes](16-trading-combat-and-recipes.md) decided.
 
 ### Handed on
 

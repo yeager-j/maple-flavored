@@ -44,13 +44,12 @@ Standing choices:
 - [The role of XP](issues/12-role-of-xp.md): level sets uncapped Enchantment Slots; only combining books and renaming cost XP, while repairs are free; dying drops all XP as a Remnant only you can collect, and each further death cuts uncollected Remnants by 20%.
 - [Storage and End City rewards](issues/13-storage-and-end-rewards.md): storage stays vanilla; End City chests only gain rolls for Pith (50%, 1 or 2) and a Crystal Heart (15%).
 - [Brewing](issues/11-brewing.md): vanilla apart from potions stacking to 16 with a shared 1 second throw cooldown for players; the enchanted golden apple offers vanilla's four effects, unlocking at 15%, 30%, 50% and 75% Library Progress.
+- [Structures](issues/14-structures.md): spawners ignore light and must be Cleared (12 deaths plus 2 per extra player) before breaking; the Fortress book unlocks once its Blaze spawners are Cleared; dungeons are more common; Crystal Hearts and Pith sit in guarded chests at half Matcha's rates or less.
+- [Trading, combat and recipes](issues/16-trading-combat-and-recipes.md): villagers sell plain gear; armor and combat stay vanilla apart from Reinforcement; a Nether Star crafts into 9 Pith; the Alloy Furnace mirrors the blast furnace with gold and polished blackstone bricks; Alloys have no block.
 
 ## Not yet specified
 
-- Nether and End progression, including whether bosses need new rewards; major End changes belong to the End Update mod
-- Trading economy details
-- New recipes
-- Armor and combat changes beyond alloys, including the shield
+Nothing. Every topic is decided.
 
 ## Out of scope
 
@@ -58,4 +57,4 @@ Standing choices:
 - Custom music and discs
 - Translations beyond English
 - Fishing as a progression track
-- A deeper End City rework, which belongs to a separate End Update mod; the ideas so far are in [Storage and End City rewards](issues/13-storage-and-end-rewards.md)
+- Deeper End changes, including an End City rework, which belong to a separate End Update mod that requires this one; the End City ideas so far are in [Storage and End City rewards](issues/13-storage-and-end-rewards.md)

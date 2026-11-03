@@ -100,9 +100,9 @@ Enchanting stops being a loot box. Enchantments are found in the world as books 
 
 ### Left open
 
-- Rewards on the Library progress bar before Mending
-- Enchanting and repair materials for items with no ingot or simple recipe, such as Elytra, tridents, the Mace and bows
-- Which other structures wake when their book is taken
+- Rewards on the Library progress bar before Mending: the enchanted golden apple's effects (see [Brewing](11-brewing.md))
+- Enchanting and repair materials for items with no ingot or simple recipe, such as Elytra, tridents, the Mace and bows: see [Trading, combat and recipes](16-trading-combat-and-recipes.md)
+- Which other structures wake when their book is taken: none, and the Nether Fortress's book is locked instead (see [Structures](14-structures.md))
 
 ## Comments
 
