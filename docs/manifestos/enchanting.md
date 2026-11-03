@@ -120,9 +120,9 @@ Sharpness V still takes 16 found books, but you and your friends can combine you
 
 Communal books mean everyone in a group can reach the same enchantments, so players need another way to stand apart. Your level sets how many enchantments an item can hold: 1 at level 30, and 1 more every 30 levels.
 
-This isn't as brutal as it sounds. Keep Inventory is on by default, so you don't lose XP when you die.
+This isn't as brutal as it sounds. Keep Inventory is on by default, and the XP you drop when you die waits for you in a [Remnant](../../.scratch/maple-flavored-design/issues/12-role-of-xp.md).
 
-A step of 30 levels is fine, because XP is plentiful: most of what you do earns it, and you no longer lose it on death. An XP farm can reach level 150 in a few hours. Vanilla's XP curve makes each slot cost much more than the last:
+A step of 30 levels is fine, because XP is plentiful: most of what you do earns it, and you can go back for it after dying. An XP farm can reach level 150 in a few hours. Vanilla's XP curve makes each slot cost much more than the last:
 
 | Enchantments | Level | Total XP |
 | --- | --- | --- |
@@ -156,7 +156,7 @@ This sounds like a horrible idea until you remember that enchanting is now nearl
 
 ## The anvil keeps its XP costs
 
-The anvil still costs XP, which can now also lower your enchantment slots. Combining books is a powerful move, so it should cost something that matters.
+The anvil still costs XP for combining books and renaming, which can now also lower your enchantment slots. Repairs are free. Combining books is a powerful move, so it should cost something that matters.
 
 The anvil charges XP points, not levels. Higher levels hold more points, at 112 points per level at level 30 and 922 at level 120, so a cost in levels would charge the group's enchanter about 8 times as much as a newer player. Points make the same job cost everyone the same.
 

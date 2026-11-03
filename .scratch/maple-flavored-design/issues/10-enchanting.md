@@ -115,3 +115,5 @@ From [Early-game tiers](07-early-game-tiers.md): the extra Enchantment Slot move
 From [Getting villagers and removing villages](08-villagers-and-villages.md):
 
 - The Library progress bar now has a defined measure, Library Progress: the sum of the highest level shelved for each enchantment, over a Full Library's 130. Its first reward before Mending is the enchanted golden apple's Regeneration II at 15%, with more apple effects to follow (see Brewing). The table also takes golden apples, with a block of gold as their material unit.
+
+From [The role of XP](12-role-of-xp.md): repairs cost no XP, so the anvil charges points only for combining books (50 × the resulting level) and renaming (10). The anvil can't apply books to gear, the grindstone gives no XP, and the crafting grid and grindstone can't combine damaged items.

@@ -41,6 +41,7 @@ Standing choices:
 - [Healing and food](issues/04-healing-and-food.md): vanilla food, hunger and natural regeneration stay for now, since no design beat them; the enchanted golden apple's effects moved to Brewing.
 - [Mob changes](issues/05-mob-changes.md): fast, frail zombies and lower health on skeletons, creepers and others; creepers don't spawn above sea level; mobs drop gear but not enchantments; the Warden and Wither open Subspaces, and Wardens summon near a player in Warden Territory, which closes the Warden switch.
 - [Farm pacing](issues/09-farm-pacing.md): no new gates; earning villagers paces iron and raid farms, and other farms stay vanilla apart from creeper farms sitting below Y 63.
+- [The role of XP](issues/12-role-of-xp.md): level sets uncapped Enchantment Slots; only combining books and renaming cost XP, while repairs are free; dying drops all XP as a Remnant only you can collect, and each further death cuts uncollected Remnants by 20%.
 
 ## Not yet specified
 

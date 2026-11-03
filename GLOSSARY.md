@@ -88,6 +88,10 @@ _Avoid_: Collection progress, completion
 Room for one enchantment on an item, set by the level of the player who enchants it: one at level 30, and one more every 30 levels.
 _Avoid_: Enchant limit, capacity
 
+**Remnant**:
+The XP a player drops on death, which only they can collect. Each further death shrinks it.
+_Avoid_: Bloodstain, grave, souls
+
 **Blight**:
 A weapon enchantment that gives a struck mob the Wither effect.
 _Avoid_: Withered, Withering
