@@ -43,6 +43,7 @@ Standing choices:
 - [Farm pacing](issues/09-farm-pacing.md): no new gates; earning villagers paces iron and raid farms, and other farms stay vanilla apart from creeper farms sitting below Y 63.
 - [The role of XP](issues/12-role-of-xp.md): level sets uncapped Enchantment Slots; only combining books and renaming cost XP, while repairs are free; dying drops all XP as a Remnant only you can collect, and each further death cuts uncollected Remnants by 20%.
 - [Storage and End City rewards](issues/13-storage-and-end-rewards.md): storage stays vanilla; End City chests only gain rolls for Pith (50%, 1 or 2) and a Crystal Heart (15%).
+- [Brewing](issues/11-brewing.md): vanilla apart from potions stacking to 16 with a shared 1 second throw cooldown for players; the enchanted golden apple offers vanilla's four effects, unlocking at 15%, 30%, 50% and 75% Library Progress.
 
 ## Not yet specified
 
