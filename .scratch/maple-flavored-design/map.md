@@ -49,6 +49,7 @@ Standing choices:
 - [Advancements](issues/17-advancements.md): vanilla's tabs stay, with 22 new advancements that teach each system; the seven Milestones are advancements that set the Heart Floor; Crystal Hearts come from four boss advancements, the Warden's for surviving it; only But why?, an all-Alloy beacon, is hidden.
 - [Stronghold Illagers](issues/18-stronghold-illagers.md): Vindicators, Pillagers and 1 to 3 Evokers fill each Stronghold by piece, about 12 to 20 in all, with the strongest guard and the book in the portal room; no Captains or Ravagers; spots sit only on the stone bricks family, infested variants included, so every one can be Restored.
 - [Illager book drops](issues/19-illager-book-drops.md): books drop on player kills from any Illager a raid didn't spawn, each on its own roll; Vindicator Sharpness 10% and Sweeping Edge 2.5%, Captain Power 20%, Punch and Infinity 5%, Evoker Protection 15% on one roll, Ravager Knockback 10%; Looting adds 20% of the base per level.
+- [Librarian book trades](issues/20-librarian-book-trades.md): every Novice Librarian buys any enchanted book, paying per find 4 emeralds, 10 villager XP and 50 player XP points, so level V pays 64 emeralds; fixed price, 12 uses; levels 2 to 4 lose their book slot.
 
 ## Not yet specified
 

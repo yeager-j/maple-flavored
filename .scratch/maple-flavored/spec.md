@@ -103,7 +103,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 69. As a player, I want gear from chests, fishing, trades and bartering to be plain, so that enchantments come only from the Library.
 70. As a player, I want gear a mob spawned with to drop without enchantments, so that mobs are never an enchantment source.
 71. As a player, I want gear a mob picked up from me to drop unchanged, so that I get my own gear back.
-72. As a player, I want Librarians to buy books instead of selling them, so that my surplus finds have a use.
+72. As a player, I want every Novice Librarian to buy any enchanted book for 4 emeralds, 10 villager XP and 50 XP points per find it holds, instead of selling books, so that my surplus finds have a use.
 73. As a player, I want bartering to drop Soul Speed books and iron boots, so that bartering doesn't hand out books.
 74. As an explorer, I want Unbreaking III to need four Stronghold books and Fortune III four Mansions, so that I explore past the first ring.
 
@@ -412,7 +412,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 
 **Villages and villagers.** Worldgen and entity changes. Village structure set uses spacing 80 and separation 50. Every village spawns zombie villagers and no iron golems. Hay bales (piles and barn hay) and every brewing stand are removed from village pieces. The igloo basement villager is a zombie villager. Natural zombie villagers and conversion stay vanilla.
 
-**Trades and bartering.** Villagers sell plain gear wherever vanilla sells enchanted gear. Toolsmiths sell copper tools instead of stone ones. Librarians buy enchanted books instead of selling them. The Master Armorer sells the Reinforcement template. No villager sells Pith, Crystal Hearts or raw diamonds. Everything else stays vanilla, including cure discounts. Bartering loses Soul Speed books and iron boots, with no replacements.
+**Trades and bartering.** Villagers sell plain gear wherever vanilla sells enchanted gear. Toolsmiths sell copper tools instead of stone ones. Librarians buy enchanted books instead of selling them: every Novice Librarian offers one trade, as one of all 3 Novice trades, that takes any enchanted book and pays per find (2^(level−1)) 4 emeralds, 10 villager XP and 50 player XP points on top of the vanilla trade orb, so level V pays 64 emeralds. It has 12 uses and a price multiplier of 0. The trade list shows the level I price; a mixin on the result slot's fill in `MerchantContainer.updateSellItem` sets the real payout from the placed book. Levels 2 to 4 lose their book slot, and the Master level stays vanilla. The Master Armorer sells the Reinforcement template. No villager sells Pith, Crystal Hearts or raw diamonds. Everything else stays vanilla, including cure discounts. Bartering loses Soul Speed books and iron boots, with no replacements.
 
 **Loot and worldgen data.**
 - Every enchanted book from any source (structure books, mob and boss drops, fishing and ominous vaults) holds exactly one enchantment at level I.
@@ -515,12 +515,6 @@ The design left these small points open. This spec picks a default for each, and
 - Attacking an Illager while wearing Orichalcum ends neutrality the way attacking a Piglin does with gold: the Illager you hit and those nearby that see it turn hostile.
 - Structures with several possible enchantments choose between them with equal weight.
 - Starting tuning values: Zephyr's second jump reaches 1.5, 2.25 and 3 blocks at levels I to III; Steel weapons add 0.5 attack knockback; Steel armor adds 0.1 knockback resistance per piece on top of Netherite's; spawner progress shows as cracks that grow with the count.
-
-### Design tasks before the build
-
-These are design decisions, not tuning, so they need a short grilling ticket on the design map before the build tickets that depend on them:
-
-- **Librarian book trades:** which books Librarians buy, at which levels and for how many emeralds. Blocks the Trades ticket.
 
 ### Values left to playtesting or build time
 
