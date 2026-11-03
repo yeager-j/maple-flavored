@@ -15,7 +15,7 @@ The lowest a player's Max Hearts can fall through death.
 _Avoid_: Minimum hearts, minimum
 
 **Milestone**:
-A progression achievement that lowers a player's Heart Floor by one.
+One of seven advancements that each lower a player's Heart Floor by one while the player holds it.
 
 **Crystal Heart**:
 An item that raises Max Hearts by one when consumed, or saves its holder from a lethal hit.
@@ -62,7 +62,7 @@ Said of a structure whose mobs have returned after a Blood Moon.
 _Avoid_: Respawned
 
 **Subspace**:
-An area a boss opens around itself to shut down the cheapest way of avoiding its fight. Players can enter and leave; the Warden's restricts movement, and the Wither's stops Withered Hearts from recovering.
+An area a boss opens around itself to shut down the cheapest way of avoiding its fight. Players can enter and leave; the Warden's restricts movement, and the Wither's stops Withered Hearts from recovering. Unrelated to vanilla's "Subspace Bubble" advancement.
 _Avoid_: Domain, aura
 
 **Grounded**:
@@ -92,7 +92,7 @@ Room for one enchantment on an item, set by the level of the player who enchants
 _Avoid_: Enchant limit, capacity
 
 **Remnant**:
-The XP a player drops on death, which only they can collect. Each further death shrinks it.
+The XP a player drops on death, which only they can collect. Each further death shrinks it. Unrelated to vanilla's "Respecting the Remnants" advancement.
 _Avoid_: Bloodstain, grave, souls
 
 **Blight**:
