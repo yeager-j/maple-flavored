@@ -8,6 +8,7 @@
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] Book drops per the design task: Vindicator Sharpness and Sweeping Edge, Pillager Captain Power, Infinity and Punch, Evoker Protection, Ravager Knockback
-- [ ] Raid-spawned Illagers drop no books except Ravager Knockback
+- [ ] Book drops per the design task, each its own roll on player kills: Vindicator Sharpness 10% and Sweeping Edge 2.5%; Pillager Captain Power 20%, Punch 5% and Infinity 5%; Evoker Protection 15%, one roll; Ravager Knockback 10%
+- [ ] Each Looting level adds 20% of the base chance; the Orichalcum bonus skips these books
+- [ ] Illagers spawned by a raid wave drop no books; every Ravager can drop Knockback
 - [ ] GameTests roll drops with a fixed seed for normal and raid Illagers

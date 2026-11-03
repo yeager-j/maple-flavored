@@ -393,7 +393,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Adult zombie villagers stay vanilla.
 - Creepers never spawn naturally at Y 63 or above in the Overworld. Spawners are not affected.
 - Mobs remember which gear they spawned with. That gear keeps vanilla's drop chance and drops with enchantments removed. Picked-up gear drops exactly as it was.
-- Drops, in loot data: Pith from Elder Guardians (2, always), Evokers (1 at 25%) and Piglin Brutes (1 at 10%); Ancient Embers from Piglin Brutes (25% plus 5% per Looting level, killed by a player, a separate roll). Book drops: Vindicator Sharpness (uncommon) and Sweeping Edge (rare); Pillager Captain Power (uncommon), Infinity and Punch (rare); Evoker Protection, possibly several; Ravager Knockback (uncommon). Raid-spawned Illagers drop no books except Ravager Knockback. The Ender Dragon drops a level I Zephyr book every kill.
+- Drops, in loot data: Pith from Elder Guardians (2, always), Evokers (1 at 25%) and Piglin Brutes (1 at 10%); Ancient Embers from Piglin Brutes (25% plus 5% per Looting level, killed by a player, a separate roll). Book drops, each its own roll, only when killed by a player: Vindicator Sharpness 10% and Sweeping Edge 2.5%; Pillager Captain Power 20%, Punch 5% and Infinity 5%; Evoker Protection 15%, one roll; Ravager Knockback 10%. Each Looting level adds 20% of the base chance, and the Orichalcum bonus doesn't apply. Plain Pillagers drop no books. Illagers spawned by a raid wave drop no books; every other Illager does, including Blood Moon Restores and Illagers that later join a raid. Every Ravager can drop Knockback. The Ender Dragon drops a level I Zephyr book every kill.
 
 **Materials and Alloys.** Registered items and blocks: Ancient Ember; five Alloy ingots (Steel from iron, Electrum from gold, Shakudo from copper, Adamant from diamond, Orichalcum from emerald); five Alloy blocks (9 ingots each way, in the beacon base blocks tag); an Alloy version of every item that has a Netherite version in 26.3; and an Armored Elytra for each Alloy.
 - The Netherite Ingot recipe becomes 4 Netherite Scrap and 4 Pith.
@@ -520,7 +520,6 @@ The design left these small points open. This spec picks a default for each, and
 
 These are design decisions, not tuning, so they need a short grilling ticket on the design map before the build tickets that depend on them:
 
-- **Illager book drops:** the odds behind "uncommon" and "rare", whether Looting helps, and how many books an Evoker can drop. Blocks the Mobs book drop ticket.
 - **Librarian book trades:** which books Librarians buy, at which levels and for how many emeralds. Blocks the Trades ticket.
 
 ### Values left to playtesting or build time

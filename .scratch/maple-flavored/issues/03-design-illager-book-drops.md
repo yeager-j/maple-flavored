@@ -4,11 +4,15 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human
+**Status:** resolved
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] Odds for Vindicator Sharpness and Sweeping Edge, Pillager Captain Power, Infinity and Punch, Evoker Protection and Ravager Knockback are set
-- [ ] Looting's effect and the Evoker's number of rolls are set
-- [ ] The answer accounts for the Stronghold Illagers decided in the Stronghold design task
-- [ ] The spec is updated with the decision
+- [x] Odds for Vindicator Sharpness and Sweeping Edge, Pillager Captain Power, Infinity and Punch, Evoker Protection and Ravager Knockback are set
+- [x] Looting's effect and the Evoker's number of rolls are set
+- [x] The answer accounts for the Stronghold Illagers decided in the Stronghold design task
+- [x] The spec is updated with the decision
+
+## Comments
+
+Resolved in [Illager book drops](../../maple-flavored-design/issues/19-illager-book-drops.md) on the design map. The spec's Mobs drop line now carries the odds, the player-kill rule, Looting's 20% per level and the single Evoker roll. The enchanting manifesto's "several drops" line now says one roll.
