@@ -62,11 +62,11 @@ Said of a structure whose mobs have returned after a Blood Moon.
 _Avoid_: Respawned
 
 **Subspace**:
-An area a boss opens around itself to shut down the cheapest way of avoiding its fight. A Sealed Subspace has a wall you can't cross. An Open Subspace has none, but stops Withered Hearts from recovering inside it.
+An area a boss opens around itself to shut down the cheapest way of avoiding its fight. Players can enter and leave; the Warden's restricts movement, and the Wither's stops Withered Hearts from recovering.
 _Avoid_: Domain, aura
 
 **Grounded**:
-An effect that makes gliding and Firework Rockets much weaker, and stops Riptide and Zephyr's double jump.
+An effect that makes gliding and Firework Rockets much weaker, greatly increases Ender Pearl gravity to shorten throws, and stops Riptide and Zephyr's double jump.
 _Avoid_: Heavy, gravity
 
 **Warden Territory**:

@@ -35,7 +35,7 @@ Dying drops all your XP as a Remnant, in exact points, in place of vanilla's par
 - **Lasting:** it can't be destroyed and doesn't despawn, including while you're offline or its chunk is unloaded.
 - **Collecting:** walking over it returns everything at once, not as orbs, so Mending can't eat it.
 - **Saves:** a Crystal Heart or Totem save isn't a death, so nothing drops.
-- **Placement:** it stays where you died, or appears at your last solid ground if you died in the void, in lava or anywhere else it couldn't be collected. Inside a Warden's Sealed Subspace it stays put, so you can collect it once the Subspace ends.
+- **Placement:** it stays where you died, or appears at your last solid ground if you died in the void, in lava or anywhere else it couldn't be collected. Inside a Warden's Subspace it stays put; you can return for it while the Subspace is active or wait until it ends.
 - **Tracking:** vanilla's Recovery Compass is the only tracker and points to your most recent death.
 
 ### Dying again

@@ -20,7 +20,7 @@ Enchanting stops being a loot box. Enchantments are found in the world as books 
 
 - Every book found is level I. Two books of a level combine in the anvil into the next level, so a level n book takes 2^(n-1) finds.
 - Most books float in a fixed spot in a structure: one book per structure, per world, guaranteed. A structure with several possible enchantments is given one when it generates.
-- Some books wake their structure when taken. The Ancient City's spawns an angry Warden inside a Sealed Subspace (see [Mob changes](05-mob-changes.md)). A Bastion's angers every Piglin. Taking a Stronghold's or Woodland Mansion's alerts every Illager nearby and turns them hostile, even to Orichalcum. Other structures don't wake; finding them is the challenge.
+- Some books wake their structure when taken. The Ancient City's spawns an angry Warden with a barrierless Subspace of 100 block radius, applying Darkness and Grounded (see [Mob changes](05-mob-changes.md)). A Bastion's angers every Piglin. Taking a Stronghold's or Woodland Mansion's alerts every Illager nearby and turns them hostile, even to Orichalcum. Other structures don't wake; finding them is the challenge.
 - Strongholds are filled with Illagers. Blood Moons Restore them, so reaching the End Portal is a fight.
 - Some books are chance drops. Illagers drop some, including from Strongholds, and Evokers can drop several. Illagers spawned by a raid don't, except raid-only drops such as Knockback from Ravagers.
 - The Ender Dragon drops a Zephyr book and the Wither a Blight book, every kill.

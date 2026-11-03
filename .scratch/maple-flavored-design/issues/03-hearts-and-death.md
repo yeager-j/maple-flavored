@@ -32,7 +32,7 @@ Numbers are starting values that balance work can change. The rules are fixed. T
 ### Withered Hearts
 
 - Under the Wither effect, one heart becomes a Withered Heart every 5 seconds, down to a minimum of 1 usable heart. Max Hearts don't change, so death and Crystal Hearts act as normal.
-- All return when the player is outside the Nether without the Wither effect, unless they're inside the Wither's Open Subspace, as [Mob changes](05-mob-changes.md) decided. Death also clears them.
+- All return when the player is outside the Nether without the Wither effect, unless they're inside the Wither's Subspace, as [Mob changes](05-mob-changes.md) decided. Death also clears them.
 - They show as darkened hearts and persist through logging out.
 
 ## Comments

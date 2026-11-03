@@ -44,12 +44,14 @@ Mobs can carry enchantments but can't be a source of them.
 
 ### Subspaces
 
-The Warden and Wither Subspaces follow [the boss subspaces manifesto](../../../docs/manifestos/boss-subspaces.md), including sizes and overlap rules, except where this answer differs. The Warden's is a Sealed Subspace and the Wither's an Open Subspace. The Elder Guardian and Ender Dragon get none unless playtesting finds a cheap way to avoid their fights.
+The Warden and Wither Subspaces follow [the boss subspaces manifesto](../../../docs/manifestos/boss-subspaces.md), including sizes and overlap rules, except where this answer differs. Neither has a barrier: players can enter and leave. Every Warden opens its own fixed sphere with a 100 block radius centred where it spawns, even inside another Subspace. Each Subspace ends when its own Warden goes away. Subspaces can overlap without shifting their centres or blocking summons, and Grounded does not stack with itself. The Elder Guardian and Ender Dragon get none unless playtesting finds a cheap way to avoid their fights.
 
-Inside the Warden's Sealed Subspace:
+Inside the Warden's Subspace:
 
 - Players are Grounded: horizontal glide drag is multiplied by 0.97 per tick and Firework Rocket boost is reduced by 95%. Both stack with the Armored Elytra's penalty.
-- Riptide and Zephyr's double jump don't work. Levitation, Slow Falling, Ender Pearls and Chorus Fruit do, but nothing crosses the wall.
+- Grounded greatly increases Ender Pearl gravity, sharply shortening throws. Pearls still teleport on landing and remain useful for reaching nearby cover or crossing gaps. The exact gravity multiplier needs playtesting.
+- Riptide and Zephyr's double jump don't work. Levitation, Slow Falling and Chorus Fruit still work, and nothing blocks crossing the Subspace's edge.
+- Players can escape by leaving the active Subspaces, or sneak and hide until their Wardens go away. Each Subspace ends independently when its own Warden goes away.
 - Dying costs hearts and respawns you as normal, even at a bed or anchor inside the Subspace.
 
 ### Summoning a Warden
@@ -58,12 +60,12 @@ This replaces the vanilla rule and closes the Warden switch, where a spawn-proof
 
 - A shriek counts only for players in Warden Territory. Others get no warning level or cooldown, so a chunk-loaded switch does nothing to a player elsewhere.
 - The Warden spawns 5 to 15 blocks from the player who caused the shriek, or from the nearest player in Warden Territory if they aren't there. A friend's arrow can therefore summon on someone else in Warden Territory.
-- With no room there, the search widens to the whole Subspace, up to 50 blocks from that player. If that fails too, the cooldown is cleared.
+- With no room there, the search widens to other spots within the Subspace, up to 50 blocks from that player. This spawn search distance is separate from the Subspace's 100 block radius. If that fails too, the cooldown is cleared.
 - If nobody is in Warden Territory when the summon happens, it's cancelled.
 
 ### Withered Heart recovery
 
-This changes [Hearts and death](03-hearts-and-death.md). Withered Hearts return anywhere except the Nether when the player doesn't have the Wither effect, so the End allows recovery, which matters for PvP. Inside the Wither's Open Subspace they never return, in any dimension. No other enemy blocks recovery, and the 5 second interval stays.
+This changes [Hearts and death](03-hearts-and-death.md). Withered Hearts return anywhere except the Nether when the player doesn't have the Wither effect, so the End allows recovery, which matters for PvP. Inside the Wither's Subspace they never return, in any dimension. No other enemy blocks recovery, and the 5 second interval stays.
 
 ### Vanilla facts (26.3 jar)
 
@@ -80,4 +82,4 @@ From Hearts and death:
 
 From [the boss subspaces manifesto](../../../docs/manifestos/boss-subspaces.md):
 
-- When a boss appears, it opens a domain you can't leave, which shuts down the cheapest way to avoid its fight. The Warden's applies Darkness and gravity, so an Elytra can't escape it. Decide what each domain blocks, how it ends, its size, and how it relates to the auras above.
+- When a boss appears, it opens a Subspace that shuts down the cheapest way to avoid its fight. The Warden's applies Darkness and Grounded in a 100 block radius, with no barrier. Grounded weakens flight and greatly increases Ender Pearl gravity, keeping short teleports useful while making escape a journey through the area.
