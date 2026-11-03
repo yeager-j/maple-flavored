@@ -49,7 +49,7 @@ Standing choices:
 
 ## Not yet specified
 
-Nothing. Every topic is decided.
+Nothing.
 
 ## Out of scope
 
