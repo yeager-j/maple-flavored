@@ -30,7 +30,7 @@ Vanilla apart from Reinforcement, which [Early-game tiers](07-early-game-tiers.m
 - A Crystal Heart is 8 diamonds around 1 Pith, as [Hearts and death](03-hearts-and-death.md) decided. The recipe comes from Matcha Flavoured, with credit.
 - A Nether Star crafts into 9 Pith, as in Matcha Flavoured, and keeps its vanilla name. There's no recipe the other way. A Wither farm that works despite the Wither's Subspace earns its Pith.
 - The Alloy Furnace mirrors the blast furnace recipe: 5 gold ingots across the top and sides, a blast furnace in the centre, and 3 polished blackstone bricks along the bottom.
-- Alloys have no storage block.
+- Each Alloy has a storage block: 9 ingots make a block, and a block crafts back into 9 ingots. Alloy blocks work as beacon base blocks, like blocks of Netherite.
 
 ### Enchanting and repair materials
 

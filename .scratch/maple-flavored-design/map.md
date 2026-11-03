@@ -45,7 +45,7 @@ Standing choices:
 - [Storage and End City rewards](issues/13-storage-and-end-rewards.md): storage stays vanilla; End City chests only gain rolls for Pith (50%, 1 or 2) and a Crystal Heart (15%).
 - [Brewing](issues/11-brewing.md): vanilla apart from potions stacking to 16 with a shared 1 second throw cooldown for players; the enchanted golden apple offers vanilla's four effects, unlocking at 15%, 30%, 50% and 75% Library Progress.
 - [Structures](issues/14-structures.md): spawners ignore light and must be Cleared (12 deaths plus 2 per extra player) before breaking; the Fortress book unlocks once its Blaze spawners are Cleared; dungeons are more common; Crystal Hearts and Pith sit in guarded chests at half Matcha's rates or less.
-- [Trading, combat and recipes](issues/16-trading-combat-and-recipes.md): villagers sell plain gear; armor and combat stay vanilla apart from Reinforcement; a Nether Star crafts into 9 Pith; the Alloy Furnace mirrors the blast furnace with gold and polished blackstone bricks; Alloys have no block.
+- [Trading, combat and recipes](issues/16-trading-combat-and-recipes.md): villagers sell plain gear; armor and combat stay vanilla apart from Reinforcement; a Nether Star crafts into 9 Pith; the Alloy Furnace mirrors the blast furnace with gold and polished blackstone bricks; each Alloy has a block that works as a beacon base.
 
 ## Not yet specified
 
