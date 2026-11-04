@@ -4,15 +4,15 @@
 
 **Blocked by:** 05 (Max Hearts and death cost)
 
-**Status:** ready-for-agent
+**Status:** done
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] Under the Wither effect, one heart withers every 5 seconds, down to 1 usable heart; Max Hearts don't change
-- [ ] The timer starts with the effect and resets whenever it ends, so one short exposure withers nothing; timer progress is saved through logout
-- [ ] All return at once when the player has no Wither effect and is outside the Nether (the Wither Subspace rule comes later)
-- [ ] Death clears them; logging out doesn't
-- [ ] The count syncs to the client and shows as darkened hearts
-- [ ] Advancement: Get a Withered Heart back (Nether, under A Terrible Fortress)
-- [ ] GameTests cover withering, the timer reset, the minimum, recovery in each dimension and death
+- [x] Under the Wither effect, one heart withers every 5 seconds, down to 1 usable heart; Max Hearts don't change
+- [x] The timer starts with the effect and resets whenever it ends, so one short exposure withers nothing; timer progress is saved through logout
+- [x] All return at once when the player has no Wither effect and is outside the Nether (the Wither Subspace rule comes later)
+- [x] Death clears them; logging out doesn't
+- [x] The count syncs to the client and shows as darkened hearts
+- [x] Advancement: Get a Withered Heart back (Nether, under A Terrible Fortress)
+- [x] GameTests cover withering, the timer reset, the minimum, recovery in each dimension and death
 - [ ] Hand check: darkened hearts

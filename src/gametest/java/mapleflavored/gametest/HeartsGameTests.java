@@ -3,26 +3,17 @@ package mapleflavored.gametest;
 import static mapleflavored.gametest.MockPlayers.assertMaxHearts;
 import static mapleflavored.gametest.MockPlayers.dieAndRespawn;
 import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
+import static mapleflavored.gametest.MockPlayers.relog;
 import static mapleflavored.gametest.MockPlayers.runCommand;
 
-import io.netty.channel.embedded.EmbeddedChannel;
-import java.util.Optional;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.hearts.Hearts;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
-import net.minecraft.server.players.NameAndId;
-import net.minecraft.server.players.PlayerList;
-import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.gamerules.GameRules;
-import net.minecraft.world.level.storage.TagValueInput;
 
 /** Max Hearts, the death cost per difficulty, the Heart Floor and the Keep Hearts and Keep Inventory game rules. */
 public class HeartsGameTests {
@@ -173,28 +164,5 @@ public class HeartsGameTests {
 		assertMaxHearts(helper, respawned, maxHeartsAfter);
 		helper.assertValueEqual(respawned.getHealth(), respawned.getMaxHealth(), "health after respawn");
 		helper.succeed();
-	}
-
-	// Mirrors how vanilla's PrepareSpawnTask loads a joining player's saved data before placing them.
-	private static ServerPlayer relog(GameTestHelper helper, ServerPlayer player) {
-		PlayerList playerList = helper.getLevel().getServer().getPlayerList();
-		CommonListenerCookie cookie = CommonListenerCookie.createInitial(player.getGameProfile(), false);
-
-		playerList.remove(player);
-
-		ServerPlayer relogged = new ServerPlayer(
-			helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation()
-		);
-		Optional<CompoundTag> savedData = playerList.loadPlayerData(new NameAndId(player.getGameProfile()));
-
-		helper.assertTrue(savedData.isPresent(), "the player's data was saved on leaving");
-		relogged.load(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), savedData.get()));
-
-		Connection connection = new Connection(PacketFlow.SERVERBOUND);
-
-		new EmbeddedChannel(connection);
-		playerList.placeNewPlayer(connection, relogged, cookie);
-
-		return relogged;
 	}
 }

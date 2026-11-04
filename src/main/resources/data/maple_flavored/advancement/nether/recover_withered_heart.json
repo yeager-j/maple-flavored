@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:nether/find_fortress",
+  "criteria": {
+    "withered_heart_recovered": {
+      "trigger": "maple_flavored:withered_heart_recovered"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.nether.recover_withered_heart.description"
+    },
+    "icon": {
+      "id": "minecraft:wither_rose"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.nether.recover_withered_heart.title"
+    }
+  },
+  "requirements": [
+    [
+      "withered_heart_recovered"
+    ]
+  ]
+}
