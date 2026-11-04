@@ -31,7 +31,11 @@ Size: M. One ticket, built in order; no split.
    - It ignores the 15-bookshelf count, like Progress.
    - `data/maple_flavored/advancement/story/full_library.json`: parent `minecraft:story/enchant_item`, frame `goal`, icon `minecraft:chiseled_bookshelf`, no reward.
    - Title "Well Read". Description "Shelve every enchantment but Mending at its max level".
-8. **Progress bar (client).** It sits in the gap right of the "Inventory" label (x ≈ 70–168, y ≈ 113, 5 px tall; exact pixels set at the hand check). Its track and fill are drawn as original art into unused space of the existing 256² atlas `enchanting_table.png`, below v=206, with Pillow, in lapis blue. No Mojang pixels are copied, and the XP bar's green is avoided so it doesn't read as XP. Hovering it shows "Library Progress: 87/130". When Full, a second line reads "Full Library". It deliberately doesn't claim Mending is offered: a Full Library below 15 bookshelves offers nothing, and the list itself shows Mending whenever it is offered.
+8. **Progress strip with checkpoints (client).** Jackson asked for room to mark rewards, so the panel grows 20 px (206 → 226) and the menu's inventory slots move down to y 144. A full-width strip sits between the list and the "Inventory" label: a 162×5 track (160 px fill, about 1.2 px per level) at y 123, and 8 px reward icons at y 113, leaving 3 px under the list, 2 px between icons and bar and 4 px above the label. The track and lapis-blue fill are original art drawn with Pillow into the atlas, with the fill sprite at v=226. No Mojang pixels are copied, and the XP bar's green is avoided.
+   - **`LibraryCheckpoint(percent, icon, reward)`** in `mapleflavored.enchanting`, with `ALL` in rising order. Today it holds only `MENDING` at 100%. Ticket 16 adds the four apple effects at 15/30/50/75%.
+   - **One rule:** `Progress.levelsFor(percent)` rounds up (15% of 130 needs 20), and `Progress.reached(checkpoint)` compares against it. `Library.offers()` gates Mending with `reached(LibraryCheckpoint.MENDING)`, and the screen uses the same list, so a threshold can't differ between server and screen.
+   - **Drawing:** each checkpoint below 100% gets a 1 px notch, dark blue once reached and grey before. The reward's icon is drawn at half scale over its notch, clamped to the bar. Unreached icons are shaded after a `nextStratum()`, because items draw above everything else in their stratum.
+   - **Tooltips:** an icon shows its reward, then "Unlocked" or "Needs n% Library Progress (m levels)". The bar shows "Library Progress: 87/130", plus "Full Library" when Full. It doesn't claim Mending is offered: a Full Library below 15 bookshelves offers nothing.
 
 ## API sketch
 
@@ -120,7 +124,7 @@ Existing tests keep passing. `theLibraryOffersTheHighestShelvedLevel` still expe
 
 ## Hand checks
 
-- The bar at 0%, partial and Full (both a powered table and a 7-shelf one); its tooltip; no overlap with the "Inventory" label; the bar updating live when a second player shelves or removes a book.
+- The strip at 0%, partial and Full (both a powered table and a 7-shelf one): notches, the half-scale Mending icon, its shade before Full, both tooltips, spacing against the list and the "Inventory" label, and the moved inventory slots; the bar updating live when a second player shelves or removes a book.
 - Mending appearing in the list at a Full table.
 
 ## Exclusions

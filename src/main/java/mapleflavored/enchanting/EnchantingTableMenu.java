@@ -51,7 +51,7 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 	private static final int INVENTORY_START = TABLE_SLOT_COUNT;
 	private static final int INVENTORY_END = INVENTORY_START + 36;
 	private static final int INVENTORY_X = 8;
-	private static final int INVENTORY_Y = 124;
+	private static final int INVENTORY_Y = 144;
 	private static final int TABLE_SLOTS_Y = 18;
 	private static final int SLOT_SPACING = 18;
 

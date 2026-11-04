@@ -51,6 +51,16 @@ public record Library(Registry<Enchantment> enchantments, int bookshelves, Map<H
 
 			return Mth.clamp((float) levels / fullLevels, 0.0F, 1.0F);
 		}
+
+		/** The levels needed to reach {@code percent} of a Full Library, rounded up: 15% of 130 needs 20. */
+		public int levelsFor(int percent) {
+			return Mth.positiveCeilDiv(percent * fullLevels, 100);
+		}
+
+		/** Whether enough levels are shelved for the checkpoint's reward. */
+		public boolean reached(LibraryCheckpoint checkpoint) {
+			return levels >= levelsFor(checkpoint.percent());
+		}
 	}
 
 	/** Reads the Library of the enchanting table at {@code tablePos}. */
@@ -110,7 +120,7 @@ public record Library(Registry<Enchantment> enchantments, int bookshelves, Map<H
 
 		offers.remove(mending);
 
-		if (progress().isFull()) offers.put(mending, mending.value().getMaxLevel());
+		if (progress().reached(LibraryCheckpoint.MENDING)) offers.put(mending, mending.value().getMaxLevel());
 
 		return Map.copyOf(offers);
 	}

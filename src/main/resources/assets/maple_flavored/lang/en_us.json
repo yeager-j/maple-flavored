@@ -19,6 +19,8 @@
 	"container.maple_flavored.anvil.cost": "Cost: %s XP points",
 	"container.maple_flavored.anvil.enchanting_error_tooltip": "Must enchant at Enchanting Table",
 	"container.maple_flavored.anvil.repair_error_tooltip": "Must repair with %s",
+	"container.maple_flavored.enchanting_table.checkpoint_needs": "Needs %s%% Library Progress (%s levels)",
+	"container.maple_flavored.enchanting_table.checkpoint_reached": "Unlocked",
 	"container.maple_flavored.enchanting_table.full_library": "Full Library",
 	"container.maple_flavored.enchanting_table.incompatible": "%s and %s can't be combined",
 	"container.maple_flavored.enchanting_table.lower_in_library": "This Library only has %s",

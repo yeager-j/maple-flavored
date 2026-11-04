@@ -13,6 +13,7 @@ import mapleflavored.enchanting.Checklist;
 import mapleflavored.enchanting.EnchantingDeposit;
 import mapleflavored.enchanting.EnchantingTableMenu;
 import mapleflavored.enchanting.Library;
+import mapleflavored.enchanting.LibraryCheckpoint;
 import mapleflavored.experience.ExperiencePoints;
 import mapleflavored.zephyr.Zephyr;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -508,6 +509,20 @@ public class EnchantingTableGameTests {
 		assertProgress(helper, List.of(book(sharpness, 1), book(sharpness, 2)), 2, "Sharpness I and II");
 		assertProgress(helper, List.of(book(sharpness, 1), book(smite, 3), book(mending, 1)), 4, "Sharpness I, Smite III and Mending");
 		assertProgress(helper, List.of(book(sharpness, 7)), 5, "Sharpness VII");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void checkpointsUnlockAtTheirShareOfAFullLibrary(GameTestHelper helper) {
+		Library.Progress empty = new Library.Progress(0, 130);
+		List<Integer> percents = LibraryCheckpoint.ALL.stream().map(LibraryCheckpoint::percent).toList();
+
+		helper.assertValueEqual(empty.levelsFor(15), 20, "levels for 15%");
+		helper.assertValueEqual(empty.levelsFor(100), 130, "levels for 100%");
+		helper.assertFalse(new Library.Progress(129, 130).reached(LibraryCheckpoint.MENDING), "Mending is reached at 129 levels");
+		helper.assertTrue(new Library.Progress(130, 130).reached(LibraryCheckpoint.MENDING), "Mending is reached at 130 levels");
+		helper.assertTrue(percents.stream().allMatch(percent -> percent >= 1 && percent <= 100), "checkpoints within 1-100%: " + percents);
+		helper.assertValueEqual(percents, percents.stream().sorted().distinct().toList(), "checkpoints in rising order");
 		helper.succeed();
 	}
 
