@@ -9,7 +9,8 @@
 		"fabric-gametest": [
 			"mapleflavored.gametest.SmokeGameTests",
 			"mapleflavored.gametest.HeartsGameTests",
-			"mapleflavored.gametest.HeartFloorGameTests"
+			"mapleflavored.gametest.HeartFloorGameTests",
+			"mapleflavored.gametest.CrystalHeartGameTests"
 		]
 	},
 	"depends": {

@@ -10,5 +10,7 @@
 	"commands.maple_flavored.maxhearts.set": "%s now has %s Max Hearts",
 	"deathScreen.maple_flavored.max_hearts_lost": "Max Hearts lost: %s",
 	"gamerule.maple_flavored.keep_hearts": "Keep Max Hearts after death",
-	"gamerule.maple_flavored.keep_hearts.description": "When on, death costs no Max Hearts."
+	"gamerule.maple_flavored.keep_hearts.description": "When on, death costs no Max Hearts.",
+	"item.maple_flavored.crystal_heart": "Crystal Heart",
+	"item.maple_flavored.pith": "Pith"
 }

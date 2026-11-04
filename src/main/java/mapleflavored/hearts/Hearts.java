@@ -5,6 +5,7 @@ import mapleflavored.MapleFlavored;
 import mapleflavored.advancements.Milestones;
 import mapleflavored.gamerules.MapleGameRules;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -14,11 +15,13 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * The Hearts module: each player's Max Hearts, their Heart Floor and what death costs.
@@ -39,7 +42,12 @@ public final class Hearts {
 
 	private static final AttachmentType<Integer> MAX_HEARTS = AttachmentRegistry.create(
 		MapleFlavored.id("max_hearts"),
-		builder -> builder.persistent(Codec.INT).initializer(() -> STARTING_MAX_HEARTS).copyOnDeath()
+		builder -> builder
+			.persistent(Codec.INT)
+			.initializer(() -> STARTING_MAX_HEARTS)
+			.copyOnDeath()
+			// The owner's client needs Max Hearts to predict a refused Crystal Heart.
+			.syncWith(ByteBufCodecs.VAR_INT, AttachmentSyncPredicate.targetOnly())
 	);
 
 	private Hearts() {
@@ -59,9 +67,14 @@ public final class Hearts {
 		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> MaxHeartsCommand.register(dispatcher));
 	}
 
-	/** The player's Max Hearts, up to 30. */
-	public static int maxHearts(ServerPlayer player) {
-		return player.getAttachedOrCreate(MAX_HEARTS);
+	/** The player's Max Hearts, up to 30. A client knows them only for its own player. */
+	public static int maxHearts(Player player) {
+		return player.getAttachedOrElse(MAX_HEARTS, STARTING_MAX_HEARTS);
+	}
+
+	/** Whether the player is at 30 Max Hearts, so {@link #addMaxHeart} would refuse. Also true on its own client. */
+	public static boolean atMaxHeartsCap(Player player) {
+		return maxHearts(player) >= MAX_HEARTS_CAP;
 	}
 
 	/** The lowest the player's Max Hearts can fall through death: 10, less one per Milestone held on Normal and Hard. */
@@ -94,11 +107,9 @@ public final class Hearts {
 	 * @return false, changing nothing, when the player is already at 30 Max Hearts
 	 */
 	public static boolean addMaxHeart(ServerPlayer player) {
-		int maxHearts = maxHearts(player);
+		if (atMaxHeartsCap(player)) return false;
 
-		if (maxHearts >= MAX_HEARTS_CAP) return false;
-
-		setMaxHearts(player, maxHearts + 1);
+		setMaxHearts(player, maxHearts(player) + 1);
 
 		return true;
 	}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "group": "netherite_ingot",
+  "ingredients": [
+    "minecraft:netherite_scrap",
+    "minecraft:netherite_scrap",
+    "minecraft:netherite_scrap",
+    "minecraft:netherite_scrap",
+    "maple_flavored:pith",
+    "maple_flavored:pith",
+    "maple_flavored:pith",
+    "maple_flavored:pith"
+  ],
+  "result": {
+    "id": "minecraft:netherite_ingot"
+  }
+}
