@@ -14,6 +14,9 @@ public final class MapleTriggers {
 	/** A player collected one of their own Remnants. */
 	public static final PlayerTrigger REMNANT_COLLECTED = register("remnant_collected", new PlayerTrigger());
 
+	/** A player shelved an enchanted book in a Library. */
+	public static final PlayerTrigger ENCHANTED_BOOK_SHELVED = register("enchanted_book_shelved", new PlayerTrigger());
+
 	private MapleTriggers() {
 	}
 

@@ -95,6 +95,10 @@ _Avoid_: Collection progress, completion
 Room for one enchantment on an item, set by the level of the player who enchants it: one at level 30, and one more every 30 levels.
 _Avoid_: Enchant limit, capacity
 
+**Deposit**:
+The material unit an item pays on its first save at the Enchanting Table. It stays on the item, and the grindstone hands it back when it strips the item.
+_Avoid_: Enchanting fee, ingot cost
+
 **Remnant**:
 The XP a player drops on death, which only they can collect. Each further death shrinks it. Unrelated to vanilla's "Respecting the Remnants" advancement.
 _Avoid_: Bloodstain, grave, souls
