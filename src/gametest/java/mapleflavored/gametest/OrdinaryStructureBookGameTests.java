@@ -1,6 +1,7 @@
 package mapleflavored.gametest;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -258,30 +259,37 @@ public class OrdinaryStructureBookGameTests {
 	}
 
 	@GameTest(maxTicks = 400)
-	public void anEndCityBookIsInItsLootRoomOrItsStartHouse(GameTestHelper helper) {
+	public void anEndCityBookIsAtTheTopOfATower(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureTemplateManager templates = level.getStructureTemplateManager();
 		Identifier lootRoom = Identifier.withDefaultNamespace("end_city/fat_tower_top");
-		Predicate<StructureStart> hasLootRoom = city -> city.getPieces().stream().anyMatch(piece -> isTemplate(piece, templates, lootRoom));
+		Identifier towerTop = Identifier.withDefaultNamespace("end_city/tower_top");
+		// A loot room higher than the first one planned, so the book has to pick the highest.
+		Predicate<StructureStart> hasAHigherLaterLootRoom = city -> {
+			List<StructurePiece> lootRooms = piecesOf(city, templates, lootRoom);
+
+			return !lootRooms.isEmpty() && highest(lootRooms) != lootRooms.getFirst();
+		};
+		Predicate<StructureStart> hasNoLootRoom = city -> piecesOf(city, templates, lootRoom).isEmpty();
 		// Planned in different areas, so the two cities don't overlap.
-		Optional<StructureStart> withLootRoom = firstEndCityWhere(level, farChunk(50), hasLootRoom);
-		Optional<StructureStart> withoutLootRoom = firstEndCityWhere(level, farChunk(52), hasLootRoom.negate());
+		Optional<StructureStart> withLootRooms = firstEndCityWhere(level, farChunk(50), hasAHigherLaterLootRoom);
+		Optional<StructureStart> withoutLootRoom = firstEndCityWhere(level, farChunk(52), hasNoLootRoom);
 
-		helper.assertTrue(withLootRoom.isPresent() && withoutLootRoom.isPresent(), "planned cities with and without a fat tower");
+		helper.assertTrue(withLootRooms.isPresent() && withoutLootRoom.isPresent(), "planned a city whose highest loot room isn't its first, and one with none");
 
-		StructureStart lootCity = withLootRoom.orElseThrow();
-		StructureStart plainCity = withoutLootRoom.orElseThrow();
+		StructureStart lootCity = withLootRooms.orElseThrow();
+		StructureStart towerCity = withoutLootRoom.orElseThrow();
 
 		Structures.chunks(lootCity).forEach(chunk -> Structures.build(level, lootCity, chunk));
-		Structures.chunks(plainCity).forEach(chunk -> Structures.build(level, plainCity, chunk));
+		Structures.chunks(towerCity).forEach(chunk -> Structures.build(level, towerCity, chunk));
 
 		BlockPos lootBook = onlyBook(helper, lootCity, BuiltinStructures.END_CITY);
-		BlockPos plainBook = onlyBook(helper, plainCity, BuiltinStructures.END_CITY);
+		BlockPos towerBook = onlyBook(helper, towerCity, BuiltinStructures.END_CITY);
 
 		helper.assertValueEqual(enchantmentAt(level, lootBook), Enchantments.FEATHER_FALLING, "the city's book");
-		helper.assertTrue(templatePiece(lootCity, templates, "end_city/fat_tower_top").getBoundingBox().isInside(lootBook), "the book is in the loot room");
-		helper.assertTrue(plainCity.getPieces().getFirst().getBoundingBox().isInside(plainBook), "the book is in the start house");
-		helper.assertTrue(isOpen(level, lootBook) && isOpen(level, plainBook), "both books have open space beside them");
+		helper.assertTrue(highest(piecesOf(lootCity, templates, lootRoom)).getBoundingBox().isInside(lootBook), "the book is in the highest loot room");
+		helper.assertTrue(highest(piecesOf(towerCity, templates, towerTop)).getBoundingBox().isInside(towerBook), "the book is in the highest tower top");
+		helper.assertTrue(isOpen(level, lootBook) && isOpen(level, towerBook), "both books have open space beside them");
 		helper.succeed();
 	}
 
@@ -376,6 +384,14 @@ public class OrdinaryStructureBookGameTests {
 		BlockPos floor = book.below(2);
 
 		return !level.getBlockState(feet).isCollisionShapeFullBlock(level, feet) && level.getBlockState(floor).isCollisionShapeFullBlock(level, floor);
+	}
+
+	private static List<StructurePiece> piecesOf(StructureStart start, StructureTemplateManager templates, Identifier location) {
+		return start.getPieces().stream().filter(piece -> isTemplate(piece, templates, location)).toList();
+	}
+
+	private static StructurePiece highest(List<StructurePiece> pieces) {
+		return pieces.stream().max(Comparator.comparingInt(piece -> piece.getBoundingBox().maxY())).orElseThrow();
 	}
 
 	private static TemplateStructurePiece templatePiece(StructureStart start, StructureTemplateManager templates, String path) {

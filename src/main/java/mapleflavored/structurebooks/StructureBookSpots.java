@@ -1,5 +1,6 @@
 package mapleflavored.structurebooks;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -55,9 +56,10 @@ final class StructureBookSpots {
 	private static final String TENT_ENTRANCE = "minecraft:connector";
 
 	private static final Identifier END_CITY_LOOT_ROOM = Identifier.withDefaultNamespace("end_city/fat_tower_top");
-	private static final Identifier END_CITY_START = Identifier.withDefaultNamespace("end_city/base_floor");
+	private static final Identifier END_CITY_TOWER_TOP = Identifier.withDefaultNamespace("end_city/tower_top");
 	private static final BlockPos END_CITY_LOOT_ROOM_CENTRE = new BlockPos(8, 2, 8);
-	private static final BlockPos END_CITY_START_CENTRE = new BlockPos(4, 2, 4);
+	// At head height over the top of the tower's spiral stairs, under the Shulker that guards the cap room.
+	private static final BlockPos END_CITY_TOWER_TOP_CENTRE = new BlockPos(4, 2, 4);
 
 	private StructureBookSpots() {
 	}
@@ -91,9 +93,7 @@ final class StructureBookSpots {
 
 	/** Just above the chest of the first ruin that has one, which is the big ruin in a cluster. */
 	static Optional<BookSpot> oceanRuin(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
-		return pieces.stream()
-			.filter(TemplateStructurePiece.class::isInstance)
-			.map(TemplateStructurePiece.class::cast)
+		return templatePieces(pieces)
 			.flatMap(ruin -> dataMarkers(ruin, OCEAN_RUIN_CHEST).map(chest -> new BookSpot(ruin, chest.above())))
 			.findFirst();
 	}
@@ -124,27 +124,45 @@ final class StructureBookSpots {
 		);
 	}
 
-	/** In the first fat tower's loot room, or the start house when the city has no fat tower. Never on the ship. */
+	/**
+	 * At the top of a tower: in the highest fat tower's loot room, or the highest thin tower's cap room when the city has
+	 * no fat tower. Never on the ship.
+	 */
 	static Optional<BookSpot> endCity(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
 		StructureTemplateManager templates = planning.templates();
-		Optional<BookSpot> lootRoom = templatePiece(pieces, templates, END_CITY_LOOT_ROOM).map(piece -> inTemplate(piece, END_CITY_LOOT_ROOM_CENTRE));
+		Optional<BookSpot> lootRoom = highestTemplatePiece(pieces, templates, END_CITY_LOOT_ROOM)
+			.map(piece -> inTemplate(piece, END_CITY_LOOT_ROOM_CENTRE));
 
-		return lootRoom.or(() -> templatePiece(pieces, templates, END_CITY_START).map(piece -> inTemplate(piece, END_CITY_START_CENTRE)));
+		return lootRoom.or(() -> highestTemplatePiece(pieces, templates, END_CITY_TOWER_TOP)
+			.map(piece -> inTemplate(piece, END_CITY_TOWER_TOP_CENTRE))
+		);
+	}
+
+	private static Optional<TemplateStructurePiece> highestTemplatePiece(
+		List<StructurePiece> pieces,
+		StructureTemplateManager templates,
+		Identifier location
+	) {
+		StructureTemplate template = templates.getOrCreate(location);
+
+		return templatePieces(pieces)
+			.filter(piece -> piece.template() == template)
+			.max(Comparator.comparingInt(piece -> piece.getBoundingBox().maxY()));
 	}
 
 	private static <T extends StructurePiece> Optional<T> firstOfType(List<StructurePiece> pieces, Class<T> type) {
 		return pieces.stream().filter(type::isInstance).map(type::cast).findFirst();
 	}
 
+	private static Stream<TemplateStructurePiece> templatePieces(List<StructurePiece> pieces) {
+		return pieces.stream().filter(TemplateStructurePiece.class::isInstance).map(TemplateStructurePiece.class::cast);
+	}
+
 	// The template manager caches templates, so a piece built from a template holds that same instance.
 	private static Optional<TemplateStructurePiece> templatePiece(List<StructurePiece> pieces, StructureTemplateManager templates, Identifier location) {
 		StructureTemplate template = templates.getOrCreate(location);
 
-		return pieces.stream()
-			.filter(TemplateStructurePiece.class::isInstance)
-			.map(TemplateStructurePiece.class::cast)
-			.filter(piece -> piece.template() == template)
-			.findFirst();
+		return templatePieces(pieces).filter(piece -> piece.template() == template).findFirst();
 	}
 
 	// A list element places several templates at one spot, as an outpost's watchtower does with its overgrowth.

@@ -37,7 +37,7 @@ Template coordinates are template-local and were read from the vanilla 26.3 `.nb
 | Ocean Ruins | `ocean_ruin_cold`, `ocean_ruin_warm` | Just above the chest of the first piece with one (the big ruin in a cluster). |
 | Pillager Outpost | `pillager_outpost` | Centre of the watchtower's top deck at head height (`watchtower` or `watchtower_overgrown` 7, 15, 7), the captain's floor beside the chest. |
 | Abandoned Camp | all 18 `abandoned_camp_*` | Floating just above the campsite's campfire (every campsite template has one). Fallback when the campsite piece didn't generate: above the tent's entrance jigsaw. |
-| End City | `end_city` | Centre of the first planned fat tower's top room, the loot room (`fat_tower_top` 8, 2, 8). A city without a fat tower: the start house's ground floor centre (`base_floor` 4, 2, 4). Never the ship, per the manifesto. |
+| End City | `end_city` | At the top of a tower. The highest fat tower's loot room (`fat_tower_top` 8, 2, 8). A city without a fat tower (about a third, from 500 planned cities): the highest thin tower's cap room, at head height over its spiral stairs under the guarding Shulker (`tower_top` 4, 2, 4). Never the ship, per the manifesto. (The first version used the first loot room and fell back to the start house's ground floor. Jackson wanted somewhere more challenging, towards the top.) |
 
 Multi-choice structures pick with equal weight through the existing `StructureBookRule.chooseEnchantment`.
 
@@ -90,7 +90,7 @@ public static PiecesContainer withBook(Holder<Structure>, PiecesContainer, long 
 | Ocean Ruin and Shipwreck in water (fill the area with water first) | book is waterlogged; taking it leaves water |
 | Multi-choice: plan Ocean Ruins and Outposts at 200 chunks each | nothing outside the list; each choice's count within 4 binomial standard deviations of a quarter |
 | Chunk order: each settling structure built with the book's chunk first, and with it last after saving and reloading the half-built structure | the book sits at an independent landmark: the chest under it, or for the Igloo the floor two below |
-| End City: `startHouseTower` with seeds giving a fat tower and none, through `withBook`, built | 1 Feather Falling book in the fat tower top's box, or in the base floor's box |
+| End City: `startHouseTower` with seeds giving a city whose highest loot room isn't its first, and one with no fat tower, through `withBook`, built | 1 Feather Falling book in the highest loot room's box, or in the highest thin tower top's box |
 | Save and load a planned Shipwreck, then build | 1 book at the right height (anchor link survives loading) |
 | Outpost and Camp beardifier | no book piece adds a rigid box (`Beardifier` over the book's chunk equals one built from the pieces without the book) |
 | Existing ticket-18 tests | still pass (Mineshaft `POCKET`, bucket and flow tests) |
