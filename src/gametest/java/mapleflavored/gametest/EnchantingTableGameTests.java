@@ -1,15 +1,27 @@
 package mapleflavored.gametest;
 
-import com.google.common.collect.Lists;
-import java.util.ArrayList;
+import static mapleflavored.gametest.EnchantingTables.TABLE_POS;
+import static mapleflavored.gametest.EnchantingTables.UPPER_RING;
+import static mapleflavored.gametest.EnchantingTables.book;
+import static mapleflavored.gametest.EnchantingTables.enchantment;
+import static mapleflavored.gametest.EnchantingTables.fill;
+import static mapleflavored.gametest.EnchantingTables.fullLibraryBooks;
+import static mapleflavored.gametest.EnchantingTables.fullLibraryLevels;
+import static mapleflavored.gametest.EnchantingTables.grindstone;
+import static mapleflavored.gametest.EnchantingTables.isDone;
+import static mapleflavored.gametest.EnchantingTables.placeChiseledShelf;
+import static mapleflavored.gametest.EnchantingTables.placeTable;
+import static mapleflavored.gametest.EnchantingTables.shelves;
+import static mapleflavored.gametest.EnchantingTables.survivalPlayer;
+import static mapleflavored.gametest.EnchantingTables.table;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import mapleflavored.MapleFlavored;
-import mapleflavored.enchanting.Checklist;
+import mapleflavored.enchanting.EnchantmentChecklist;
 import mapleflavored.enchanting.EnchantingDeposit;
 import mapleflavored.enchanting.EnchantingTableMenu;
 import mapleflavored.enchanting.Library;
@@ -32,19 +44,15 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.ContainerInput;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.EnchantingTableBlock;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 
 /**
@@ -53,10 +61,6 @@ import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
  * deposit the grindstone hands back. A refused save changes nothing.
  */
 public class EnchantingTableGameTests {
-	private static final BlockPos TABLE_POS = new BlockPos(3, 1, 3);
-	private static final BlockPos GRINDSTONE_POS = new BlockPos(0, 1, 0);
-	private static final List<BlockPos> LOWER_RING = ring(0);
-	private static final List<BlockPos> UPPER_RING = ring(1);
 	private static final Identifier SHELVE_ADVANCEMENT = MapleFlavored.id("story/shelve_enchanted_book");
 	private static final Identifier ENCHANTER = Identifier.withDefaultNamespace("story/enchant_item");
 	private static final Identifier FULL_LIBRARY_ADVANCEMENT = MapleFlavored.id("story/full_library");
@@ -71,12 +75,12 @@ public class EnchantingTableGameTests {
 
 		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
 
-		helper.assertValueEqual(table.checklist().offers(), Map.of(sharpness, 2), "offers with 15 shelves");
+		helper.assertValueEqual(table.enchantmentChecklist().offers(), Map.of(sharpness, 2), "offers with 15 shelves");
 
 		helper.setBlock(TABLE_POS.offset(plainShelves.getFirst()), Blocks.AIR);
 		table.broadcastChanges();
 
-		helper.assertValueEqual(table.checklist().offers(), Map.of(), "offers with 14 shelves");
+		helper.assertValueEqual(table.enchantmentChecklist().offers(), Map.of(), "offers with 14 shelves");
 		helper.succeed();
 	}
 
@@ -92,7 +96,7 @@ public class EnchantingTableGameTests {
 		));
 
 		helper.assertValueEqual(
-			table(helper, survivalPlayer(helper, 0)).checklist().offers(), Map.of(sharpness, 3, smite, 1), "offers (never Mending)"
+			table(helper, survivalPlayer(helper, 0)).enchantmentChecklist().offers(), Map.of(sharpness, 3, smite, 1), "offers (never Mending)"
 		);
 		helper.succeed();
 	}
@@ -107,12 +111,12 @@ public class EnchantingTableGameTests {
 
 		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
 
-		helper.assertValueEqual(table.checklist().offers(), Map.of(smite, 1), "offers with the gap open");
+		helper.assertValueEqual(table.enchantmentChecklist().offers(), Map.of(smite, 1), "offers with the gap open");
 
 		helper.setBlock(TABLE_POS.offset(1, 0, 0), Blocks.STONE);
 		table.broadcastChanges();
 
-		helper.assertValueEqual(table.checklist().offers(), Map.of(), "offers with the gap blocked");
+		helper.assertValueEqual(table.enchantmentChecklist().offers(), Map.of(), "offers with the gap blocked");
 		helper.succeed();
 	}
 
@@ -135,7 +139,7 @@ public class EnchantingTableGameTests {
 		helper.assertTrue(table.getSlot(EnchantingTableMenu.LAPIS_SLOT).getItem().isEmpty(), "the lapis is used");
 		helper.assertTrue(table.getSlot(EnchantingTableMenu.MATERIAL_SLOT).getItem().isEmpty(), "the diamond is used");
 		helper.assertTrue(ItemStack.matches(EnchantingDeposit.refund(sword), new ItemStack(Items.DIAMOND)), "the deposit is the diamond");
-		helper.assertValueEqual(table.checklist().state(sharpness), Checklist.State.CARRIED, "Sharpness after saving");
+		helper.assertValueEqual(table.enchantmentChecklist().state(sharpness), EnchantmentChecklist.State.CARRIED, "Sharpness after saving");
 		assertSameBooks(helper, shelvedBefore, shelvedBooks(helper, chiseled));
 		helper.assertTrue(isDone(helper, player, ENCHANTER), "saving grants Enchanter");
 		helper.succeed();
@@ -204,8 +208,8 @@ public class EnchantingTableGameTests {
 
 		fill(table, sword, 1, new ItemStack(Items.IRON_INGOT));
 
-		helper.assertValueEqual(table.checklist().state(sharpness), Checklist.State.CARRIED, "Sharpness on insertion");
-		helper.assertValueEqual(table.checklist().level(sharpness), 5, "Sharpness keeps its level");
+		helper.assertValueEqual(table.enchantmentChecklist().state(sharpness), EnchantmentChecklist.State.CARRIED, "Sharpness on insertion");
+		helper.assertValueEqual(table.enchantmentChecklist().level(sharpness), 5, "Sharpness keeps its level");
 		assertRefuses(helper, table, player, "Sharpness V from a Sharpness III Library");
 
 		toggle(helper, table, player, sharpness);
@@ -255,7 +259,7 @@ public class EnchantingTableGameTests {
 		toggle(helper, table, player, sharpness);
 		assertSaves(helper, table, player, "Sharpness III saved as it was");
 
-		helper.assertValueEqual(table.checklist().state(sharpness), Checklist.State.CARRIED, "Sharpness after saving");
+		helper.assertValueEqual(table.enchantmentChecklist().state(sharpness), EnchantmentChecklist.State.CARRIED, "Sharpness after saving");
 
 		helper.getBlockEntity(shelf, ChiseledBookShelfBlockEntity.class).removeItem(0, 1);
 
@@ -277,7 +281,7 @@ public class EnchantingTableGameTests {
 		helper.getBlockEntity(shelf, ChiseledBookShelfBlockEntity.class).removeItem(0, 1);
 
 		assertRefuses(helper, table, player, "Sharpness after its book is taken");
-		helper.assertTrue(table.checklist().rows().contains(sharpness), "Sharpness is still listed");
+		helper.assertTrue(table.enchantmentChecklist().listed().contains(sharpness), "Sharpness is still listed");
 
 		toggle(helper, table, player, sharpness);
 		assertSaves(helper, table, player, "Unbreaking alone");
@@ -343,7 +347,9 @@ public class EnchantingTableGameTests {
 		EnchantingTableMenu enchanterTable = table(helper, enchanter);
 		EnchantingTableMenu friendTable = table(helper, friend);
 
-		helper.assertValueEqual(friendTable.checklist().offers(), enchanterTable.checklist().offers(), "both players' offers");
+		helper.assertValueEqual(
+			friendTable.enchantmentChecklist().offers(), enchanterTable.enchantmentChecklist().offers(), "both players' offers"
+		);
 
 		for (EnchantingTableMenu table : List.of(enchanterTable, friendTable)) {
 			ServerPlayer player = table == enchanterTable ? enchanter : friend;
@@ -390,20 +396,24 @@ public class EnchantingTableGameTests {
 	}
 
 	@GameTest
-	public void theTableTakesOnlyEnchantableGear(GameTestHelper helper) {
+	public void theTableTakesOnlyEnchantableGearAndGoldenApples(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
 
 		placeTable(helper, UPPER_RING, List.of());
 
-		for (Item refused : List.of(Items.BOOK, Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE, Items.DIRT)) {
+		for (Item refused : List.of(Items.BOOK, Items.APPLE, Items.DIRT)) {
 			helper.assertFalse(table.getSlot(EnchantingTableMenu.ITEM_SLOT).mayPlace(new ItemStack(refused)), refused + " is accepted");
 		}
 
 		helper.assertFalse(table.getSlot(EnchantingTableMenu.ITEM_SLOT).mayPlace(book(sharpness, 1)), "an enchanted book is accepted");
 
-		for (Item accepted : List.of(Items.DIAMOND_SWORD, Items.SHIELD, Items.SHEARS, Items.ELYTRA, Items.FLINT_AND_STEEL)) {
-			helper.assertTrue(table.getSlot(EnchantingTableMenu.ITEM_SLOT).mayPlace(new ItemStack(accepted)), accepted + " is refused");
+		List<Item> accepted = List.of(
+			Items.DIAMOND_SWORD, Items.SHIELD, Items.SHEARS, Items.ELYTRA, Items.FLINT_AND_STEEL, Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE
+		);
+
+		for (Item item : accepted) {
+			helper.assertTrue(table.getSlot(EnchantingTableMenu.ITEM_SLOT).mayPlace(new ItemStack(item)), item + " is refused");
 		}
 
 		helper.succeed();
@@ -443,7 +453,7 @@ public class EnchantingTableGameTests {
 		boolean toggled = table.clickMenuButton(player, EnchantingTableMenu.toggleButton(protection, table.enchantments()));
 
 		helper.assertFalse(toggled, "Protection toggles on a sword");
-		helper.assertValueEqual(table.checklist().state(protection), Checklist.State.UNSELECTED, "Protection");
+		helper.assertValueEqual(table.enchantmentChecklist().state(protection), EnchantmentChecklist.State.UNSELECTED, "Protection");
 		helper.succeed();
 	}
 
@@ -521,8 +531,7 @@ public class EnchantingTableGameTests {
 		helper.assertValueEqual(empty.levelsFor(100), 130, "levels for 100%");
 		helper.assertFalse(new Library.Progress(129, 130).reached(LibraryCheckpoint.MENDING), "Mending is reached at 129 levels");
 		helper.assertTrue(new Library.Progress(130, 130).reached(LibraryCheckpoint.MENDING), "Mending is reached at 130 levels");
-		helper.assertTrue(percents.stream().allMatch(percent -> percent >= 1 && percent <= 100), "checkpoints within 1-100%: " + percents);
-		helper.assertValueEqual(percents, percents.stream().sorted().distinct().toList(), "checkpoints in rising order");
+		helper.assertValueEqual(percents, List.of(15, 30, 50, 75, 100), "checkpoints: the four apple effects, then Mending");
 		helper.succeed();
 	}
 
@@ -537,7 +546,7 @@ public class EnchantingTableGameTests {
 		expectedOffers.put(mending, 1);
 
 		helper.assertValueEqual(table.progress(), new Library.Progress(130, 130), "progress");
-		helper.assertValueEqual(table.checklist().offers(), expectedOffers, "offers");
+		helper.assertValueEqual(table.enchantmentChecklist().offers(), expectedOffers, "offers");
 		helper.succeed();
 	}
 
@@ -558,13 +567,13 @@ public class EnchantingTableGameTests {
 		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
 
 		helper.assertValueEqual(table.progress(), new Library.Progress(129, 130), "progress with Blight I");
-		helper.assertFalse(table.checklist().offers().containsKey(mending), "Mending is offered with Blight I");
+		helper.assertFalse(table.enchantmentChecklist().offers().containsKey(mending), "Mending is offered with Blight I");
 
 		placeTable(helper, UPPER_RING, shelves(noZephyr));
 		table.broadcastChanges();
 
 		helper.assertValueEqual(table.progress(), new Library.Progress(127, 130), "progress without Zephyr");
-		helper.assertFalse(table.checklist().offers().containsKey(mending), "Mending is offered without Zephyr");
+		helper.assertFalse(table.enchantmentChecklist().offers().containsKey(mending), "Mending is offered without Zephyr");
 		helper.succeed();
 	}
 
@@ -589,16 +598,16 @@ public class EnchantingTableGameTests {
 		}
 
 		helper.assertTrue(zephyrShelf != null, "the Zephyr book is shelved");
-		helper.assertTrue(table.checklist().offers().containsKey(mending), "Mending is offered when Full");
+		helper.assertTrue(table.enchantmentChecklist().offers().containsKey(mending), "Mending is offered when Full");
 
 		ItemStack zephyrBook = zephyrShelf.removeItem(zephyrSlot, 1);
 
 		table.broadcastChanges();
-		helper.assertFalse(table.checklist().offers().containsKey(mending), "Mending is offered once the Zephyr book leaves");
+		helper.assertFalse(table.enchantmentChecklist().offers().containsKey(mending), "Mending is offered once the Zephyr book leaves");
 
 		zephyrShelf.setItem(zephyrSlot, zephyrBook);
 		table.broadcastChanges();
-		helper.assertTrue(table.checklist().offers().containsKey(mending), "Mending is offered once the Zephyr book returns");
+		helper.assertTrue(table.enchantmentChecklist().offers().containsKey(mending), "Mending is offered once the Zephyr book returns");
 		helper.succeed();
 	}
 
@@ -615,7 +624,7 @@ public class EnchantingTableGameTests {
 		}
 
 		helper.assertValueEqual(table.progress(), new Library.Progress(130, 130), "progress with 7 shelves");
-		helper.assertValueEqual(table.checklist().offers(), Map.of(), "offers with 7 shelves");
+		helper.assertValueEqual(table.enchantmentChecklist().offers(), Map.of(), "offers with 7 shelves");
 		helper.assertTrue(isDone(helper, player, FULL_LIBRARY_ADVANCEMENT), "a Full Library without power grants Well Read");
 		helper.succeed();
 	}
@@ -656,9 +665,9 @@ public class EnchantingTableGameTests {
 
 		fill(table, sword, 1, ItemStack.EMPTY);
 
-		helper.assertValueEqual(table.checklist().state(mending), Checklist.State.CARRIED, "Mending on the inserted sword");
+		helper.assertValueEqual(table.enchantmentChecklist().state(mending), EnchantmentChecklist.State.CARRIED, "Mending on the inserted sword");
 		helper.assertTrue(
-			table.problems(player).contains(new Checklist.NotInLibrary(mending, 1, 0)), "Mending is refused without a Full Library"
+			table.problems(player).contains(new EnchantmentChecklist.NotInLibrary(mending, 1, 0)), "Mending is refused without a Full Library"
 		);
 		assertRefuses(helper, table, player, "carried Mending without a Full Library");
 
@@ -701,62 +710,6 @@ public class EnchantingTableGameTests {
 		helper.succeed();
 	}
 
-	// The 16 vanilla bookshelf offsets at one height around the table, as relative offsets.
-	private static List<BlockPos> ring(int height) {
-		return EnchantingTableBlock.BOOKSHELF_OFFSETS.stream().filter(offset -> offset.getY() == height).toList();
-	}
-
-	/**
-	 * Places the table with plain bookshelves at {@code plainOffsets} and one Chiseled Bookshelf holding each list of
-	 * books at the lower ring's offsets, returning the Chiseled Bookshelves' positions.
-	 */
-	private static List<BlockPos> placeTable(GameTestHelper helper, List<BlockPos> plainOffsets, List<List<ItemStack>> chiseledShelves) {
-		List<BlockPos> chiseledPositions = new ArrayList<>();
-
-		helper.setBlock(TABLE_POS, Blocks.ENCHANTING_TABLE);
-		plainOffsets.forEach(offset -> helper.setBlock(TABLE_POS.offset(offset), Blocks.BOOKSHELF));
-
-		for (int shelf = 0; shelf < chiseledShelves.size(); shelf++) {
-			BlockPos pos = TABLE_POS.offset(LOWER_RING.get(shelf));
-
-			placeChiseledShelf(helper, pos, chiseledShelves.get(shelf));
-			chiseledPositions.add(pos);
-		}
-
-		return chiseledPositions;
-	}
-
-	private static void placeChiseledShelf(GameTestHelper helper, BlockPos pos, List<ItemStack> books) {
-		helper.setBlock(pos, Blocks.CHISELED_BOOKSHELF);
-
-		ChiseledBookShelfBlockEntity shelf = helper.getBlockEntity(pos, ChiseledBookShelfBlockEntity.class);
-
-		// Placing a shelf where one stands keeps its block entity, so earlier books would stay.
-		shelf.clearContent();
-
-		for (int slot = 0; slot < books.size(); slot++) {
-			shelf.setItem(slot, books.get(slot));
-		}
-	}
-
-	/** One book per enchantment but Mending, each at its max level. */
-	private static List<ItemStack> fullLibraryBooks(GameTestHelper helper) {
-		return fullLibraryLevels(helper).entrySet().stream()
-			.map(entry -> book(entry.getKey(), entry.getValue()))
-			.toList();
-	}
-
-	private static Map<Holder<Enchantment>, Integer> fullLibraryLevels(GameTestHelper helper) {
-		return helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).listElements()
-			.filter(enchantment -> !enchantment.is(Enchantments.MENDING))
-			.collect(Collectors.toMap(enchantment -> enchantment, enchantment -> enchantment.value().getMaxLevel()));
-	}
-
-	// The books split into Chiseled Bookshelves of 6.
-	private static List<List<ItemStack>> shelves(List<ItemStack> books) {
-		return Lists.partition(books, ChiseledBookShelfBlockEntity.MAX_BOOKS_IN_STORAGE);
-	}
-
 	private static boolean holds(ItemStack book, Holder<Enchantment> enchantment) {
 		return book.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).getLevel(enchantment) > 0;
 	}
@@ -778,25 +731,6 @@ public class EnchantingTableGameTests {
 		helper.assertTrue(ItemStack.listMatches(before, after), "the shelved books are unchanged");
 	}
 
-	private static EnchantingTableMenu table(GameTestHelper helper, ServerPlayer player) {
-		return new EnchantingTableMenu(0, player.getInventory(), ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(TABLE_POS)));
-	}
-
-	private static ServerPlayer survivalPlayer(GameTestHelper helper, int level) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		player.setGameMode(GameType.SURVIVAL);
-		player.setExperienceLevels(level);
-
-		return player;
-	}
-
-	private static void fill(EnchantingTableMenu table, ItemStack item, int lapis, ItemStack material) {
-		table.getSlot(EnchantingTableMenu.ITEM_SLOT).set(item);
-		table.getSlot(EnchantingTableMenu.LAPIS_SLOT).set(lapis == 0 ? ItemStack.EMPTY : new ItemStack(Items.LAPIS_LAZULI, lapis));
-		table.getSlot(EnchantingTableMenu.MATERIAL_SLOT).set(material);
-	}
-
 	private static void toggle(GameTestHelper helper, EnchantingTableMenu table, ServerPlayer player, Holder<Enchantment> enchantment) {
 		boolean toggled = table.clickMenuButton(player, EnchantingTableMenu.toggleButton(enchantment, table.enchantments()));
 
@@ -816,11 +750,11 @@ public class EnchantingTableGameTests {
 	/** Saves, failing unless the save is refused and nothing in the table changes. */
 	private static void assertRefuses(GameTestHelper helper, EnchantingTableMenu table, ServerPlayer player, String label) {
 		List<ItemStack> slotsBefore = tableSlots(table);
-		Map<Holder<Enchantment>, Checklist.State> statesBefore = table.checklist().states();
+		Map<Holder<Enchantment>, EnchantmentChecklist.State> statesBefore = table.enchantmentChecklist().states();
 
 		helper.assertFalse(table.clickMenuButton(player, EnchantingTableMenu.SAVE_BUTTON), label + " saves");
 		helper.assertTrue(ItemStack.listMatches(slotsBefore, tableSlots(table)), label + ": the table's slots are unchanged");
-		helper.assertValueEqual(table.checklist().states(), statesBefore, label + ": the choices");
+		helper.assertValueEqual(table.enchantmentChecklist().states(), statesBefore, label + ": the choices");
 	}
 
 	private static List<ItemStack> tableSlots(EnchantingTableMenu table) {
@@ -871,11 +805,7 @@ public class EnchantingTableGameTests {
 	private static void assertGrindingRefunds(GameTestHelper helper, ServerPlayer player, ItemStack item, Item deposit, int count) {
 		int before = player.getInventory().countItem(deposit);
 
-		helper.setBlock(GRINDSTONE_POS, Blocks.GRINDSTONE);
-
-		GrindstoneMenu grindstone = new GrindstoneMenu(
-			0, player.getInventory(), ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(GRINDSTONE_POS))
-		);
+		GrindstoneMenu grindstone = grindstone(helper, player);
 
 		grindstone.getSlot(GrindstoneMenu.INPUT_SLOT).set(item);
 		grindstone.setCarried(ItemStack.EMPTY);
@@ -900,19 +830,4 @@ public class EnchantingTableGameTests {
 		return isDone(helper, player, SHELVE_ADVANCEMENT);
 	}
 
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, Identifier advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(advancement);
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
-	}
-
-	private static ItemStack book(Holder<Enchantment> enchantment, int level) {
-		return EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, level));
-	}
-
-	private static Holder<Enchantment> enchantment(GameTestHelper helper, ResourceKey<Enchantment> key) {
-		return helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
-	}
 }

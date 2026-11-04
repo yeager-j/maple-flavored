@@ -17,7 +17,9 @@ public final class LootSubstitutions {
 		Items.STONE_PICKAXE, Items.COPPER_PICKAXE,
 		Items.STONE_AXE, Items.COPPER_AXE,
 		Items.STONE_HOE, Items.COPPER_HOE,
-		Items.STONE_SPEAR, Items.COPPER_SPEAR
+		Items.STONE_SPEAR, Items.COPPER_SPEAR,
+		// Enchanted golden apples come only from the Enchanting Table.
+		Items.ENCHANTED_GOLDEN_APPLE, Items.GOLDEN_APPLE
 	);
 
 	private LootSubstitutions() {

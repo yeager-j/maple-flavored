@@ -1,7 +1,10 @@
 package mapleflavored.enchanting;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -21,8 +24,8 @@ import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
  * A table's Library: the enchanted books in Chiseled Bookshelves at the positions vanilla checks for bookshelf power.
  * It is read live from the world each time it is needed; nothing about it is stored, and books are never used up.
  *
- * <p>A Library is Full when it holds every enchantment but Mending at its max level. Only a Full Library offers
- * Mending, and its {@link Progress} shows how close it is.
+ * <p>A Library is Full when it holds every enchantment but Mending at its max level. Its {@link Progress} shows how
+ * close it is, and unlocks golden apple effects along the way. Only a Full Library offers Mending.
  *
  * @param enchantments the enchantment registry, whose entries other than Mending make up a Full Library
  * @param bookshelves the table's bookshelves of either kind, as vanilla counts them for power
@@ -57,9 +60,14 @@ public record Library(Registry<Enchantment> enchantments, int bookshelves, Map<H
 			return Mth.positiveCeilDiv(percent * fullLevels, 100);
 		}
 
+		/** Whether enough levels are shelved to reach {@code percent} of a Full Library. */
+		public boolean reached(int percent) {
+			return levels >= levelsFor(percent);
+		}
+
 		/** Whether enough levels are shelved for the checkpoint's reward. */
 		public boolean reached(LibraryCheckpoint checkpoint) {
-			return levels >= levelsFor(checkpoint.percent());
+			return reached(checkpoint.percent());
 		}
 	}
 
@@ -123,6 +131,22 @@ public record Library(Registry<Enchantment> enchantments, int bookshelves, Map<H
 		if (progress().reached(LibraryCheckpoint.MENDING)) offers.put(mending, mending.value().getMaxLevel());
 
 		return Map.copyOf(offers);
+	}
+
+	/**
+	 * The effects the table offers for golden apples: each one whose share of a Full Library this Library has reached,
+	 * or none below 15 bookshelves.
+	 */
+	public Set<AppleEffect> appleOffers() {
+		Set<AppleEffect> offers = EnumSet.noneOf(AppleEffect.class);
+
+		if (bookshelves < REQUIRED_BOOKSHELVES) return offers;
+
+		Progress progress = progress();
+
+		Arrays.stream(AppleEffect.values()).filter(effect -> progress.reached(effect.percent())).forEach(offers::add);
+
+		return offers;
 	}
 
 	private static boolean countsTowardFull(Holder<Enchantment> enchantment) {

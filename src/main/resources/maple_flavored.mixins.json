@@ -7,6 +7,7 @@
 		"ChiseledBookShelfBlockMixin",
 		"EnchantingTableBlockMixin",
 		"GameRulesMixin",
+		"GrindstoneInputSlotMixin",
 		"GrindstoneMenuMixin",
 		"GrindstoneResultSlotMixin",
 		"MinecraftServerMixin",
@@ -17,7 +18,8 @@
 		"ServerPlayerMixin",
 		"SmithingMenuMixin",
 		"SmithingTransformRecipeMixin",
-		"WitherSkeletonMixin"
+		"WitherSkeletonMixin",
+		"ZombieVillagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
