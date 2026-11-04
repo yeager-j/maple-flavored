@@ -5,6 +5,7 @@ import mapleflavored.enchanting.Enchanting;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
+import mapleflavored.loot.LootEnchantments;
 import mapleflavored.loot.LootSubstitutions;
 import mapleflavored.remnants.Remnants;
 import mapleflavored.zephyr.Zephyr;
@@ -30,6 +31,7 @@ public class MapleFlavored implements ModInitializer {
 		MapleItems.register();
 		Remnants.register();
 		LootSubstitutions.register();
+		LootEnchantments.register();
 		Zephyr.register();
 		Enchanting.register();
 
