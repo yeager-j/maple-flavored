@@ -5,19 +5,25 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import mapleflavored.MapleFlavored;
+import mapleflavored.mixin.BaseContainerBlockEntityInvoker;
+import mapleflavored.mixin.BrushableBlockEntityAccessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BrushableBlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -37,7 +43,9 @@ public class StructureBookPiece extends StructurePiece {
 	private static final String ENCHANTMENT = "Enchantment";
 	private static final String ANCHOR = "Anchor";
 	private static final String OFFSET = "Offset";
-	private static final String POCKET = "Pocket";
+	private static final String PLACEMENT = "Placement";
+	// Saved before books could be placed other than floating: whether the book carved a pocket.
+	private static final String LEGACY_POCKET = "Pocket";
 	private static final Codec<ResourceKey<Enchantment>> ENCHANTMENT_CODEC = ResourceKey.codec(Registries.ENCHANTMENT);
 	private static final int NO_ANCHOR = -1;
 	private static final int POCKET_RADIUS = 1;
@@ -45,7 +53,7 @@ public class StructureBookPiece extends StructurePiece {
 	private final ResourceKey<Enchantment> enchantment;
 	private final int anchorIndex;
 	private final BlockPos offset;
-	private final StructureBookRule.Clearance clearance;
+	private final StructureBookRule.Placement placement;
 	// Linked from the structure's pieces whenever they're gathered, so it's never saved.
 	private @Nullable StructurePiece anchor;
 
@@ -58,13 +66,13 @@ public class StructureBookPiece extends StructurePiece {
 		ResourceKey<Enchantment> enchantment,
 		int anchorIndex,
 		StructurePiece anchor,
-		StructureBookRule.Clearance clearance
+		StructureBookRule.Placement placement
 	) {
 		super(StructureBooks.PIECE, 0, new BoundingBox(spot));
 		this.enchantment = enchantment;
 		this.anchorIndex = anchorIndex;
 		this.offset = spot.subtract(originOf(anchor));
-		this.clearance = clearance;
+		this.placement = placement;
 	}
 
 	/** Loads a saved book piece. A book saved without an anchor stays at its saved spot. */
@@ -73,7 +81,9 @@ public class StructureBookPiece extends StructurePiece {
 		this.enchantment = tag.read(ENCHANTMENT, ENCHANTMENT_CODEC).orElseThrow();
 		this.anchorIndex = tag.getIntOr(ANCHOR, NO_ANCHOR);
 		this.offset = tag.read(OFFSET, BlockPos.CODEC).orElse(BlockPos.ZERO);
-		this.clearance = tag.getBooleanOr(POCKET, true) ? StructureBookRule.Clearance.POCKET : StructureBookRule.Clearance.NONE;
+		this.placement = tag.getString(PLACEMENT)
+			.map(StructureBookRule.Placement::valueOf)
+			.orElseGet(() -> tag.getBooleanOr(LEGACY_POCKET, true) ? StructureBookRule.Placement.POCKET : StructureBookRule.Placement.OPEN);
 	}
 
 	/** Hands each book among a structure's pieces the piece it follows. Call whenever the pieces are gathered. */
@@ -112,7 +122,7 @@ public class StructureBookPiece extends StructurePiece {
 		tag.store(ENCHANTMENT, ENCHANTMENT_CODEC, enchantment);
 		tag.putInt(ANCHOR, anchorIndex);
 		tag.store(OFFSET, BlockPos.CODEC, offset);
-		tag.putBoolean(POCKET, clearance == StructureBookRule.Clearance.POCKET);
+		tag.putString(PLACEMENT, placement.name());
 	}
 
 	@Override
@@ -137,15 +147,50 @@ public class StructureBookPiece extends StructurePiece {
 			return;
 		}
 
-		// A cave or lake the planning preview couldn't see can still stop the structure building around the spot.
-		if (clearance == StructureBookRule.Clearance.POCKET && !level.getBlockState(spot).isAir()) openPocket(level, spot, chunkBB);
+		switch (placement) {
+			case POCKET -> {
+				// A cave or lake the planning preview couldn't see can still stop the structure building around the spot.
+				if (!level.getBlockState(spot).isAir()) openPocket(level, spot, chunkBB);
 
+				placeFloatingBook(level, spot, holder.get());
+			}
+			case OPEN -> placeFloatingBook(level, spot, holder.get());
+			case IN_CHEST -> putInChest(level, spot, holder.get());
+			case IN_SUSPICIOUS_GRAVEL -> placeSuspiciousGravel(level, spot, holder.get());
+		}
+	}
+
+	private static void placeFloatingBook(WorldGenLevel level, BlockPos spot, Holder<Enchantment> enchantment) {
 		boolean inWater = level.getFluidState(spot).is(FluidTags.WATER);
 		BlockState book = StructureBooks.BLOCK.defaultBlockState().setValue(StructureBookBlock.WATERLOGGED, inWater);
 
 		level.setBlock(spot, book, Block.UPDATE_CLIENTS);
 
-		if (level.getBlockEntity(spot) instanceof StructureBookBlockEntity bookEntity) bookEntity.setEnchantment(holder.get());
+		if (level.getBlockEntity(spot) instanceof StructureBookBlockEntity bookEntity) bookEntity.setEnchantment(enchantment);
+	}
+
+	// Written straight into the slots, since setItem would roll the chest's loot now. The roll fills only empty slots.
+	// With no chest at the spot, as when Buried Treasure finds no stone to rest on, there's no book either.
+	private static void putInChest(WorldGenLevel level, BlockPos spot, Holder<Enchantment> enchantment) {
+		if (!(level.getBlockEntity(spot) instanceof ChestBlockEntity chest)) return;
+
+		NonNullList<ItemStack> slots = ((BaseContainerBlockEntityInvoker) chest).items();
+
+		slots.set(slots.size() / 2, StructureBooks.levelOneBook(enchantment));
+		chest.setChanged();
+	}
+
+	// Replaces whatever the structure's archaeology left at the spot, even its own suspicious gravel.
+	private static void placeSuspiciousGravel(WorldGenLevel level, BlockPos spot, Holder<Enchantment> enchantment) {
+		level.setBlock(spot, Blocks.SUSPICIOUS_GRAVEL.defaultBlockState(), Block.UPDATE_CLIENTS);
+
+		if (!(level.getBlockEntity(spot) instanceof BrushableBlockEntity gravel)) return;
+
+		BrushableBlockEntityAccessor contents = (BrushableBlockEntityAccessor) gravel;
+
+		contents.setLootTable(null);
+		contents.setItem(StructureBooks.levelOneBook(enchantment));
+		gravel.setChanged();
 	}
 
 	// Carves the 3-block cube around the spot, first turning any water or lava touching it to stone, so the book is

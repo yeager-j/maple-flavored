@@ -25,7 +25,7 @@ public final class StructureBookRules {
 	private static final StructureBookRule MINESHAFT = new StructureBookRule(
 		List.of(Enchantments.EFFICIENCY),
 		(pieces, planning) -> MineshaftBookSpots.choose(pieces, planning.terrain(), planning.random()),
-		StructureBookRule.Clearance.POCKET
+		StructureBookRule.Placement.POCKET
 	);
 	private static final StructureBookRule DESERT_PYRAMID = ordinary(List.of(Enchantments.BLAST_PROTECTION), StructureBookSpots::desertPyramid);
 	private static final StructureBookRule JUNGLE_TEMPLE = ordinary(List.of(Enchantments.LOOTING), StructureBookSpots::jungleTemple);
@@ -41,6 +41,16 @@ public final class StructureBookRules {
 	);
 	private static final StructureBookRule ABANDONED_CAMP = ordinary(List.of(Enchantments.LUNGE), StructureBookSpots::abandonedCamp);
 	private static final StructureBookRule END_CITY = ordinary(List.of(Enchantments.FEATHER_FALLING), StructureBookSpots::endCity);
+	private static final StructureBookRule BURIED_TREASURE = new StructureBookRule(
+		List.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION),
+		StructureBookSpots::buriedTreasure,
+		StructureBookRule.Placement.IN_CHEST
+	);
+	private static final StructureBookRule TRAIL_RUINS = new StructureBookRule(
+		List.of(Enchantments.SILK_TOUCH),
+		StructureBookSpots::trailRuins,
+		StructureBookRule.Placement.IN_SUSPICIOUS_GRAVEL
+	);
 
 	/** Every Abandoned Camp, one per biome variant. */
 	public static final List<ResourceKey<Structure>> ABANDONED_CAMPS = List.of(
@@ -105,13 +115,13 @@ public final class StructureBookRules {
 
 		ResourceKey<Enchantment> enchantment = rule.get().chooseEnchantment(random);
 		int anchorIndex = pieces.pieces().indexOf(spot.get().anchor());
-		StructureBookPiece book = new StructureBookPiece(spot.get().pos(), enchantment, anchorIndex, spot.get().anchor(), rule.get().clearance());
+		StructureBookPiece book = new StructureBookPiece(spot.get().pos(), enchantment, anchorIndex, spot.get().anchor(), rule.get().placement());
 
 		return new PiecesContainer(Stream.concat(pieces.pieces().stream(), Stream.of(book)).toList());
 	}
 
 	private static StructureBookRule ordinary(List<ResourceKey<Enchantment>> enchantments, StructureBookRule.SpotRule spot) {
-		return new StructureBookRule(enchantments, spot, StructureBookRule.Clearance.NONE);
+		return new StructureBookRule(enchantments, spot, StructureBookRule.Placement.OPEN);
 	}
 
 	private static Map<ResourceKey<Structure>, StructureBookRule> rules() {
@@ -129,6 +139,8 @@ public final class StructureBookRules {
 		));
 
 		rules.put(BuiltinStructures.END_CITY, END_CITY);
+		rules.put(BuiltinStructures.BURIED_TREASURE, BURIED_TREASURE);
+		rules.put(BuiltinStructures.TRAIL_RUINS, TRAIL_RUINS);
 		ABANDONED_CAMPS.forEach(camp -> rules.put(camp, ABANDONED_CAMP));
 
 		return Map.copyOf(rules);

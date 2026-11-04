@@ -80,7 +80,7 @@ _Avoid_: Warden zone
 ### Enchanting
 
 **Structure book**:
-The one level I enchanted book a structure or Dungeon holds, floating in a fixed, visible spot. Taking it can wake the structure.
+The one level I enchanted book a structure or Dungeon holds, in a fixed spot. Most float where they can be seen. Buried Treasure keeps its book in the treasure chest, and Trail Ruins keep theirs in one suspicious gravel. Taking it can wake the structure.
 _Avoid_: Floating book, book pedestal
 
 **Library**:

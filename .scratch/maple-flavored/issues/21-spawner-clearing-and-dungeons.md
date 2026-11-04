@@ -2,7 +2,7 @@
 
 **What to build:** Normal spawners fight back: they ignore light and can't be broken until Cleared. Dungeons are more common. This ticket also wires the Crystal Heart advancements, whose parent is here.
 
-**Blocked by:** 07 (Crystal Heart, Pith and Netherite recipe)
+**Blocked by:** 07 (Crystal Heart, Pith and Netherite recipe), 18 (Structure book framework, with Mineshafts)
 
 **Status:** ready-for-agent
 
@@ -15,5 +15,6 @@ Spec: the Maple Flavored spec in this folder.
 - [ ] Advancements under it: Consume a Crystal Heart; Be saved by a Crystal Heart (under Consume); Reach 30 Max Hearts (challenge, 100 XP, under Consume)
 - [ ] A Cleared event is exposed for the Fortress lock
 - [ ] Dungeons: 15 attempts per chunk above Y 0 and 8 below
+- [ ] Dungeon books, moved here from 20: Bane of Arthropods or Smite with equal weight, placed by the dungeon room's own placement, since Dungeons are placed features. Starting idea: floating just above the spawner
 - [ ] GameTests cover light, the count with several players, lava kills, explosions, the drop and the advancements; worldgen data check for dungeon attempts
 - [ ] Hand check: crack feedback, and dungeon frequency in a fresh world

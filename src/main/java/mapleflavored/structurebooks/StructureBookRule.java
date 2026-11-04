@@ -10,10 +10,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 /**
  * How one structure gets its book: the enchantments it can hold, one chosen with equal weight, where the book goes
- * among its planned pieces, and how its spot is cleared when built. A spot rule that finds no spot leaves the structure
+ * among its planned pieces, and how it's placed there when built. A spot rule that finds no spot leaves the structure
  * without a book.
  */
-record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Clearance clearance) {
+record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Placement placement) {
 	StructureBookRule {
 		if (enchantments.isEmpty()) throw new IllegalArgumentException("a structure book rule needs an enchantment");
 
@@ -41,11 +41,15 @@ record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule s
 	record Planning(TerrainPreview terrain, StructureTemplateManager templates, RandomSource random) {
 	}
 
-	/** What a book does to its spot when the spot isn't open as the chunk is built. */
-	enum Clearance {
-		/** Carves an open pocket around the book, sealing any liquid touching it. */
+	/** How the book is put at its spot as the chunk is built. */
+	enum Placement {
+		/** A floating book in an open pocket carved around it, sealing any liquid touching it. */
 		POCKET,
-		/** Takes the spot as it is: the book replaces what's there and is waterlogged in water. */
-		NONE
+		/** A floating book that takes the spot as it is: it replaces what's there and is waterlogged in water. */
+		OPEN,
+		/** A book item in the container at the spot, left there by the container's loot when it's rolled. */
+		IN_CHEST,
+		/** Suspicious gravel at the spot that gives the book when brushed. */
+		IN_SUSPICIOUS_GRAVEL
 	}
 }
