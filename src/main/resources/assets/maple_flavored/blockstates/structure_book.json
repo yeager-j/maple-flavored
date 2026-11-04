@@ -1,6 +1,9 @@
 {
 	"variants": {
-		"": {
+		"waterlogged=false": {
+			"model": "maple_flavored:block/structure_book"
+		},
+		"waterlogged=true": {
 			"model": "maple_flavored:block/structure_book"
 		}
 	}

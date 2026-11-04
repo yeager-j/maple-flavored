@@ -37,7 +37,7 @@ public final class MineshaftBookSpots {
 	 * dry and outside the Deep Dark. Cobwebbed spider corridors are tried only when there are no others. When no
 	 * corridor passes, the first one tried. Empty only for a Mineshaft without corridors.
 	 */
-	public static Optional<BlockPos> choose(List<StructurePiece> pieces, TerrainPreview terrain, RandomSource random) {
+	public static Optional<BookSpot> choose(List<StructurePiece> pieces, TerrainPreview terrain, RandomSource random) {
 		List<StructurePiece> corridors = corridorsToTry(pieces);
 
 		Util.shuffle(corridors, random);
@@ -48,7 +48,7 @@ public final class MineshaftBookSpots {
 			.filter(corridor -> isBuilt(corridor, terrain))
 			.findFirst()
 			.or(() -> tries.stream().findFirst())
-			.map(MineshaftBookSpots::middleSupport);
+			.map(corridor -> new BookSpot(corridor, middleSupport(corridor)));
 	}
 
 	private static List<StructurePiece> corridorsToTry(List<StructurePiece> pieces) {

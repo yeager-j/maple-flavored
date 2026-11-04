@@ -62,13 +62,17 @@ final class Structures {
 		return start;
 	}
 
-	/** Builds the structure's part of one chunk, loading the chunk first. */
+	/**
+	 * Builds the structure's part of one chunk, loading it and its neighbours first. Worldgen always has the neighbours'
+	 * terrain when it builds a chunk, and structures that settle onto the terrain, such as Ocean Ruins and Desert
+	 * Pyramids, read heights there. An unloaded neighbour reads as the bottom of the world.
+	 */
 	static void build(ServerLevel level, StructureStart start, ChunkPos chunk) {
 		BoundingBox chunkBox = new BoundingBox(
 			chunk.getMinBlockX(), level.getMinY(), chunk.getMinBlockZ(), chunk.getMaxBlockX(), level.getMaxY() + 1, chunk.getMaxBlockZ()
 		);
 
-		level.getChunk(chunk.x(), chunk.z());
+		ChunkPos.rangeClosed(chunk, 1).forEach(near -> level.getChunk(near.x(), near.z()));
 		start.placeInChunk(level, level.structureManager(), level.getChunkSource().getGenerator(), level.getRandom(), chunkBox, chunk);
 	}
 

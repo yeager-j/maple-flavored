@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiPredicate;
+import mapleflavored.structurebooks.BookSpot;
 import mapleflavored.structurebooks.MineshaftBookSpots;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBooks;
@@ -392,6 +393,7 @@ public class StructureBookGameTests {
 		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
 
 		return MineshaftBookSpots.choose(pieces, terrain, random)
+			.map(BookSpot::pos)
 			.orElseThrow(() -> new IllegalStateException("no spot chosen with " + preview));
 	}
 

@@ -1,6 +1,7 @@
 package mapleflavored.structurebooks;
 
 import com.mojang.serialization.Codec;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import mapleflavored.MapleFlavored;
@@ -9,6 +10,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.ChunkPos;
@@ -21,33 +23,96 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
+import org.jspecify.annotations.Nullable;
 
 /**
- * A structure's planned book, saved with the structure as one of its pieces. Its bounding box is the book's spot, and
- * the book is placed when the chunk holding that spot is built.
+ * A structure's planned book, saved with the structure as its last piece and placed when the chunk holding its spot is
+ * built.
+ *
+ * <p>The spot is kept relative to the piece the book sits in, its anchor, so the book follows that piece when it
+ * settles onto the terrain as it's built. Shipwrecks, Ocean Ruins, Igloos and temples all move up or down then. Those
+ * moves are vertical, so the book's chunk never changes. The piece's own bounding box is the spot as planned.
  */
 public class StructureBookPiece extends StructurePiece {
 	private static final String ENCHANTMENT = "Enchantment";
+	private static final String ANCHOR = "Anchor";
+	private static final String OFFSET = "Offset";
+	private static final String POCKET = "Pocket";
 	private static final Codec<ResourceKey<Enchantment>> ENCHANTMENT_CODEC = ResourceKey.codec(Registries.ENCHANTMENT);
+	private static final int NO_ANCHOR = -1;
 	private static final int POCKET_RADIUS = 1;
 
 	private final ResourceKey<Enchantment> enchantment;
+	private final int anchorIndex;
+	private final BlockPos offset;
+	private final StructureBookRule.Clearance clearance;
+	// Linked from the structure's pieces whenever they're gathered, so it's never saved.
+	private @Nullable StructurePiece anchor;
 
-	/** A book at {@code spot} that gives {@code enchantment} at level I. */
-	public StructureBookPiece(BlockPos spot, ResourceKey<Enchantment> enchantment) {
+	/**
+	 * A book at {@code spot} that gives {@code enchantment} at level I, following the piece at {@code anchorIndex} in
+	 * the structure's pieces.
+	 */
+	StructureBookPiece(
+		BlockPos spot,
+		ResourceKey<Enchantment> enchantment,
+		int anchorIndex,
+		StructurePiece anchor,
+		StructureBookRule.Clearance clearance
+	) {
 		super(StructureBooks.PIECE, 0, new BoundingBox(spot));
 		this.enchantment = enchantment;
+		this.anchorIndex = anchorIndex;
+		this.offset = spot.subtract(originOf(anchor));
+		this.clearance = clearance;
 	}
 
-	/** Loads a saved book piece. */
+	/** Loads a saved book piece. A book saved without an anchor stays at its saved spot. */
 	public StructureBookPiece(CompoundTag tag) {
 		super(StructureBooks.PIECE, tag);
 		this.enchantment = tag.read(ENCHANTMENT, ENCHANTMENT_CODEC).orElseThrow();
+		this.anchorIndex = tag.getIntOr(ANCHOR, NO_ANCHOR);
+		this.offset = tag.read(OFFSET, BlockPos.CODEC).orElse(BlockPos.ZERO);
+		this.clearance = tag.getBooleanOr(POCKET, true) ? StructureBookRule.Clearance.POCKET : StructureBookRule.Clearance.NONE;
+	}
+
+	/** Hands each book among a structure's pieces the piece it follows. Call whenever the pieces are gathered. */
+	public static void linkAnchors(List<StructurePiece> pieces) {
+		for (StructurePiece piece : pieces) {
+			if (!(piece instanceof StructureBookPiece book)) continue;
+
+			boolean hasAnchor = book.anchorIndex >= 0 && book.anchorIndex < pieces.size();
+
+			book.anchor = hasAnchor ? pieces.get(book.anchorIndex) : null;
+		}
+	}
+
+	/** Where the book is, following its anchor's latest move. */
+	public BlockPos spot() {
+		if (anchor == null) return new BlockPos(boundingBox.minX(), boundingBox.minY(), boundingBox.minZ());
+
+		return originOf(anchor).offset(offset);
+	}
+
+	/** The enchantment the book gives at level I. */
+	public ResourceKey<Enchantment> enchantment() {
+		return enchantment;
+	}
+
+	// A piece's bounding box always matches where it was last built: code-built pieces move their box to the ground,
+	// and template pieces recompute theirs from the position they place at, even an Igloo's temporary one.
+	private static BlockPos originOf(StructurePiece piece) {
+		BoundingBox box = piece.getBoundingBox();
+
+		return new BlockPos(box.minX(), box.minY(), box.minZ());
 	}
 
 	@Override
 	protected void addAdditionalSaveData(StructurePieceSerializationContext context, CompoundTag tag) {
 		tag.store(ENCHANTMENT, ENCHANTMENT_CODEC, enchantment);
+		tag.putInt(ANCHOR, anchorIndex);
+		tag.store(OFFSET, BlockPos.CODEC, offset);
+		tag.putBoolean(POCKET, clearance == StructureBookRule.Clearance.POCKET);
 	}
 
 	@Override
@@ -60,7 +125,7 @@ public class StructureBookPiece extends StructurePiece {
 		ChunkPos chunkPos,
 		BlockPos referencePos
 	) {
-		BlockPos spot = new BlockPos(boundingBox.minX(), boundingBox.minY(), boundingBox.minZ());
+		BlockPos spot = spot();
 
 		if (!chunkBB.isInside(spot)) return;
 
@@ -73,11 +138,14 @@ public class StructureBookPiece extends StructurePiece {
 		}
 
 		// A cave or lake the planning preview couldn't see can still stop the structure building around the spot.
-		if (!level.getBlockState(spot).isAir()) openPocket(level, spot, chunkBB);
+		if (clearance == StructureBookRule.Clearance.POCKET && !level.getBlockState(spot).isAir()) openPocket(level, spot, chunkBB);
 
-		level.setBlock(spot, StructureBooks.BLOCK.defaultBlockState(), Block.UPDATE_CLIENTS);
+		boolean inWater = level.getFluidState(spot).is(FluidTags.WATER);
+		BlockState book = StructureBooks.BLOCK.defaultBlockState().setValue(StructureBookBlock.WATERLOGGED, inWater);
 
-		if (level.getBlockEntity(spot) instanceof StructureBookBlockEntity book) book.setEnchantment(holder.get());
+		level.setBlock(spot, book, Block.UPDATE_CLIENTS);
+
+		if (level.getBlockEntity(spot) instanceof StructureBookBlockEntity bookEntity) bookEntity.setEnchantment(holder.get());
 	}
 
 	// Carves the 3-block cube around the spot, first turning any water or lava touching it to stone, so the book is

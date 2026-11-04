@@ -24,7 +24,8 @@
 			"mapleflavored.gametest.GoldenAppleGameTests",
 			"mapleflavored.gametest.BookLootGameTests",
 			"mapleflavored.gametest.SpawnedGearGameTests",
-			"mapleflavored.gametest.StructureBookGameTests"
+			"mapleflavored.gametest.StructureBookGameTests",
+			"mapleflavored.gametest.OrdinaryStructureBookGameTests"
 		]
 	},
 	"mixins": [
