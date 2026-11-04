@@ -21,7 +21,9 @@
 			"mapleflavored.gametest.RemovedCursesGameTests",
 			"mapleflavored.gametest.EnchantingTableGameTests",
 			"mapleflavored.gametest.EnchantedBookGameTests",
-			"mapleflavored.gametest.GoldenAppleGameTests"
+			"mapleflavored.gametest.GoldenAppleGameTests",
+			"mapleflavored.gametest.BookLootGameTests",
+			"mapleflavored.gametest.SpawnedGearGameTests"
 		]
 	},
 	"mixins": [
