@@ -15,6 +15,8 @@
 	"advancements.maple_flavored.story.obtain_ender_eye.title": "Eyes on the Prize",
 	"advancements.maple_flavored.story.shelve_enchanted_book.description": "Shelve an enchanted book in a Library",
 	"advancements.maple_flavored.story.shelve_enchanted_book.title": "Shelf Life",
+	"block.maple_flavored.structure_book": "Structure Book",
+	"block.maple_flavored.structure_book.no_room": "No room for the book",
 	"chat.maple_flavored.heart_floor_lowered": "[Milestone] Your Heart Floor is now %s",
 	"commands.maple_flavored.maxhearts.query": "%s has %s Max Hearts",
 	"commands.maple_flavored.maxhearts.set": "%s now has %s Max Hearts",

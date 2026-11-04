@@ -8,11 +8,11 @@
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] A registered book block with a block entity shows a floating level I book and holds its enchantment
-- [ ] It can't be mined, blown up, pushed or replaced; using it gives the book and removes the block, as one server action with a hook for wake events
-- [ ] With a full inventory the action is refused, with nothing changed and no wake event
-- [ ] Starting approach (open to experiment): a per-structure spot rule picks the spot when pieces are planned; the spot and enchantment are saved with the structure; the book is placed when that chunk is built
-- [ ] Exactly one book per Mineshaft
-- [ ] Add the structure book to the glossary
-- [ ] GameTests place a Mineshaft and take its book, including with a full inventory
+- [x] A registered book block with a block entity shows a floating level I book and holds its enchantment
+- [x] It can't be mined, blown up, pushed or replaced; using it gives the book and removes the block, as one server action with a hook for wake events
+- [x] With a full inventory the action is refused, with nothing changed and no wake event
+- [x] Starting approach (open to experiment): a per-structure spot rule picks the spot when pieces are planned; the spot and enchantment are saved with the structure; the book is placed when that chunk is built
+- [x] Exactly one book per Mineshaft
+- [x] Add the structure book to the glossary
+- [x] GameTests place a Mineshaft and take its book, including with a full inventory
 - [ ] Hand check: the floating book

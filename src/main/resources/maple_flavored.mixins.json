@@ -10,6 +10,7 @@
 		"GrindstoneInputSlotMixin",
 		"GrindstoneMenuMixin",
 		"GrindstoneResultSlotMixin",
+		"MineShaftCorridorAccessor",
 		"MinecraftServerMixin",
 		"MobMixin",
 		"PlayerAdvancementsMixin",
@@ -19,6 +20,9 @@
 		"ServerPlayerMixin",
 		"SmithingMenuMixin",
 		"SmithingTransformRecipeMixin",
+		"StructureMixin",
+		"StructurePieceMixin",
+		"StructureTemplateMixin",
 		"WitherSkeletonMixin",
 		"ZombieVillagerMixin"
 	],
