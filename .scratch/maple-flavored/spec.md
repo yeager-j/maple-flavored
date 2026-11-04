@@ -534,4 +534,4 @@ The floating structure book and the Reinforcement template have no glossary entr
 
 ### Credits and license
 
-Mob numbers, the Crystal Heart recipe, Nether Star into 9 Pith, Blight, Dungeon frequency, village spacing and the heart system's shape come from Matcha Flavoured and need credit. Any reused Matcha asset must be listed in `CREDITS.md` with its original path, its author and whether it was changed. The mod stays under CC BY-NC-SA 4.0.
+Mob numbers, the Crystal Heart recipe, Nether Star into 9 Pith, Dungeon frequency, village spacing and the heart system's shape come from Matcha Flavoured and need credit. Any reused Matcha asset must be listed in `CREDITS.md` with its original path, its author and whether it was changed. The mod stays under CC BY-NC-SA 4.0.
