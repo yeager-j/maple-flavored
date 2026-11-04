@@ -90,6 +90,8 @@ public class SpawnedGearGameTests {
 		Zombie zombie = EntityTypes.ZOMBIE.create(level, EntitySpawnReason.NATURAL);
 
 		zombie.snapTo(Vec3.atBottomCenterOf(helper.absolutePos(MOB_POS)));
+		// Mock players join at world spawn, far from the test, so a zombie that isn't persistent despawns on its first tick.
+		zombie.setPersistenceRequired();
 		level.addFreshEntity(zombie);
 
 		return zombie;
