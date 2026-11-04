@@ -12,21 +12,18 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.Structure;
-import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
-import net.minecraft.world.level.levelgen.structure.structures.MineshaftPieces;
 
 /** Which structures hold a book, and where each one's book goes. */
 public final class StructureBookRules {
-	// Seeds the enchantment choice apart from the structure's own randomness, so adding a book changes no layout.
-	private static final int ENCHANTMENT_SALT = 0x5B00C;
+	// Seeds the book's choices apart from the structure's own randomness, so adding a book changes no layout.
+	private static final int BOOK_SALT = 0x5B00C;
 
 	private static final StructureBookRule MINESHAFT = new StructureBookRule(
 		List.of(Enchantments.EFFICIENCY),
-		StructureBookRules::mineshaftRoomCentre
+		MineshaftBookSpots::choose
 	);
 
 	private static final Map<ResourceKey<Structure>, StructureBookRule> RULES = Map.of(
@@ -43,42 +40,37 @@ public final class StructureBookRules {
 	 *
 	 * @param seed the world seed
 	 * @param chunkPos the chunk the structure starts in
+	 * @param terrain the terrain the structure is planned into
 	 */
-	public static PiecesContainer withBook(Holder<Structure> structure, PiecesContainer pieces, long seed, ChunkPos chunkPos) {
+	public static PiecesContainer withBook(
+		Holder<Structure> structure,
+		PiecesContainer pieces,
+		long seed,
+		ChunkPos chunkPos,
+		TerrainPreview terrain
+	) {
 		if (pieces.isEmpty()) return pieces;
 
 		Optional<StructureBookRule> rule = structure.unwrapKey().map(RULES::get);
 
 		if (rule.isEmpty()) return pieces;
 
-		Optional<BlockPos> spot = rule.get().spot().apply(pieces.pieces());
+		WorldgenRandom random = bookRandom(seed, chunkPos);
+		Optional<BlockPos> spot = rule.get().spot().spot(pieces.pieces(), terrain, random);
 
 		if (spot.isEmpty()) return pieces;
 
-		ResourceKey<Enchantment> enchantment = rule.get().chooseEnchantment(enchantmentRandom(seed, chunkPos));
+		ResourceKey<Enchantment> enchantment = rule.get().chooseEnchantment(random);
 		StructureBookPiece book = new StructureBookPiece(spot.get(), enchantment);
 
 		return new PiecesContainer(Stream.concat(pieces.pieces().stream(), Stream.of(book)).toList());
 	}
 
-	private static WorldgenRandom enchantmentRandom(long seed, ChunkPos chunkPos) {
+	private static WorldgenRandom bookRandom(long seed, ChunkPos chunkPos) {
 		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
 
-		random.setLargeFeatureWithSalt(seed, chunkPos.x(), chunkPos.z(), ENCHANTMENT_SALT);
+		random.setLargeFeatureWithSalt(seed, chunkPos.x(), chunkPos.z(), BOOK_SALT);
 
 		return random;
-	}
-
-	// The central room every corridor branches from, on its floor: the first layer the room carves out.
-	private static Optional<BlockPos> mineshaftRoomCentre(List<StructurePiece> pieces) {
-		return pieces.stream()
-			.filter(MineshaftPieces.MineShaftRoom.class::isInstance)
-			.findFirst()
-			.map(room -> {
-				BoundingBox box = room.getBoundingBox();
-				BlockPos centre = box.getCenter();
-
-				return new BlockPos(centre.getX(), box.minY() + 1, centre.getZ());
-			});
 	}
 }

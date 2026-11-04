@@ -2,6 +2,7 @@ package mapleflavored.structurebooks;
 
 import com.mojang.serialization.Codec;
 import java.util.Optional;
+import java.util.stream.Stream;
 import mapleflavored.MapleFlavored;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -14,6 +15,8 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
@@ -26,6 +29,7 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSeriali
 public class StructureBookPiece extends StructurePiece {
 	private static final String ENCHANTMENT = "Enchantment";
 	private static final Codec<ResourceKey<Enchantment>> ENCHANTMENT_CODEC = ResourceKey.codec(Registries.ENCHANTMENT);
+	private static final int POCKET_RADIUS = 1;
 
 	private final ResourceKey<Enchantment> enchantment;
 
@@ -68,8 +72,30 @@ public class StructureBookPiece extends StructurePiece {
 			return;
 		}
 
+		// A cave or lake the planning preview couldn't see can still stop the structure building around the spot.
+		if (!level.getBlockState(spot).isAir()) openPocket(level, spot, chunkBB);
+
 		level.setBlock(spot, StructureBooks.BLOCK.defaultBlockState(), Block.UPDATE_CLIENTS);
 
 		if (level.getBlockEntity(spot) instanceof StructureBookBlockEntity book) book.setEnchantment(holder.get());
+	}
+
+	// Carves the 3-block cube around the spot, first turning any water or lava touching it to stone, so the book is
+	// never buried or flooded. Stays within the chunk being built.
+	private static void openPocket(WorldGenLevel level, BlockPos spot, BoundingBox chunkBB) {
+		BoundingBox pocket = new BoundingBox(spot).inflatedBy(POCKET_RADIUS);
+
+		insideChunk(pocket.inflatedBy(1), chunkBB)
+			.filter(pos -> level.getBlockState(pos).liquid())
+			.forEach(pos -> level.setBlock(pos, sealFor(pos), Block.UPDATE_CLIENTS));
+		insideChunk(pocket, chunkBB).forEach(pos -> level.setBlock(pos, Blocks.CAVE_AIR.defaultBlockState(), Block.UPDATE_CLIENTS));
+	}
+
+	private static Stream<BlockPos> insideChunk(BoundingBox box, BoundingBox chunkBB) {
+		return BlockPos.betweenClosedStream(box).filter(chunkBB::isInside);
+	}
+
+	private static BlockState sealFor(BlockPos pos) {
+		return pos.getY() < 0 ? Blocks.DEEPSLATE.defaultBlockState() : Blocks.STONE.defaultBlockState();
 	}
 }

@@ -29,6 +29,16 @@ loom.runs.named("gameTest") {
 	vmArg "-Dfabric-api.gametest.report-file=${layout.buildDirectory.file("gametest/report.xml").get().asFile}"
 }
 
+// Loom reuses the last run's world, so blocks a test left behind would carry into the next run. Vanilla's own
+// GameTest runner starts from a fresh world, and so does this.
+def gameTestWorld = layout.buildDirectory.dir("run/gameTest/world")
+
+tasks.named("runGameTest") {
+	doFirst {
+		gameTestWorld.get().asFile.deleteDir()
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"

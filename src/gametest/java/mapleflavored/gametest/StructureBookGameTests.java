@@ -6,8 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiPredicate;
+import mapleflavored.structurebooks.MineshaftBookSpots;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBooks;
+import mapleflavored.structurebooks.TerrainPreview;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -20,6 +23,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Inventory;
@@ -32,9 +36,12 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.levelgen.LegacyRandomSource;
+import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.Structure;
@@ -49,9 +56,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Every Mineshaft holds exactly one Efficiency I structure book, placed with the chunk that holds it, saved with the
- * structure, kept when another structure overlaps it, and left in the open even where its room touches liquid. Taking
- * it is one action, refused on a full inventory, and the book can't be mined, blown up, pushed or replaced.
+ * Every Mineshaft holds exactly one Efficiency I structure book in a dry hallway, placed with the chunk that holds it,
+ * saved with the structure and kept when another structure overlaps it. Taking it is one action, refused on a full
+ * inventory, and the book can't be mined, blown up, pushed or replaced.
  */
 public class StructureBookGameTests {
 	// Far from every test's own area, and far enough apart that no two Mineshafts overlap.
@@ -70,18 +77,92 @@ public class StructureBookGameTests {
 	}
 
 	@GameTest
-	public void everyMineshaftHoldsExactlyOneBook(GameTestHelper helper) {
+	public void everyMineshaftHoldsExactlyOneBookInAHallway(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		List<ResourceKey<Structure>> mineshafts = List.of(
 			BuiltinStructures.MINESHAFT, BuiltinStructures.MINESHAFT, BuiltinStructures.MINESHAFT, BuiltinStructures.MINESHAFT_MESA
 		);
 
 		for (int i = 0; i < mineshafts.size(); i++) {
+			String name = mineshafts.get(i).identifier() + " " + i;
 			StructureStart start = Structures.place(level, mineshafts.get(i), farChunk(i));
+			BlockPos book = onlyBook(helper, start);
+			long openSides = Direction.Plane.HORIZONTAL.stream().filter(side -> level.getBlockState(book.relative(side)).isAir()).count();
 
-			helper.assertValueEqual(Structures.books(level, start).size(), 1, "books in " + mineshafts.get(i).identifier() + " " + i);
+			helper.assertTrue(
+				corridors(start.getPieces()).stream().anyMatch(corridor -> MineshaftBookSpots.middleSupport(corridor).equals(book)),
+				"the book in " + name + " floats at a corridor's middle support"
+			);
+			helper.assertTrue(openSides >= 2, "the book in " + name + " is open along its hallway");
 		}
 
+		helper.succeed();
+	}
+
+	@GameTest
+	public void theTerrainPreviewSteersTheBookAwayFromAWetHallway(GameTestHelper helper) {
+		List<StructurePiece> pieces = Structures.plan(helper.getLevel(), BuiltinStructures.MINESHAFT, farChunk(9)).getPieces();
+		List<BlockPos> corridorSpots = corridors(pieces).stream().map(MineshaftBookSpots::middleSupport).toList();
+		BlockPos dryChoice = chooseSpot(pieces, previewWithLiquid((x, z) -> false), "an all-dry preview");
+		BoundingBox firstHallway = corridors(pieces).stream()
+			.filter(corridor -> MineshaftBookSpots.middleSupport(corridor).equals(dryChoice))
+			.findFirst()
+			.orElseThrow()
+			.getBoundingBox()
+			.inflatedBy(1);
+		// Wet around the first choice's hallway but not at the spot itself, so the whole hallway must be checked.
+		TerrainPreview wetAroundFirstChoice = previewWithLiquid(
+			(x, z) -> firstHallway.isInside(new BlockPos(x, firstHallway.minY(), z)) && !(x == dryChoice.getX() && z == dryChoice.getZ())
+		);
+		BlockPos wetChoice = chooseSpot(pieces, wetAroundFirstChoice, "a preview wet around the first choice");
+		BlockPos allWetChoice = chooseSpot(pieces, previewWithLiquid((x, z) -> true), "an all-wet preview");
+
+		helper.assertTrue(corridorSpots.contains(dryChoice), "the dry choice is a corridor's middle support");
+		helper.assertTrue(corridorSpots.contains(wetChoice), "the next choice is a corridor's middle support");
+		helper.assertTrue(!wetChoice.equals(dryChoice), "a wet hallway is passed over");
+		helper.assertValueEqual(allWetChoice, dryChoice, "with no dry hallway, the first one tried");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void aBookWhoseHallwayIsntBuiltGetsADryPocket(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = Structures.plan(level, BuiltinStructures.MINESHAFT, farChunk(8));
+		BlockPos spot = start.getPieces().stream()
+			.filter(StructureBookPiece.class::isInstance)
+			.findFirst()
+			.orElseThrow()
+			.getBoundingBox()
+			.getCenter();
+
+		// Water the preview can't see, like a flooded cave: vanilla then skips building the hallway around the spot.
+		BlockPos.betweenClosedStream(new BoundingBox(spot).inflatedBy(3))
+			.forEach(pos -> level.setBlock(pos, Blocks.WATER.defaultBlockState(), Block.UPDATE_CLIENTS));
+		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
+
+		BlockPos book = onlyBook(helper, start);
+		ChunkPos chunk = ChunkPos.containing(book);
+		BoundingBox bookChunk = new BoundingBox(
+			chunk.getMinBlockX(), level.getMinY(), chunk.getMinBlockZ(), chunk.getMaxBlockX(), level.getMaxY(), chunk.getMaxBlockZ()
+		);
+
+		helper.assertValueEqual(book, spot, "the book's spot");
+
+		for (Direction side : Direction.values()) {
+			if (bookChunk.isInside(book.relative(side))) {
+				helper.assertTrue(level.getBlockState(book.relative(side)).isAir(), "open space " + side + " of the book");
+			}
+		}
+
+		BlockPos.betweenClosedStream(new BoundingBox(book).inflatedBy(2))
+			.filter(bookChunk::isInside)
+			.forEach(pos -> helper.assertTrue(level.getFluidState(pos).isEmpty(), "liquid left at " + pos));
+
+		ServerPlayer player = survivalPlayer(helper);
+
+		use(player, book);
+
+		helper.assertValueEqual(booksIn(player), List.of(Map.of(Enchantments.EFFICIENCY, 1)), "books in the inventory");
 		helper.succeed();
 	}
 
@@ -152,39 +233,6 @@ public class StructureBookGameTests {
 		BlockPos book = onlyBook(helper, saved);
 
 		helper.assertValueEqual(chunksThatAddedABook, List.of(ChunkPos.containing(book)), "chunks whose building added a book");
-
-		ServerPlayer player = survivalPlayer(helper);
-
-		use(player, book);
-
-		helper.assertValueEqual(booksIn(player), List.of(Map.of(Enchantments.EFFICIENCY, 1)), "books in the inventory");
-		helper.succeed();
-	}
-
-	@GameTest
-	public void aMineshaftRoomInWaterIsStillCarvedAndDry(GameTestHelper helper) {
-		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.plan(level, BuiltinStructures.MINESHAFT, farChunk(8));
-		BoundingBox room = start.getPieces().stream()
-			.filter(MineshaftPieces.MineShaftRoom.class::isInstance)
-			.findFirst()
-			.orElseThrow()
-			.getBoundingBox();
-
-		// Vanilla skips carving a room that touches liquid, which would bury the book.
-		BlockPos.betweenClosedStream(room.inflatedBy(2))
-			.forEach(pos -> level.setBlock(pos, Blocks.WATER.defaultBlockState(), Block.UPDATE_CLIENTS));
-
-		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
-
-		BlockPos book = onlyBook(helper, start);
-
-		for (Direction side : List.of(Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST)) {
-			helper.assertTrue(level.getBlockState(book.relative(side)).isAir(), "open space " + side + " of the book");
-		}
-
-		BlockPos.betweenClosedStream(room.inflatedBy(1))
-			.forEach(pos -> helper.assertTrue(level.getFluidState(pos).isEmpty(), "liquid left in or around the room at " + pos));
 
 		ServerPlayer player = survivalPlayer(helper);
 
@@ -335,6 +383,33 @@ public class StructureBookGameTests {
 		helper.succeed();
 	}
 
+	private static List<StructurePiece> corridors(List<StructurePiece> pieces) {
+		return pieces.stream().filter(MineshaftPieces.MineShaftCorridor.class::isInstance).toList();
+	}
+
+	// Seeded the same way each call, so every choice tries the corridors in the same order.
+	private static BlockPos chooseSpot(List<StructurePiece> pieces, TerrainPreview terrain, String preview) {
+		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
+
+		return MineshaftBookSpots.choose(pieces, terrain, random)
+			.orElseThrow(() -> new IllegalStateException("no spot chosen with " + preview));
+	}
+
+	// A preview with no Mineshaft-blocking biome and liquid in the columns that wet picks.
+	private static TerrainPreview previewWithLiquid(BiPredicate<Integer, Integer> wet) {
+		return new TerrainPreview() {
+			@Override
+			public boolean hasLiquid(int x, int z, int minY, int maxY) {
+				return wet.test(x, z);
+			}
+
+			@Override
+			public boolean biomeIs(BlockPos pos, TagKey<Biome> tag) {
+				return false;
+			}
+		};
+	}
+
 	private static ChunkPos farChunk(int index) {
 		return new ChunkPos(FAR_CHUNK, FAR_CHUNK + index * CHUNKS_APART);
 	}
@@ -342,7 +417,7 @@ public class StructureBookGameTests {
 	private static BlockPos onlyBook(GameTestHelper helper, StructureStart start) {
 		List<BlockPos> books = Structures.books(helper.getLevel(), start);
 
-		helper.assertValueEqual(books.size(), 1, "structure books");
+		helper.assertValueEqual(books.size(), 1, "structure books at " + books + " in " + start.getChunkPos());
 
 		return books.getFirst();
 	}

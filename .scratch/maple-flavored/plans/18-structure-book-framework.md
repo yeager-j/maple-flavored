@@ -17,7 +17,9 @@ Size: M–L, one ticket. No split: the block, the take action and placement are 
 1. **The book is saved as an extra structure piece.** `StructureBookPiece` (a registered `StructurePieceType`, contextless) has a 1×1×1 bounding box at the spot and stores the enchantment key in its tag. Vanilla already saves every piece with the `StructureStart` and calls `postProcess` on each piece intersecting the chunk being built, so "saved with the structure" and "placed when that chunk is built" need no extra state and no second hook. Its `postProcess` places the block only when `chunkBB` holds the spot. Because the spot *is* the bounding box, any later `move()` keeps it right.
 2. **One mixin, on `Structure.generate`.** `@ModifyExpressionValue` on `StructurePiecesBuilder.build()`, capturing `selected`, `seed` and `sourceChunkPos` with `@Local(argsOnly = true)`. It returns `StructureBookRules.withBook(selected, pieces, seed, chunkPos)`: the same container, or a new one with the book piece appended last. It covers natural worldgen and `/place structure` alike. Invariant: an empty container (an invalid start) is never touched, so a book never makes a failed structure valid. Appending last keeps index 0 (which some vanilla code reads as the start piece) unchanged, and in each chunk the book is placed after the structure's own blocks.
 3. **Rules are keyed by structure key**, not type, since jigsaw structures share a type. `StructureBookRule(List<ResourceKey<Enchantment>> enchantments, Function<List<StructurePiece>, Optional<BlockPos>> spot)`. The enchantment is picked when pieces are planned, from a `WorldgenRandom` seeded with `setLargeFeatureWithSalt(seed, chunkX, chunkZ, salt)`, so it's deterministic and consumes none of vanilla's randomness. With one choice it's always that one. Equal weight is ready for ticket 19.
-4. **The Mineshaft rule:** `minecraft:mineshaft` and `minecraft:mineshaft_mesa` → Efficiency. The spot is the central room (the first `MineshaftPieces.MineShaftRoom`, the hub every corridor branches from): its x/z centre, at `minY + 1`, the first air layer the room carves. Vanilla skips carving a room where it touches liquid or a `mineshaft_blocking` biome, which would bury the book. Jackson's call after the LARP review: the central room is always carved, and every liquid in its box and the layer around it turns to stone (deepslate below Y 0) first, so the room is open and dry. Each chunk seals its own part, so build order doesn't matter. Corridors keep vanilla's rule.
+4. **The Mineshaft rule:** `minecraft:mineshaft` and `minecraft:mineshaft_mesa` → Efficiency. The book floats at head height in a hallway: at the support in the middle of a corridor, between its two oak fence posts and above its rail line. Cobwebbed spider corridors are used only when there are no others. (The first version used the central room's centre; in a hand check, rooms touching water buried the book, and carving and sealing the room left a stone box in the ocean. Jackson chose hallways instead.)
+   - Vanilla skips building a corridor in any chunk where it touches water or lava, or the Deep Dark. Chunks are built independently and in any order, so the hallway is chosen when the Mineshaft is planned, never as it's built: corridors are tried in an order seeded per structure, and the first whose spot the generator's terrain preview (`ChunkGenerator.getBaseColumn`, which includes oceans and aquifers) shows dry is chosen. The check samples the corridor's box, grown by one and limited to the spot's chunk, at its corners and the spot, from one below to one above, plus the biome at the spot. Up to 16 corridors are tried; if none pass, the first one tried is used.
+   - Caves and lakes come later, so the preview can't see them. If the spot isn't open when its chunk is built, the book piece carves the 3×3×3 pocket around it, turning water or lava touching it to stone (deepslate below Y 0) first. It stays within the chunk being built.
 5. **The block** (`StructureBookBlock`, `maple_flavored:structure_book`, no item):
    - `strength(-1, 3_600_000)`, `noLootTable`, `noCollision`, `pushReaction(IMMOVEABLE)` (26.3 has no `BLOCK`), `isValidSpawn(never)`, `lightLevel(7)` (Jackson's call: glows like an enchanting table), `RenderShape.INVISIBLE`, selection shape a centred 8×8×8 box.
    - `canBeReplaced(state, Fluid)` → false. Without it a water bucket destroys it, since vanilla lets fluids replace any non-solid block. Fluid flow already can't (26.3 washes away only the `washed_away_by_fluids` tag).
@@ -63,7 +65,9 @@ public class StructureBookBlockEntity extends BlockEntity { Optional<Holder<Ench
 
 | Case | Expected |
 | --- | --- |
-| Place `mineshaft` at 3 chunk positions and `mineshaft_mesa` at 1, then count books in the start's chunks | exactly 1 each |
+| Place `mineshaft` at 3 chunk positions and `mineshaft_mesa` at 1, then count books in the start's chunks | exactly 1 each, at a corridor's middle support, open on at least two sides |
+| `MineshaftBookSpots.choose` with an all-dry preview, then one wet around the first choice's hallway (not at its spot), then an all-wet one | a corridor spot; a different corridor spot; the first choice again |
+| Water around the planned book spot before building | the book has air on every side within its chunk, no liquid within 2 blocks in its chunk; taking gives Efficiency I |
 | Survival player uses that book (`gameMode.useItemOn`, empty hand) | inventory gains 1 enchanted book with exactly Efficiency I; block is air; `TAKEN` fired once for that pos with Efficiency |
 | Same while holding dirt | book taken; dirt kept |
 | 36 main slots full of dirt, then use | refused: every slot unchanged, block still there, no `TAKEN` for that pos; free one slot and use again → Efficiency I taken, `TAKEN` once |
@@ -91,6 +95,10 @@ The fixture calls `Structure.generate` exactly as `/place structure` does, so a 
 - A refused take changes nothing and fires nothing.
 - No later structure placement replaces a structure book.
 - `TAKEN` fires only after the book is in the inventory and the block is gone.
+
+## Test world
+
+Loom reuses the GameTest world between runs, so books a test left behind showed up in the next run. `runGameTest` now deletes `build/run/gameTest/world` first, as vanilla's own GameTest runner does.
 
 ## Verification
 
