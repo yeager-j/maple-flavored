@@ -6,6 +6,7 @@ import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import mapleflavored.loot.LootSubstitutions;
 import mapleflavored.remnants.Remnants;
+import mapleflavored.zephyr.Zephyr;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ public class MapleFlavored implements ModInitializer {
 		MapleItems.register();
 		Remnants.register();
 		LootSubstitutions.register();
+		Zephyr.register();
 
 		LOGGER.info("Maple Flavored initialized");
 	}

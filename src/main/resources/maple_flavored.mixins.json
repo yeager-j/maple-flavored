@@ -10,6 +10,8 @@
 		"MinecraftServerMixin",
 		"PlayerAdvancementsMixin",
 		"PlayerMixin",
+		"ServerGamePacketListenerImplMixin",
+		"ServerPlayerMixin",
 		"SmithingMenuMixin",
 		"SmithingTransformRecipeMixin",
 		"WitherSkeletonMixin"
