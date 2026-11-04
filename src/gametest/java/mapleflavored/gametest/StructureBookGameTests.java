@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiPredicate;
@@ -19,6 +20,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -49,6 +51,7 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
+import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.structures.MineshaftPieces;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -410,6 +413,46 @@ public class StructureBookGameTests {
 				return false;
 			}
 		};
+	}
+
+	@GameTest
+	public void aBookSavedBeforePlacementsKeepsItsPocketRule(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructurePieceSerializationContext context = StructurePieceSerializationContext.fromLevel(level);
+		StructureBookPiece planned = Structures.plan(level, BuiltinStructures.MINESHAFT, farChunk(10)).getPieces().stream()
+			.filter(StructureBookPiece.class::isInstance)
+			.map(StructureBookPiece.class::cast)
+			.findFirst()
+			.orElseThrow();
+		CompoundTag current = planned.createTag(context);
+		// The old format's Pocket flag: true, false, and a book saved before it existed, which carved a pocket.
+		List<Optional<Boolean>> pockets = List.of(Optional.of(true), Optional.of(false), Optional.empty());
+
+		for (int i = 0; i < pockets.size(); i++) {
+			Optional<Boolean> pocket = pockets.get(i);
+			boolean carves = pocket.orElse(true);
+			BlockPos spot = helper.absolutePos(new BlockPos(2 + 4 * i, 2, 2));
+			CompoundTag legacy = current.copy();
+
+			legacy.remove("Placement");
+			legacy.remove("Anchor");
+			pocket.ifPresent(value -> legacy.putBoolean("Pocket", value));
+			legacy.putIntArray("BB", new int[] {spot.getX(), spot.getY(), spot.getZ(), spot.getX(), spot.getY(), spot.getZ()});
+			BlockPos.betweenClosed(spot.offset(-1, -1, -1), spot.offset(1, 1, 1)).forEach(pos -> level.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState()));
+
+			StructureBookPiece loaded = new StructureBookPiece(legacy);
+			BoundingBox chunkBox = new BoundingBox(spot).inflatedBy(2);
+
+			loaded.postProcess(level, level.structureManager(), level.getChunkSource().getGenerator(), level.getRandom(), chunkBox, ChunkPos.containing(spot), spot);
+
+			String saved = loaded.createTag(context).getStringOr("Placement", "");
+
+			helper.assertTrue(level.getBlockState(spot).is(StructureBooks.BLOCK), "Pocket " + pocket + ": the book is placed");
+			helper.assertValueEqual(level.getBlockState(spot.east()).isAir(), carves, "Pocket " + pocket + ": carved a pocket");
+			helper.assertValueEqual(saved, carves ? "POCKET" : "OPEN", "Pocket " + pocket + ": saved again as");
+		}
+
+		helper.succeed();
 	}
 
 	private static ChunkPos farChunk(int index) {

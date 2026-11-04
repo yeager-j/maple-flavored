@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import mapleflavored.mixin.ListPoolElementAccessor;
 import mapleflavored.mixin.SinglePoolElementAccessor;
@@ -13,12 +14,14 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
 import net.minecraft.world.level.levelgen.structure.pools.ListPoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
+import net.minecraft.world.level.levelgen.structure.structures.BuriedTreasurePieces;
 import net.minecraft.world.level.levelgen.structure.structures.DesertPyramidPiece;
 import net.minecraft.world.level.levelgen.structure.structures.JungleTemplePiece;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
@@ -27,7 +30,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 /**
  * Where the books of structures without a wake event go: each in the structure's most important spot, where a player
- * exploring it properly will find it. Local coordinates come from vanilla's code-built pieces and templates.
+ * exploring it properly will find it. Buried Treasure and Trail Ruins have no open room, so theirs is in the treasure
+ * chest and in one of the ruin's gravel blocks. Local coordinates come from vanilla's code-built pieces and templates.
  */
 final class StructureBookSpots {
 	// In the shaft of the hidden treasure room, one block above the TNT pressure plate.
@@ -60,6 +64,10 @@ final class StructureBookSpots {
 	private static final BlockPos END_CITY_LOOT_ROOM_CENTRE = new BlockPos(8, 2, 8);
 	// At head height over the top of the tower's spiral stairs, under the Shulker that guards the cap room.
 	private static final BlockPos END_CITY_TOWER_TOP_CENTRE = new BlockPos(4, 2, 4);
+
+	private static final List<Identifier> TRAIL_RUINS_TOWERS = IntStream.rangeClosed(1, 5)
+		.mapToObj(n -> Identifier.withDefaultNamespace("trail_ruins/tower/tower_" + n))
+		.toList();
 
 	private StructureBookSpots() {
 	}
@@ -136,6 +144,32 @@ final class StructureBookSpots {
 		return lootRoom.or(() -> highestTemplatePiece(pieces, templates, END_CITY_TOWER_TOP)
 			.map(piece -> inTemplate(piece, END_CITY_TOWER_TOP_CENTRE))
 		);
+	}
+
+	/** In the treasure chest, which the treasure places where it comes to rest on stone. */
+	static Optional<BookSpot> buriedTreasure(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		return firstOfType(pieces, BuriedTreasurePieces.BuriedTreasurePiece.class).map(treasure -> {
+			BoundingBox box = treasure.getBoundingBox();
+
+			return new BookSpot(treasure, new BlockPos(box.minX(), box.minY(), box.minZ()));
+		});
+	}
+
+	/** One of the gravel blocks of the ruin's tower, the one piece every Trail Ruin has, chosen at random. */
+	static Optional<BookSpot> trailRuins(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		Optional<PoolElementStructurePiece> tower = pieces.stream()
+			.filter(PoolElementStructurePiece.class::isInstance)
+			.map(PoolElementStructurePiece.class::cast)
+			.filter(piece -> placesTemplate(piece, TRAIL_RUINS_TOWERS::contains))
+			.findFirst();
+
+		return tower.flatMap(piece -> {
+			List<BlockPos> gravel = blocksIn(piece, planning.templates(), Blocks.GRAVEL).toList();
+
+			if (gravel.isEmpty()) return Optional.empty();
+
+			return Optional.of(new BookSpot(piece, gravel.get(planning.random().nextInt(gravel.size()))));
+		});
 	}
 
 	private static Optional<TemplateStructurePiece> highestTemplatePiece(

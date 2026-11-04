@@ -16,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
@@ -110,12 +111,17 @@ public final class StructureBooks {
 			return false;
 		}
 
-		player.getInventory().add(EnchantmentHelper.createBook(new EnchantmentInstance(enchantment.get(), 1)));
+		player.getInventory().add(levelOneBook(enchantment.get()));
 		level.removeBlock(pos, false);
 		level.playSound(null, pos, SoundEvents.BOOK_PAGE_TURN, SoundSource.BLOCKS, 1.0F, 1.0F);
 		TAKEN.invoker().onTaken(player, level, pos, enchantment.get());
 
 		return true;
+	}
+
+	/** The enchanted book a structure book gives: {@code enchantment} at level I. */
+	static ItemStack levelOneBook(Holder<Enchantment> enchantment) {
+		return EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, 1));
 	}
 
 	/** Listens for a taken structure book. */
