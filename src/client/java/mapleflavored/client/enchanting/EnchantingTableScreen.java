@@ -6,6 +6,9 @@ import mapleflavored.MapleFlavored;
 import mapleflavored.enchanting.Checklist;
 import mapleflavored.enchanting.EnchantingTableMenu;
 import mapleflavored.enchanting.EnchantmentSlots;
+import mapleflavored.enchanting.Library;
+import mapleflavored.enchanting.LibraryCheckpoint;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -25,13 +28,14 @@ import net.minecraft.world.item.enchantment.Enchantment;
 /**
  * The Enchanting Table's checklist screen. It lists what the Library offers for the item and what the item already
  * has; clicking a row ticks or unticks it, and Save is enabled once the server would accept the save. Hovering Save or
- * a red row explains what blocks it.
+ * a red row explains what blocks it. A bar under the list shows the Library's progress toward Full, with each
+ * {@link LibraryCheckpoint}'s reward marked where it unlocks.
  */
 public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTableMenu> {
 	private static final Identifier BACKGROUND = MapleFlavored.id("textures/gui/container/enchanting_table.png");
 	private static final Component SAVE = Component.translatable("container.maple_flavored.enchanting_table.save");
 	private static final int IMAGE_WIDTH = 176;
-	private static final int IMAGE_HEIGHT = 206;
+	private static final int IMAGE_HEIGHT = 226;
 	private static final int TEXTURE_SIZE = 256;
 
 	private static final int SAVE_X = 64;
@@ -59,6 +63,28 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 	private static final int SCROLLER_U = 176;
 	private static final int DISABLED_SCROLLER_U = 188;
 	private static final int SCROLLER_V = 9;
+
+	// The track is part of the background; the fill sprite sits below the panel in the same texture. Each checkpoint
+	// gets a notch in the bar, except 100%, which is the bar's end, and its reward's icon above.
+	private static final int PROGRESS_X = 7;
+	private static final int PROGRESS_Y = 123;
+	private static final int PROGRESS_WIDTH = 162;
+	private static final int PROGRESS_HEIGHT = 5;
+	private static final int PROGRESS_HOVER_MARGIN = 1;
+	private static final int PROGRESS_FILL_V = 226;
+	private static final int FILL_X = PROGRESS_X + 1;
+	private static final int FILL_Y = PROGRESS_Y + 1;
+	private static final int FILL_WIDTH = PROGRESS_WIDTH - 2;
+	private static final int FILL_HEIGHT = PROGRESS_HEIGHT - 2;
+	private static final int CHECKPOINT_ICON_Y = 113;
+	private static final int CHECKPOINT_ICON_SIZE = 8;
+	private static final float CHECKPOINT_ICON_SCALE = 0.5F;
+	private static final int REACHED_NOTCH_COLOR = 0xFF1E3E96;
+	private static final int UNREACHED_NOTCH_COLOR = 0xFF8B8B8B;
+	private static final int UNREACHED_ICON_SHADE = 0xA0C6C6C6;
+	private static final Component FULL_LIBRARY = Component.translatable("container.maple_flavored.enchanting_table.full_library");
+	private static final Component CHECKPOINT_REACHED = Component.translatable("container.maple_flavored.enchanting_table.checkpoint_reached")
+		.withStyle(ChatFormatting.GREEN);
 
 	private static final int LABEL_COLOR = 0xFF404040;
 	private static final int UNTICKED_COLOR = 0xFFA8A8A8;
@@ -109,6 +135,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 		}
 
 		extractScroller(graphics, rows.size(), mouseX, mouseY);
+		extractProgress(graphics);
 	}
 
 	@Override
@@ -127,6 +154,22 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 	@Override
 	protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 		super.extractTooltip(graphics, mouseX, mouseY);
+
+		Library.Progress progress = menu.progress();
+
+		for (LibraryCheckpoint checkpoint : LibraryCheckpoint.ALL) {
+			if (isWithin(mouseX, mouseY, leftPos + checkpointIconX(checkpoint), topPos + CHECKPOINT_ICON_Y, CHECKPOINT_ICON_SIZE, CHECKPOINT_ICON_SIZE)) {
+				graphics.setTooltipForNextFrame(font, font.split(checkpointTooltip(checkpoint, progress), IMAGE_WIDTH), mouseX, mouseY);
+
+				return;
+			}
+		}
+
+		if (isOverProgress(mouseX, mouseY)) {
+			graphics.setTooltipForNextFrame(font, font.split(progressTooltip(progress), IMAGE_WIDTH), mouseX, mouseY);
+
+			return;
+		}
 
 		List<Holder<Enchantment>> rows = menu.checklist().rows();
 		int row = hoveredRow(rows.size(), mouseX, mouseY);
@@ -236,6 +279,78 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 		);
 
 		if (active && isOverScroller(mouseX, mouseY)) graphics.requestCursor(scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+	}
+
+	private void extractProgress(GuiGraphicsExtractor graphics) {
+		Library.Progress progress = menu.progress();
+		int filled = Math.round(progress.fraction() * FILL_WIDTH);
+
+		graphics.blit(
+			RenderPipelines.GUI_TEXTURED, BACKGROUND, leftPos + FILL_X, topPos + FILL_Y, 0.0F, PROGRESS_FILL_V, filled, FILL_HEIGHT,
+			TEXTURE_SIZE, TEXTURE_SIZE
+		);
+
+		for (LibraryCheckpoint checkpoint : LibraryCheckpoint.ALL) {
+			extractCheckpoint(graphics, checkpoint, progress.reached(checkpoint));
+		}
+
+		// The shades must cover the icons, and items draw above everything else in their stratum.
+		graphics.nextStratum();
+
+		for (LibraryCheckpoint checkpoint : LibraryCheckpoint.ALL) {
+			if (progress.reached(checkpoint)) continue;
+
+			int x = leftPos + checkpointIconX(checkpoint);
+			int y = topPos + CHECKPOINT_ICON_Y;
+
+			graphics.fill(x, y, x + CHECKPOINT_ICON_SIZE, y + CHECKPOINT_ICON_SIZE, UNREACHED_ICON_SHADE);
+		}
+	}
+
+	private void extractCheckpoint(GuiGraphicsExtractor graphics, LibraryCheckpoint checkpoint, boolean reached) {
+		int notchX = leftPos + checkpointNotchX(checkpoint);
+
+		if (checkpoint.percent() < 100) {
+			graphics.fill(notchX, topPos + FILL_Y, notchX + 1, topPos + FILL_Y + FILL_HEIGHT, reached ? REACHED_NOTCH_COLOR : UNREACHED_NOTCH_COLOR);
+		}
+
+		graphics.pose().pushMatrix();
+		graphics.pose().translate(leftPos + checkpointIconX(checkpoint), topPos + CHECKPOINT_ICON_Y);
+		graphics.pose().scale(CHECKPOINT_ICON_SCALE);
+		graphics.item(checkpoint.icon().create(), 0, 0);
+		graphics.pose().popMatrix();
+	}
+
+	private static int checkpointNotchX(LibraryCheckpoint checkpoint) {
+		return FILL_X + checkpoint.percent() * FILL_WIDTH / 100;
+	}
+
+	// Centred over its notch, but kept within the bar.
+	private static int checkpointIconX(LibraryCheckpoint checkpoint) {
+		return Mth.clamp(checkpointNotchX(checkpoint) - CHECKPOINT_ICON_SIZE / 2, FILL_X, FILL_X + FILL_WIDTH - CHECKPOINT_ICON_SIZE);
+	}
+
+	private static Component progressTooltip(Library.Progress progress) {
+		Component levels = Component.translatable("container.maple_flavored.enchanting_table.progress", progress.levels(), progress.fullLevels());
+
+		return progress.isFull() ? CommonComponents.joinLines(levels, FULL_LIBRARY) : levels;
+	}
+
+	private static Component checkpointTooltip(LibraryCheckpoint checkpoint, Library.Progress progress) {
+		Component requirement = progress.reached(checkpoint)
+			? CHECKPOINT_REACHED
+			: Component.translatable(
+				"container.maple_flavored.enchanting_table.checkpoint_needs", checkpoint.percent(), progress.levelsFor(checkpoint.percent())
+			).withStyle(ChatFormatting.GRAY);
+
+		return CommonComponents.joinLines(checkpoint.reward(), requirement);
+	}
+
+	private boolean isOverProgress(double mouseX, double mouseY) {
+		return isWithin(
+			mouseX, mouseY, leftPos + PROGRESS_X, topPos + PROGRESS_Y - PROGRESS_HOVER_MARGIN, PROGRESS_WIDTH,
+			PROGRESS_HEIGHT + 2 * PROGRESS_HOVER_MARGIN
+		);
 	}
 
 	private void click(int buttonId) {

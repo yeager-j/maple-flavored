@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:story/enchant_item",
+  "criteria": {
+    "full_library": {
+      "trigger": "maple_flavored:full_library"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.story.full_library.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "minecraft:chiseled_bookshelf"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.story.full_library.title"
+    }
+  },
+  "requirements": [
+    [
+      "full_library"
+    ]
+  ]
+}
