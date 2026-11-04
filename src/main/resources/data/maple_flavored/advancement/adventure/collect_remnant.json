@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:adventure/root",
+  "criteria": {
+    "remnant_collected": {
+      "trigger": "maple_flavored:remnant_collected"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.adventure.collect_remnant.description"
+    },
+    "icon": {
+      "id": "minecraft:experience_bottle"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.adventure.collect_remnant.title"
+    }
+  },
+  "requirements": [
+    [
+      "remnant_collected"
+    ]
+  ]
+}

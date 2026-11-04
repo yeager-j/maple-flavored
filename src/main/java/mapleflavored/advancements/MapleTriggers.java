@@ -11,6 +11,9 @@ public final class MapleTriggers {
 	/** A player's Withered Hearts all returned. */
 	public static final PlayerTrigger WITHERED_HEART_RECOVERED = register("withered_heart_recovered", new PlayerTrigger());
 
+	/** A player collected one of their own Remnants. */
+	public static final PlayerTrigger REMNANT_COLLECTED = register("remnant_collected", new PlayerTrigger());
+
 	private MapleTriggers() {
 	}
 
