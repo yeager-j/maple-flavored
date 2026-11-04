@@ -2,6 +2,7 @@ package mapleflavored.remnants;
 
 import java.util.Optional;
 import mapleflavored.MapleFlavored;
+import mapleflavored.experience.ExperiencePoints;
 import mapleflavored.gamerules.MapleGameRules;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -29,8 +30,6 @@ import net.minecraft.world.phys.Vec3;
  * points to it.
  */
 public final class Remnants {
-	// Reaching level 21,864 takes more than Integer.MAX_VALUE points.
-	private static final int HIGHEST_LEVEL_IN_POINTS = 21_863;
 	private static final ResourceKey<EntityType<?>> REMNANT_KEY = ResourceKey.create(Registries.ENTITY_TYPE, MapleFlavored.id("remnant"));
 
 	/** The Remnant entity type. */
@@ -76,34 +75,11 @@ public final class Remnants {
 		return pos.getY() >= level.getMinY() && !level.getFluidState(pos).is(FluidTags.LAVA);
 	}
 
-	/**
-	 * All the player's XP in points, from their level and progress.
-	 *
-	 * <p>Vanilla's {@code totalExperience} isn't used, since adding levels by command doesn't update it.
-	 */
-	static int xpPoints(Player player) {
-		// Commands allow levels whose points don't fit in an int, or whose square doesn't fit in a long.
-		if (player.experienceLevel > HIGHEST_LEVEL_IN_POINTS) return Integer.MAX_VALUE;
-
-		long pointsInLevel = Math.round(player.experienceProgress * player.getXpNeededForNextLevel());
-		long points = pointsToReachLevel(player.experienceLevel) + pointsInLevel;
-
-		return (int) Math.min(points, Integer.MAX_VALUE);
-	}
-
-	// Closed forms of summing Player.getXpNeededForNextLevel over every lower level, halved last to stay in integers.
-	private static long pointsToReachLevel(long level) {
-		if (level <= 16) return level * level + 6 * level;
-		if (level <= 31) return (5 * level * level - 81 * level + 720) / 2;
-
-		return (9 * level * level - 325 * level + 4440) / 2;
-	}
-
 	private static void onDeath(ServerPlayer player) {
 		if (player.isSpectator()) return;
 		if (player.level().getGameRules().get(MapleGameRules.KEEP_XP)) return;
 
-		int points = xpPoints(player);
+		int points = ExperiencePoints.total(player);
 
 		takeAllXp(player);
 

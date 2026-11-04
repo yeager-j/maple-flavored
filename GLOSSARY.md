@@ -41,6 +41,10 @@ The block that smelts a Netherite Ingot and a storage block into an Alloy ingot,
 The Alloy Furnace's fuel, dropped by Piglin Brutes when a player kills them. One makes one Alloy ingot.
 _Avoid_: Brute Ember
 
+**Material unit**:
+The one material that repairs and enchants an item, such as an iron ingot for iron gear or string for a bow. A full repair takes one fewer than the item's recipe uses, at least 1.
+_Avoid_: Repair item, repair material
+
 **Reinforced**:
 Said of an armor piece given +1 armor toughness by smithing it with chainmail and a Reinforcement template.
 _Avoid_: Plated, chained

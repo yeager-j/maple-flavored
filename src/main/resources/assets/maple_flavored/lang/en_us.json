@@ -12,6 +12,7 @@
 	"chat.maple_flavored.heart_floor_lowered": "[Milestone] Your Heart Floor is now %s",
 	"commands.maple_flavored.maxhearts.query": "%s has %s Max Hearts",
 	"commands.maple_flavored.maxhearts.set": "%s now has %s Max Hearts",
+	"container.maple_flavored.anvil.cost": "Cost: %s XP points",
 	"deathScreen.maple_flavored.max_hearts_lost": "Max Hearts lost: %s",
 	"entity.maple_flavored.remnant": "Remnant",
 	"gamerule.maple_flavored.keep_hearts": "Keep Max Hearts after death",
