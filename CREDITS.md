@@ -15,7 +15,6 @@ Maple Flavored is inspired by these projects. Neither author is involved in or e
 Each reused asset is listed with its original path, its author, and whether it was changed, as CC BY-NC-SA 4.0 requires.
 
 - `assets/maple_flavored/textures/font/broken_heart.png`: the broken heart glyph (`\uE010`) cut from Matcha Flavoured's `MF_resourcepack/assets/minecraft/textures/font/custom_emojis.png` by Klei, at commit `0f196bd`. Changed only by cropping it to its own 8 × 8 image.
-- The crack in Withered Hearts, the `CRACK` pixel map in `client/mixin/HudMixin.java`: traced from the same broken heart glyph by Klei. Changed: only the crack's pixels are kept, shifted one pixel right and down to sit inside a heart, extended through the outline's top dip and down to just above the bottom tip, and cut out of vanilla's empty heart.
 - `assets/maple_flavored/textures/item/crystal_heart.png`: Matcha Flavoured's `assets/matcha/textures/item/heart_container.png` by Klei, from the 1.12.8-beta mod jar. Unchanged.
 - `assets/maple_flavored/textures/item/pith.png`: Matcha Flavoured's Pith, `assets/minecraft/textures/item/turtle_scute.png` by Klei, from the 1.12.8-beta mod jar. Unchanged.
 

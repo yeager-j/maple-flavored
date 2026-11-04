@@ -25,18 +25,18 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(Hud.class)
 abstract class HudMixin {
 	private static final int HEART_SIZE = 9;
-	// The crack of the broken heart glyph that marks Milestones, credited in CREDITS.md, left out of a withered slot's
-	// empty heart. It runs through the outline's top dip, so only the bottom tip joins the halves. One string per row
-	// of the 9 × 9 heart.
+	// A zigzag crack left out of a withered slot's empty heart, after Tears of the Kingdom's broken hearts. It splits
+	// the heart from the top of the outline to just right of the bottom tip, which stays with the left half. One string
+	// per row of the 9 × 9 heart.
 	private static final String[] CRACK = {
-		".........",
+		".....#...",
+		"...##....",
+		"....#....",
+		"....##...",
 		"....#....",
 		"...##....",
 		"....##...",
-		".....##..",
-		"....##...",
-		"....#....",
-		"....#....",
+		".....#...",
 		"........."
 	};
 
