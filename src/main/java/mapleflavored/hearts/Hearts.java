@@ -2,6 +2,7 @@ package mapleflavored.hearts;
 
 import com.mojang.serialization.Codec;
 import mapleflavored.MapleFlavored;
+import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.advancements.Milestones;
 import mapleflavored.gamerules.MapleGameRules;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -167,6 +168,8 @@ public final class Hearts {
 	static void setMaxHearts(ServerPlayer player, int maxHearts) {
 		player.setAttached(MAX_HEARTS, maxHearts);
 		applyMaxHealth(player);
+
+		if (maxHearts >= MAX_HEARTS_CAP) MapleTriggers.MAX_HEARTS_CAP_REACHED.trigger(player);
 	}
 
 	/** Sets max health to the player's usable hearts. Call after changing Max Hearts or Withered Hearts. */

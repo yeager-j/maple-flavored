@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "maple_flavored:structure_book"
+    "maple_flavored:structure_book",
+    "minecraft:spawner"
   ]
 }

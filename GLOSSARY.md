@@ -59,7 +59,7 @@ The only kind of village: populated by zombie villagers, with no iron golems, so
 _Avoid_: Ruined village, zombie village
 
 **Cleared**:
-A spawner whose mobs have died enough times, 12 plus 2 per additional player, so it can be broken.
+A spawner whose mobs have died enough times, 12 plus 2 per additional player, so it can be broken. Until then a cage of particles surrounds it and loses a bar as its mobs die. A Cleared spawner looks like any other and stays Cleared.
 
 **Restored**:
 Said of a structure whose mobs have returned after a Blood Moon.
@@ -80,7 +80,7 @@ _Avoid_: Warden zone
 ### Enchanting
 
 **Structure book**:
-The one level I enchanted book a structure or Dungeon holds, in a fixed spot. Most float where they can be seen. Buried Treasure keeps its book in the treasure chest, and Trail Ruins keep theirs in one suspicious gravel. Taking it can wake the structure.
+The one level I enchanted book a structure or Dungeon holds, in a fixed spot. Most float where they can be seen. Buried Treasure keeps its book in the treasure chest, Trail Ruins keep theirs in one suspicious gravel, and a Dungeon's spawner holds its book and drops it with its Pith once Cleared and broken. Taking it can wake the structure.
 _Avoid_: Floating book, book pedestal
 
 **Library**:

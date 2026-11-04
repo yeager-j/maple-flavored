@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:adventure/kill_a_mob",
+  "criteria": {
+    "cleared_spawner_broken": {
+      "trigger": "maple_flavored:cleared_spawner_broken"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.adventure.break_cleared_spawner.description"
+    },
+    "icon": {
+      "id": "minecraft:spawner"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.adventure.break_cleared_spawner.title"
+    }
+  },
+  "requirements": [
+    [
+      "cleared_spawner_broken"
+    ]
+  ]
+}

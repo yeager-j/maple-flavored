@@ -26,7 +26,9 @@
 			"mapleflavored.gametest.SpawnedGearGameTests",
 			"mapleflavored.gametest.StructureBookGameTests",
 			"mapleflavored.gametest.OrdinaryStructureBookGameTests",
-			"mapleflavored.gametest.BuriedStructureBookGameTests"
+			"mapleflavored.gametest.BuriedStructureBookGameTests",
+			"mapleflavored.gametest.SpawnerGameTests",
+			"mapleflavored.gametest.DungeonGameTests"
 		]
 	},
 	"mixins": [
