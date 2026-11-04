@@ -20,6 +20,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.skeleton.WitherSkeleton;
 import net.minecraft.world.item.Item;
@@ -43,7 +44,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Early tiers: stone tools are gone, a wooden pickaxe mines copper ore, copper takes stone's place for everything
- * else, and loot, Wither Skeletons and Getting an Upgrade hand out or ask for copper instead of stone.
+ * else, loot and Getting an Upgrade hand out or ask for copper instead of stone, and Wither Skeletons carry a
+ * Netherite sword they never drop.
  */
 public class CopperToolsGameTests {
 	private static final Set<Item> STONE_TOOLS = Set.of(
@@ -54,6 +56,7 @@ public class CopperToolsGameTests {
 		new BlockPos(1, 2, 4), new BlockPos(3, 2, 4), new BlockPos(5, 2, 4)
 	);
 	private static final int LOOT_ROLLS = 200;
+	private static final int WITHER_SKELETON_KILLS = 50;
 
 	/** A tool breaking a block, and the item that should drop, or {@code null} for no drop. */
 	private record MiningCase(Item tool, Block block, Item drop) {
@@ -172,15 +175,33 @@ public class CopperToolsGameTests {
 	}
 
 	@GameTest
-	public void witherSkeletonsSpawnWithACopperSword(GameTestHelper helper) {
+	public void witherSkeletonsHitForTenWithANetheriteSword(GameTestHelper helper) {
+		WitherSkeleton skeleton = spawnWitherSkeleton(helper);
+
+		helper.assertValueEqual(skeleton.getItemBySlot(EquipmentSlot.MAINHAND).getItem(), Items.NETHERITE_SWORD, "held weapon");
+
+		// The sword's attribute modifiers apply on the mob's next tick. A base attack of 3 plus the Netherite sword's
+		// 7, against vanilla's 4 plus the stone sword's 4.
+		helper.succeedWhen(() -> helper.assertValueEqual(skeleton.getAttributeValue(Attributes.ATTACK_DAMAGE), 10.0, "attack damage"));
+	}
+
+	@GameTest
+	public void witherSkeletonsNeverDropTheirNetheriteSword(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos spawnPos = helper.absolutePos(new BlockPos(2, 2, 2));
-		WitherSkeleton skeleton = EntityTypes.WITHER_SKELETON.create(level, EntitySpawnReason.NATURAL);
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack lootingSword = new ItemStack(Items.DIAMOND_SWORD);
+		var looting = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.LOOTING);
 
-		skeleton.snapTo(Vec3.atBottomCenterOf(spawnPos));
-		skeleton.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.NATURAL, null);
+		lootingSword.enchant(looting, 3);
+		player.setItemInHand(InteractionHand.MAIN_HAND, lootingSword);
 
-		helper.assertValueEqual(skeleton.getItemBySlot(EquipmentSlot.MAINHAND).getItem(), Items.COPPER_SWORD, "held weapon");
+		// With vanilla's 8.5% sword drop chance and Looting III, 50 kills would all miss about 0.2% of the time.
+		for (int i = 0; i < WITHER_SKELETON_KILLS; i++) {
+			spawnWitherSkeleton(helper).hurtServer(level, level.damageSources().playerAttack(player), 1000.0F);
+		}
+
+		helper.assertItemEntityPresent(Items.BONE);
+		helper.assertItemEntityNotPresent(Items.NETHERITE_SWORD);
 		helper.succeed();
 	}
 
@@ -208,6 +229,18 @@ public class CopperToolsGameTests {
 
 		helper.assertTrue(isDone(helper, player, "minecraft:story/mine_stone"), "cobblestone grants Stone Age");
 		helper.succeed();
+	}
+
+	private static WitherSkeleton spawnWitherSkeleton(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos spawnPos = helper.absolutePos(new BlockPos(2, 2, 2));
+		WitherSkeleton skeleton = EntityTypes.WITHER_SKELETON.create(level, EntitySpawnReason.NATURAL);
+
+		skeleton.snapTo(Vec3.atBottomCenterOf(spawnPos));
+		skeleton.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), EntitySpawnReason.NATURAL, null);
+		level.addFreshEntity(skeleton);
+
+		return skeleton;
 	}
 
 	private static void assertMiningDrops(GameTestHelper helper, List<MiningCase> cases) {
