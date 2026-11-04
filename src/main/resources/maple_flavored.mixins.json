@@ -19,6 +19,9 @@
 		"ServerPlayerMixin",
 		"SmithingMenuMixin",
 		"SmithingTransformRecipeMixin",
+		"StructureMixin",
+		"StructurePieceMixin",
+		"StructureTemplateMixin",
 		"WitherSkeletonMixin",
 		"ZombieVillagerMixin"
 	],

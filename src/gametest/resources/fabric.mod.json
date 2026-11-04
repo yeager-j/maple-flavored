@@ -23,7 +23,8 @@
 			"mapleflavored.gametest.EnchantedBookGameTests",
 			"mapleflavored.gametest.GoldenAppleGameTests",
 			"mapleflavored.gametest.BookLootGameTests",
-			"mapleflavored.gametest.SpawnedGearGameTests"
+			"mapleflavored.gametest.SpawnedGearGameTests",
+			"mapleflavored.gametest.StructureBookGameTests"
 		]
 	},
 	"mixins": [

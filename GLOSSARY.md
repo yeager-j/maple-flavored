@@ -79,6 +79,10 @@ _Avoid_: Warden zone
 
 ### Enchanting
 
+**Structure book**:
+The one level I enchanted book a structure or Dungeon holds, floating in a fixed, visible spot. Taking it can wake the structure.
+_Avoid_: Floating book, book pedestal
+
 **Library**:
 The enchanted books shelved in Chiseled Bookshelves around an enchanting table, which set the enchantments and levels it can apply.
 _Avoid_: Collection, book collection
