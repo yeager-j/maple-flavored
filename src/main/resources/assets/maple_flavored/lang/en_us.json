@@ -1,4 +1,6 @@
 {
+	"advancements.maple_flavored.adventure.collect_remnant.description": "Collect your own Remnant",
+	"advancements.maple_flavored.adventure.collect_remnant.title": "Picking Up the Pieces",
 	"advancements.maple_flavored.nether.obtain_netherite_ingot.description": "Get a Netherite Ingot",
 	"advancements.maple_flavored.nether.obtain_netherite_ingot.title": "Forged in the Depths",
 	"advancements.maple_flavored.nether.recover_withered_heart.description": "Get a Withered Heart back",
@@ -11,8 +13,11 @@
 	"commands.maple_flavored.maxhearts.query": "%s has %s Max Hearts",
 	"commands.maple_flavored.maxhearts.set": "%s now has %s Max Hearts",
 	"deathScreen.maple_flavored.max_hearts_lost": "Max Hearts lost: %s",
+	"entity.maple_flavored.remnant": "Remnant",
 	"gamerule.maple_flavored.keep_hearts": "Keep Max Hearts after death",
 	"gamerule.maple_flavored.keep_hearts.description": "When on, death costs no Max Hearts.",
+	"gamerule.maple_flavored.keep_xp": "Keep XP after death",
+	"gamerule.maple_flavored.keep_xp.description": "When on, death keeps all XP and leaves no Remnant.",
 	"item.maple_flavored.crystal_heart": "Crystal Heart",
 	"item.maple_flavored.pith": "Pith"
 }

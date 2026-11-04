@@ -75,7 +75,7 @@ final class MockPlayers {
 
 	/** Kills the player and returns the player that respawns in their place, loaded so it can die again. */
 	static ServerPlayer dieAndRespawn(GameTestHelper helper, ServerPlayer player) {
-		player.kill(helper.getLevel());
+		player.kill(player.level());
 
 		// Respawns the way a client asks to, which also ends the wait for the respawned client that death starts.
 		player.connection.handleClientCommand(new ServerboundClientCommandPacket(ServerboundClientCommandPacket.Action.PERFORM_RESPAWN));
@@ -88,17 +88,26 @@ final class MockPlayers {
 	}
 
 	/** Logs the player out and back in, returning the player loaded from their saved data into the test's level. */
-	// Mirrors how vanilla's PrepareSpawnTask loads a joining player's saved data before placing them.
 	static ServerPlayer relog(GameTestHelper helper, ServerPlayer player) {
+		logOut(helper, player);
+
+		return logIn(helper, player.getGameProfile());
+	}
+
+	/** Logs the player out, saving their data. */
+	static void logOut(GameTestHelper helper, ServerPlayer player) {
+		helper.getLevel().getServer().getPlayerList().remove(player);
+	}
+
+	/** Logs a player back in from their saved data, into the test's level. */
+	// Mirrors how vanilla's PrepareSpawnTask loads a joining player's saved data before placing them.
+	static ServerPlayer logIn(GameTestHelper helper, GameProfile profile) {
 		PlayerList playerList = helper.getLevel().getServer().getPlayerList();
-		CommonListenerCookie cookie = CommonListenerCookie.createInitial(player.getGameProfile(), false);
-
-		playerList.remove(player);
-
+		CommonListenerCookie cookie = CommonListenerCookie.createInitial(profile, false);
 		ServerPlayer relogged = new ServerPlayer(
 			helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation()
 		);
-		Optional<CompoundTag> savedData = playerList.loadPlayerData(new NameAndId(player.getGameProfile()));
+		Optional<CompoundTag> savedData = playerList.loadPlayerData(new NameAndId(profile));
 
 		helper.assertTrue(savedData.isPresent(), "the player's data was saved on leaving");
 		relogged.load(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), savedData.get()));

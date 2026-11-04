@@ -14,6 +14,11 @@ public final class MapleGameRules {
 		.category(GameRuleCategory.PLAYER)
 		.buildAndRegister(MapleFlavored.id("keep_hearts"));
 
+	/** When on, death keeps all XP and leaves no Remnant. Off by default. Vanilla's Keep Inventory no longer decides XP. */
+	public static final GameRule<Boolean> KEEP_XP = GameRuleBuilder.forBoolean(false)
+		.category(GameRuleCategory.PLAYER)
+		.buildAndRegister(MapleFlavored.id("keep_xp"));
+
 	private MapleGameRules() {
 	}
 

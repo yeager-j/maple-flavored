@@ -11,7 +11,8 @@
 			"mapleflavored.gametest.HeartsGameTests",
 			"mapleflavored.gametest.HeartFloorGameTests",
 			"mapleflavored.gametest.CrystalHeartGameTests",
-			"mapleflavored.gametest.WitheredHeartsGameTests"
+			"mapleflavored.gametest.WitheredHeartsGameTests",
+			"mapleflavored.gametest.RemnantsGameTests"
 		]
 	},
 	"depends": {
