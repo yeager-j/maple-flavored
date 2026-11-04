@@ -6,6 +6,7 @@ import mapleflavored.MapleFlavored;
 import mapleflavored.enchanting.Checklist;
 import mapleflavored.enchanting.EnchantingTableMenu;
 import mapleflavored.enchanting.EnchantmentSlots;
+import mapleflavored.enchanting.Library;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -25,7 +26,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 /**
  * The Enchanting Table's checklist screen. It lists what the Library offers for the item and what the item already
  * has; clicking a row ticks or unticks it, and Save is enabled once the server would accept the save. Hovering Save or
- * a red row explains what blocks it.
+ * a red row explains what blocks it. A bar beside the inventory label shows the Library's progress toward Full.
  */
 public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTableMenu> {
 	private static final Identifier BACKGROUND = MapleFlavored.id("textures/gui/container/enchanting_table.png");
@@ -59,6 +60,15 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 	private static final int SCROLLER_U = 176;
 	private static final int DISABLED_SCROLLER_U = 188;
 	private static final int SCROLLER_V = 9;
+
+	// The track is part of the background; the fill sprite sits below the panel in the same texture.
+	private static final int PROGRESS_X = 62;
+	private static final int PROGRESS_Y = 113;
+	private static final int PROGRESS_WIDTH = 106;
+	private static final int PROGRESS_HEIGHT = 5;
+	private static final int PROGRESS_HOVER_MARGIN = 2;
+	private static final int PROGRESS_FILL_V = 206;
+	private static final Component FULL_LIBRARY = Component.translatable("container.maple_flavored.enchanting_table.full_library");
 
 	private static final int LABEL_COLOR = 0xFF404040;
 	private static final int UNTICKED_COLOR = 0xFFA8A8A8;
@@ -109,6 +119,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 		}
 
 		extractScroller(graphics, rows.size(), mouseX, mouseY);
+		extractProgress(graphics);
 	}
 
 	@Override
@@ -127,6 +138,12 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 	@Override
 	protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 		super.extractTooltip(graphics, mouseX, mouseY);
+
+		if (isOverProgress(mouseX, mouseY)) {
+			graphics.setTooltipForNextFrame(font, font.split(progressTooltip(), IMAGE_WIDTH), mouseX, mouseY);
+
+			return;
+		}
 
 		List<Holder<Enchantment>> rows = menu.checklist().rows();
 		int row = hoveredRow(rows.size(), mouseX, mouseY);
@@ -236,6 +253,30 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 		);
 
 		if (active && isOverScroller(mouseX, mouseY)) graphics.requestCursor(scrolling ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+	}
+
+	private void extractProgress(GuiGraphicsExtractor graphics) {
+		int fillWidth = PROGRESS_WIDTH - 2;
+		int filled = Math.round(menu.progress().fraction() * fillWidth);
+
+		graphics.blit(
+			RenderPipelines.GUI_TEXTURED, BACKGROUND, leftPos + PROGRESS_X + 1, topPos + PROGRESS_Y + 1, 0.0F, PROGRESS_FILL_V,
+			filled, PROGRESS_HEIGHT - 2, TEXTURE_SIZE, TEXTURE_SIZE
+		);
+	}
+
+	private Component progressTooltip() {
+		Library.Progress progress = menu.progress();
+		Component levels = Component.translatable("container.maple_flavored.enchanting_table.progress", progress.levels(), progress.fullLevels());
+
+		return progress.isFull() ? CommonComponents.joinLines(levels, FULL_LIBRARY) : levels;
+	}
+
+	private boolean isOverProgress(double mouseX, double mouseY) {
+		return isWithin(
+			mouseX, mouseY, leftPos + PROGRESS_X, topPos + PROGRESS_Y - PROGRESS_HOVER_MARGIN, PROGRESS_WIDTH,
+			PROGRESS_HEIGHT + 2 * PROGRESS_HOVER_MARGIN
+		);
 	}
 
 	private void click(int buttonId) {

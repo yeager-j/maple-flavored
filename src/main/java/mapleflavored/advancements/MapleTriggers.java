@@ -17,6 +17,9 @@ public final class MapleTriggers {
 	/** A player shelved an enchanted book in a Library. */
 	public static final PlayerTrigger ENCHANTED_BOOK_SHELVED = register("enchanted_book_shelved", new PlayerTrigger());
 
+	/** A player has an enchanting table open whose Library is Full. */
+	public static final PlayerTrigger FULL_LIBRARY = register("full_library", new PlayerTrigger());
+
 	private MapleTriggers() {
 	}
 

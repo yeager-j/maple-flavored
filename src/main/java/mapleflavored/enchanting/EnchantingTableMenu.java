@@ -3,6 +3,7 @@ package mapleflavored.enchanting;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.materialunits.MaterialUnits;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.Holder;
@@ -33,8 +34,8 @@ import net.minecraft.world.level.block.Blocks;
  * Save, which costs lapis and, on the first save of an unenchanted item, a deposit from the material slot.
  *
  * <p>The server owns the checklist. It sends each enchantment's offered level and {@link Checklist.State} to the client
- * through menu data, indexed by enchantment registry id, and takes clicks as menu buttons: {@link #SAVE_BUTTON}, or
- * {@link #toggleButton} for a row.
+ * through menu data, indexed by enchantment registry id, along with the Library's {@link #progress() progress}. It
+ * takes clicks as menu buttons: {@link #SAVE_BUTTON}, or {@link #toggleButton} for a row.
  */
 public class EnchantingTableMenu extends AbstractContainerMenu {
 	public static final int ITEM_SLOT = 0;
@@ -62,10 +63,12 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 		}
 	};
 	private final ContainerLevelAccess access;
+	private final Player player;
 	private final Registry<Enchantment> enchantments;
 	private final IdMap<Holder<Enchantment>> enchantmentIds;
 	private final int[] offeredLevels;
 	private final int[] states;
+	private final DataSlot progressLevels = DataSlot.standalone();
 	// The item the states were last pre-selected for, so other slot changes keep the player's choices.
 	private ItemStack checklistItem = ItemStack.EMPTY;
 
@@ -78,7 +81,8 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 	public EnchantingTableMenu(int containerId, Inventory inventory, ContainerLevelAccess access) {
 		super(Enchanting.MENU, containerId);
 		this.access = access;
-		this.enchantments = inventory.player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		this.player = inventory.player;
+		this.enchantments = player.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
 		this.enchantmentIds = enchantments.asHolderIdMap();
 		this.offeredLevels = new int[enchantmentIds.size()];
 		this.states = new int[enchantmentIds.size()];
@@ -91,7 +95,8 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 			addDataSlot(DataSlot.shared(states, id));
 		}
 
-		refreshOffers();
+		addDataSlot(progressLevels);
+		refreshLibrary();
 	}
 
 	/** The menu button that toggles the enchantment's row. */
@@ -114,6 +119,11 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 		return new Checklist(item(), offers, checklistStates, enchantments);
 	}
 
+	/** The table's Library Progress, as last synced. */
+	public Library.Progress progress() {
+		return new Library.Progress(progressLevels.get(), Library.fullLevels(enchantments));
+	}
+
 	/** Every reason the table would refuse {@code player}'s save right now, empty when it can save. */
 	public List<Checklist.Problem> problems(Player player) {
 		return problems(checklist(), player);
@@ -134,7 +144,7 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 
 	@Override
 	public void broadcastChanges() {
-		refreshOffers();
+		refreshLibrary();
 		super.broadcastChanges();
 	}
 
@@ -145,7 +155,7 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 		// The client shows nothing until the server's answer syncs back, so it only asks whether to send the click.
 		if (!isButton || player.level().isClientSide()) return isButton;
 
-		refreshOffers();
+		refreshLibrary();
 
 		return buttonId == SAVE_BUTTON ? save(player) : toggle(enchantmentIds.byIdOrThrow(buttonId - 1));
 	}
@@ -291,13 +301,20 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 		writeStates(Checklist.preselected(checklistItem));
 	}
 
-	private void refreshOffers() {
+	// Reads the Library afresh into the synced offers and progress, and awards a Full one to the player using it.
+	private void refreshLibrary() {
 		access.execute((level, pos) -> {
-			Map<Holder<Enchantment>, Integer> offers = Library.read(level, pos).offers();
+			Library library = Library.read(level, pos);
+			Map<Holder<Enchantment>, Integer> offers = library.offers();
+			Library.Progress progress = library.progress();
 
 			for (int id = 0; id < enchantmentIds.size(); id++) {
 				offeredLevels[id] = offers.getOrDefault(enchantmentIds.byIdOrThrow(id), 0);
 			}
+
+			progressLevels.set(progress.levels());
+
+			if (progress.isFull() && player instanceof ServerPlayer serverPlayer) MapleTriggers.FULL_LIBRARY.trigger(serverPlayer);
 		});
 	}
 
