@@ -24,10 +24,10 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * The Hearts module: each player's Max Hearts, their Heart Floor and what death costs.
+ * The Hearts module: each player's Max Hearts, their Heart Floor, what death costs and Withered Hearts.
  *
- * <p>Max Hearts are per player, apply as max health and survive respawn and relog. Other modules read and change
- * them only through this class.
+ * <p>Max Hearts are per player and survive respawn and relog. Max health follows usable hearts, the Max Hearts not
+ * withered. Other modules read and change hearts only through this class.
  */
 public final class Hearts {
 	private static final int STARTING_MAX_HEARTS = 10;
@@ -37,7 +37,8 @@ public final class Hearts {
 	private static final int DEATH_LOSS = 1;
 	private static final int HARD_DEATH_LOSS = 2;
 
-	private static final Identifier MAX_HEARTS_MODIFIER = MapleFlavored.id("max_hearts");
+	// Named before Withered Hearts existed; kept so saved players don't carry a stale modifier beside a renamed one.
+	private static final Identifier USABLE_HEARTS_MODIFIER = MapleFlavored.id("max_hearts");
 	private static final Identifier AFTER_ATTACHMENTS_COPIED = MapleFlavored.id("after_attachments_copied");
 
 	private static final AttachmentType<Integer> MAX_HEARTS = AttachmentRegistry.create(
@@ -65,11 +66,22 @@ public final class Hearts {
 			if (entity instanceof ServerPlayer player) onDeath(player);
 		});
 		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> MaxHeartsCommand.register(dispatcher));
+		WitheredHearts.register();
 	}
 
 	/** The player's Max Hearts, up to 30. A client knows them only for its own player. */
 	public static int maxHearts(Player player) {
 		return player.getAttachedOrElse(MAX_HEARTS, STARTING_MAX_HEARTS);
+	}
+
+	/** The player's Withered Hearts, which never leave fewer than 1 usable heart. A client knows them only for its own player. */
+	public static int witheredHearts(Player player) {
+		return WitheredHearts.count(player);
+	}
+
+	/** The player's Max Hearts that aren't withered, which set their max health. */
+	public static int usableHearts(Player player) {
+		return maxHearts(player) - witheredHearts(player);
 	}
 
 	/** Whether the player is at 30 Max Hearts, so {@link #addMaxHeart} would refuse. Also true on its own client. */
@@ -157,10 +169,12 @@ public final class Hearts {
 		applyMaxHealth(player);
 	}
 
+	/** Sets max health to the player's usable hearts. Call after changing Max Hearts or Withered Hearts. */
 	// A permanent modifier is saved with the player and loaded before their health, so health above 20 survives relog.
-	private static void applyMaxHealth(ServerPlayer player) {
-		double bonusHealth = (maxHearts(player) - STARTING_MAX_HEARTS) * 2.0;
-		var modifier = new AttributeModifier(MAX_HEARTS_MODIFIER, bonusHealth, AttributeModifier.Operation.ADD_VALUE);
+	// One modifier covers both, so no change passes through a lower max health that would cut health on the way.
+	static void applyMaxHealth(ServerPlayer player) {
+		double bonusHealth = (usableHearts(player) - STARTING_MAX_HEARTS) * 2.0;
+		var modifier = new AttributeModifier(USABLE_HEARTS_MODIFIER, bonusHealth, AttributeModifier.Operation.ADD_VALUE);
 
 		player.getAttribute(Attributes.MAX_HEALTH).addOrReplacePermanentModifier(modifier);
 	}

@@ -1,5 +1,6 @@
 package mapleflavored;
 
+import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
@@ -20,6 +21,7 @@ public class MapleFlavored implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		MapleGameRules.register();
+		MapleTriggers.register();
 		Hearts.register();
 		MapleItems.register();
 

@@ -3,9 +3,11 @@ package mapleflavored.gametest;
 import com.mojang.authlib.GameProfile;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import mapleflavored.hearts.Hearts;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.PacketFlow;
@@ -13,6 +15,10 @@ import net.minecraft.network.protocol.game.ServerboundClientCommandPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.players.NameAndId;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
 
 /** Mock players for GameTests, with the steps to give them Max Hearts, run commands as them and kill them. */
 final class MockPlayers {
@@ -79,6 +85,30 @@ final class MockPlayers {
 		finishLoading(respawned);
 
 		return respawned;
+	}
+
+	/** Logs the player out and back in, returning the player loaded from their saved data into the test's level. */
+	// Mirrors how vanilla's PrepareSpawnTask loads a joining player's saved data before placing them.
+	static ServerPlayer relog(GameTestHelper helper, ServerPlayer player) {
+		PlayerList playerList = helper.getLevel().getServer().getPlayerList();
+		CommonListenerCookie cookie = CommonListenerCookie.createInitial(player.getGameProfile(), false);
+
+		playerList.remove(player);
+
+		ServerPlayer relogged = new ServerPlayer(
+			helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation()
+		);
+		Optional<CompoundTag> savedData = playerList.loadPlayerData(new NameAndId(player.getGameProfile()));
+
+		helper.assertTrue(savedData.isPresent(), "the player's data was saved on leaving");
+		relogged.load(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), savedData.get()));
+
+		Connection connection = new Connection(PacketFlow.SERVERBOUND);
+
+		new EmbeddedChannel(connection);
+		playerList.placeNewPlayer(connection, relogged, cookie);
+
+		return relogged;
 	}
 
 	// Vanilla keeps a player invulnerable until their client reports it has loaded the world, which a mock never does.
