@@ -29,7 +29,7 @@ public final class MapleItems {
 	// Matcha Flavoured's burst on use: Regeneration XI for 3 seconds and Resistance V for 1 second.
 	private static final Consumable CRYSTAL_HEART_CONSUMABLE = Consumable.builder()
 		.consumeSeconds(Consumable.DEFAULT_CONSUME_SECONDS)
-		.animation(ItemUseAnimation.EAT)
+		.animation(ItemUseAnimation.BLOCK)
 		.sound(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.AMETHYST_BLOCK_CHIME))
 		.hasConsumeParticles(false)
 		.onConsume(new ApplyStatusEffectsConsumeEffect(List.of(
