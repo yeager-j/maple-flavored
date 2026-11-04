@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.1
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "maple_flavored:pith"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "minecraft:entities/piglin_brute"
+}

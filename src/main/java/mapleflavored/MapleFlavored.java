@@ -2,6 +2,7 @@ package mapleflavored;
 
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.hearts.Hearts;
+import mapleflavored.items.MapleItems;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ public class MapleFlavored implements ModInitializer {
 	public void onInitialize() {
 		MapleGameRules.register();
 		Hearts.register();
+		MapleItems.register();
 
 		LOGGER.info("Maple Flavored initialized");
 	}
