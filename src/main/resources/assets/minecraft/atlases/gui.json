@@ -1,9 +1,0 @@
-{
-  "sources": [
-    {
-      "type": "minecraft:single",
-      "resource": "maple_flavored:font/broken_heart",
-      "sprite": "maple_flavored:hud/heart/withered"
-    }
-  ]
-}
