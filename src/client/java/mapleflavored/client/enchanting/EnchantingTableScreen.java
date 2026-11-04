@@ -157,7 +157,13 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 
 		if (isOverScroller(event.x(), event.y())) scrolling = true;
 
-		return super.mouseClicked(event, doubleClick);
+		boolean handled = super.mouseClicked(event, doubleClick);
+
+		// A clicked button keeps focus, which draws it highlighted until something else takes focus. Keyboard presses
+		// don't come through here, so Tab and Enter still leave Save focused.
+		if (getFocused() == saveButton) setFocused(null);
+
+		return handled;
 	}
 
 	@Override

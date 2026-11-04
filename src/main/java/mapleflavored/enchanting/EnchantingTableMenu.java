@@ -44,6 +44,8 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 	public static final int SAVE_BUTTON = 0;
 
 	private static final Identifier EMPTY_SLOT_LAPIS_LAZULI = Identifier.withDefaultNamespace("container/slot/lapis_lazuli");
+	// The smithing table's ingot outline; most materials are ingots, though planks, string and others also fit.
+	private static final Identifier EMPTY_SLOT_INGOT = Identifier.withDefaultNamespace("container/slot/ingot");
 	private static final int TABLE_SLOT_COUNT = 3;
 	private static final int INVENTORY_START = TABLE_SLOT_COUNT;
 	private static final int INVENTORY_END = INVENTORY_START + 36;
@@ -210,7 +212,12 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 				return EMPTY_SLOT_LAPIS_LAZULI;
 			}
 		});
-		addSlot(new Slot(tableSlots, MATERIAL_SLOT, INVENTORY_X + 2 * SLOT_SPACING, TABLE_SLOTS_Y));
+		addSlot(new Slot(tableSlots, MATERIAL_SLOT, INVENTORY_X + 2 * SLOT_SPACING, TABLE_SLOTS_Y) {
+			@Override
+			public Identifier getNoItemIcon() {
+				return EMPTY_SLOT_INGOT;
+			}
+		});
 	}
 
 	// Lapis goes to its slot, gear to the empty item slot, and the current item's material to the material slot.
