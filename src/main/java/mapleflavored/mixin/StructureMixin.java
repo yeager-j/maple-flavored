@@ -13,6 +13,7 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -36,12 +37,13 @@ public abstract class StructureMixin {
 		@Local(argsOnly = true) BiomeSource biomeSource,
 		@Local(argsOnly = true) Climate.Sampler climateSampler,
 		@Local(argsOnly = true) RandomState randomState,
+		@Local(argsOnly = true) StructureTemplateManager structureTemplateManager,
 		@Local(argsOnly = true) long seed,
 		@Local(argsOnly = true) ChunkPos sourceChunkPos,
 		@Local(argsOnly = true) LevelHeightAccessor heightAccessor
 	) {
 		TerrainPreview terrain = TerrainPreview.of(chunkGenerator, biomeSource, climateSampler, randomState, heightAccessor);
 
-		return StructureBookRules.withBook(selected, pieces, seed, sourceChunkPos, terrain);
+		return StructureBookRules.withBook(selected, pieces, seed, sourceChunkPos, terrain, structureTemplateManager);
 	}
 }

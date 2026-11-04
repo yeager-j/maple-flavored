@@ -1,0 +1,440 @@
+package mapleflavored.gametest;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
+import mapleflavored.structurebooks.StructureBookBlock;
+import mapleflavored.structurebooks.StructureBookBlockEntity;
+import mapleflavored.structurebooks.StructureBookPiece;
+import mapleflavored.structurebooks.StructureBookRules;
+import mapleflavored.structurebooks.StructureBooks;
+import mapleflavored.structurebooks.TerrainPreview;
+import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.Beardifier;
+import net.minecraft.world.level.levelgen.LegacyRandomSource;
+import net.minecraft.world.level.levelgen.RandomState;
+import net.minecraft.world.level.levelgen.WorldgenRandom;
+import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
+import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
+import net.minecraft.world.level.levelgen.structure.structures.EndCityPieces;
+import net.minecraft.world.level.levelgen.structure.structures.JungleTemplePiece;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.level.material.Fluids;
+
+/**
+ * Every structure that doesn't wake holds exactly one book from its list, in its most important spot, and the book
+ * follows its piece as the structure settles onto the terrain. Ocean Ruins and Pillager Outposts pick their enchantment
+ * with equal weight.
+ */
+public class OrdinaryStructureBookGameTests {
+	// Away from the Mineshaft tests' area, and far enough apart that no two structures overlap.
+	private static final int FAR_CHUNK = -2000;
+	private static final int CHUNKS_APART = 40;
+	private static final int PLANNING_TRIES = 64;
+	private static final int CHOICE_PLANS = 200;
+	// A seeded count must land within this many binomial standard deviations of the expected count.
+	private static final double RATE_TOLERANCE = 4.0;
+	private static final int END_CITY_HEIGHT = 100;
+	private static final int FLOOD_TOP = 120;
+
+	private static final List<ResourceKey<Structure>> PLACED = List.of(
+		BuiltinStructures.DESERT_PYRAMID,
+		BuiltinStructures.JUNGLE_TEMPLE,
+		BuiltinStructures.IGLOO,
+		BuiltinStructures.SHIPWRECK,
+		BuiltinStructures.SHIPWRECK_BEACHED,
+		BuiltinStructures.OCEAN_RUIN_COLD,
+		BuiltinStructures.OCEAN_RUIN_WARM,
+		BuiltinStructures.PILLAGER_OUTPOST,
+		BuiltinStructures.ABANDONED_CAMP_FOREST,
+		BuiltinStructures.ABANDONED_CAMP_SNOWY_TAIGA,
+		BuiltinStructures.ABANDONED_CAMP_PALE_GARDEN
+	);
+	// These settle onto the terrain as they're built, so their books have to move with them.
+	private static final List<ResourceKey<Structure>> SETTLING = List.of(
+		BuiltinStructures.SHIPWRECK, BuiltinStructures.OCEAN_RUIN_WARM, BuiltinStructures.IGLOO, BuiltinStructures.JUNGLE_TEMPLE
+	);
+
+	@GameTest(maxTicks = 400)
+	public void everyOrdinaryStructureHoldsOneBookFromItsList(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+
+		for (int i = 0; i < PLACED.size(); i++) {
+			ResourceKey<Structure> key = PLACED.get(i);
+			StructureStart start = Structures.place(level, key, farChunk(i));
+			BlockPos book = onlyBook(helper, start, key);
+			ResourceKey<Enchantment> enchantment = enchantmentAt(level, book);
+
+			helper.assertTrue(StructureBookRules.enchantmentsFor(key).contains(enchantment), key.identifier() + " book holds " + enchantment.identifier());
+			helper.assertValueEqual(book, bookPiece(start).spot(), key.identifier() + " book at its planned spot as built");
+
+			// A beached wreck's chests, and so its book, can be buried in the beach like vanilla's.
+			if (key != BuiltinStructures.SHIPWRECK_BEACHED) {
+				helper.assertTrue(isOpen(level, book), key.identifier() + " book at " + book + " has open space beside it");
+			}
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void aBookFollowsItsPieceAsTheStructureSettles(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+
+		for (int i = 0; i < SETTLING.size(); i++) {
+			ResourceKey<Structure> key = SETTLING.get(i);
+			StructureStart start = Structures.plan(level, key, farChunk(20 + i));
+			int plannedY = bookPiece(start).spot().getY();
+
+			Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
+
+			BlockPos built = onlyBook(helper, start, key);
+
+			helper.assertTrue(built.getY() != plannedY, key.identifier() + " book moved from its planned height");
+			helper.assertTrue(isAtLandmark(level, key, built), key.identifier() + " book at " + built + " sits at its landmark");
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void theBookIsPlacedRightWhicheverChunkIsBuiltFirstAndAcrossAReload(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+
+		for (int i = 0; i < SETTLING.size(); i++) {
+			ResourceKey<Structure> key = SETTLING.get(i);
+			BlockPos bookChunkFirst = buildInOrder(helper, Structures.plan(level, key, farChunk(30 + 2 * i)), true, key);
+			BlockPos bookChunkLast = buildInOrder(helper, Structures.plan(level, key, farChunk(31 + 2 * i)), false, key);
+
+			helper.assertTrue(isAtLandmark(level, key, bookChunkFirst), key.identifier() + " book built first sits at its landmark");
+			helper.assertTrue(isAtLandmark(level, key, bookChunkLast), key.identifier() + " book built last, after a reload, sits at its landmark");
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void anIglooBookIsInTheBasementWhenThereIsOne(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureTemplateManager templates = level.getStructureTemplateManager();
+		// An igloo with a basement has its lab and ladder pieces besides the igloo and the book.
+		Optional<ChunkPos> withBasement = firstChunkWhere(level, BuiltinStructures.IGLOO, farChunk(60), start -> start.getPieces().size() > 2);
+		Optional<ChunkPos> withoutBasement = firstChunkWhere(level, BuiltinStructures.IGLOO, farChunk(61), start -> start.getPieces().size() == 2);
+
+		helper.assertTrue(withBasement.isPresent() && withoutBasement.isPresent(), "found igloos with and without a basement");
+
+		StructureStart basementIgloo = Structures.place(level, BuiltinStructures.IGLOO, withBasement.orElseThrow());
+		StructureStart plainIgloo = Structures.place(level, BuiltinStructures.IGLOO, withoutBasement.orElseThrow());
+
+		helper.assertTrue(
+			templatePiece(basementIgloo, templates, "igloo/bottom").getBoundingBox().isInside(onlyBook(helper, basementIgloo, BuiltinStructures.IGLOO)),
+			"the book is in the basement"
+		);
+		helper.assertTrue(
+			templatePiece(plainIgloo, templates, "igloo/top").getBoundingBox().isInside(onlyBook(helper, plainIgloo, BuiltinStructures.IGLOO)),
+			"the book is in the igloo"
+		);
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void aJungleTempleBookFloatsAboveItsHiddenChest(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = Structures.place(level, BuiltinStructures.JUNGLE_TEMPLE, farChunk(40));
+		BlockPos book = onlyBook(helper, start, BuiltinStructures.JUNGLE_TEMPLE);
+
+		helper.assertTrue(start.getPieces().getFirst() instanceof JungleTemplePiece, "a jungle temple");
+		helper.assertTrue(level.getBlockState(book.below()).is(Blocks.CHEST), "the hidden chest is under the book");
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void aDesertPyramidBookFloatsAboveTheTrap(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = Structures.place(level, BuiltinStructures.DESERT_PYRAMID, farChunk(41));
+		BlockPos book = onlyBook(helper, start, BuiltinStructures.DESERT_PYRAMID);
+
+		helper.assertTrue(level.getBlockState(book.below()).is(Blocks.STONE_PRESSURE_PLATE), "the pressure plate is under the book");
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void shipwreckAndOceanRuinBooksFloatAboveAChest(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		List<ResourceKey<Structure>> keys = List.of(BuiltinStructures.SHIPWRECK, BuiltinStructures.OCEAN_RUIN_COLD, BuiltinStructures.OCEAN_RUIN_WARM);
+
+		for (int i = 0; i < keys.size(); i++) {
+			StructureStart start = Structures.place(level, keys.get(i), farChunk(42 + i));
+			BlockPos book = onlyBook(helper, start, keys.get(i));
+
+			helper.assertTrue(level.getBlockState(book.below()).is(Blocks.CHEST), keys.get(i).identifier() + " chest under the book");
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void outpostAndCampBooksFloatAtTheirLandmark(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart outpost = Structures.place(level, BuiltinStructures.PILLAGER_OUTPOST, farChunk(45));
+		BlockPos outpostBook = onlyBook(helper, outpost, BuiltinStructures.PILLAGER_OUTPOST);
+		StructureStart camp = Structures.place(level, BuiltinStructures.ABANDONED_CAMP_FOREST, farChunk(46));
+		BlockPos campBook = onlyBook(helper, camp, BuiltinStructures.ABANDONED_CAMP_FOREST);
+
+		helper.assertTrue(level.getBlockState(campBook.below()).is(Blocks.CAMPFIRE), "the camp's book floats above its campfire");
+		helper.assertTrue(isNear(level, outpostBook, 4, Blocks.CHEST), "the outpost's book is on the deck with the chest");
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void underwaterBooksAreWaterloggedAndLeaveWaterWhenTaken(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = Structures.plan(level, BuiltinStructures.OCEAN_RUIN_WARM, farChunk(47));
+		BoundingBox flooded = start.getBoundingBox().inflatedBy(2);
+		// Flood the ruin's area up past any ground it could settle on, so it's built under water as in the ocean.
+		Structures.chunks(start).forEach(chunk -> level.getChunk(chunk.x(), chunk.z()));
+		BlockPos.betweenClosedStream(flooded.minX(), level.getMinY(), flooded.minZ(), flooded.maxX(), FLOOD_TOP, flooded.maxZ())
+			.filter(pos -> level.getBlockState(pos).isAir())
+			.forEach(pos -> level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2));
+		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
+
+		BlockPos book = onlyBook(helper, start, BuiltinStructures.OCEAN_RUIN_WARM);
+		BlockState state = level.getBlockState(book);
+
+		helper.assertTrue(state.getValue(StructureBookBlock.WATERLOGGED), "the underwater book is waterlogged");
+		helper.assertTrue(StructureBooks.take(helper.makeMockServerPlayerInLevel(), book), "the book can be taken");
+		helper.assertTrue(level.getFluidState(book).is(Fluids.WATER), "taking it leaves water");
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void oceanRuinsAndOutpostsChooseTheirEnchantmentWithEqualWeight(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+
+		for (ResourceKey<Structure> key : List.of(BuiltinStructures.OCEAN_RUIN_WARM, BuiltinStructures.PILLAGER_OUTPOST)) {
+			List<ResourceKey<Enchantment>> choices = StructureBookRules.enchantmentsFor(key);
+			Map<ResourceKey<Enchantment>, Integer> counts = new HashMap<>();
+
+			for (int i = 0; i < CHOICE_PLANS; i++) {
+				ResourceKey<Enchantment> chosen = bookPiece(Structures.plan(level, key, new ChunkPos(i * 3, -5000))).enchantment();
+
+				counts.merge(chosen, 1, Integer::sum);
+			}
+
+			helper.assertTrue(choices.containsAll(counts.keySet()), key.identifier() + " chose only from its list: " + counts);
+
+			for (ResourceKey<Enchantment> choice : choices) {
+				assertCount(helper, key.identifier() + " " + choice.identifier(), counts.getOrDefault(choice, 0), CHOICE_PLANS, 1.0 / choices.size());
+			}
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void anEndCityBookIsInItsLootRoomOrItsStartHouse(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureTemplateManager templates = level.getStructureTemplateManager();
+		Identifier lootRoom = Identifier.withDefaultNamespace("end_city/fat_tower_top");
+		Predicate<StructureStart> hasLootRoom = city -> city.getPieces().stream().anyMatch(piece -> isTemplate(piece, templates, lootRoom));
+		// Planned in different areas, so the two cities don't overlap.
+		Optional<StructureStart> withLootRoom = firstEndCityWhere(level, farChunk(50), hasLootRoom);
+		Optional<StructureStart> withoutLootRoom = firstEndCityWhere(level, farChunk(52), hasLootRoom.negate());
+
+		helper.assertTrue(withLootRoom.isPresent() && withoutLootRoom.isPresent(), "planned cities with and without a fat tower");
+
+		StructureStart lootCity = withLootRoom.orElseThrow();
+		StructureStart plainCity = withoutLootRoom.orElseThrow();
+
+		Structures.chunks(lootCity).forEach(chunk -> Structures.build(level, lootCity, chunk));
+		Structures.chunks(plainCity).forEach(chunk -> Structures.build(level, plainCity, chunk));
+
+		BlockPos lootBook = onlyBook(helper, lootCity, BuiltinStructures.END_CITY);
+		BlockPos plainBook = onlyBook(helper, plainCity, BuiltinStructures.END_CITY);
+
+		helper.assertValueEqual(enchantmentAt(level, lootBook), Enchantments.FEATHER_FALLING, "the city's book");
+		helper.assertTrue(templatePiece(lootCity, templates, "end_city/fat_tower_top").getBoundingBox().isInside(lootBook), "the book is in the loot room");
+		helper.assertTrue(plainCity.getPieces().getFirst().getBoundingBox().isInside(plainBook), "the book is in the start house");
+		helper.assertTrue(isOpen(level, lootBook) && isOpen(level, plainBook), "both books have open space beside them");
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void aBookAddsNoTerrainAdaptation(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart camp = Structures.plan(level, BuiltinStructures.ABANDONED_CAMP_FOREST, farChunk(55));
+		BlockPos book = bookPiece(camp).spot();
+		List<StructurePiece> piecesWithoutBook = camp.getPieces().stream().filter(piece -> !(piece instanceof StructureBookPiece)).toList();
+		StructureStart campWithoutBook = new StructureStart(camp.getStructure(), camp.getChunkPos(), 0, new PiecesContainer(piecesWithoutBook));
+		BlockPos belowBook = book.below();
+
+		double withBook = beardAt(level, camp, ChunkPos.containing(book), belowBook);
+		double withoutBook = beardAt(level, campWithoutBook, ChunkPos.containing(book), belowBook);
+
+		helper.assertValueEqual(withBook, withoutBook, "terrain adaptation under the book");
+		helper.succeed();
+	}
+
+	// Registers the start in the chunks the way generation does, then asks for the terrain adaptation it causes.
+	private static double beardAt(ServerLevel level, StructureStart start, ChunkPos chunk, BlockPos point) {
+		long startChunk = start.getChunkPos().pack();
+
+		level.getChunk(start.getChunkPos().x(), start.getChunkPos().z()).setStartForStructure(start.getStructure(), start);
+		level.getChunk(chunk.x(), chunk.z()).addReferenceForStructure(start.getStructure(), startChunk);
+
+		return Beardifier.forStructuresInChunk(level.structureManager(), chunk).sampleValue(SamplerContext.EMPTY_UNCACHED, point.getX(), point.getY(), point.getZ());
+	}
+
+	private static BlockPos buildInOrder(GameTestHelper helper, StructureStart start, boolean bookChunkFirst, ResourceKey<Structure> key) {
+		ServerLevel level = helper.getLevel();
+		ChunkPos bookChunk = ChunkPos.containing(bookPiece(start).spot());
+		List<ChunkPos> others = Structures.chunks(start).stream().filter(chunk -> !chunk.equals(bookChunk)).toList();
+
+		if (bookChunkFirst) {
+			Structures.build(level, start, bookChunk);
+			others.forEach(chunk -> Structures.build(level, start, chunk));
+
+			return onlyBook(helper, start, key);
+		}
+
+		// Build every other chunk, save and reload the half-built structure, then build the book's chunk.
+		others.forEach(chunk -> Structures.build(level, start, chunk));
+
+		StructureStart reloaded = Structures.saveAndLoad(level, start);
+
+		Structures.build(level, reloaded, bookChunk);
+
+		return onlyBook(helper, reloaded, key);
+	}
+
+	private static Optional<StructureStart> firstEndCityWhere(ServerLevel level, ChunkPos chunk, Predicate<StructureStart> wanted) {
+		return IntStream.range(0, PLANNING_TRIES).mapToObj(seed -> planEndCity(level, seed, chunk)).filter(wanted).findFirst();
+	}
+
+	// The test world is flat, where End Cities never find ground high enough, so the city's pieces are planned
+	// directly and given their book as generation would.
+	private static StructureStart planEndCity(ServerLevel level, int seed, ChunkPos chunk) {
+		Holder.Reference<Structure> structure = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(BuiltinStructures.END_CITY);
+		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(seed));
+		BlockPos origin = new BlockPos(chunk.getBlockX(7), END_CITY_HEIGHT, chunk.getBlockZ(7));
+		List<StructurePiece> pieces = new ArrayList<>();
+
+		EndCityPieces.startHouseTower(level.getStructureTemplateManager(), origin, Rotation.getRandom(random), pieces, random);
+
+		ChunkGenerator generator = level.getChunkSource().getGenerator();
+		RandomState randomState = level.getChunkSource().randomState();
+		TerrainPreview terrain = TerrainPreview.of(
+			generator, generator.getBiomeSource(), randomState.createClimateSampler(SamplerContext.EMPTY_UNCACHED), randomState, level
+		);
+		PiecesContainer withBook = StructureBookRules.withBook(
+			structure, new PiecesContainer(pieces), level.getSeed(), chunk, terrain, level.getStructureTemplateManager()
+		);
+
+		return new StructureStart(structure.value(), chunk, 0, withBook);
+	}
+
+	// Searches a line of chunks running away from the other tests' areas.
+	private static Optional<ChunkPos> firstChunkWhere(ServerLevel level, ResourceKey<Structure> key, ChunkPos first, Predicate<StructureStart> wanted) {
+		return IntStream.range(0, PLANNING_TRIES)
+			.mapToObj(i -> new ChunkPos(first.x(), first.z() - i * CHUNKS_APART))
+			.filter(chunk -> wanted.test(Structures.plan(level, key, chunk)))
+			.findFirst();
+	}
+
+	// Checks the book against the structure's own blocks, independent of how the book finds its spot.
+	private static boolean isAtLandmark(ServerLevel level, ResourceKey<Structure> key, BlockPos book) {
+		if (key != BuiltinStructures.IGLOO) return level.getBlockState(book.below()).is(Blocks.CHEST);
+
+		// At head height in a room: the floor is two below, with only carpet or air between.
+		BlockPos feet = book.below();
+		BlockPos floor = book.below(2);
+
+		return !level.getBlockState(feet).isCollisionShapeFullBlock(level, feet) && level.getBlockState(floor).isCollisionShapeFullBlock(level, floor);
+	}
+
+	private static TemplateStructurePiece templatePiece(StructureStart start, StructureTemplateManager templates, String path) {
+		Identifier location = Identifier.withDefaultNamespace(path);
+
+		return start.getPieces().stream()
+			.filter(piece -> isTemplate(piece, templates, location))
+			.map(TemplateStructurePiece.class::cast)
+			.findFirst()
+			.orElseThrow(() -> new IllegalStateException("no " + path + " piece"));
+	}
+
+	private static boolean isTemplate(StructurePiece piece, StructureTemplateManager templates, Identifier location) {
+		return piece instanceof TemplateStructurePiece template && template.template() == templates.getOrCreate(location);
+	}
+
+	private static StructureBookPiece bookPiece(StructureStart start) {
+		return start.getPieces().stream()
+			.filter(StructureBookPiece.class::isInstance)
+			.map(StructureBookPiece.class::cast)
+			.findFirst()
+			.orElseThrow(() -> new IllegalStateException("the structure planned no book"));
+	}
+
+	private static BlockPos onlyBook(GameTestHelper helper, StructureStart start, ResourceKey<Structure> key) {
+		List<BlockPos> books = Structures.books(helper.getLevel(), start);
+
+		helper.assertValueEqual(books.size(), 1, key.identifier() + " books");
+
+		return books.getFirst();
+	}
+
+	private static ResourceKey<Enchantment> enchantmentAt(ServerLevel level, BlockPos pos) {
+		if (!(level.getBlockEntity(pos) instanceof StructureBookBlockEntity book)) throw new IllegalStateException("no book at " + pos);
+
+		return book.enchantment().flatMap(Holder::unwrapKey).orElseThrow();
+	}
+
+	// A player can see and reach the book: some side of it isn't a full block.
+	private static boolean isOpen(ServerLevel level, BlockPos book) {
+		return Direction.stream().anyMatch(side -> {
+			BlockPos neighbour = book.relative(side);
+
+			return !level.getBlockState(neighbour).isCollisionShapeFullBlock(level, neighbour);
+		});
+	}
+
+	private static boolean isNear(ServerLevel level, BlockPos pos, int radius, Block block) {
+		return BlockPos.betweenClosedStream(new BoundingBox(pos).inflatedBy(radius)).anyMatch(near -> level.getBlockState(near).is(block));
+	}
+
+	private static void assertCount(GameTestHelper helper, String what, int count, int trials, double expected) {
+		double mean = trials * expected;
+		double band = RATE_TOLERANCE * Math.sqrt(trials * expected * (1.0 - expected));
+
+		helper.assertTrue(Math.abs(count - mean) <= band, what + ": " + count + " of " + trials + ", expected about " + Math.round(mean));
+	}
+
+	private static ChunkPos farChunk(int index) {
+		return new ChunkPos(FAR_CHUNK - index * CHUNKS_APART, FAR_CHUNK);
+	}
+}
