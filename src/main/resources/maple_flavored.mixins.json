@@ -10,6 +10,7 @@
 		"GrindstoneInputSlotMixin",
 		"GrindstoneMenuMixin",
 		"GrindstoneResultSlotMixin",
+		"MineShaftRoomMixin",
 		"MinecraftServerMixin",
 		"MobMixin",
 		"PlayerAdvancementsMixin",

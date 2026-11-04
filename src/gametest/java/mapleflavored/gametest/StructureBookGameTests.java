@@ -35,11 +35,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
+import net.minecraft.world.level.levelgen.structure.structures.MineshaftPieces;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.material.Fluids;
@@ -48,8 +50,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Every Mineshaft holds exactly one Efficiency I structure book, placed with the chunk that holds it, saved with the
- * structure and kept when another structure overlaps it. Taking it is one action, refused on a full inventory, and the
- * book can't be mined, blown up, pushed or replaced.
+ * structure, kept when another structure overlaps it, and left in the open even where its room touches liquid. Taking
+ * it is one action, refused on a full inventory, and the book can't be mined, blown up, pushed or replaced.
  */
 public class StructureBookGameTests {
 	// Far from every test's own area, and far enough apart that no two Mineshafts overlap.
@@ -150,6 +152,39 @@ public class StructureBookGameTests {
 		BlockPos book = onlyBook(helper, saved);
 
 		helper.assertValueEqual(chunksThatAddedABook, List.of(ChunkPos.containing(book)), "chunks whose building added a book");
+
+		ServerPlayer player = survivalPlayer(helper);
+
+		use(player, book);
+
+		helper.assertValueEqual(booksIn(player), List.of(Map.of(Enchantments.EFFICIENCY, 1)), "books in the inventory");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void aMineshaftRoomInWaterIsStillCarvedAndDry(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = Structures.plan(level, BuiltinStructures.MINESHAFT, farChunk(8));
+		BoundingBox room = start.getPieces().stream()
+			.filter(MineshaftPieces.MineShaftRoom.class::isInstance)
+			.findFirst()
+			.orElseThrow()
+			.getBoundingBox();
+
+		// Vanilla skips carving a room that touches liquid, which would bury the book.
+		BlockPos.betweenClosedStream(room.inflatedBy(2))
+			.forEach(pos -> level.setBlock(pos, Blocks.WATER.defaultBlockState(), Block.UPDATE_CLIENTS));
+
+		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
+
+		BlockPos book = onlyBook(helper, start);
+
+		for (Direction side : List.of(Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST)) {
+			helper.assertTrue(level.getBlockState(book.relative(side)).isAir(), "open space " + side + " of the book");
+		}
+
+		BlockPos.betweenClosedStream(room.inflatedBy(1))
+			.forEach(pos -> helper.assertTrue(level.getFluidState(pos).isEmpty(), "liquid left in or around the room at " + pos));
 
 		ServerPlayer player = survivalPlayer(helper);
 
