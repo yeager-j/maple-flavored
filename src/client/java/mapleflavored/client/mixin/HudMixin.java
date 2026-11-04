@@ -19,24 +19,23 @@ import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 /**
- * Draws the player's Withered Hearts as empty hearts with a see-through crack, after their usable hearts and before
+ * Draws the player's Withered Hearts as hollow empty hearts, after their usable hearts and before
  * any absorption hearts.
  */
 @Mixin(Hud.class)
 abstract class HudMixin {
 	private static final int HEART_SIZE = 9;
-	// A zigzag crack left out of a withered slot's empty heart, after Tears of the Kingdom's broken hearts. It splits
-	// the heart from the top of the outline to just right of the bottom tip, which stays with the left half. One string
-	// per row of the 9 × 9 heart.
-	private static final String[] CRACK = {
-		".....#...",
-		"...##....",
+	// The middle of the empty heart, left out of a withered slot so the heart is hollow: just the outline and a
+	// one-pixel rim. One string per row of the 9 × 9 heart.
+	private static final String[] HOLLOW = {
+		".........",
+		".........",
+		"..##.##..",
+		"..#####..",
+		"..#####..",
+		"...###...",
 		"....#....",
-		"....##...",
-		"....#....",
-		"...##....",
-		"....##...",
-		".....#...",
+		".........",
 		"........."
 	};
 
@@ -66,7 +65,7 @@ abstract class HudMixin {
 			ordinal = 0
 		)
 	)
-	private boolean drawCrackedHeartInWitheredSlot(
+	private boolean drawHollowHeartInWitheredSlot(
 		Hud hud,
 		GuiGraphicsExtractor graphics,
 		@Coerce Object containerType,
@@ -83,7 +82,7 @@ abstract class HudMixin {
 
 		if (!withered) return true;
 
-		drawWithoutCrack(graphics, emptyHeartSprite(isHardcore, blinks), xo, yo);
+		drawHollowed(graphics, emptyHeartSprite(isHardcore, blinks), xo, yo);
 
 		return false;
 	}
@@ -94,13 +93,13 @@ abstract class HudMixin {
 		return Identifier.withDefaultNamespace(blinks ? sprite + "_blinking" : sprite);
 	}
 
-	// Draws each row of the sprite in runs that skip the crack's pixels, leaving them transparent.
-	private static void drawWithoutCrack(GuiGraphicsExtractor graphics, Identifier sprite, int x, int y) {
+	// Draws each row of the sprite in runs that skip the hollow's pixels, leaving them transparent.
+	private static void drawHollowed(GuiGraphicsExtractor graphics, Identifier sprite, int x, int y) {
 		for (int row = 0; row < HEART_SIZE; row++) {
 			int runStart = 0;
 
 			for (int column = 0; column <= HEART_SIZE; column++) {
-				boolean runEnds = column == HEART_SIZE || CRACK[row].charAt(column) == '#';
+				boolean runEnds = column == HEART_SIZE || HOLLOW[row].charAt(column) == '#';
 
 				if (!runEnds) continue;
 
