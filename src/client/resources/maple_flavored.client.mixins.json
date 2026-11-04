@@ -4,7 +4,8 @@
 	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"AnvilScreenMixin",
-		"HudMixin"
+		"HudMixin",
+		"SmithingScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -1,6 +1,7 @@
 package mapleflavored.gametest;
 
 import java.util.List;
+import mapleflavored.smithing.UpgradeRefusalMenu;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -101,7 +102,37 @@ public class WorkstationGameTests {
 		helper.succeed();
 	}
 
+	@GameTest
+	public void theSmithingMenuSaysWhenEnchantmentIsTheOnlyProblem(GameTestHelper helper) {
+		ServerPlayer player = survivalPlayer(helper);
+		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
+		ItemStack enchantedDiamondSword = new ItemStack(Items.DIAMOND_SWORD);
+		ItemStack enchantedIronSword = new ItemStack(Items.IRON_SWORD);
+		ItemStack enchantedChestplate = new ItemStack(Items.IRON_CHESTPLATE);
+
+		enchantedDiamondSword.enchant(sharpness, 1);
+		enchantedIronSword.enchant(sharpness, 1);
+		enchantedChestplate.enchant(enchantment(helper, Enchantments.PROTECTION), 1);
+
+		SmithingMenu refused = smithing(helper, player, Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE, enchantedDiamondSword, Items.NETHERITE_INGOT);
+		SmithingMenu noUpgrade = smithing(helper, player, Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE, enchantedIronSword, Items.NETHERITE_INGOT);
+		SmithingMenu upgraded = smithing(helper, player, Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE, new ItemStack(Items.DIAMOND_SWORD), Items.NETHERITE_INGOT);
+		SmithingMenu trimmed = smithing(helper, player, Items.COAST_ARMOR_TRIM_SMITHING_TEMPLATE, enchantedChestplate, Items.AMETHYST_SHARD);
+
+		helper.assertTrue(refusedEnchantedBase(refused), "an enchanted diamond sword's upgrade is refused for its enchantment");
+		helper.assertTrue(refused.hasRecipeError(), "the refused upgrade shows the error icon");
+		helper.assertFalse(refusedEnchantedBase(noUpgrade), "an enchanted iron sword, which has no upgrade, is refused for its enchantment");
+		helper.assertTrue(noUpgrade.hasRecipeError(), "the iron sword shows the error icon");
+		helper.assertFalse(refusedEnchantedBase(upgraded), "an unenchanted upgrade is refused for its enchantment");
+		helper.assertFalse(refusedEnchantedBase(trimmed), "a trim on enchanted armor is refused for its enchantment");
+		helper.succeed();
+	}
+
 	private static ItemStack smith(GameTestHelper helper, ServerPlayer player, Item template, ItemStack base, Item addition) {
+		return smithing(helper, player, template, base, addition).getSlot(SmithingMenu.RESULT_SLOT).getItem();
+	}
+
+	private static SmithingMenu smithing(GameTestHelper helper, ServerPlayer player, Item template, ItemStack base, Item addition) {
 		helper.setBlock(STATION_POS, Blocks.SMITHING_TABLE);
 
 		SmithingMenu smithing = new SmithingMenu(0, player.getInventory(), access(helper));
@@ -110,7 +141,12 @@ public class WorkstationGameTests {
 		smithing.getSlot(SmithingMenu.BASE_SLOT).set(base);
 		smithing.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(addition));
 
-		return smithing.getSlot(SmithingMenu.RESULT_SLOT).getItem();
+		return smithing;
+	}
+
+	// The flag the menu syncs to its screen to pick the error tooltip.
+	private static boolean refusedEnchantedBase(SmithingMenu smithing) {
+		return ((UpgradeRefusalMenu) smithing).mapleflavored$refusedEnchantedBase();
 	}
 
 	private static GrindstoneMenu grindstone(GameTestHelper helper, ServerPlayer player) {
