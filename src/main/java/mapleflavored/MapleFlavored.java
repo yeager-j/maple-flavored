@@ -1,6 +1,7 @@
 package mapleflavored;
 
 import mapleflavored.advancements.MapleTriggers;
+import mapleflavored.enchanting.Enchanting;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
@@ -30,6 +31,7 @@ public class MapleFlavored implements ModInitializer {
 		Remnants.register();
 		LootSubstitutions.register();
 		Zephyr.register();
+		Enchanting.register();
 
 		LOGGER.info("Maple Flavored initialized");
 	}

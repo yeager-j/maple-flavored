@@ -18,7 +18,9 @@
 			"mapleflavored.gametest.WorkstationGameTests",
 			"mapleflavored.gametest.ZephyrGameTests",
 			"mapleflavored.gametest.BlightGameTests",
-			"mapleflavored.gametest.RemovedCursesGameTests"
+			"mapleflavored.gametest.RemovedCursesGameTests",
+			"mapleflavored.gametest.EnchantingTableGameTests",
+			"mapleflavored.gametest.EnchantedBookGameTests"
 		]
 	},
 	"mixins": [

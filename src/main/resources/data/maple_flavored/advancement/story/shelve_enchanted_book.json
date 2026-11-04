@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:story/mine_diamond",
+  "criteria": {
+    "enchanted_book_shelved": {
+      "trigger": "maple_flavored:enchanted_book_shelved"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.story.shelve_enchanted_book.description"
+    },
+    "icon": {
+      "id": "minecraft:chiseled_bookshelf"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.story.shelve_enchanted_book.title"
+    }
+  },
+  "requirements": [
+    [
+      "enchanted_book_shelved"
+    ]
+  ]
+}
