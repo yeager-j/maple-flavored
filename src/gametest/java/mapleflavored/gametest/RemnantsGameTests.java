@@ -357,7 +357,10 @@ public class RemnantsGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(maxTicks = 200)
+	// The far respawn point's chunk has to generate, which takes wall-clock time while the server keeps ticking. It
+	// finishes in about 60 ticks on a desktop but ran past 200 on a GitHub Actions runner. The test ends as soon as the
+	// XP arrives, so this limit only matters on slow machines.
+	@GameTest(maxTicks = 1200)
 	public void aRemnantBoundForAnUnloadedChunkSurvivesItsOwnerLoggingOut(GameTestHelper helper) {
 		ServerPlayer player = playerWithXp(helper, 100);
 		BlockPos testOrigin = helper.absolutePos(BlockPos.ZERO);
