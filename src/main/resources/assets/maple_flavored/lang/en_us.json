@@ -17,6 +17,7 @@
 	"container.maple_flavored.anvil.repair_error_tooltip": "Must repair with %s",
 	"container.maple_flavored.upgrade.enchanted_error_tooltip": "Can't upgrade enchanted items",
 	"deathScreen.maple_flavored.max_hearts_lost": "Max Hearts lost: %s",
+	"enchantment.maple_flavored.zephyr": "Zephyr",
 	"entity.maple_flavored.remnant": "Remnant",
 	"gamerule.maple_flavored.keep_hearts": "Keep Max Hearts after death",
 	"gamerule.maple_flavored.keep_hearts.description": "When on, death costs no Max Hearts.",

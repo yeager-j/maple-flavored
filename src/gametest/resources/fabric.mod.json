@@ -15,7 +15,8 @@
 			"mapleflavored.gametest.RemnantsGameTests",
 			"mapleflavored.gametest.CopperToolsGameTests",
 			"mapleflavored.gametest.AnvilGameTests",
-			"mapleflavored.gametest.WorkstationGameTests"
+			"mapleflavored.gametest.WorkstationGameTests",
+			"mapleflavored.gametest.ZephyrGameTests"
 		]
 	},
 	"depends": {
