@@ -1,5 +1,6 @@
 package mapleflavored.client;
 
+import mapleflavored.client.enchanting.AppleTooltip;
 import mapleflavored.client.enchanting.EnchantingTableScreen;
 import mapleflavored.client.hearts.DeathScreenMaxHearts;
 import mapleflavored.client.items.CrystalHeartActivation;
@@ -17,5 +18,6 @@ public class MapleFlavoredClient implements ClientModInitializer {
 		RemnantRenderer.register();
 		ZephyrInput.register();
 		MenuScreens.register(Enchanting.MENU, EnchantingTableScreen::new);
+		AppleTooltip.register();
 	}
 }
