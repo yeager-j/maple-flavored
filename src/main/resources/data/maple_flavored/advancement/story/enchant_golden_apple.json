@@ -1,0 +1,29 @@
+{
+  "parent": "minecraft:story/enchant_item",
+  "criteria": {
+    "enchanted_golden_apple": {
+      "conditions": {
+        "item": {
+          "items": "minecraft:enchanted_golden_apple"
+        }
+      },
+      "trigger": "minecraft:enchanted_item"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.story.enchant_golden_apple.description"
+    },
+    "icon": {
+      "id": "minecraft:enchanted_golden_apple"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.story.enchant_golden_apple.title"
+    }
+  },
+  "requirements": [
+    [
+      "enchanted_golden_apple"
+    ]
+  ]
+}

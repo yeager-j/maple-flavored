@@ -1,8 +1,11 @@
 package mapleflavored.enchanting;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.materialunits.MaterialUnits;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
@@ -25,17 +28,18 @@ import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Blocks;
 
 /**
- * The Enchanting Table's menu: a checklist over the table's {@link Library}. Put in gear, tick enchantments, and press
- * Save, which costs lapis and, on the first save of an unenchanted item, a deposit from the material slot.
+ * The Enchanting Table's menu: a {@link Checklist} over the table's {@link Library}. Put in gear or a golden apple,
+ * tick enchantments or effects, and press Save, which costs lapis and, on the item's first save, a deposit from the
+ * material slot.
  *
- * <p>The server owns the checklist. It sends each enchantment's offered level and {@link Checklist.State} to the client
- * through menu data, indexed by enchantment registry id, along with the Library's {@link #progress() progress}. It
- * takes clicks as menu buttons: {@link #SAVE_BUTTON}, or {@link #toggleButton} for a row.
+ * <p>The server owns the checklist. It sends each enchantment's offered level and {@link EnchantmentChecklist.State},
+ * indexed by enchantment registry id, the offered and chosen {@link AppleEffect}s, and the Library's
+ * {@link #progress() progress} to the client through menu data. It takes clicks as menu buttons: {@link #SAVE_BUTTON},
+ * or a {@code toggleButton} for a row.
  */
 public class EnchantingTableMenu extends AbstractContainerMenu {
 	public static final int ITEM_SLOT = 0;
@@ -54,6 +58,7 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 	private static final int INVENTORY_Y = 144;
 	private static final int TABLE_SLOTS_Y = 18;
 	private static final int SLOT_SPACING = 18;
+	private static final int FIRST_ENCHANTMENT_BUTTON = 1 + AppleEffect.values().length;
 
 	private final Container tableSlots = new SimpleContainer(TABLE_SLOT_COUNT) {
 		@Override
@@ -69,6 +74,8 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 	private final int[] offeredLevels;
 	private final int[] states;
 	private final DataSlot progressLevels = DataSlot.standalone();
+	private final DataSlot offeredEffects = DataSlot.standalone();
+	private final DataSlot chosenEffects = DataSlot.standalone();
 	// The item the states were last pre-selected for, so other slot changes keep the player's choices.
 	private ItemStack checklistItem = ItemStack.EMPTY;
 
@@ -96,27 +103,44 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 		}
 
 		addDataSlot(progressLevels);
+		addDataSlot(offeredEffects);
+		addDataSlot(chosenEffects);
 		refreshLibrary();
 	}
 
 	/** The menu button that toggles the enchantment's row. */
 	public static int toggleButton(Holder<Enchantment> enchantment, Registry<Enchantment> enchantments) {
-		return 1 + enchantments.asHolderIdMap().getId(enchantment);
+		return FIRST_ENCHANTMENT_BUTTON + enchantments.asHolderIdMap().getId(enchantment);
 	}
 
-	/** The checklist for the item in the table, from the Library's offers and the states as last synced. */
+	/** The menu button that toggles the golden apple effect's row. */
+	public static int toggleButton(AppleEffect effect) {
+		return 1 + effect.ordinal();
+	}
+
+	/** The checklist for the item in the table: an {@link AppleChecklist} for a golden apple, and gear's otherwise. */
 	public Checklist checklist() {
+		return AppleChecklist.accepts(item()) ? appleChecklist() : enchantmentChecklist();
+	}
+
+	/** The gear checklist for the item in the table, from the Library's offers and the states as last synced. */
+	public EnchantmentChecklist enchantmentChecklist() {
 		Map<Holder<Enchantment>, Integer> offers = new HashMap<>();
-		Map<Holder<Enchantment>, Checklist.State> checklistStates = new HashMap<>();
+		Map<Holder<Enchantment>, EnchantmentChecklist.State> checklistStates = new HashMap<>();
 
 		for (int id = 0; id < enchantmentIds.size(); id++) {
 			Holder<Enchantment> enchantment = enchantmentIds.byIdOrThrow(id);
 
 			if (offeredLevels[id] > 0) offers.put(enchantment, offeredLevels[id]);
-			if (states[id] > 0) checklistStates.put(enchantment, Checklist.State.values()[states[id]]);
+			if (states[id] > 0) checklistStates.put(enchantment, EnchantmentChecklist.State.values()[states[id]]);
 		}
 
-		return new Checklist(item(), offers, checklistStates, enchantments);
+		return new EnchantmentChecklist(item(), offers, checklistStates, enchantments);
+	}
+
+	/** The golden apple checklist for the item in the table, from the Library's offers and the choices as last synced. */
+	public AppleChecklist appleChecklist() {
+		return new AppleChecklist(item(), effects(offeredEffects.get()), effects(chosenEffects.get()));
 	}
 
 	/** The table's Library Progress, as last synced. */
@@ -150,14 +174,17 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 
 	@Override
 	public boolean clickMenuButton(Player player, int buttonId) {
-		boolean isButton = buttonId >= 0 && buttonId <= enchantmentIds.size();
+		boolean isButton = buttonId >= 0 && buttonId < FIRST_ENCHANTMENT_BUTTON + enchantmentIds.size();
 
 		// The client shows nothing until the server's answer syncs back, so it only asks whether to send the click.
 		if (!isButton || player.level().isClientSide()) return isButton;
 
 		refreshLibrary();
 
-		return buttonId == SAVE_BUTTON ? save(player) : toggle(enchantmentIds.byIdOrThrow(buttonId - 1));
+		if (buttonId == SAVE_BUTTON) return save(player);
+		if (buttonId < FIRST_ENCHANTMENT_BUTTON) return toggle(AppleEffect.values()[buttonId - 1]);
+
+		return toggle(enchantmentIds.byIdOrThrow(buttonId - FIRST_ENCHANTMENT_BUTTON));
 	}
 
 	@Override
@@ -230,7 +257,7 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 		});
 	}
 
-	// Lapis goes to its slot, gear to the empty item slot, and the current item's material to the material slot.
+	// Lapis goes to its slot, gear or an apple to the empty item slot, and the current item's material to the material slot.
 	private boolean moveIntoTable(ItemStack stack) {
 		if (stack.is(Items.LAPIS_LAZULI)) return moveItemStackTo(stack, LAPIS_SLOT, LAPIS_SLOT + 1, false);
 
@@ -248,11 +275,27 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 	}
 
 	private boolean toggle(Holder<Enchantment> enchantment) {
-		Checklist checklist = checklist();
+		EnchantmentChecklist checklist = enchantmentChecklist();
 
-		if (!checklist.isRow(enchantment)) return false;
+		if (!checklist.isListed(enchantment)) return false;
 
 		states[enchantmentIds.getId(enchantment)] = checklist.state(enchantment).toggled().ordinal();
+
+		return true;
+	}
+
+	private boolean toggle(AppleEffect effect) {
+		AppleChecklist checklist = appleChecklist();
+
+		if (!checklist.listed().contains(effect)) return false;
+
+		Set<AppleEffect> chosen = EnumSet.noneOf(AppleEffect.class);
+
+		chosen.addAll(checklist.chosen());
+
+		if (!chosen.remove(effect)) chosen.add(effect);
+
+		chosenEffects.set(mask(chosen));
 
 		return true;
 	}
@@ -263,17 +306,18 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 		if (!problems(checklist, player).isEmpty()) return false;
 
 		Checklist.Cost cost = checklist.cost(player.hasInfiniteMaterials());
-		ItemStack item = item();
-		int chosen = checklist.chosen().size();
+		ItemStack saved = checklist.saved();
 
-		EnchantmentHelper.setEnchantments(item, checklist.selection());
 		tableSlots.getItem(LAPIS_SLOT).shrink(cost.lapis());
 
-		if (cost.deposit()) EnchantingDeposit.pay(item, tableSlots.getItem(MATERIAL_SLOT));
+		if (cost.deposit()) EnchantingDeposit.pay(saved, tableSlots.getItem(MATERIAL_SLOT));
 
+		tableSlots.setItem(ITEM_SLOT, saved);
 		player.awardStat(Stats.ENCHANT_ITEM);
 
-		if (player instanceof ServerPlayer serverPlayer) CriteriaTriggers.ENCHANTED_ITEM.trigger(serverPlayer, item, chosen);
+		if (player instanceof ServerPlayer serverPlayer) {
+			CriteriaTriggers.ENCHANTED_ITEM.trigger(serverPlayer, saved, checklist.chosenCount());
+		}
 
 		access.execute((level, pos) -> level.playSound(
 			null, pos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1.0F, level.getRandom().nextFloat() * 0.1F + 0.9F
@@ -298,7 +342,8 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 
 	private void preselect() {
 		checklistItem = item().copy();
-		writeStates(Checklist.preselected(checklistItem));
+		writeStates(EnchantmentChecklist.preselected(checklistItem));
+		chosenEffects.set(mask(AppleEffect.on(checklistItem)));
 	}
 
 	// Reads the Library afresh into the synced offers and progress, and awards a Full one to the player using it.
@@ -313,15 +358,29 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 			}
 
 			progressLevels.set(progress.levels());
+			offeredEffects.set(mask(library.appleOffers()));
 
 			if (progress.isFull() && player instanceof ServerPlayer serverPlayer) MapleTriggers.FULL_LIBRARY.trigger(serverPlayer);
 		});
 	}
 
-	private void writeStates(Map<Holder<Enchantment>, Checklist.State> checklistStates) {
+	private void writeStates(Map<Holder<Enchantment>, EnchantmentChecklist.State> checklistStates) {
 		for (int id = 0; id < enchantmentIds.size(); id++) {
-			states[id] = checklistStates.getOrDefault(enchantmentIds.byIdOrThrow(id), Checklist.State.UNSELECTED).ordinal();
+			states[id] = checklistStates.getOrDefault(enchantmentIds.byIdOrThrow(id), EnchantmentChecklist.State.UNSELECTED).ordinal();
 		}
+	}
+
+	// Apple effects cross to the client as one bit each, in AppleEffect order.
+	private static int mask(Set<AppleEffect> effects) {
+		return effects.stream().mapToInt(effect -> 1 << effect.ordinal()).sum();
+	}
+
+	private static Set<AppleEffect> effects(int mask) {
+		Set<AppleEffect> effects = EnumSet.noneOf(AppleEffect.class);
+
+		Arrays.stream(AppleEffect.values()).filter(effect -> (mask & 1 << effect.ordinal()) != 0).forEach(effects::add);
+
+		return effects;
 	}
 
 	private ItemStack item() {

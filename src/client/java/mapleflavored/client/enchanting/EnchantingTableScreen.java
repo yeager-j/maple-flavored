@@ -16,20 +16,18 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.core.Holder;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.enchantment.Enchantment;
 
 /**
- * The Enchanting Table's checklist screen. It lists what the Library offers for the item and what the item already
- * has; clicking a row ticks or unticks it, and Save is enabled once the server would accept the save. Hovering Save or
- * a red row explains what blocks it. A bar under the list shows the Library's progress toward Full, with each
- * {@link LibraryCheckpoint}'s reward marked where it unlocks.
+ * The Enchanting Table's checklist screen. It lists what the Library offers for the item, enchantments for gear or
+ * effects for a golden apple, and what the item already has; clicking a row ticks or unticks it, and Save is enabled
+ * once the server would accept the save. Hovering Save or a red row explains what blocks it. A bar under the list shows
+ * the Library's progress toward Full, with each {@link LibraryCheckpoint}'s reward marked where it unlocks.
  */
 public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTableMenu> {
 	private static final Identifier BACKGROUND = MapleFlavored.id("textures/gui/container/enchanting_table.png");
@@ -125,13 +123,11 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 		super.extractBackground(graphics, mouseX, mouseY, partialTick);
 		graphics.blit(RenderPipelines.GUI_TEXTURED, BACKGROUND, leftPos, topPos, 0.0F, 0.0F, imageWidth, imageHeight, TEXTURE_SIZE, TEXTURE_SIZE);
 
-		Checklist checklist = menu.checklist();
-		List<Holder<Enchantment>> rows = checklist.rows();
-		List<Checklist.Problem> problems = menu.problems(minecraft.player);
+		List<Checklist.Row> rows = rows();
 		int firstRow = firstRow(rows.size());
 
 		for (int visible = 0; visible < VISIBLE_ROWS && firstRow + visible < rows.size(); visible++) {
-			extractRow(graphics, checklist, problems, rows.get(firstRow + visible), visible, mouseX, mouseY);
+			extractRow(graphics, rows.get(firstRow + visible), visible, mouseX, mouseY);
 		}
 
 		extractScroller(graphics, rows.size(), mouseX, mouseY);
@@ -143,7 +139,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 		super.extractLabels(graphics, mouseX, mouseY);
 
 		Checklist checklist = menu.checklist();
-		int chosen = checklist.chosen().size();
+		int chosen = checklist.chosenCount();
 		int slots = EnchantmentSlots.available(minecraft.player.experienceLevel, checklist.item());
 		boolean overLimit = chosen > slots && !minecraft.player.hasInfiniteMaterials();
 		Component counter = Component.translatable("container.maple_flavored.enchanting_table.slots", chosen, slots);
@@ -171,29 +167,22 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 			return;
 		}
 
-		List<Holder<Enchantment>> rows = menu.checklist().rows();
+		List<Checklist.Row> rows = rows();
 		int row = hoveredRow(rows.size(), mouseX, mouseY);
 
-		if (row < 0) return;
+		if (row < 0 || rows.get(row).problems().isEmpty()) return;
 
-		Holder<Enchantment> enchantment = rows.get(row);
-		List<Checklist.Problem> rowProblems = menu.problems(minecraft.player).stream()
-			.filter(problem -> problem.concerns(enchantment))
-			.toList();
-
-		if (rowProblems.isEmpty()) return;
-
-		graphics.setTooltipForNextFrame(font, font.split(describe(rowProblems), IMAGE_WIDTH), mouseX, mouseY);
+		graphics.setTooltipForNextFrame(font, font.split(describe(rows.get(row).problems()), IMAGE_WIDTH), mouseX, mouseY);
 	}
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		List<Holder<Enchantment>> rows = menu.checklist().rows();
+		List<Checklist.Row> rows = rows();
 		int row = hoveredRow(rows.size(), event.x(), event.y());
 
 		if (row >= 0) {
 			minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-			click(EnchantingTableMenu.toggleButton(rows.get(row), menu.enchantments()));
+			click(rows.get(row).button());
 
 			return true;
 		}
@@ -211,7 +200,7 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 
 	@Override
 	public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-		if (!scrolling || !canScroll(menu.checklist().rows().size())) return super.mouseDragged(event, dragX, dragY);
+		if (!scrolling || !canScroll(rows().size())) return super.mouseDragged(event, dragX, dragY);
 
 		float trackTop = topPos + SCROLLER_Y;
 		float thumbTravel = SCROLL_TRACK_HEIGHT - SCROLLER_HEIGHT;
@@ -232,28 +221,19 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		if (super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) return true;
 
-		int rowCount = menu.checklist().rows().size();
+		int rowCount = rows().size();
 
 		if (canScroll(rowCount)) scrollOffset = Mth.clamp(scrollOffset - (float) scrollY / offscreenRows(rowCount), 0.0F, 1.0F);
 
 		return true;
 	}
 
-	private void extractRow(
-		GuiGraphicsExtractor graphics,
-		Checklist checklist,
-		List<Checklist.Problem> problems,
-		Holder<Enchantment> enchantment,
-		int visibleIndex,
-		int mouseX,
-		int mouseY
-	) {
+	private void extractRow(GuiGraphicsExtractor graphics, Checklist.Row row, int visibleIndex, int mouseX, int mouseY) {
 		int x = leftPos + LIST_X;
 		int y = topPos + LIST_Y + visibleIndex * ROW_HEIGHT;
-		boolean ticked = checklist.state(enchantment) != Checklist.State.UNSELECTED;
-		boolean hasProblem = problems.stream().anyMatch(problem -> problem.concerns(enchantment));
-		int color = hasProblem ? PROBLEM_COLOR : ticked ? TICKED_COLOR : UNTICKED_COLOR;
-		String name = Enchantment.getFullname(enchantment, checklist.shownLevel(enchantment)).getString();
+		boolean ticked = row.chosen();
+		int color = !row.problems().isEmpty() ? PROBLEM_COLOR : ticked ? TICKED_COLOR : UNTICKED_COLOR;
+		String name = row.name().getString();
 		int checkboxY = y + (ROW_HEIGHT - CHECKBOX_SIZE) / 2;
 
 		if (isWithin(mouseX, mouseY, x, y, LIST_WIDTH, ROW_HEIGHT)) {
@@ -351,6 +331,10 @@ public class EnchantingTableScreen extends AbstractContainerScreen<EnchantingTab
 			mouseX, mouseY, leftPos + PROGRESS_X, topPos + PROGRESS_Y - PROGRESS_HOVER_MARGIN, PROGRESS_WIDTH,
 			PROGRESS_HEIGHT + 2 * PROGRESS_HOVER_MARGIN
 		);
+	}
+
+	private List<Checklist.Row> rows() {
+		return menu.checklist().rows(menu.problems(minecraft.player));
 	}
 
 	private void click(int buttonId) {

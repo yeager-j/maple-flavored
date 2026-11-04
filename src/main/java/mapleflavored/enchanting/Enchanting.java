@@ -11,11 +11,12 @@ import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.Consumables;
 import net.minecraft.world.item.component.DamageResistant;
 
 /**
- * Enchanting and the Library: the Enchanting Table's checklist menu, the deposit it takes, and enchanted books that
- * resist fire and explosions.
+ * Enchanting and the Library: the Enchanting Table's checklist menu, the deposit it takes, enchanted books that resist
+ * fire and explosions, and plain golden apples with no effects.
  */
 public final class Enchanting {
 	/** The Enchanting Table's checklist menu, which replaces vanilla's random offers. */
@@ -29,11 +30,15 @@ public final class Enchanting {
 	private Enchanting() {
 	}
 
-	/** Registers the menu, the deposit and the books' resistance. Call once from mod init. */
+	/** Registers the menu, the deposit, the books' resistance and the plain golden apple. Call once from mod init. */
 	public static void register() {
 		EnchantingDeposit.register();
 		DefaultItemComponentEvents.MODIFY.register(context -> context.modify(Items.ENCHANTED_BOOK, (components, lookup, item) ->
 			components.set(DataComponents.DAMAGE_RESISTANT, new DamageResistant(lookup.lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ENCHANTED_BOOK_RESISTS)))
+		));
+		// A plain golden apple is the table's base, like an unenchanted pickaxe: still food, but with no effects.
+		DefaultItemComponentEvents.MODIFY.register(context -> context.modify(Items.GOLDEN_APPLE, (components, lookup, item) ->
+			components.set(DataComponents.CONSUMABLE, Consumables.DEFAULT_FOOD)
 		));
 	}
 }

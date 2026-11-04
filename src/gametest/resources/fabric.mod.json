@@ -20,7 +20,8 @@
 			"mapleflavored.gametest.BlightGameTests",
 			"mapleflavored.gametest.RemovedCursesGameTests",
 			"mapleflavored.gametest.EnchantingTableGameTests",
-			"mapleflavored.gametest.EnchantedBookGameTests"
+			"mapleflavored.gametest.EnchantedBookGameTests",
+			"mapleflavored.gametest.GoldenAppleGameTests"
 		]
 	},
 	"mixins": [
