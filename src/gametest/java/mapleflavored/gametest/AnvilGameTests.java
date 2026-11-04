@@ -1,6 +1,7 @@
 package mapleflavored.gametest;
 
 import java.util.List;
+import mapleflavored.anvil.AnvilResults;
 import mapleflavored.materialunits.MaterialUnits;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -261,6 +262,28 @@ public class AnvilGameTests {
 	}
 
 	@GameTest
+	public void enchantingAttemptsAreToldApartFromOtherRefusals(GameTestHelper helper) {
+		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
+		Holder<Enchantment> efficiency = enchantment(helper, Enchantments.EFFICIENCY);
+		ItemStack enchantedPickaxe = damaged(Items.IRON_PICKAXE);
+		ItemStack otherEnchantedPickaxe = damaged(Items.IRON_PICKAXE);
+
+		enchantedPickaxe.enchant(efficiency, 1);
+		otherEnchantedPickaxe.enchant(efficiency, 2);
+
+		// The screen picks its error tooltip from this; each case also makes no result.
+		assertEnchantingAttempt(helper, new ItemStack(Items.DIAMOND_SWORD), book(sharpness, 1), true, "a book on gear");
+		assertEnchantingAttempt(helper, enchantedPickaxe, otherEnchantedPickaxe, true, "two enchanted pickaxes");
+		assertEnchantingAttempt(helper, damaged(Items.IRON_PICKAXE), enchantedPickaxe, true, "an enchanted pickaxe on a plain one");
+		assertEnchantingAttempt(helper, new ItemStack(Items.GOLDEN_APPLE), book(sharpness, 1), true, "a book on a golden apple");
+		assertEnchantingAttempt(helper, damaged(Items.IRON_PICKAXE), damaged(Items.IRON_PICKAXE), false, "two plain pickaxes");
+		assertEnchantingAttempt(helper, book(sharpness, 1), book(sharpness, 2), false, "mismatched books");
+		assertEnchantingAttempt(helper, new ItemStack(Items.BOOK), book(sharpness, 1), false, "an enchanted book on a plain book");
+		assertEnchantingAttempt(helper, damaged(Items.IRON_PICKAXE), new ItemStack(Items.DIAMOND), false, "the wrong material");
+		helper.succeed();
+	}
+
+	@GameTest
 	public void materialUnitsCoverGoldenApplesButNotBooks(GameTestHelper helper) {
 		for (Item apple : List.of(Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE)) {
 			var material = MaterialUnits.materialOf(new ItemStack(apple)).orElseThrow();
@@ -292,6 +315,11 @@ public class AnvilGameTests {
 		}
 
 		helper.succeed();
+	}
+
+	private static void assertEnchantingAttempt(GameTestHelper helper, ItemStack input, ItemStack addition, boolean expected, String label) {
+		helper.assertValueEqual(AnvilResults.triesToEnchant(input, addition), expected, label + " tries to enchant");
+		assertNoResult(helper, input, addition, label);
 	}
 
 	private static void assertNoResult(GameTestHelper helper, ItemStack input, ItemStack addition, String label) {

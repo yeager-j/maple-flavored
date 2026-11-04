@@ -48,6 +48,7 @@ public final class AnvilResults {
 	 */
 	public static Optional<Result> compute(ItemStack input, ItemStack addition, @Nullable String name, RecipeManager recipes) {
 		if (input.isEmpty() || !EnchantmentHelper.canStoreEnchantments(input)) return Optional.empty();
+		if (triesToEnchant(input, addition)) return Optional.empty();
 
 		Optional<Result> work = addition.isEmpty() ? Optional.of(new Result(input.copy(), 0, 0)) : combine(input, addition, recipes);
 
@@ -61,6 +62,15 @@ public final class AnvilResults {
 		int xpCost = work.get().xpCost() + (renamed ? RENAME_COST : 0);
 
 		return Optional.of(new Result(result, xpCost, work.get().materialUsed()));
+	}
+
+	/**
+	 * Whether the slots try to enchant an item: an enchanted book or enchanted item offered to anything the Enchanting
+	 * Table enchants. The anvil always refuses this, since only the table enchants. Needs no recipes, so it works on
+	 * either side.
+	 */
+	public static boolean triesToEnchant(ItemStack input, ItemStack addition) {
+		return EnchantmentHelper.hasAnyEnchantments(addition) && MaterialUnits.materialOf(input).isPresent();
 	}
 
 	private static Optional<Result> combine(ItemStack input, ItemStack addition, RecipeManager recipes) {

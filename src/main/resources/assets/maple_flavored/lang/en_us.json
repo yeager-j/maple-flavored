@@ -13,6 +13,7 @@
 	"commands.maple_flavored.maxhearts.query": "%s has %s Max Hearts",
 	"commands.maple_flavored.maxhearts.set": "%s now has %s Max Hearts",
 	"container.maple_flavored.anvil.cost": "Cost: %s XP points",
+	"container.maple_flavored.anvil.enchanting_error_tooltip": "Must enchant at Enchanting Table",
 	"container.maple_flavored.upgrade.enchanted_error_tooltip": "Can't upgrade enchanted items",
 	"deathScreen.maple_flavored.max_hearts_lost": "Max Hearts lost: %s",
 	"entity.maple_flavored.remnant": "Remnant",
