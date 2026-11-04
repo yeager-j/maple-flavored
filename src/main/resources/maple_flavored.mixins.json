@@ -10,6 +10,7 @@
 		"MinecraftServerMixin",
 		"PlayerAdvancementsMixin",
 		"PlayerMixin",
+		"ResourceManagerRegistryLoadTaskMixin",
 		"ServerGamePacketListenerImplMixin",
 		"ServerPlayerMixin",
 		"SmithingMenuMixin",

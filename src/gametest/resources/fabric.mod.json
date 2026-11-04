@@ -16,9 +16,14 @@
 			"mapleflavored.gametest.CopperToolsGameTests",
 			"mapleflavored.gametest.AnvilGameTests",
 			"mapleflavored.gametest.WorkstationGameTests",
-			"mapleflavored.gametest.ZephyrGameTests"
+			"mapleflavored.gametest.ZephyrGameTests",
+			"mapleflavored.gametest.BlightGameTests",
+			"mapleflavored.gametest.RemovedCursesGameTests"
 		]
 	},
+	"mixins": [
+		"maple_flavored_gametest.mixins.json"
+	],
 	"depends": {
 		"maple_flavored": "*",
 		"fabric-gametest-api-v1": "*"

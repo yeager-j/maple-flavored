@@ -9,6 +9,7 @@ Maple Flavored is inspired by these projects. Neither author is involved in or e
 
 - The Crystal Heart recipe (8 diamonds around 1 Pith) and the Nether Star recipe (1 Nether Star into 9 Pith) come from Matcha Flavoured by Klei (`dp/data/matcha/recipe/crafting/crystal_heart.json`, where Pith is a renamed turtle scute).
 - Zephyr, a boots enchantment that gives a double jump, comes from Matcha Flavoured by Klei (`data/matcha/enchantment/zephyr.json`). Maple keeps the name and the double jump, and its own code adds the per-level heights and the Clutch. Matcha's sneak jump and slow falling are left out.
+- Blight, a weapon enchantment that gives a struck mob the Wither effect, comes from Matcha Flavoured by Klei. Maple names it Blight, puts it on Fire Aspect's weapons and makes the two exclusive.
 - Using a Crystal Heart plays the Totem of Undying's activation and gives Regeneration XI for 3 seconds and Resistance V for 1 second, as Matcha Flavoured's `mechanics/heart_container/use_crystal_heart.mcfunction` does.
 
 ## Reused assets
