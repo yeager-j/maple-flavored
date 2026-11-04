@@ -10,6 +10,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AnvilMenu;
@@ -284,6 +285,32 @@ public class AnvilGameTests {
 	}
 
 	@GameTest
+	public void wrongRepairMaterialsAreToldApartFromOtherRefusals(GameTestHelper helper) {
+		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
+
+		// The screen picks its error tooltip from this; each case also makes no result.
+		assertWrongMaterial(helper, damaged(Items.IRON_PICKAXE), damaged(Items.IRON_PICKAXE), true, "two plain pickaxes");
+		assertWrongMaterial(helper, damaged(Items.IRON_PICKAXE), new ItemStack(Items.DIAMOND), true, "a diamond on an iron pickaxe");
+		assertWrongMaterial(helper, damaged(Items.BOW), new ItemStack(Items.STICK), true, "a stick on a bow");
+		assertWrongMaterial(helper, damaged(Items.IRON_PICKAXE), book(sharpness, 1), false, "a book on a pickaxe");
+		assertWrongMaterial(helper, new ItemStack(Items.IRON_PICKAXE), new ItemStack(Items.DIAMOND), false, "an undamaged pickaxe");
+		assertWrongMaterial(helper, book(sharpness, 1), book(sharpness, 2), false, "mismatched books");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void materialsAreNamedByTheirItemOrTag(GameTestHelper helper) {
+		assertMaterialName(helper, Items.IRON_PICKAXE, "item.minecraft.iron_ingot");
+		assertMaterialName(helper, Items.CHAINMAIL_CHESTPLATE, "item.minecraft.iron_ingot");
+		assertMaterialName(helper, Items.BOW, "item.minecraft.string");
+		assertMaterialName(helper, Items.ELYTRA, "item.minecraft.phantom_membrane");
+		assertMaterialName(helper, Items.WOODEN_PICKAXE, "tag.item.minecraft.wooden_tool_materials");
+		assertMaterialName(helper, Items.SHIELD, "tag.item.minecraft.wooden_tool_materials");
+		helper.assertTrue(MaterialUnits.materialName(new ItemStack(Items.BOOK)).isEmpty(), "a book's material has a name");
+		helper.succeed();
+	}
+
+	@GameTest
 	public void materialUnitsCoverGoldenApplesButNotBooks(GameTestHelper helper) {
 		for (Item apple : List.of(Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE)) {
 			var material = MaterialUnits.materialOf(new ItemStack(apple)).orElseThrow();
@@ -320,6 +347,19 @@ public class AnvilGameTests {
 	private static void assertEnchantingAttempt(GameTestHelper helper, ItemStack input, ItemStack addition, boolean expected, String label) {
 		helper.assertValueEqual(AnvilResults.triesToEnchant(input, addition), expected, label + " tries to enchant");
 		assertNoResult(helper, input, addition, label);
+	}
+
+	private static void assertWrongMaterial(GameTestHelper helper, ItemStack input, ItemStack addition, boolean expected, String label) {
+		helper.assertValueEqual(AnvilResults.offersWrongMaterial(input, addition), expected, label + " offers the wrong material");
+		assertNoResult(helper, input, addition, label);
+	}
+
+	// The server has no translations for the mod's names, so names are checked by their translation key.
+	private static void assertMaterialName(GameTestHelper helper, Item item, String translationKey) {
+		Component name = MaterialUnits.materialName(new ItemStack(item)).orElseThrow();
+		String key = name.getContents() instanceof TranslatableContents translatable ? translatable.getKey() : name.getString();
+
+		helper.assertValueEqual(key, translationKey, item + "'s material name");
 	}
 
 	private static void assertNoResult(GameTestHelper helper, ItemStack input, ItemStack addition, String label) {

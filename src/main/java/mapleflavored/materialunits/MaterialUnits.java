@@ -3,7 +3,11 @@ package mapleflavored.materialunits;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -53,13 +57,15 @@ public final class MaterialUnits {
 
 	/** The item's material, or empty if it has none, so it can be neither repaired nor enchanted. */
 	public static Optional<Ingredient> materialOf(ItemStack item) {
-		Item override = MATERIAL_OVERRIDES.get(item.getItem());
+		return materialItems(item).map(Ingredient::of);
+	}
 
-		if (override != null) return Optional.of(Ingredient.of(override));
-
-		Repairable repairable = item.get(DataComponents.REPAIRABLE);
-
-		return repairable == null ? Optional.empty() : Optional.of(Ingredient.of(repairable.items()));
+	/**
+	 * The name of the item's material to show players, or empty if it has none: the material item's name, or for a
+	 * material any of several items fill, such as planks, its tag's {@code tag.item.<namespace>.<path>} name.
+	 */
+	public static Optional<Component> materialName(ItemStack item) {
+		return materialItems(item).map(MaterialUnits::nameOf);
 	}
 
 	/**
@@ -82,6 +88,32 @@ public final class MaterialUnits {
 		OptionalInt craftingUnits = cheapestCraftingUnits(craftedItem, material, recipes);
 
 		return Math.max(craftingUnits.orElse(1) - 1, 1);
+	}
+
+	private static Optional<HolderSet<Item>> materialItems(ItemStack item) {
+		Item override = MATERIAL_OVERRIDES.get(item.getItem());
+
+		if (override != null) return Optional.of(HolderSet.direct(override.builtInRegistryHolder()));
+
+		Repairable repairable = item.get(DataComponents.REPAIRABLE);
+
+		return repairable == null ? Optional.empty() : Optional.of(repairable.items());
+	}
+
+	private static Component nameOf(HolderSet<Item> material) {
+		Component firstItemName = new ItemStack(material.get(0)).getHoverName();
+
+		if (material.size() == 1) return firstItemName;
+
+		return material.unwrapKey()
+			.<Component>map(tag -> Component.translatableWithFallback(tagTranslationKey(tag), firstItemName.getString()))
+			.orElse(firstItemName);
+	}
+
+	private static String tagTranslationKey(TagKey<Item> tag) {
+		Identifier id = tag.location();
+
+		return "tag.item." + id.getNamespace() + "." + id.getPath().replace('/', '.');
 	}
 
 	private static OptionalInt cheapestCraftingUnits(Item craftedItem, Ingredient material, RecipeManager recipes) {

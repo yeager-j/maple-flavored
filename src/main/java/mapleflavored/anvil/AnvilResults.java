@@ -49,6 +49,7 @@ public final class AnvilResults {
 	public static Optional<Result> compute(ItemStack input, ItemStack addition, @Nullable String name, RecipeManager recipes) {
 		if (input.isEmpty() || !EnchantmentHelper.canStoreEnchantments(input)) return Optional.empty();
 		if (triesToEnchant(input, addition)) return Optional.empty();
+		if (offersWrongMaterial(input, addition)) return Optional.empty();
 
 		Optional<Result> work = addition.isEmpty() ? Optional.of(new Result(input.copy(), 0, 0)) : combine(input, addition, recipes);
 
@@ -71,6 +72,17 @@ public final class AnvilResults {
 	 */
 	public static boolean triesToEnchant(ItemStack input, ItemStack addition) {
 		return EnchantmentHelper.hasAnyEnchantments(addition) && MaterialUnits.materialOf(input).isPresent();
+	}
+
+	/**
+	 * Whether the slots offer a damaged item something other than its material unit, such as another copy of the same
+	 * tool. The anvil refuses this, since items repair only with their material. Attempts to enchant don't count; see
+	 * {@link #triesToEnchant}. Needs no recipes, so it works on either side.
+	 */
+	public static boolean offersWrongMaterial(ItemStack input, ItemStack addition) {
+		if (addition.isEmpty() || !input.isDamaged() || triesToEnchant(input, addition)) return false;
+
+		return MaterialUnits.materialOf(input).filter(material -> !material.test(addition)).isPresent();
 	}
 
 	private static Optional<Result> combine(ItemStack input, ItemStack addition, RecipeManager recipes) {
