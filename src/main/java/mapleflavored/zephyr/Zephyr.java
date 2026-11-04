@@ -113,6 +113,7 @@ public final class Zephyr {
 		double carriedFall = clutched(player.fallDistance, CLUTCH_CUTS[levelIndex(player)]);
 
 		player.setAttached(AIR_JUMP, new AirJump.Rising(player.getY(), carriedFall));
+		ZephyrEffects.showToOthers(player);
 	}
 
 	private static boolean endsAirTime(Player player) {

@@ -1,6 +1,7 @@
 package mapleflavored.client.zephyr;
 
 import mapleflavored.zephyr.Zephyr;
+import mapleflavored.zephyr.ZephyrEffects;
 import mapleflavored.zephyr.ZephyrJumpPayload;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -40,6 +41,7 @@ public final class ZephyrInput {
 
 		player.setDeltaMovement(movement.x, Math.max(Zephyr.launchSpeed(player), movement.y), movement.z);
 		Zephyr.markJumped(player);
+		ZephyrEffects.showToJumper(player);
 		ClientPlayNetworking.send(ZephyrJumpPayload.INSTANCE);
 	}
 }
