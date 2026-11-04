@@ -13,7 +13,9 @@
 			"mapleflavored.gametest.CrystalHeartGameTests",
 			"mapleflavored.gametest.WitheredHeartsGameTests",
 			"mapleflavored.gametest.RemnantsGameTests",
-			"mapleflavored.gametest.CopperToolsGameTests"
+			"mapleflavored.gametest.CopperToolsGameTests",
+			"mapleflavored.gametest.AnvilGameTests",
+			"mapleflavored.gametest.WorkstationGameTests"
 		]
 	},
 	"depends": {

@@ -3,7 +3,9 @@
 	"package": "mapleflavored.client.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
-		"HudMixin"
+		"AnvilScreenMixin",
+		"HudMixin",
+		"SmithingScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

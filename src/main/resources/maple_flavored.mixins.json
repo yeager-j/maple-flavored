@@ -3,10 +3,15 @@
 	"package": "mapleflavored.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
+		"AnvilMenuMixin",
 		"GameRulesMixin",
+		"GrindstoneMenuMixin",
+		"GrindstoneResultSlotMixin",
 		"MinecraftServerMixin",
 		"PlayerAdvancementsMixin",
 		"PlayerMixin",
+		"SmithingMenuMixin",
+		"SmithingTransformRecipeMixin",
 		"WitherSkeletonMixin"
 	],
 	"injectors": {
