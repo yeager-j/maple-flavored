@@ -6,7 +6,8 @@
 		"GameRulesMixin",
 		"MinecraftServerMixin",
 		"PlayerAdvancementsMixin",
-		"PlayerMixin"
+		"PlayerMixin",
+		"WitherSkeletonMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
