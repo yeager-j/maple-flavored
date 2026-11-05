@@ -28,7 +28,8 @@
 			"mapleflavored.gametest.OrdinaryStructureBookGameTests",
 			"mapleflavored.gametest.BuriedStructureBookGameTests",
 			"mapleflavored.gametest.SpawnerGameTests",
-			"mapleflavored.gametest.DungeonGameTests"
+			"mapleflavored.gametest.DungeonGameTests",
+			"mapleflavored.gametest.FortressBookGameTests"
 		]
 	},
 	"mixins": [

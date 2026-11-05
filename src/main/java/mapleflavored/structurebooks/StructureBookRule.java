@@ -2,6 +2,7 @@ package mapleflavored.structurebooks;
 
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -10,14 +11,19 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 /**
  * How one structure gets its book: the enchantments it can hold, one chosen with equal weight, where the book goes
- * among its planned pieces, and how it's placed there when built. A spot rule that finds no spot leaves the structure
- * without a book.
+ * among its planned pieces, how it's placed there when built, and which of the structure's spawners lock it. A spot
+ * rule that finds no spot leaves the structure without a book.
  */
-record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Placement placement) {
+record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Placement placement, SpawnerLock lock) {
 	StructureBookRule {
 		if (enchantments.isEmpty()) throw new IllegalArgumentException("a structure book rule needs an enchantment");
 
 		enchantments = List.copyOf(enchantments);
+	}
+
+	/** A rule whose book is never locked. */
+	StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Placement placement) {
+		this(enchantments, spot, placement, SpawnerLock.NONE);
 	}
 
 	/** One of the enchantments, with equal weight. */
@@ -29,6 +35,16 @@ record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule s
 	@FunctionalInterface
 	interface SpotRule {
 		Optional<BookSpot> spot(List<StructurePiece> pieces, Planning planning);
+	}
+
+	/** Finds the spawners among a structure's planned pieces that must all be Cleared before its book can be taken. */
+	@FunctionalInterface
+	interface SpawnerLock {
+		/** No spawner locks the book. */
+		SpawnerLock NONE = pieces -> List.of();
+
+		/** Where each locking spawner will be placed. Empty when nothing locks the book. */
+		List<BlockPos> spawners(List<StructurePiece> pieces);
 	}
 
 	/**

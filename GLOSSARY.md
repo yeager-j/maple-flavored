@@ -80,7 +80,7 @@ _Avoid_: Warden zone
 ### Enchanting
 
 **Structure book**:
-The one level I enchanted book a structure or Dungeon holds, in a fixed spot. Most float where they can be seen. Buried Treasure keeps its book in the treasure chest, Trail Ruins keep theirs in one suspicious gravel, and a Dungeon's spawner holds its book and drops it with its Pith once Cleared and broken. Mineshaft cave spider spawners each hold a Bane of Arthropods book the same way, besides the Mineshaft's own book. Taking it can wake the structure.
+The one level I enchanted book a structure or Dungeon holds, in a fixed spot. Most float where they can be seen. Buried Treasure keeps its book in the treasure chest, Trail Ruins keep theirs in one suspicious gravel, and a Dungeon's spawner holds its book and drops it with its Pith once Cleared and broken. Mineshaft cave spider spawners each hold a Bane of Arthropods book the same way, besides the Mineshaft's own book. The Nether Fortress's book is locked until every Blaze spawner the fortress generated with is Cleared. Taking it can wake the structure.
 _Avoid_: Floating book, book pedestal
 
 **Library**:

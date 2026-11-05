@@ -33,6 +33,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -73,7 +74,8 @@ public class SpawnerGameTests {
 
 		CompoundTag spawnSoon = new CompoundTag();
 
-		spawnSoon.putShort("Delay", (short) 0);
+		// Waits a second for the glowstone's light, which the light engine spreads after this tick.
+		spawnSoon.putShort("Delay", (short) 20);
 		spawnSoon.putShort("MinSpawnDelay", (short) 20);
 		spawnSoon.putShort("MaxSpawnDelay", (short) 20);
 		spawnSoon.putShort("SpawnRange", (short) 2);
@@ -83,11 +85,12 @@ public class SpawnerGameTests {
 		BlockPos lit = helper.absolutePos(SPAWNER.east());
 
 		playerAt(helper, Vec3.atCenterOf(spawnerPos).add(0.0, 1.0, 0.0));
-		helper.assertTrue(helper.getLevel().getMaxLocalRawBrightness(lit) >= 14, "the spawner's surroundings are fully lit");
 
 		helper.succeedWhen(() -> {
 			List<Zombie> zombies = helper.getLevel().getEntitiesOfClass(Zombie.class, new AABB(spawnerPos).inflate(4));
 
+			// Block light, so the check doesn't depend on the time of day.
+			helper.assertTrue(helper.getLevel().getBrightness(LightLayer.BLOCK, lit) >= 14, "the spawner's surroundings are fully lit");
 			helper.assertTrue(!zombies.isEmpty(), "a zombie spawned in full light");
 
 			GlobalPos origin = GlobalPos.of(helper.getLevel().dimension(), spawnerPos);
