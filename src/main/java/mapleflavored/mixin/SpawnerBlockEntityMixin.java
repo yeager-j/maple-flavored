@@ -1,7 +1,6 @@
 package mapleflavored.mixin;
 
 import mapleflavored.spawners.ClearableSpawner;
-import mapleflavored.spawners.SpawnerCage;
 import mapleflavored.spawners.SpawnerClearing;
 import mapleflavored.spawners.Spawners;
 import net.minecraft.core.BlockPos;
@@ -18,8 +17,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Gives each spawner block its Clearing, saved with it and sent to clients in its update tag. Each server tick records
- * the players in range, and each client tick draws the progress cage.
+ * Gives each spawner block its Clearing, saved with it and sent to clients in its update tag, where the forcefield
+ * renderer reads it. Each server tick records the players in range.
  */
 @Mixin(SpawnerBlockEntity.class)
 public abstract class SpawnerBlockEntityMixin implements ClearableSpawner {
@@ -47,10 +46,5 @@ public abstract class SpawnerBlockEntityMixin implements ClearableSpawner {
 	@Inject(method = "serverTick", at = @At("HEAD"))
 	private static void recordPlayersInRange(Level level, BlockPos pos, BlockState state, SpawnerBlockEntity spawner, CallbackInfo ci) {
 		Spawners.recordPlayersInRange((ServerLevel) level, pos, spawner);
-	}
-
-	@Inject(method = "clientTick", at = @At("HEAD"))
-	private static void drawCage(Level level, BlockPos pos, BlockState state, SpawnerBlockEntity spawner, CallbackInfo ci) {
-		SpawnerCage.draw(level, pos, spawner);
 	}
 }

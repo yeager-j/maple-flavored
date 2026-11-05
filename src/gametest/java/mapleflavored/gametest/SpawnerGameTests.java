@@ -47,6 +47,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public class SpawnerGameTests {
 	private static final BlockPos SPAWNER = new BlockPos(3, 2, 3);
+	private static final BlockPos SECOND_SPAWNER = new BlockPos(3, 2, 7);
+	private static final int VANILLA_WAIT = 200;
 	// Far enough from the spawner that its mobs' loot lands outside the spawner's drop search.
 	private static final BlockPos MOB_SPOT = new BlockPos(7, 2, 7);
 	// Small, so mock players from neighbouring tests stay out of range.
@@ -94,6 +96,31 @@ public class SpawnerGameTests {
 		});
 	}
 
+	@GameTest(maxTicks = 60)
+	public void anUnclearedSpawnerWaitsHalfAsLongBetweenWaves(GameTestHelper helper) {
+		CompoundTag fixedWait = new CompoundTag();
+
+		fixedWait.putShort("Delay", (short) -1);
+		fixedWait.putShort("MinSpawnDelay", (short) VANILLA_WAIT);
+		fixedWait.putShort("MaxSpawnDelay", (short) VANILLA_WAIT);
+
+		SpawnerBlockEntity uncleared = placeSpawner(helper, SPAWNER, fixedWait);
+		SpawnerBlockEntity cleared = placeSpawner(helper, SECOND_SPAWNER, fixedWait);
+
+		killMarkedMobs(helper, cleared, 12);
+		playerAt(helper, Vec3.atCenterOf(uncleared.getBlockPos()).add(1.0, 0.0, 0.0));
+		playerAt(helper, Vec3.atCenterOf(cleared.getBlockPos()).add(1.0, 0.0, 0.0));
+
+		// A Delay of -1 makes each spawner choose its wait on its next tick, then both count down together.
+		helper.succeedWhen(() -> {
+			int unclearedWait = currentWait(helper, uncleared);
+			int clearedWait = currentWait(helper, cleared);
+
+			helper.assertTrue(unclearedWait > 0 && unclearedWait <= VANILLA_WAIT / 2, "the uncleared spawner waits " + unclearedWait);
+			helper.assertValueEqual(clearedWait - unclearedWait, VANILLA_WAIT / 2, "the Cleared spawner's extra wait");
+		});
+	}
+
 	@GameTest
 	public void aTrialSpawnerCanStillBeMined(GameTestHelper helper) {
 		ServerPlayer player = survivalPlayer(helper, Items.DIAMOND_PICKAXE);
@@ -137,26 +164,26 @@ public class SpawnerGameTests {
 	}
 
 	@GameTest
-	public void twelveDeathsClearASoloSpawnerOnceAndTheCageLosesABarEach(GameTestHelper helper) {
+	public void twelveDeathsClearASoloSpawnerOnceAndTheForcefieldClosesIn(GameTestHelper helper) {
 		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
 
 		playerAt(helper, Vec3.atCenterOf(spawner.getBlockPos()).add(1.0, 0.0, 0.0));
 		Spawners.recordPlayersInRange(helper.getLevel(), spawner.getBlockPos(), spawner);
 
 		helper.assertValueEqual(clearing(spawner).requirement(), 12, "a solo requirement");
-		helper.assertValueEqual(clearing(spawner).cageBars(), 12, "bars before any death");
+		helper.assertValueEqual(clearing(spawner).remainingShare(), 1.0F, "share to go before any death");
 
 		killMarkedMobs(helper, spawner, 1);
-		helper.assertValueEqual(clearing(spawner).cageBars(), 11, "bars after 1 death");
+		helper.assertValueEqual(clearing(spawner).remainingShare(), 11.0F / 12.0F, "share to go after 1 death");
 
 		killMarkedMobs(helper, spawner, 10);
-		helper.assertValueEqual(clearing(spawner).cageBars(), 1, "bars after 11 deaths");
+		helper.assertValueEqual(clearing(spawner).remainingShare(), 1.0F / 12.0F, "share to go after 11 deaths");
 		helper.assertFalse(clearing(spawner).isCleared(), "11 deaths don't Clear it");
 		helper.assertValueEqual(clearsAt(spawner), 0, "Cleared events before");
 
 		killMarkedMobs(helper, spawner, 1);
 		helper.assertTrue(clearing(spawner).isCleared(), "the 12th death Clears it");
-		helper.assertValueEqual(clearing(spawner).cageBars(), 0, "a Cleared spawner has no cage");
+		helper.assertValueEqual(clearing(spawner).remainingShare(), 0.0F, "a Cleared spawner has no forcefield");
 		helper.assertValueEqual(clearsAt(spawner), 1, "Cleared events after the 12th death");
 
 		killMarkedMobs(helper, spawner, 3);
@@ -181,7 +208,7 @@ public class SpawnerGameTests {
 		helper.assertValueEqual(clearing(spawner).requirement(), 16, "the requirement for 3 players");
 
 		killMarkedMobs(helper, spawner, 4);
-		helper.assertValueEqual(clearing(spawner).cageBars(), 9, "bars after 4 of 16 deaths");
+		helper.assertValueEqual(clearing(spawner).remainingShare(), 0.75F, "share to go after 4 of 16 deaths");
 
 		Vec3 farAway = centre.add(0.0, 50.0, 0.0);
 
@@ -384,6 +411,10 @@ public class SpawnerGameTests {
 		Vec3 centre = helper.absoluteVec(Vec3.atCenterOf(relative).add(1.0, 0.0, 0.0));
 
 		helper.getLevel().explode(null, centre.x, centre.y, centre.z, 4.0F, Level.ExplosionInteraction.TNT);
+	}
+
+	private static int currentWait(GameTestHelper helper, SpawnerBlockEntity spawner) {
+		return spawner.saveCustomOnly(helper.getLevel().registryAccess()).getShortOr("Delay", (short) 0);
 	}
 
 	private static int clearsAt(SpawnerBlockEntity spawner) {

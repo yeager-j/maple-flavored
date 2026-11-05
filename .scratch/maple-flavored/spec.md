@@ -357,9 +357,9 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Source list: Abandoned Camp Lunge; Ancient City Swift Sneak; Bastion treasure room Fire Aspect, bridge Soul Speed, housing units Flame, hoglin stables Thorns; Buried Treasure Aqua Affinity or Respiration; Desert Pyramid Blast Protection; Dungeon Bane of Arthropods or Smite; End City Feather Falling; Igloo Frost Walker; Jungle Temple Looting; Mineshaft Efficiency; Nether Fortress Fire Protection; Ocean Ruins Channeling, Impaling, Loyalty or Riptide; Pillager Outpost Multishot, Piercing, Projectile Protection or Quick Charge; Shipwreck Depth Strider; Stronghold Unbreaking; Trail Ruins Silk Touch; Woodland Mansion Fortune.
 
 **Spawners.** Normal spawners (not trial spawners) gain per-block state: a death count of mobs they spawned, the set of players who entered their 16-block activation range since counting began, and a Cleared flag.
-- They spawn regardless of light.
+- They spawn regardless of light. Until Cleared they spawn twice as fast, waiting half the delay vanilla chooses; once Cleared they wait as long as vanilla.
 - They are unbreakable and immune to explosions until Cleared at 12 deaths plus 2 per additional player. The requirement never drops. Any cause of death counts. Cleared stays Cleared.
-- Progress shows as a cage of particles along the spawner's 12 edges, losing bars as the count grows: ceil(12 × remaining deaths / requirement) bars stand. A Cleared spawner has no cage and looks like any other spawner.
+- Progress shows as the world border's forcefield wrapped around the spawner. It starts half a block out and closes in on the spawner as the count grows, in step with the share of the requirement still to go. A Cleared spawner has no forcefield and looks like any other spawner.
 - Breaking a Cleared spawner drops 1 Pith and fires the advancement for the breaker.
 - Interface: is this spawner Cleared, and a Cleared event. The Structure books module uses the event to update the Fortress record.
 
@@ -515,7 +515,7 @@ The design left these small points open. This spec picks a default for each, and
 - A Blood Moon spot that can't fill yet (a player nearby, the spot blocked) stays pending past dawn and fills the next time it can.
 - Attacking an Illager while wearing Orichalcum ends neutrality the way attacking a Piglin does with gold: the Illager you hit and those nearby that see it turn hostile.
 - Structures with several possible enchantments choose between them with equal weight.
-- Starting tuning values: Zephyr's second jump reaches 1.5, 2.25 and 3 blocks at levels I to III; Steel weapons add 0.5 attack knockback; Steel armor adds 0.1 knockback resistance per piece on top of Netherite's; the spawner cage's particle colour, density and rate.
+- Starting tuning values: Zephyr's second jump reaches 1.5, 2.25 and 3 blocks at levels I to III; Steel weapons add 0.5 attack knockback; Steel armor adds 0.1 knockback resistance per piece on top of Netherite's; the spawner forcefield's starting distance and colour.
 
 ### Values left to playtesting or build time
 

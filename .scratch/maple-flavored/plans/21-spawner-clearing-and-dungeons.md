@@ -7,7 +7,8 @@ Spawners are the mod's first "deal with it" obstacle: right now a torch beats a 
 Jackson's calls (2026-11-04):
 
 - **Dungeon book:** it's held by the dungeon's spawner and drops with the Pith when the Cleared spawner is broken. It doesn't float above the spawner. Bane of Arthropods or Smite, equal weight, chosen at generation.
-- **Progress look:** no cracks and no new textures. An uncleared spawner is wrapped in a particle cage: dust particles along the block's 12 edges, so each edge is a bar. The cage loses bars as its mobs die. It shows ceil(12 × remaining / requirement) bars, so a solo player breaks one bar per death. A Cleared spawner is just a normal spawner, with no cage and no extra effect. The spec's "cracks that grow with the count" (lines 362, 448 and 518) and the ticket's wording change to match.
+- **Progress look:** no cracks and no new textures. An uncleared spawner is wrapped in the world border's forcefield. It starts half a block out and closes in on the spawner in step with the share of the requirement still to go, then vanishes once Cleared. A Cleared spawner is just a normal spawner, with no extra effect. The spec's "cracks that grow with the count" (lines 362, 448 and 518) and the ticket's wording change to match. (A first try, a particle cage of 12 edge bars, was replaced after a look in game.)
+- **Spawn speed:** until Cleared, a spawner waits half the delay vanilla chooses, so it spawns twice as fast. Once Cleared it goes back to vanilla speed.
 - **Tool rule:** Pith and the book follow vanilla's spawner XP rule and need a pickaxe (`requiresCorrectToolForDrops`). Breaking a spawner by hand drops nothing. The advancement fires only when the Pith drops.
 
 ## What the evidence says (26.3 sources)
@@ -21,9 +22,9 @@ Jackson's calls (2026-11-04):
 
 ## Decisions
 
-1. **New module `mapleflavored.spawners`.** `Spawners` is the facade: `register()`, `isCleared(ServerLevel, BlockPos)`, the `CLEARED` event and the internal hooks the mixins call. `SpawnerClearing` is the per-spawner state: deaths, the set of player UUIDs, the Cleared flag and an optional held book (`ResourceKey<Enchantment>`). It has the pure rules: `requirement()` = 12 + 2 × max(0, players − 1), `recordPlayer`, `recordDeath` (returns true on the death that Clears it), and `cageBars()` (12 at 0 deaths, ceil(12 × (requirement − deaths) / requirement) while counting, 0 once Cleared). It has a codec, so it saves and syncs under `maple_flavored:clearing`. Once Cleared it ignores further deaths and players.
-2. **State lives on `SpawnerBlockEntity`** through `SpawnerBlockEntityMixin`, with a duck interface. It saves and loads in `saveAdditional`/`loadAdditional`, and it ticks in `serverTick`. Each tick, if the spawner isn't Cleared, it records alive non-spectator players within the spawner's own `requiredPlayerRange` (16 by default, read through a `BaseSpawner` accessor). That lets tests shrink the range so neighbouring tests' mock players stay out. Every death and every new player calls `sendBlockUpdated`. Both are rare, and the client needs the state to draw the cage and predict `getDestroyProgress`. "Since counting began" means since the spawner existed, so the set only grows and the requirement never drops.
-3. **The cage is drawn on the client.** `SpawnerBlockEntityMixin` also hooks `clientTick`. While a player is in range (the same check vanilla's flame particles use) and the spawner isn't Cleared, it adds a few `DustParticleOptions` particles every few ticks. They go at random points along the first `cageBars()` edges, in a fixed edge order, just outside the block. The colour (a pale soul blue to start), the density and the rate are tuning values for the hand check. `level.addParticle` is common code, so no client-only class is needed, and no packets are sent per frame.
+1. **New module `mapleflavored.spawners`.** `Spawners` is the facade: `register()`, `isCleared(ServerLevel, BlockPos)`, the `CLEARED` event and the internal hooks the mixins call. `SpawnerClearing` is the per-spawner state: deaths, the set of player UUIDs, the Cleared flag and an optional held book (`ResourceKey<Enchantment>`). It has the pure rules: `requirement()` = 12 + 2 × max(0, players − 1), `recordPlayer`, `recordDeath` (returns true on the death that Clears it), `remainingShare()` ((requirement − deaths) / requirement, 0 once Cleared) and `spawnDelay(vanillaDelay)` (half until Cleared). It has a codec, so it saves and syncs under `maple_flavored:clearing`. Once Cleared it ignores further deaths and players.
+2. **State lives on `SpawnerBlockEntity`** through `SpawnerBlockEntityMixin`, with a duck interface. It saves and loads in `saveAdditional`/`loadAdditional`, and it ticks in `serverTick`. Each tick, if the spawner isn't Cleared, it records alive non-spectator players within the spawner's own `requiredPlayerRange` (16 by default, read through a `BaseSpawner` accessor). That lets tests shrink the range so neighbouring tests' mock players stay out. Every death and every new player calls `sendBlockUpdated`. Both are rare, and the client needs the state to draw the forcefield and predict `getDestroyProgress`. "Since counting began" means since the spawner existed, so the set only grows and the requirement never drops.
+3. **The forcefield is drawn on the client.** `SpawnerForcefieldRenderer` replaces vanilla's spawner renderer, drawing vanilla's spawner through a `SpawnerRenderer` it holds and then a box around it. The box uses the world border's `forcefield.png` with the `energySwirl` render type, which is additive and scrolls. It's tinted the world border's stationary blue, and repeats and scrolls the way the world border does. Its outset goes from 0.5 to 0.02 blocks with `remainingShare()`. `BaseSpawnerMixin` also hooks the private `delay` to halve the wait while the spawner block isn't Cleared. Spawner minecarts keep vanilla's wait.
 4. **Tagging spawned mobs.** `BaseSpawnerMixin` wraps `tryAddFreshEntityWithPassengers`. When this `BaseSpawner` belongs to a `SpawnerBlockEntity` at `pos`, `Spawners.onSpawned` gives the entity and its passengers a persistent Fabric entity attachment, `maple_flavored:spawned_by` (`GlobalPos`). `ServerLivingEntityEvents.AFTER_DEATH` looks the spawner up in that dimension and records the death. Any cause counts. A lookup can load the spawner's chunk in the rare case the mob wandered far from it. A spawner that's gone or already Cleared ignores the death. When the count reaches the requirement, it's Cleared: setChanged, `sendBlockUpdated` (so the client learns it's Cleared), and `CLEARED` fires once.
 5. **Light.** `EntitySpawnReasonMixin` makes `ignoresLightRequirements(SPAWNER)` true. `BaseSpawnerMixin` also wraps `Mob.checkSpawnRules` in `serverTick` to return true. This covers every `BaseSpawner` (blocks and command-made spawner minecarts), but never trial spawners, which use their own code and `TRIAL_SPAWNER`.
 6. **Unbreakable and explosion-proof until Cleared.** `SpawnerBlockMixin` adds overrides to `SpawnerBlock`. `getDestroyProgress` returns 0 unless the block entity is Cleared, which works on the client from the synced state. `onExplosionHit` does nothing unless Cleared. `playerDestroy` calls super and fires `MapleTriggers.CLEARED_SPAWNER_BROKEN` when the spawner was Cleared. Vanilla only calls it with the correct tool, which is the same rule as the drops. `minecraft:spawner` is added to the `wither_immune` and `dragon_immune` tags, since those bosses use `destroyBlock` and skip the explosion path. That also makes Cleared spawners immune to them, which is accepted. Creative and commands still remove spawners.
@@ -44,7 +45,7 @@ public static final Event<Cleared> CLEARED; // (ServerLevel level, BlockPos pos)
 public static boolean isCleared(ServerLevel level, BlockPos pos);
 public static void holdBook(SpawnerBlockEntity spawner, ResourceKey<Enchantment> enchantment);
 static void onSpawned(ServerLevel level, BlockPos spawnerPos, Entity entity);  // called from BaseSpawnerMixin; public for tests
-// SpawnerClearing: requirement(), deaths(), isCleared(), heldBook(), cageBars(), CODEC
+// SpawnerClearing: requirement(), deaths(), isCleared(), heldBook(), remainingShare(), spawnDelay(int), CODEC
 ```
 
 ## Files
@@ -54,7 +55,7 @@ static void onSpawned(ServerLevel level, BlockPos spawnerPos, Entity entity);  /
 - Changed: `MapleTriggers` (two triggers), `Hearts.setMaxHearts`, `StructureBooks.levelOneBook` (public), `MapleFlavored.onInitialize` (`Spawners.register()`)
 - Data: the 4 advancement JSONs, the 2 placed features, the `wither_immune` and `dragon_immune` tags, `en_us.json`
 - GameTests: new `SpawnerGameTests` and `DungeonGameTests`, registered in the gametest `fabric.mod.json`. Crystal Heart advancement checks go in `CrystalHeartGameTests`, which already has `isDone`.
-- Docs: `GLOSSARY.md` (structure book: a dungeon's book is held by its spawner; Cleared stays), spec lines 353 and 357 (dungeon book drops from the broken Cleared spawner) and 362, 448 and 518 (the particle cage replaces cracks), ticket 21 boxes and the wording of its dungeon-book and progress criteria, `CREDITS.md`, and this plan copied to `.scratch/maple-flavored/plans/21-spawner-clearing-and-dungeons.md`
+- Docs: `GLOSSARY.md` (structure book: a dungeon's book is held by its spawner; Cleared stays), spec lines 353 and 357 (dungeon book drops from the broken Cleared spawner) and 362, 448 and 518 (the forcefield replaces cracks; the spawn speed), ticket 21 boxes and the wording of its dungeon-book and progress criteria, `CREDITS.md`, and this plan copied to `.scratch/maple-flavored/plans/21-spawner-clearing-and-dungeons.md`
 
 ## Acceptance matrix
 
@@ -68,7 +69,8 @@ static void onSpawned(ServerLevel level, BlockPos spawnerPos, Entity entity);  /
 | 3 players entered, then 2 leave | the requirement stays 16: 15 deaths don't Clear it, 16 do |
 | A player enters mid-count | the requirement rises by 2 |
 | Tagged mob dies in lava, or with `/kill` | counts |
-| `cageBars()` with 1 player, after 0, 1, 11 and 12 deaths | 12, 11, 1, 0 (Cleared). With 3 players (requirement 16) after 4 deaths: 9 |
+| `remainingShare()` with 1 player, after 0, 1, 11 and 12 deaths | 1, 11/12, 1/12, 0 (Cleared). With 3 players (requirement 16) after 4 deaths: 0.75 |
+| Spawners with a fixed 200-tick wait, one uncleared, one Cleared | they wait at most 100 and more than 100 ticks |
 | A death on the server | the client copy of the spawner's state matches (update tag round trip) |
 | A death after Cleared, or an untagged mob's death | changes nothing |
 | Cleared spawner broken with a pickaxe | 1 Pith, no book (not a dungeon), and the breaker gets `break_cleared_spawner` |
@@ -95,7 +97,7 @@ Set `JAVA_HOME` to `C:/Users/jackson/.jdks/jdk-25.0.4.1+1`, then `gradlew build`
 
 ## Hand checks (left unchecked on the ticket)
 
-The particle cage reads as a cage, loses a bar per kill when solo, and is gone once Cleared. Tune its colour and density then. Dungeons show up more often in a fresh world.
+The forcefield reads like the world border, closes in visibly with each kill, and is gone once Cleared. Tune its starting distance and colour then. Dungeons show up more often in a fresh world.
 
 ## Exclusions
 

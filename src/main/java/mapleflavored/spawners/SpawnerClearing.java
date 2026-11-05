@@ -15,14 +15,13 @@ import org.jspecify.annotations.Nullable;
  * One normal spawner's Clearing: the deaths of mobs it spawned, the players who entered its activation range, whether
  * it is Cleared, and the book it drops when broken, if any.
  *
- * <p>The requirement grows with each new player and never drops. Once Cleared, nothing changes.
+ * <p>The requirement grows with each new player and never drops. Until Cleared, the spawner spawns twice as fast.
+ * Once Cleared, nothing changes and it spawns at vanilla speed.
  */
 public final class SpawnerClearing {
-	/** How many bars the progress cage has while no mob has died. */
-	public static final int CAGE_BARS = 12;
-
 	private static final int BASE_REQUIREMENT = 12;
 	private static final int PER_ADDITIONAL_PLAYER = 2;
+	private static final int UNCLEARED_SPEEDUP = 2;
 
 	/** Saves and syncs a spawner's Clearing. */
 	public static final Codec<SpawnerClearing> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -74,16 +73,16 @@ public final class SpawnerClearing {
 		return Optional.ofNullable(heldBook);
 	}
 
-	/**
-	 * How many of the cage's 12 bars are still standing: the share of the requirement still to go, rounded up, so the
-	 * cage only empties when the spawner is Cleared.
-	 */
-	public int cageBars() {
-		if (cleared) return 0;
+	/** The share of the requirement still to go, from 1 before any death down toward 0, and exactly 0 once Cleared. */
+	public float remainingShare() {
+		if (cleared) return 0.0F;
 
-		int remaining = requirement() - deaths;
+		return (float) (requirement() - deaths) / requirement();
+	}
 
-		return Math.ceilDiv(CAGE_BARS * remaining, requirement());
+	/** The wait before this spawner's next wave, given the wait vanilla chose: half as long until Cleared. */
+	public int spawnDelay(int vanillaDelay) {
+		return cleared ? vanillaDelay : vanillaDelay / UNCLEARED_SPEEDUP;
 	}
 
 	/** @return whether the player is new to this spawner, which raises the requirement */

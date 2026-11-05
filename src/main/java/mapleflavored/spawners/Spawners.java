@@ -29,6 +29,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.BaseSpawner;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -42,7 +43,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The Spawners module: normal spawners ignore light, and can't be broken or blown up until they are Cleared by the
- * deaths of their own mobs. Breaking a Cleared spawner gives 1 Pith, and the book it holds, if any.
+ * deaths of their own mobs. Until then they spawn twice as fast. Breaking a Cleared spawner gives 1 Pith, and the book
+ * it holds, if any.
  *
  * <p>Trial spawners are left vanilla. Each spawner's state is a {@link SpawnerClearing} on its block entity.
  */
@@ -93,11 +95,19 @@ public final class Spawners {
 	 * Clearing it. Only a spawner block's own {@code spawner} counts; a spawner minecart's mobs are left unmarked.
 	 */
 	public static void markSpawned(ServerLevel level, BlockPos pos, BaseSpawner spawner, Entity entity) {
-		if (!(level.getBlockEntity(pos) instanceof SpawnerBlockEntity block) || block.getSpawner() != spawner) return;
+		if (blockClearing(level, pos, spawner).isEmpty()) return;
 
 		GlobalPos origin = GlobalPos.of(level.dimension(), pos.immutable());
 
 		entity.getSelfAndPassengers().forEach(spawned -> spawned.setAttached(SPAWNED_BY, origin));
+	}
+
+	/**
+	 * The wait before the next wave of the spawner at {@code pos}, given the wait vanilla chose: halved while a spawner
+	 * block isn't Cleared. A spawner minecart keeps vanilla's wait.
+	 */
+	public static int spawnDelay(Level level, BlockPos pos, BaseSpawner spawner, int vanillaDelay) {
+		return blockClearing(level, pos, spawner).map(clearing -> clearing.spawnDelay(vanillaDelay)).orElse(vanillaDelay);
 	}
 
 	/** Where the spawner block that spawned {@code entity} is, if one did. */
@@ -130,12 +140,12 @@ public final class Spawners {
 	}
 
 	/** The spawner's activation range, which is also the range that adds players to its requirement. */
-	static double activationRange(SpawnerBlockEntity spawner) {
+	private static double activationRange(SpawnerBlockEntity spawner) {
 		return ((BaseSpawnerAccessor) spawner.getSpawner()).getRequiredPlayerRange();
 	}
 
 	/** Whether the player activates a spawner whose centre is {@code centre}, as vanilla decides it. */
-	static boolean isInRange(Player player, Vec3 centre, double range) {
+	private static boolean isInRange(Player player, Vec3 centre, double range) {
 		return !player.isSpectator() && player.isAlive() && player.distanceToSqr(centre) < range * range;
 	}
 
@@ -179,7 +189,7 @@ public final class Spawners {
 		clearing.get().heldBook().ifPresent(book -> drops.add(StructureBooks.levelOneBook(book)));
 	}
 
-	// Saves the change and sends it to clients, which draw the cage and predict whether the spawner can be mined.
+	// Saves the change and sends it to clients, which draw the forcefield and predict whether the spawner can be mined.
 	private static void sendChange(ServerLevel level, BlockPos pos, SpawnerBlockEntity spawner) {
 		BlockState state = spawner.getBlockState();
 
@@ -187,11 +197,18 @@ public final class Spawners {
 		level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
 	}
 
+	// The Clearing of the spawner block whose own spawner is {@code spawner}; empty for a spawner minecart.
+	private static Optional<SpawnerClearing> blockClearing(Level level, BlockPos pos, BaseSpawner spawner) {
+		if (!(level.getBlockEntity(pos) instanceof SpawnerBlockEntity block) || block.getSpawner() != spawner) return Optional.empty();
+
+		return Optional.of(clearingOf(block));
+	}
+
 	private static Optional<SpawnerClearing> clearing(@Nullable BlockEntity blockEntity) {
 		return blockEntity instanceof ClearableSpawner spawner ? Optional.of(spawner.maple_flavored$clearing()) : Optional.empty();
 	}
 
-	static SpawnerClearing clearingOf(SpawnerBlockEntity spawner) {
+	private static SpawnerClearing clearingOf(SpawnerBlockEntity spawner) {
 		return ((ClearableSpawner) spawner).maple_flavored$clearing();
 	}
 

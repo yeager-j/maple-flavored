@@ -59,7 +59,7 @@ The only kind of village: populated by zombie villagers, with no iron golems, so
 _Avoid_: Ruined village, zombie village
 
 **Cleared**:
-A spawner whose mobs have died enough times, 12 plus 2 per additional player, so it can be broken. Until then a cage of particles surrounds it and loses a bar as its mobs die. A Cleared spawner looks like any other and stays Cleared.
+A spawner whose mobs have died enough times, 12 plus 2 per additional player, so it can be broken. Until then it spawns twice as fast, and a forcefield like the world border's surrounds it and closes in as its mobs die. A Cleared spawner looks like any other and stays Cleared.
 
 **Restored**:
 Said of a structure whose mobs have returned after a Blood Moon.
