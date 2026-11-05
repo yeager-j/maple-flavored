@@ -13,7 +13,6 @@
 		"ChiseledBookShelfBlockMixin",
 		"EnchantingTableBlockMixin",
 		"EntitySpawnReasonMixin",
-		"FireworkRocketEntityMixin",
 		"GameRulesMixin",
 		"GrindstoneInputSlotMixin",
 		"GrindstoneMenuMixin",

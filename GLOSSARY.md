@@ -70,7 +70,7 @@ An area a boss opens around itself to shut down the cheapest way of avoiding its
 _Avoid_: Domain, aura
 
 **Grounded**:
-An effect that makes gliding and Firework Rockets much weaker, greatly increases Ender Pearl gravity to shorten throws, and stops Riptide and Zephyr's double jump.
+An effect that stops Elytra gliding, greatly increases Ender Pearl gravity to shorten throws, and stops Riptide and Zephyr's double jump.
 _Avoid_: Heavy, gravity
 
 **Warden Territory**:

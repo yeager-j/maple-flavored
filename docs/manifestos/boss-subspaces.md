@@ -17,7 +17,7 @@ Subspaces start with the Warden. The Wither is next, and other bosses come later
 ## The Warden's subspace
 
 - **Where:** a fixed sphere centred where the Warden spawns, with a radius of 100 blocks. It doesn't move with the Warden.
-- **Effect:** Darkness and Grounded. Grounded makes gliding and Firework Rockets much weaker, stops Riptide and Zephyr's double jump, and greatly increases Ender Pearl gravity. Pearls fall sharply and travel much shorter distances, but their teleports still work. The gravity multiplier needs playtesting.
+- **Effect:** Darkness and Grounded. Grounded stops Elytra from working (so Firework Rockets can't boost either), stops Riptide and Zephyr's double jump, and greatly increases Ender Pearl gravity. Pearls fall sharply and travel much shorter distances, but their teleports still work. The gravity multiplier needs playtesting.
 - **Escape:** there is no barrier. Sneaking, hiding and finding a physical route out are valid ways to survive. Short pearl throws can still help you reach nearby cover or cross a gap.
 - **Ending:** each subspace ends when the Warden that opened it goes away, which in vanilla happens after a minute without being disturbed. You can leave earlier if you reach the edge.
 - **The Ancient City's book:** a Warden spawned by grabbing it is angry from the start, which makes it a bit tougher.

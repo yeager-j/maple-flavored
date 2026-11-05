@@ -222,7 +222,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 ### Boss Subspaces
 
 166. As a player, I want every Warden to open a fixed Subspace with a 100-block radius where it spawns, applying Darkness and Grounded, so that I can't fly away from it.
-167. As a player, I want Grounded to weaken gliding and Firework Rockets, shorten Ender Pearl throws and stop Riptide and Zephyr's jump, so that escape is a journey through the area.
+167. As a player, I want Grounded to stop Elytra gliding, shorten Ender Pearl throws and stop Riptide and Zephyr's jump, so that escape is a journey through the area.
 168. As a player, I want Levitation, Slow Falling, Chorus Fruit and short pearl teleports to still work while Grounded, so that clever play still helps.
 169. As a player, I want no barrier at a Subspace's edge, so that I can sneak out or hide until the Warden leaves.
 170. As a player, I want the Warden to know where every entity in its Subspace is, so that hiding needs real stealth while anger still comes only from sniffing.
@@ -372,7 +372,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Wither kind: blocks Withered Heart recovery. It applies no effect by itself.
 - Overlap is allowed. Grounded does not stack.
 
-**Grounded.** A registered status effect. It multiplies horizontal glide movement by an extra 0.97 per tick, cuts Firework Rocket boost by 95%, greatly increases Ender Pearl gravity, and stops Riptide and Zephyr's double jump. It stacks with the Armored Elytra penalty. Levitation, Slow Falling and Chorus Fruit still work.
+**Grounded.** A registered status effect. It stops Elytra gliding the way Levitation does (no glide starts, and one under way ends), which also leaves Firework Rockets nothing to boost. It greatly increases the gravity of Ender Pearls thrown while Grounded and stops Riptide and Zephyr's double jump. Armored Elytra are Elytra, so it stops them too. Levitation, Slow Falling and Chorus Fruit still work.
 
 **Warden summoning.** Replaces the vanilla rule. A shriek gives warning levels and cooldowns only to players in Warden Territory (the Deep Dark biome or an Ancient City's bounds). The Warden spawns 5 to 15 blocks from the player who caused the shriek, or the nearest player in Warden Territory if that player is outside it. With no room, the search widens to 50 blocks from that player. If that fails, the cooldown clears. With nobody in Warden Territory, the summon is cancelled.
 
@@ -447,7 +447,7 @@ There is one automated test seam: Fabric's server GameTest framework. Tests run 
 The client decides some things, and a headless server can't see them. These are checked by hand in a development client, not automated:
 
 - Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced overlay and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and the Blood Moon sky.
-- Player movement and input: Zephyr's double jump and Clutch, glide and Firework Rocket penalties from Grounded and the Armored Elytra, Riptide being blocked, and Shakudo's movement speed.
+- Player movement and input: Zephyr's double jump and Clutch, Grounded ending a glide, the Armored Elytra's glide and Firework Rocket penalties, Riptide being blocked, and Shakudo's movement speed.
 - Sync: that the client shows the server's Max Hearts, Withered Hearts, Remnants, Subspaces and Blood Moon.
 
 Server GameTests still cover the server side of these: the Zephyr request's checks and fall-distance results, the Grounded effect being applied, Ender Pearl gravity, and attribute values. Each build ticket that touches a hand-checked item lists what to check.
