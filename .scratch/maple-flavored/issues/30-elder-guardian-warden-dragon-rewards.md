@@ -14,3 +14,7 @@ Spec: the Maple Flavored spec in this folder.
 - [ ] Free the End also gives a Crystal Heart
 - [ ] The Ender Dragon drops a level I Zephyr book every kill
 - [ ] GameTests cover each reward and its player range
+
+## Notes
+
+- From 25 (Warden Subspace): `Subspaces.ENDED` fires for every ending, whatever caused it: death, digging down, Peaceful, or any other removal for good. Survive the Warden needs only death and digging down, so this ticket must tell those apart itself. Digging down removes the Warden with `DISCARDED` from `Digging.stop`, and so does any other discard.
