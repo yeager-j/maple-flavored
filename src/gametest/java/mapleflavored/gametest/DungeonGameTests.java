@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import mapleflavored.items.MapleItems;
+import mapleflavored.mixin.MineShaftCorridorAccessor;
 import mapleflavored.spawners.Spawners;
-import mapleflavored.structurebooks.DungeonBooks;
+import mapleflavored.structurebooks.SpawnerBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -34,6 +35,7 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.feature.MonsterRoomFeature;
@@ -42,12 +44,16 @@ import net.minecraft.world.level.levelgen.heightproviders.UniformHeight;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
 import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.structures.MineshaftPieces;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * Dungeons are tried 15 times per chunk above Y 0 and 8 below, and each dungeon's spawner holds the book that fights its
- * mob, Smite for zombies and skeletons and Bane of Arthropods for spiders. It drops with the spawner's Pith once the
- * spawner is Cleared and broken.
+ * mob, Smite for zombies and skeletons and Bane of Arthropods for spiders. Every Mineshaft cave spider spawner holds Bane
+ * of Arthropods too. The book drops with the spawner's Pith once the spawner is Cleared and broken.
  */
 public class DungeonGameTests {
 	// Far from every test's own area and from the other far-away tests, high in the air of the flat test world.
@@ -55,6 +61,12 @@ public class DungeonGameTests {
 	private static final int ROOM_SEEDS = 8;
 	private static final int ROOMS_APART = 32;
 	private static final int ZOMBIE_HEIGHT = 20;
+	// Clear of the other far-away tests' chunks. Not every Mineshaft has a spider corridor, so several are planned.
+	private static final ChunkPos MINESHAFT_CHUNK = new ChunkPos(-3000, 3000);
+	private static final int MINESHAFT_PLANS = 40;
+	private static final int MINESHAFTS_APART = 40;
+	private static final BlockPos CORRIDOR_SITE = new BlockPos(-48_000, 100, 40_000);
+	private static final long CORRIDOR_SEED = 21L;
 	private static final int BOOK_ROLLS = 200;
 	private static final long BOOK_SEED = 21L;
 	private static final double STANDARD_DEVIATIONS = 4.0;
@@ -103,28 +115,68 @@ public class DungeonGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(maxTicks = 400)
+	public void aMineshaftCaveSpiderSpawnerHoldsBaneOfArthropods(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructurePiece corridor = firstSpiderCorridor(level);
+		BoundingBox planned = corridor.getBoundingBox();
+
+		corridor.move(CORRIDOR_SITE.getX() - planned.minX(), CORRIDOR_SITE.getY() - planned.minY(), CORRIDOR_SITE.getZ() - planned.minZ());
+
+		BoundingBox site = corridor.getBoundingBox();
+
+		// The corridor places its spawner only underground, below the worldgen heightmap, which the thin test world
+		// doesn't reach. Solid stone around and above it stands in for the ground.
+		for (BlockPos pos : BlockPos.betweenClosed(site.minX() - 2, site.minY() - 2, site.minZ() - 2, site.maxX() + 2, site.maxY() + 4, site.maxZ() + 2)) {
+			level.setBlock(pos, Blocks.STONE.defaultBlockState(), Block.UPDATE_CLIENTS);
+		}
+
+		for (ChunkPos chunk : ChunkPos.rangeClosed(new ChunkPos(site.minX() >> 4, site.minZ() >> 4), new ChunkPos(site.maxX() >> 4, site.maxZ() >> 4)).toList()) {
+			BoundingBox chunkBox = new BoundingBox(
+				chunk.getMinBlockX(), level.getMinY(), chunk.getMinBlockZ(), chunk.getMaxBlockX(), level.getMaxY(), chunk.getMaxBlockZ()
+			);
+
+			corridor.postProcess(level, level.structureManager(), level.getChunkSource().getGenerator(), RandomSource.create(CORRIDOR_SEED), chunkBox, chunk, site.getCenter());
+		}
+
+		List<SpawnerBlockEntity> spawners = BlockPos.betweenClosedStream(site)
+			.map(level::getBlockEntity)
+			.filter(SpawnerBlockEntity.class::isInstance)
+			.map(SpawnerBlockEntity.class::cast)
+			.toList();
+
+		helper.assertValueEqual(spawners.size(), 1, "cave spider spawners in the corridor");
+
+		SpawnerBlockEntity spawner = spawners.getFirst();
+		Optional<Holder<Enchantment>> book = Spawners.clearing(level, spawner.getBlockPos()).flatMap(clearing -> clearing.heldBook());
+
+		helper.assertValueEqual(spawnedMob(level, spawner), EntityTypes.CAVE_SPIDER, "the Mineshaft spawner's mob");
+		helper.assertTrue(book.isPresent() && book.get().is(Enchantments.BANE_OF_ARTHROPODS), "the cave spider spawner holds Bane of Arthropods");
+		helper.succeed();
+	}
+
 	@GameTest
 	public void theDungeonBookFightsTheDungeonsMob(GameTestHelper helper) {
 		RandomSource random = RandomSource.create(BOOK_SEED);
 
-		helper.assertValueEqual(DungeonBooks.forMob(EntityTypes.ZOMBIE, random), Enchantments.SMITE, "a zombie dungeon's book");
-		helper.assertValueEqual(DungeonBooks.forMob(EntityTypes.SKELETON, random), Enchantments.SMITE, "a skeleton dungeon's book");
-		helper.assertValueEqual(DungeonBooks.forMob(EntityTypes.SPIDER, random), Enchantments.BANE_OF_ARTHROPODS, "a spider dungeon's book");
-		helper.assertValueEqual(DungeonBooks.forMob(EntityTypes.CAVE_SPIDER, random), Enchantments.BANE_OF_ARTHROPODS, "a cave spider dungeon's book");
+		helper.assertValueEqual(SpawnerBooks.forMob(EntityTypes.ZOMBIE, random), Enchantments.SMITE, "a zombie dungeon's book");
+		helper.assertValueEqual(SpawnerBooks.forMob(EntityTypes.SKELETON, random), Enchantments.SMITE, "a skeleton dungeon's book");
+		helper.assertValueEqual(SpawnerBooks.forMob(EntityTypes.SPIDER, random), Enchantments.BANE_OF_ARTHROPODS, "a spider dungeon's book");
+		helper.assertValueEqual(SpawnerBooks.forMob(EntityTypes.CAVE_SPIDER, random), Enchantments.BANE_OF_ARTHROPODS, "a cave spider dungeon's book");
 		helper.succeed();
 	}
 
 	@GameTest
 	public void aMobNeitherBookFightsGetsEitherWithEqualWeight(GameTestHelper helper) {
-		ResourceKey<Enchantment> first = DungeonBooks.ENCHANTMENTS.getFirst();
+		ResourceKey<Enchantment> first = SpawnerBooks.ENCHANTMENTS.getFirst();
 		int firstCount = 0;
 
 		RandomSource random = RandomSource.create(BOOK_SEED);
 
 		for (int roll = 0; roll < BOOK_ROLLS; roll++) {
-			ResourceKey<Enchantment> chosen = DungeonBooks.forMob(EntityTypes.BLAZE, random);
+			ResourceKey<Enchantment> chosen = SpawnerBooks.forMob(EntityTypes.BLAZE, random);
 
-			helper.assertTrue(DungeonBooks.ENCHANTMENTS.contains(chosen), chosen + " is a dungeon enchantment");
+			helper.assertTrue(SpawnerBooks.ENCHANTMENTS.contains(chosen), chosen + " is a dungeon enchantment");
 
 			if (chosen == first) firstCount++;
 		}
@@ -158,6 +210,19 @@ public class DungeonGameTests {
 		helper.assertValueEqual(counts.getFirst().count().maxInclusive(), attempts, key.identifier() + " most attempts");
 		helper.assertValueEqual(heights.size(), 1, key.identifier() + " height placements");
 		helper.assertValueEqual(encode(heights.getFirst().height()), encode(height), key.identifier() + " height range");
+	}
+
+	private static StructurePiece firstSpiderCorridor(ServerLevel level) {
+		for (int i = 0; i < MINESHAFT_PLANS; i++) {
+			ChunkPos chunk = new ChunkPos(MINESHAFT_CHUNK.x(), MINESHAFT_CHUNK.z() + i * MINESHAFTS_APART);
+			Optional<StructurePiece> corridor = Structures.plan(level, BuiltinStructures.MINESHAFT, chunk).getPieces().stream()
+				.filter(piece -> piece instanceof MineshaftPieces.MineShaftCorridor && ((MineShaftCorridorAccessor) piece).isSpiderCorridor())
+				.findFirst();
+
+			if (corridor.isPresent()) return corridor.get();
+		}
+
+		throw new IllegalStateException("no spider corridor in " + MINESHAFT_PLANS + " planned Mineshafts");
 	}
 
 	private static EntityType<?> spawnedMob(ServerLevel level, SpawnerBlockEntity spawner) {

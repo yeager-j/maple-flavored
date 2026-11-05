@@ -14,19 +14,19 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 
 /**
- * The Dungeon's structure book, which fights the dungeon's own mob: Smite for a zombie or skeleton dungeon, Bane of
- * Arthropods for a spider dungeon. Dungeons are placed features, not structures, so the book isn't a block: the
- * dungeon's spawner holds it and drops it with its Pith once Cleared and broken.
+ * The books held by spawners placed at generation: each Dungeon's spawner and each Mineshaft cave spider spawner. The
+ * book fights the spawner's own mob: Smite for zombies and skeletons, Bane of Arthropods for spiders and cave spiders.
+ * The spawner drops it with its Pith once Cleared and broken.
  */
-public final class DungeonBooks {
-	/** The enchantments a Dungeon's book can have. */
+public final class SpawnerBooks {
+	/** The enchantments a spawner's book can have. */
 	public static final List<ResourceKey<Enchantment>> ENCHANTMENTS = List.of(Enchantments.BANE_OF_ARTHROPODS, Enchantments.SMITE);
 
-	private DungeonBooks() {
+	private SpawnerBooks() {
 	}
 
 	/**
-	 * The book for a dungeon that spawns {@code mob}, read from the tags those enchantments hit harder. A mob in neither
+	 * The book for a spawner that spawns {@code mob}, read from the tags those enchantments hit harder. A mob in neither
 	 * tag gets one of the two with equal weight, chosen with {@code random}.
 	 */
 	public static ResourceKey<Enchantment> forMob(EntityType<?> mob, RandomSource random) {
@@ -36,7 +36,7 @@ public final class DungeonBooks {
 		return Util.getRandom(ENCHANTMENTS, random);
 	}
 
-	/** Gives a dungeon's freshly placed spawner the book for {@code mob}, the mob the dungeon chose for it. */
+	/** Gives a spawner placed at generation the book for {@code mob}, the mob it was set to spawn. */
 	public static void give(WorldGenLevel level, SpawnerBlockEntity spawner, EntityType<?> mob, RandomSource random) {
 		var enchantment = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(forMob(mob, random));
 

@@ -6,7 +6,7 @@ Spawners are the mod's first "deal with it" obstacle: right now a torch beats a 
 
 Jackson's calls (2026-11-04):
 
-- **Dungeon book:** it's held by the dungeon's spawner and drops with the Pith when the Cleared spawner is broken. It doesn't float above the spawner. It fights the dungeon's mob, chosen at generation: Smite for a zombie or skeleton dungeon, Bane of Arthropods for a spider dungeon. (It started as an equal-weight choice and was tied to the mob after review.)
+- **Dungeon book:** it's held by the dungeon's spawner and drops with the Pith when the Cleared spawner is broken. It doesn't float above the spawner. It fights the dungeon's mob, chosen at generation: Smite for a zombie or skeleton dungeon, Bane of Arthropods for a spider dungeon. (It started as an equal-weight choice and was tied to the mob after review.) Every Mineshaft cave spider spawner also holds a Bane of Arthropods book, on top of the Mineshaft's Efficiency book.
 - **Progress look:** no cracks and no new textures. An uncleared spawner is wrapped in the world border's forcefield. It starts half a block out and closes in on the spawner in step with the share of the requirement still to go, then vanishes once Cleared. A Cleared spawner is just a normal spawner, with no extra effect. The spec's "cracks that grow with the count" (lines 362, 448 and 518) and the ticket's wording change to match. (A first try, a particle cage of 12 edge bars, was replaced after a look in game.)
 - **Spawn speed:** until Cleared, a spawner waits half the delay vanilla chooses, so it spawns twice as fast. Once Cleared it goes back to vanilla speed.
 - **Tool rule:** Pith and the book follow vanilla's spawner XP rule and need a pickaxe (`requiresCorrectToolForDrops`). Breaking a spawner by hand drops nothing. The advancement fires only when the Pith drops.
@@ -29,7 +29,7 @@ Jackson's calls (2026-11-04):
 5. **Light.** `EntitySpawnReasonMixin` makes `ignoresLightRequirements(SPAWNER)` true. `BaseSpawnerMixin` also wraps `Mob.checkSpawnRules` in `serverTick` to return true. This covers every `BaseSpawner` (blocks and command-made spawner minecarts), but never trial spawners, which use their own code and `TRIAL_SPAWNER`.
 6. **Unbreakable and explosion-proof until Cleared.** `SpawnerBlockMixin` adds overrides to `SpawnerBlock`. `getDestroyProgress` returns 0 unless the block entity is Cleared, which works on the client from the synced state. `onExplosionHit` does nothing unless Cleared. `playerDestroy` calls super and fires `MapleTriggers.CLEARED_SPAWNER_BROKEN` when the spawner was Cleared. Vanilla only calls it with the correct tool, which is the same rule as the drops. `minecraft:spawner` is added to the `wither_immune` and `dragon_immune` tags, since those bosses use `destroyBlock` and skip the explosion path. That also makes Cleared spawners immune to them, which is accepted. Creative and commands still remove spawners.
 7. **Drops.** `MODIFY_DROPS` on `Blocks.SPAWNER`'s loot table: if `BLOCK_ENTITY` is a Cleared spawner, add 1 Pith and, if it holds a book, `StructureBooks.levelOneBook(enchantment)` (made public). That covers a pickaxe break and an explosion of a Cleared spawner. Enchanted book entities already resist explosions.
-8. **Dungeon books.** `structurebooks.DungeonBooks.forMob` reads the mob the dungeon chose. It gives Smite for `#sensitive_to_smite` and Bane of Arthropods for `#sensitive_to_bane_of_arthropods`, the tags the enchantments themselves use. Any other mob gets one of the two with equal weight from the feature random. `MonsterRoomFeatureMixin` hooks after `setEntityId`, where it has the mob, and calls `Spawners.holdBook(spawnerBlockEntity, enchantment)`. A held key whose enchantment is missing at break drops no book.
+8. **Spawner books.** `structurebooks.SpawnerBooks.forMob` reads the mob the dungeon chose. It gives Smite for `#sensitive_to_smite` and Bane of Arthropods for `#sensitive_to_bane_of_arthropods`, the tags the enchantments themselves use. Any other mob gets one of the two with equal weight from the feature random. `MonsterRoomFeatureMixin` and `MineShaftCorridorMixin` hook after `setEntityId`, where they have the mob, and call `Spawners.holdBook(spawnerBlockEntity, enchantment)`. A held key whose enchantment is missing at break drops no book.
 9. **Dungeon frequency:** `data/minecraft/worldgen/placed_feature/monster_room.json` (count 15) and `monster_room_deep.json` (count 8), copied from the 26.3 jar with only the count changed. Credit Matcha Flavoured in `CREDITS.md` under Reused designs.
 10. **Advancements** (Adventure tab, each with a title and description in `en_us.json`):
    - `adventure/break_cleared_spawner`: parent `minecraft:adventure/kill_a_mob`, task, trigger `maple_flavored:cleared_spawner_broken`, icon spawner.
@@ -50,7 +50,7 @@ static void onSpawned(ServerLevel level, BlockPos spawnerPos, Entity entity);  /
 
 ## Files
 
-- New: `spawners/Spawners.java`, `spawners/SpawnerClearing.java`, `spawners/ClearableSpawner.java` (duck), `structurebooks/DungeonBooks.java`
+- New: `spawners/Spawners.java`, `spawners/SpawnerClearing.java`, `spawners/ClearableSpawner.java` (duck), `structurebooks/SpawnerBooks.java`, `mixin/MineShaftCorridorMixin.java`
 - Mixins: `SpawnerBlockEntityMixin`, `SpawnerBlockMixin`, `BaseSpawnerMixin` (plus a `requiredPlayerRange` accessor), `EntitySpawnReasonMixin`, `MonsterRoomFeatureMixin`, registered in `maple_flavored.mixins.json`
 - Changed: `MapleTriggers` (two triggers), `Hearts.setMaxHearts`, `StructureBooks.levelOneBook` (public), `MapleFlavored.onInitialize` (`Spawners.register()`)
 - Data: the 4 advancement JSONs, the 2 placed features, the `wither_immune` and `dragon_immune` tags, `en_us.json`
@@ -77,7 +77,8 @@ static void onSpawned(ServerLevel level, BlockPos spawnerPos, Entity entity);  /
 | Cleared spawner broken by hand | no drops, no advancement |
 | Spawner state saved and loaded (`saveWithFullMetadata` → `loadWithComponents`) | deaths, players, Cleared and the held book all survive |
 | `monster_room` placed in prepared stone boxes, 8 seeds | each spawner holds Smite for zombies and skeletons, Bane of Arthropods for spiders, and both kinds appear. Clearing and breaking it drops that book at level I, plus Pith |
-| `DungeonBooks.forMob` | zombie and skeleton give Smite, spider and cave spider give Bane of Arthropods. A Blaze, in neither tag, gives either, each within 4 binomial SD of half over 200 rolls |
+| `SpawnerBooks.forMob` | zombie and skeleton give Smite, spider and cave spider give Bane of Arthropods. A Blaze, in neither tag, gives either, each within 4 binomial SD of half over 200 rolls |
+| 6 Mineshafts placed | at least one cave spider spawner, and each holds Bane of Arthropods |
 | Placed features from the loaded registry | `monster_room` count 15, Y 0 to top. `monster_room_deep` count 8 |
 | Consume a Crystal Heart | `consume_crystal_heart` done. A refused heart at 30 doesn't grant it |
 | Saved by a Crystal Heart | `saved_by_crystal_heart` done. Postmortal isn't |

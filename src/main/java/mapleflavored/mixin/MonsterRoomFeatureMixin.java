@@ -3,7 +3,7 @@ package mapleflavored.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import mapleflavored.structurebooks.DungeonBooks;
+import mapleflavored.structurebooks.SpawnerBooks;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.WorldGenLevel;
@@ -29,6 +29,6 @@ public abstract class MonsterRoomFeatureMixin {
 		SpawnerBlockEntity spawner, EntityType<?> type, RandomSource random, Operation<Void> original, @Local(argsOnly = true) WorldGenLevel level
 	) {
 		original.call(spawner, type, random);
-		DungeonBooks.give(level, spawner, type, random);
+		SpawnerBooks.give(level, spawner, type, random);
 	}
 }
