@@ -60,6 +60,7 @@ public class BastionBookGameTests {
 	// Beyond a Piglin's 16-block targeting range, which vanilla's anger is limited to.
 	private static final double FAR_FROM_THE_BOOK = 16.0;
 	private static final int OUTSIDE_THE_BASTION = 4;
+	private static final long TEN_MINUTES = 10L * 60L * 20L;
 	private static final BlockPos HAND_SET_BOOK = new BlockPos(3, 2, 3);
 	// Long enough for a Piglin's sensors and fight behaviour to run, short of its zombifying in the Overworld.
 	private static final int AI_TICKS = 40;
@@ -251,6 +252,7 @@ public class BastionBookGameTests {
 		}
 
 		helper.assertValueEqual(angryAt(farPiglin), taker, "the far Piglin is angry at");
+		helper.assertValueEqual(farPiglin.getBrain().getTimeUntilExpiry(MemoryModuleType.ANGRY_AT), TEN_MINUTES, "ticks the far Piglin stays angry");
 		helper.assertValueEqual(angryAt(brute), taker, "the Brute is angry at");
 		helper.assertValueEqual(angryAt(outsider), Optional.empty(), "the Piglin outside the Bastion is angry at");
 		helper.assertValueEqual(angryAt(betweenPieces), Optional.empty(), "the Piglin in the Bastion's bounds but none of its pieces is angry at");

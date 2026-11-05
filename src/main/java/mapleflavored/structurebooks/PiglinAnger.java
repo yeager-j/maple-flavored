@@ -16,8 +16,9 @@ import net.minecraft.world.phys.AABB;
  * far away they are and whatever the player wears.
  */
 final class PiglinAnger {
-	// Vanilla's anger duration, as when a Piglin sees a player open its Bastion's chests.
-	private static final long ANGER_TICKS = 600L;
+	// Ten minutes, long enough to cross the Bastion with all of it still after you. Vanilla's 30 seconds of chest anger
+	// would let the far side calm down first. Dying still ends it, as vanilla forgets a dead target.
+	private static final long ANGER_TICKS = 10L * 60L * 20L;
 
 	private PiglinAnger() {
 	}
@@ -38,7 +39,7 @@ final class PiglinAnger {
 		).forEach(piglin -> anger(level, piglin, player));
 	}
 
-	// Vanilla's PiglinAi.setAngerTarget without its 16-block range check, so the whole Bastion hears it.
+	// Vanilla's PiglinAi.setAngerTarget without its 16-block range check, so the whole Bastion hears it, and for longer.
 	private static void anger(ServerLevel level, AbstractPiglin piglin, ServerPlayer player) {
 		Brain<?> brain = piglin.getBrain();
 

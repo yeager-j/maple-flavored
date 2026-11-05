@@ -11,4 +11,4 @@ Spec: the Maple Flavored spec in this folder.
 - [x] Treasure room Fire Aspect, bridge Soul Speed, housing units Flame, hoglin stables Thorns
 - [x] Taking the book angers every Piglin in the structure
 - [x] GameTests place each layout, take the book and check Piglin anger
-- [ ] Hand check: each layout's book is easy to find beside its chest, and the angered Bastion feels like a fight
+- [x] Hand check: the book spawns in the Bastion and taking it angers the Piglins (anger lengthened to 10 minutes after it)

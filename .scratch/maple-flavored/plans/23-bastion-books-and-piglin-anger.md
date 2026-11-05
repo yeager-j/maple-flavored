@@ -28,7 +28,7 @@ Closing the ticket means every new Bastion holds exactly one level I book matchi
    - Hoglin stables: the first `bastion_hoglin_stable` chest, else the first chest in `bastion/hoglin_stable/walls/wall_base`.
    No match means no book, as with every rule.
 3. **Anger lives in a new `PiglinAnger` class** (package `structurebooks`, registered from `StructureBooks.register()`), listening on `TAKEN`. It looks the Bastion up with `level.structureManager().getStructureWithPieceAt(pos, bastion)` (the block is gone by then, but the start and its book piece aren't). If valid, it angers every `AbstractPiglin` (Piglins and Brutes, babies too) in `AABB.of(start.getBoundingBox())` whose `blockPosition()` is inside one of the start's pieces (`structureHasPieceAt`). So "in the structure" is the same piece test vanilla uses. Zombified Piglins aren't Piglins and are left alone.
-4. **How a Piglin is angered:** mirror `setAngerTarget` without its 16-block check: erase `CANT_REACH_WALK_TARGET_SINCE`, set `ANGRY_AT` to the player for 600 ticks (vanilla's anger duration), and set `UNIVERSAL_ANGER` for 600 when the game rule is on. This writes the brain directly, so it reaches the whole structure. The duration stays vanilla's; whether far Piglins should stay angry longer is a hand-check question.
+4. **How a Piglin is angered:** mirror `setAngerTarget` without its 16-block check: erase `CANT_REACH_WALK_TARGET_SINCE`, set `ANGRY_AT` to the player for 10 minutes (12,000 ticks), and set `UNIVERSAL_ANGER` for as long when the game rule is on. This writes the brain directly, so it reaches the whole structure. Jackson's call after the hand check: vanilla's 30 seconds let the far side calm down before the player arrives. Vanilla still erases `ANGRY_AT` when its target dies.
 5. **Fixture:** `Structures.register(level, start)` sets the start in its chunk and adds a reference in every chunk it covers, as worldgen does. Bastion tests call it after `place`. Existing tests are untouched.
 
 ## API sketch
@@ -86,7 +86,7 @@ Bastions are planned at far chunks (row at chunk 6000) and scanned until the wan
 
 ## Hand checks (left unchecked)
 
-Each layout's book is easy to see next to its chest; the angered Bastion feels like a fight; whether 30 s of anger is long enough for Piglins on the far side.
+Each layout's book is easy to see next to its chest; the angered Bastion feels like a fight.
 
 ## Exclusions
 
