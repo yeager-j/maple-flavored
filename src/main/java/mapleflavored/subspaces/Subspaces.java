@@ -75,12 +75,22 @@ public final class Subspaces {
 
 	/** The Subspaces in the level that contain the position. Works on both the server and the client. */
 	public static List<Subspace> containing(Level level, Vec3 position) {
-		return all(level).stream().filter(subspace -> subspace.contains(position)).toList();
+		return inLevel(level).stream().filter(subspace -> subspace.contains(position)).toList();
+	}
+
+	/** Every Subspace in the level. Works on both the server and the client. */
+	public static List<Subspace> inLevel(Level level) {
+		return level.getAttachedOrElse(ATTACHMENT, List.of());
+	}
+
+	/** Whether the Subspace with this id is still open in the level. */
+	static boolean isActive(Level level, UUID id) {
+		return inLevel(level).stream().anyMatch(subspace -> subspace.id().equals(id));
 	}
 
 	/** The Subspace the boss opened in the level, if it opened one there. */
 	static Optional<Subspace> ownedBy(Level level, UUID boss) {
-		return all(level).stream().filter(subspace -> subspace.boss().equals(boss)).findFirst();
+		return inLevel(level).stream().filter(subspace -> subspace.boss().equals(boss)).findFirst();
 	}
 
 	/** Whether the boss has a Subspace in any level. */
@@ -94,14 +104,10 @@ public final class Subspaces {
 
 	/** Opens a Subspace centred on where the boss stands. */
 	static void open(ServerLevel level, Entity boss, Subspace.Kind kind, double radius) {
-		Subspace subspace = new Subspace(boss.getUUID(), kind, boss.position(), radius);
+		Subspace subspace = new Subspace(UUID.randomUUID(), boss.getUUID(), kind, boss.position(), radius);
 
-		level.setAttached(ATTACHMENT, Stream.concat(all(level).stream(), Stream.of(subspace)).toList());
+		level.setAttached(ATTACHMENT, Stream.concat(inLevel(level).stream(), Stream.of(subspace)).toList());
 		STARTED.invoker().onStarted(level, subspace);
-	}
-
-	private static List<Subspace> all(Level level) {
-		return level.getAttachedOrElse(ATTACHMENT, List.of());
 	}
 
 	// A boss can carry its UUID to another dimension, while its Subspace stays where it was opened.
@@ -120,7 +126,7 @@ public final class Subspaces {
 	}
 
 	private static void end(ServerLevel level, Predicate<Subspace> ending) {
-		List<Subspace> subspaces = all(level);
+		List<Subspace> subspaces = inLevel(level);
 		List<Subspace> ended = subspaces.stream().filter(ending).toList();
 
 		if (ended.isEmpty()) return;

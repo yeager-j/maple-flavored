@@ -12,12 +12,14 @@ import net.minecraft.world.phys.Vec3;
 /**
  * A boss's Subspace: a fixed sphere that stays where the boss opened it. The level that holds it is its dimension.
  *
+ * @param id unique to this opening, even when the same boss opens another Subspace where it stood
  * @param boss the UUID of the boss that opened it
  * @param centre where the boss stood when it opened it
  * @param radius in blocks
  */
-public record Subspace(UUID boss, Kind kind, Vec3 centre, double radius) {
+public record Subspace(UUID id, UUID boss, Kind kind, Vec3 centre, double radius) {
 	static final Codec<Subspace> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+		UUIDUtil.CODEC.fieldOf("id").forGetter(Subspace::id),
 		UUIDUtil.CODEC.fieldOf("boss").forGetter(Subspace::boss),
 		Kind.CODEC.fieldOf("kind").forGetter(Subspace::kind),
 		Vec3.CODEC.fieldOf("centre").forGetter(Subspace::centre),
@@ -25,6 +27,7 @@ public record Subspace(UUID boss, Kind kind, Vec3 centre, double radius) {
 	).apply(instance, Subspace::new));
 
 	static final StreamCodec<ByteBuf, Subspace> STREAM_CODEC = StreamCodec.composite(
+		UUIDUtil.STREAM_CODEC, Subspace::id,
 		UUIDUtil.STREAM_CODEC, Subspace::boss,
 		Kind.STREAM_CODEC, Subspace::kind,
 		Vec3.STREAM_CODEC, Subspace::centre,

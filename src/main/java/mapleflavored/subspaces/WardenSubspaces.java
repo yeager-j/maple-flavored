@@ -3,6 +3,7 @@ package mapleflavored.subspaces;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
+import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.grounded.Grounded;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -29,8 +30,6 @@ import net.minecraft.world.phys.AABB;
  * outside vanilla's awareness box, never keeps it from digging back down.
  */
 public final class WardenSubspaces {
-	static final double RADIUS = 100.0;
-
 	// Playtest values. Long enough to bridge top-ups, short enough to wear off soon after a player leaves. Topping up
 	// above Darkness's 22-tick fade keeps it from flickering.
 	private static final int EFFECT_TICKS = 60;
@@ -46,6 +45,8 @@ public final class WardenSubspaces {
 				applyEffects(level, player);
 			}
 		});
+		WardenSculk.register();
+		GrownShriekers.register();
 	}
 
 	/**
@@ -92,7 +93,7 @@ public final class WardenSubspaces {
 		if (!(entity instanceof Warden warden) || !warden.isAlive()) return;
 		if (Subspaces.ownsAny(level.getServer(), warden.getUUID())) return;
 
-		Subspaces.open(level, warden, Subspace.Kind.WARDEN, RADIUS);
+		Subspaces.open(level, warden, Subspace.Kind.WARDEN, level.getGameRules().get(MapleGameRules.WARDEN_SUBSPACE_RADIUS));
 	}
 
 	// Vanilla's Warden Darkness skips creative and spectator players too.

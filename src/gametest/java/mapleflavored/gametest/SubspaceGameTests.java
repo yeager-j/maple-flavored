@@ -3,104 +3,83 @@ package mapleflavored.gametest;
 import static mapleflavored.gametest.MockPlayers.dieAndRespawn;
 
 import com.mojang.serialization.Codec;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import mapleflavored.gametest.mixin.GameTestHelperAccessor;
 import mapleflavored.grounded.Grounded;
 import mapleflavored.remnants.Remnants;
 import mapleflavored.subspaces.Subspace;
 import mapleflavored.subspaces.Subspaces;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.GameTestInfo;
-import net.minecraft.gametest.framework.GameTestListener;
-import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.players.PlayerList;
-import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.Unit;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.LevelData;
-import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Warden Subspaces: every Warden opens a fixed 100-block Subspace where it appears, which darkens and Grounds the
+ * Warden Subspaces: every Warden opens a fixed 50-block Subspace where it appears, which darkens and Grounds the
  * players inside, outlasts its Warden unloading and ends when its Warden dies or digs down. The Warden is aware of
  * everything inside, but only targets inside vanilla's awareness box keep it from digging down.
  *
  * <p>A Subspace reaches far past the few blocks between tests, so each test runs alone, in its own environment's batch,
- * in an arena high above the test grid that it first clears of whatever earlier batches left there. A mock player's
- * connection never ticks it, so the arena ticks its own players, letting their effects run out as a client's would.
+ * in a {@link SubspaceArena} high above the test grid that it first clears of whatever earlier batches left there.
  */
 public class SubspaceGameTests {
-	private static final double RADIUS = 100.0;
+	private static final double RADIUS = SubspaceArena.RADIUS;
 	// The Subspace's effects last 60 ticks once a player stops being topped up.
 	private static final int WEAR_OFF_TICKS = 61;
-	// Shortened from the 1200 ticks a Warden spawns with, so a test can watch it dig down.
-	private static final int DIG_COOLDOWN_TICKS = 200;
+	// Shortened from the 1200 ticks a Warden spawns with, so a test can watch it dig down. A summoned Warden's first sniff
+	// can end almost 200 ticks in, and a later one up to about 300 ticks after that, so this leaves room for a sniff to
+	// hold it before it digs.
+	private static final int DIG_COOLDOWN_TICKS = 600;
 	// How long a Warden's digging animation lasts before it's removed.
 	private static final int DIGGING_TICKS = 100;
 	private static final int STARTING_EXPERIENCE = 100;
 	private static final int DARKNESS_FADE_TICKS = 22;
 
-	private static final Set<UUID> TICKED_PLAYERS = ConcurrentHashMap.newKeySet();
 	private static final List<UUID> STARTED = new CopyOnWriteArrayList<>();
 	private static final List<UUID> ENDED = new CopyOnWriteArrayList<>();
 
 	static {
-		ServerTickEvents.END_SERVER_TICK.register(server -> {
-			for (ServerPlayer player : List.copyOf(server.getPlayerList().getPlayers())) {
-				if (TICKED_PLAYERS.contains(player.getUUID())) player.doTick();
-			}
-		});
 		Subspaces.STARTED.register((level, subspace) -> STARTED.add(subspace.boss()));
 		Subspaces.ENDED.register((level, subspace) -> ENDED.add(subspace.boss()));
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:subspace_entering", maxTicks = 100)
 	public void playersInsideAreDarkenedAndGroundedUntilTheyLeave(GameTestHelper helper) {
-		Arena arena = Arena.cleared(helper);
+		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Warden warden = arena.warden(Vec3.ZERO);
-		ServerPlayer inside = arena.player(new Vec3(99.0, 0.0, 0.0), GameType.SURVIVAL);
-		ServerPlayer creative = arena.player(new Vec3(99.0, 0.0, 2.0), GameType.CREATIVE);
-		ServerPlayer outside = arena.player(new Vec3(0.0, 0.0, 101.0), GameType.SURVIVAL);
-		Subspace expected = new Subspace(warden.getUUID(), Subspace.Kind.WARDEN, arena.centre(), RADIUS);
+		ServerPlayer inside = arena.player(new Vec3(49.0, 0.0, 0.0), GameType.SURVIVAL);
+		ServerPlayer creative = arena.player(new Vec3(49.0, 0.0, 2.0), GameType.CREATIVE);
+		ServerPlayer outside = arena.player(new Vec3(0.0, 0.0, 51.0), GameType.SURVIVAL);
+		List<Subspace> opened = Subspaces.containing(helper.getLevel(), arena.centre());
 
-		helper.assertValueEqual(Subspaces.containing(helper.getLevel(), arena.centre()), List.of(expected), "the Warden's Subspace");
+		helper.assertValueEqual(opened.size(), 1, "the Subspaces at the Warden's feet");
+		assertOpenedBy(helper, opened.getFirst(), warden, arena.centre());
 
 		helper.startSequence()
 			.thenExecuteAfter(1, () -> {
-				assertSubspaceEffects(helper, inside, true, "a player 99 blocks out");
-				assertSubspaceEffects(helper, creative, false, "a creative player 99 blocks out");
-				assertSubspaceEffects(helper, outside, false, "a player 101 blocks out");
-				arena.moveTo(inside, new Vec3(101.0, 0.0, 0.0));
+				assertSubspaceEffects(helper, inside, true, "a player 49 blocks out");
+				assertSubspaceEffects(helper, creative, false, "a creative player 49 blocks out");
+				assertSubspaceEffects(helper, outside, false, "a player 51 blocks out");
+				arena.moveTo(inside, new Vec3(51.0, 0.0, 0.0));
 			})
 			.thenExecuteAfter(WEAR_OFF_TICKS, () -> assertSubspaceEffects(helper, inside, false, "a player who left"))
 			.thenSucceed();
@@ -109,7 +88,7 @@ public class SubspaceGameTests {
 	@GameTest(environment = "maple_flavored_gametest:subspace_overlap", maxTicks = 300)
 	public void overlappingSubspacesEachEndOnTheirOwnAndNeverStackGrounded(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		Arena arena = Arena.cleared(helper);
+		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Warden first = arena.warden(Vec3.ZERO);
 		Warden second = arena.warden(new Vec3(60.0, 0.0, 0.0));
 		ServerPlayer player = arena.player(new Vec3(30.0, 0.0, 0.0), GameType.SURVIVAL);
@@ -118,6 +97,9 @@ public class SubspaceGameTests {
 			// The second Warden's Subspace opens once its chunk, outside the test's own, has loaded.
 			.thenWaitUntil(() -> helper.assertValueEqual(bossesAround(level, player), List.of(first.getUUID(), second.getUUID()), "the Subspaces around the player"))
 			.thenExecuteAfter(1, () -> {
+				List<Subspace> around = Subspaces.containing(level, player.position());
+
+				helper.assertFalse(around.get(0).id().equals(around.get(1).id()), "Two Subspaces share an id");
 				helper.assertValueEqual(player.getEffect(Grounded.EFFECT).getAmplifier(), 0, "Grounded's amplifier inside both");
 				first.kill(level);
 				helper.assertValueEqual(bossesAround(level, player), List.of(second.getUUID()), "the Subspaces once the first Warden dies");
@@ -141,15 +123,16 @@ public class SubspaceGameTests {
 	@GameTest(environment = "maple_flavored_gametest:subspace_unloading", maxTicks = 100)
 	public void aSubspaceOutlastsItsWardenUnloadingAndEndsWhenItDigsDown(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		Arena arena = Arena.cleared(helper);
+		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Warden warden = arena.warden(Vec3.ZERO);
-		ServerPlayer player = arena.player(new Vec3(50.0, 0.0, 0.0), GameType.SURVIVAL);
-		Subspace opened = new Subspace(warden.getUUID(), Subspace.Kind.WARDEN, arena.centre(), RADIUS);
+		ServerPlayer player = arena.player(new Vec3(40.0, 0.0, 0.0), GameType.SURVIVAL);
+		Subspace opened = Subspaces.containing(level, arena.centre()).getFirst();
 		Vec3 wandered = arena.at(new Vec3(10.0, 0.0, 0.0));
 
+		assertOpenedBy(helper, opened, warden, arena.centre());
 		warden.snapTo(wandered.x, wandered.y, wandered.z);
 
-		CompoundTag savedWarden = unload(helper, warden);
+		CompoundTag savedWarden = SubspaceArena.unload(helper, warden);
 
 		helper.startSequence()
 			// The effects arrive at the end of the first tick.
@@ -161,7 +144,7 @@ public class SubspaceGameTests {
 				reloadSubspaces(level);
 				helper.assertValueEqual(Subspaces.containing(level, arena.centre()), List.of(opened), "the Subspace once it's reloaded");
 
-				Entity reloaded = arena.track(load(helper, savedWarden));
+				Entity reloaded = arena.track(SubspaceArena.load(helper, savedWarden));
 
 				helper.assertValueEqual(Subspaces.containing(level, arena.centre()), List.of(opened), "the Subspaces once the Warden reloads");
 
@@ -177,7 +160,7 @@ public class SubspaceGameTests {
 	@GameTest(environment = "maple_flavored_gametest:peaceful", maxTicks = 100)
 	public void peacefulEndsTheSubspaceOfAWardenItWillNeverLoad(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		Arena arena = Arena.shared(helper);
+		SubspaceArena arena = SubspaceArena.shared(helper);
 		ServerPlayer player = arena.player(new Vec3(20.0, 0.0, 0.0), GameType.SURVIVAL);
 		Warden warden = new Warden(EntityTypes.WARDEN, level);
 
@@ -186,7 +169,7 @@ public class SubspaceGameTests {
 		helper.assertValueEqual(Subspaces.containing(level, arena.centre()).size(), 1, "the Subspaces as the Warden appears");
 
 		// Unloaded before it ticks, as a Warden saved before the world turned Peaceful would be.
-		unload(helper, warden);
+		SubspaceArena.unload(helper, warden);
 
 		helper.startSequence()
 			.thenExecuteAfter(WEAR_OFF_TICKS, () -> {
@@ -199,7 +182,7 @@ public class SubspaceGameTests {
 	@GameTest(environment = "maple_flavored_gametest:subspace_remnants", maxTicks = 100)
 	public void aRemnantInsideStaysWhereItsOwnerDiedUnlessItCantBeCollectedThere(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		Arena arena = Arena.cleared(helper);
+		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerPlayer onTheFloor = arena.player(new Vec3(10.0, 0.0, 0.0), GameType.SURVIVAL);
 		ServerPlayer inLava = arena.player(new Vec3(10.0, 0.0, 6.0), GameType.SURVIVAL);
 		BlockPos floorSpot = arena.blockAt(10, 0, 0);
@@ -231,7 +214,7 @@ public class SubspaceGameTests {
 	@GameTest(environment = "maple_flavored_gametest:subspace_respawn")
 	public void deathInsideRespawnsAtARespawnPointInside(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		Arena arena = Arena.cleared(helper);
+		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerPlayer player = arena.player(new Vec3(20.0, 0.0, 0.0), GameType.SURVIVAL);
 		BlockPos respawnPoint = arena.blockAt(5, 0, 0);
 		var respawnData = LevelData.RespawnData.of(level.dimension(), respawnPoint, 0.0F, 0.0F);
@@ -250,13 +233,14 @@ public class SubspaceGameTests {
 	// of them through its Subspace. A player comes first even when a mob is closer.
 	@GameTest(environment = "maple_flavored_gametest:subspace_nearest_player", maxTicks = 600)
 	public void theWardenGoesForTheNearestPlayerAnywhereInItsSubspace(GameTestHelper helper) {
-		Arena arena = Arena.cleared(helper);
+		SubspaceArena arena = SubspaceArena.cleared(helper);
 
-		arena.floor(-70, 70);
+		arena.floor(-50, 50);
 
 		Warden warden = arena.warden(Vec3.ZERO);
+
 		ServerPlayer nearer = arena.player(new Vec3(35.0, 0.0, 0.0), GameType.SURVIVAL);
-		ServerPlayer farther = arena.player(new Vec3(-60.0, 0.0, 0.0), GameType.SURVIVAL);
+		ServerPlayer farther = arena.player(new Vec3(-45.0, 0.0, 0.0), GameType.SURVIVAL);
 		double startingDistanceToFarther = warden.distanceTo(farther);
 
 		arena.stillPig(new Vec3(-30.0, 0.0, 0.0));
@@ -270,7 +254,7 @@ public class SubspaceGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:subspace_non_players", maxTicks = 600)
 	public void theWardenIsAwareOfMobsAnywhereInItsSubspace(GameTestHelper helper) {
-		Arena arena = Arena.cleared(helper);
+		SubspaceArena arena = SubspaceArena.cleared(helper);
 
 		arena.floor(-10, 50);
 
@@ -280,13 +264,14 @@ public class SubspaceGameTests {
 		helper.succeedWhen(() -> helper.assertTrue(warden.distanceTo(pig) <= 30.0, "the Warden closed on the pig, " + warden.distanceTo(pig) + " blocks away"));
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:subspace_burrow_far", maxTicks = 700)
+	@GameTest(environment = "maple_flavored_gametest:subspace_burrow_far", maxTicks = 1100)
 	public void aTargetKnownOnlyThroughTheSubspaceDoesntKeepTheWardenFromDiggingDown(GameTestHelper helper) {
-		Arena arena = Arena.cleared(helper);
+		SubspaceArena arena = SubspaceArena.cleared(helper);
 
 		arena.pen();
 
 		Warden warden = arena.warden(Vec3.ZERO);
+
 
 		shortenDigCooldown(warden);
 		arena.player(new Vec3(40.0, 0.0, 0.0), GameType.SURVIVAL);
@@ -300,13 +285,14 @@ public class SubspaceGameTests {
 	// The Warden's hitbox reaches 0.45 blocks out, and vanilla's box 24 blocks past that. A player's hitbox reaches 0.3
 	// blocks back from where they stand, so a player 24.68 blocks out overlaps the box by 0.07, more than the 0.05 the
 	// Warden can shift within its pen. The centre of the block they stand in, 25 blocks out, lies outside the box.
-	@GameTest(environment = "maple_flavored_gametest:subspace_burrow_near", maxTicks = 500)
+	@GameTest(environment = "maple_flavored_gametest:subspace_burrow_near", maxTicks = 1000)
 	public void aTargetJustInsideVanillasAwarenessBoxKeepsTheWardenFromDiggingDown(GameTestHelper helper) {
-		Arena arena = Arena.cleared(helper);
+		SubspaceArena arena = SubspaceArena.cleared(helper);
 
 		arena.pen();
 
 		Warden warden = arena.warden(Vec3.ZERO);
+
 
 		shortenDigCooldown(warden);
 		arena.player(new Vec3(24.68, 0.0, 0.0), GameType.SURVIVAL);
@@ -317,6 +303,13 @@ public class SubspaceGameTests {
 				helper.assertValueEqual(Subspaces.containing(helper.getLevel(), arena.centre()).size(), 1, "the Subspaces while it stays");
 			})
 			.thenSucceed();
+	}
+
+	private static void assertOpenedBy(GameTestHelper helper, Subspace subspace, Warden warden, Vec3 centre) {
+		helper.assertValueEqual(subspace.boss(), warden.getUUID(), "the Subspace's boss");
+		helper.assertValueEqual(subspace.kind(), Subspace.Kind.WARDEN, "the Subspace's kind");
+		helper.assertValueEqual(subspace.centre(), centre, "the Subspace's centre");
+		helper.assertValueEqual(subspace.radius(), RADIUS, "the Subspace's radius");
 	}
 
 	private static void assertSubspaceEffects(GameTestHelper helper, ServerPlayer player, boolean expected, String who) {
@@ -349,247 +342,14 @@ public class SubspaceGameTests {
 		level.setAttached(Subspaces.ATTACHMENT, codec.parse(ops, saved).getOrThrow());
 	}
 
-	// Saves the entity the way its chunk would on unloading, and removes it as unloading does.
-	private static CompoundTag unload(GameTestHelper helper, Entity entity) {
-		TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
-
-		entity.save(output);
-		entity.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
-
-		return output.buildResult();
-	}
-
-	private static Entity load(GameTestHelper helper, CompoundTag saved) {
-		var input = TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved);
-		Entity loaded = EntityType.loadEntityRecursive(input, helper.getLevel(), EntitySpawnReason.LOAD, entity -> entity);
-
-		helper.assertTrue(loaded != null, "the saved entity loads");
-		helper.assertTrue(helper.getLevel().addFreshEntity(loaded), "the saved entity is added back");
-
-		return loaded;
-	}
-
 	// The server takes a player's on-ground flag from their client's movement, which a mock player never sends.
 	private static void standAt(ServerLevel level, ServerPlayer player, BlockPos spot) {
-		level.setBlock(spot.below(), Blocks.STONE.defaultBlockState(), 3);
-		teleport(player, Vec3.atBottomCenterOf(spot));
+		level.setBlock(spot.below(), SubspaceArena.FLOOR.defaultBlockState(), 3);
+		SubspaceArena.teleport(player, Vec3.atBottomCenterOf(spot));
 		player.setOnGround(true);
-	}
-
-	// Moves the player as the server does, so the chunks around them load. A player who has moved is invulnerable until
-	// their client's first movement arrives, which a mock never sends, so that wait is cleared.
-	private static void teleport(ServerPlayer player, Vec3 position) {
-		player.teleport(new TeleportTransition(player.level(), position, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING));
-		player.hasChangedDimension();
 	}
 
 	private static int remnantsAt(ServerLevel level, BlockPos spot) {
 		return level.getEntities(Remnants.REMNANT, new AABB(spot), Entity::isAlive).size();
-	}
-
-	/**
-	 * One test's arena, 80 blocks above its test structure: clear of the runways other tests build, with the test's
-	 * Wardens and players placed relative to its centre.
-	 *
-	 * <p>Whether the test passes or fails, the arena discards its Wardens, logs out its players and ends every Subspace
-	 * in the level, so nothing it opened reaches a later batch.
-	 */
-	private static final class Arena {
-		private static final int HEIGHT = 80;
-		// Past the Subspace's reach, so nothing an earlier batch left is aware of the arena or affected by it.
-		private static final double CLEARED_RADIUS = RADIUS + 10.0;
-		// How far along the arena's x axis its chunks are kept loaded, past every Warden and target the tests place.
-		private static final int LOADED_REACH = 80;
-
-		private static final BlockPos RELATIVE_CENTRE = new BlockPos(1, HEIGHT, 1);
-
-		private final GameTestHelper helper;
-		private final ServerLevel level;
-		private final BlockPos centreBlock;
-		private final List<Entity> mobs = new ArrayList<>();
-		private final Set<UUID> players = ConcurrentHashMap.newKeySet();
-
-		private Arena(GameTestHelper helper) {
-			this.helper = helper;
-			this.level = helper.getLevel();
-			this.centreBlock = helper.absolutePos(RELATIVE_CENTRE);
-
-			// Every arena stands its Wardens on a floor.
-			level.setBlock(centreBlock.below(), Blocks.STONE.defaultBlockState(), 3);
-			keepLoaded();
-			cleanUpWhenDone();
-		}
-
-		/**
-		 * An arena for a test running alone in its batch, cleared of the players, mobs and Subspaces earlier batches
-		 * left behind.
-		 */
-		static Arena cleared(GameTestHelper helper) {
-			Arena arena = new Arena(helper);
-			PlayerList playerList = helper.getLevel().getServer().getPlayerList();
-
-			List.copyOf(playerList.getPlayers()).forEach(playerList::remove);
-			arena.level.getEntitiesOfClass(
-				LivingEntity.class,
-				AABB.ofSize(arena.centre(), CLEARED_RADIUS * 2.0, CLEARED_RADIUS * 2.0, CLEARED_RADIUS * 2.0),
-				entity -> !(entity instanceof ServerPlayer)
-			).forEach(Entity::discard);
-			arena.level.setAttached(Subspaces.ATTACHMENT, List.of());
-
-			return arena;
-		}
-
-		/** An arena for a test sharing its batch with others, so it leaves their players and mobs alone. */
-		static Arena shared(GameTestHelper helper) {
-			return new Arena(helper);
-		}
-
-		/** Where the arena's first Warden stands. */
-		Vec3 centre() {
-			return Vec3.atBottomCenterOf(centreBlock);
-		}
-
-		Vec3 at(Vec3 offset) {
-			return centre().add(offset);
-		}
-
-		BlockPos blockAt(int x, int y, int z) {
-			return centreBlock.offset(x, y, z);
-		}
-
-		/** A Warden that can dig back down, standing at the offset from the centre. */
-		Warden warden(Vec3 offset) {
-			Warden warden = helper.spawnEntity(EntityTypes.WARDEN, relativeAt(offset))
-				.requirePersistence(false)
-				.spawnReason(EntitySpawnReason.MOB_SUMMONED)
-				.spawn();
-
-			return track(warden);
-		}
-
-		/** A pig that stays where it's put. */
-		Pig stillPig(Vec3 offset) {
-			Pig pig = track(helper.spawn(EntityTypes.PIG, relativeAt(offset)));
-
-			pig.setNoAi(true);
-
-			return pig;
-		}
-
-		// The helper spawns entities relative to the test.
-		private Vec3 relativeAt(Vec3 offset) {
-			return Vec3.atBottomCenterOf(RELATIVE_CENTRE).add(offset);
-		}
-
-		/**
-		 * A loaded player standing at the offset from the centre, ticked each tick as a client would tick it. Ticking moves
-		 * it as a client would, so it falls unless it stands on something.
-		 */
-		ServerPlayer player(Vec3 offset, GameType gameType) {
-			ServerPlayer player = track(MockPlayers.survivalPlayer(helper));
-
-			player.setGameMode(gameType);
-			moveTo(player, offset);
-
-			return player;
-		}
-
-		/** Moves the player onto a block at the offset from the centre. */
-		void moveTo(ServerPlayer player, Vec3 offset) {
-			Vec3 feet = at(offset);
-
-			level.setBlock(BlockPos.containing(feet).below(), Blocks.STONE.defaultBlockState(), 3);
-			teleport(player, feet);
-		}
-
-		/** Lays a three-block-wide floor along the arena's x axis, from {@code fromX} to {@code toX} blocks out. */
-		void floor(int fromX, int toX) {
-			for (int x = fromX; x <= toX; x++) {
-				for (int z = -1; z <= 1; z++) {
-					level.setBlock(blockAt(x, -1, z), Blocks.STONE.defaultBlockState(), 3);
-				}
-			}
-		}
-
-		/** Walls in the centre so a Warden there can't walk away. */
-		void pen() {
-			for (int x = -1; x <= 1; x++) {
-				for (int z = -1; z <= 1; z++) {
-					if (x == 0 && z == 0) continue;
-
-					for (int y = 0; y < 3; y++) {
-						level.setBlock(blockAt(x, y, z), Blocks.STONE.defaultBlockState(), 3);
-					}
-				}
-			}
-		}
-
-		/** Includes the entity, or a player's respawned replacement, in the arena's cleanup. */
-		<E extends Entity> E track(E entity) {
-			if (entity instanceof ServerPlayer player) {
-				players.add(player.getUUID());
-				TICKED_PLAYERS.add(player.getUUID());
-			} else {
-				mobs.add(entity);
-			}
-
-			return entity;
-		}
-
-		// Only the test's own chunks are kept loaded for it. An entity anywhere else wouldn't tick, and neither a Warden's
-		// sensor nor its Subspace could find it. The runner releases every forced chunk as each batch ends, just before it
-		// forces the next batch's, so the arena never releases them itself: that would unload the next test's chunks.
-		private void keepLoaded() {
-			int fromX = SectionPos.blockToSectionCoord(centreBlock.getX() - LOADED_REACH);
-			int toX = SectionPos.blockToSectionCoord(centreBlock.getX() + LOADED_REACH);
-			int fromZ = SectionPos.blockToSectionCoord(centreBlock.getZ() - 1);
-			int toZ = SectionPos.blockToSectionCoord(centreBlock.getZ() + 1);
-
-			for (int x = fromX; x <= toX; x++) {
-				for (int z = fromZ; z <= toZ; z++) {
-					level.setChunkForced(x, z, true);
-				}
-			}
-		}
-
-		private void cleanUpWhenDone() {
-			GameTestInfo testInfo = ((GameTestHelperAccessor) helper).maple$testInfo();
-
-			testInfo.addListener(new GameTestListener() {
-				@Override
-				public void testStructureLoaded(GameTestInfo info) {
-				}
-
-				@Override
-				public void testPassed(GameTestInfo info, GameTestRunner runner) {
-					cleanUp();
-				}
-
-				@Override
-				public void testFailed(GameTestInfo info, GameTestRunner runner) {
-					cleanUp();
-				}
-
-				@Override
-				public void testAddedForRerun(GameTestInfo original, GameTestInfo copy, GameTestRunner runner) {
-				}
-			});
-		}
-
-		private void cleanUp() {
-			PlayerList playerList = level.getServer().getPlayerList();
-
-			mobs.stream().filter(mob -> !mob.isRemoved()).forEach(Entity::discard);
-
-			for (UUID uuid : players) {
-				ServerPlayer player = playerList.getPlayer(uuid);
-
-				if (player != null) playerList.remove(player);
-
-				TICKED_PLAYERS.remove(uuid);
-			}
-
-			level.setAttached(Subspaces.ATTACHMENT, List.of());
-		}
 	}
 }

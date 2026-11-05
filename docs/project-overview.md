@@ -83,7 +83,7 @@ Two matching books of the same level combine in an anvil to make the next level.
 
 Some structures react when you take their book:
 
-- **Ancient City:** an angry Warden appears and opens a Subspace with a 100-block radius, applying Darkness and Grounded.
+- **Ancient City:** an angry Warden appears and opens a Subspace with a 50-block radius, applying Darkness and Grounded.
 - **Bastion:** the book stays locked until three of its Piglin Brutes, its keepers, are dead, by any cause. Trying to take it makes the remaining keepers glow and shows trails to them. Once it's taken, every Piglin in the structure hunts you for ten minutes, from anywhere in the Bastion.
 - **Stronghold or Woodland Mansion:** nearby Illagers are alerted and become hostile, even towards a player wearing Orichalcum.
 - **Nether Fortress:** the book stays locked until every Blaze spawner that generated there is Cleared. The spawners can remain for farms. Every fortress generates with at least one Blaze spawner, and trying to take a locked book shows trails to the ones still to Clear.
@@ -285,17 +285,17 @@ The [boss manifesto](manifestos/boss-subspaces.md) identifies a problem: a boss 
 
 #### The Warden
 
-The Warden's **Subspace** is a fixed sphere with a 100-block radius, centered where it spawns. Darkness and **Grounded** make sneaking, hiding, and finding a route out the ways to survive.
+The Warden's **Subspace** is a fixed sphere with a 50-block radius, centered where it spawns. Darkness and **Grounded** make sneaking, hiding, and finding a route out the ways to survive.
 
 Grounded stops Elytra, including Armored Elytra, from gliding: no glide can start, and one under way ends, so Firework Rockets have nothing to boost. It also greatly increases Ender Pearl gravity, so pearls fall sharply and travel much shorter distances. Their teleports still work, letting you reach nearby cover or cross a gap. The exact gravity multiplier needs playtesting. Riptide and Zephyr's double jump do not work; Levitation, Slow Falling, and Chorus Fruit still do.
 
 The Warden is aware of all entities within the Subspace and will attempt to pathfind to the nearest player. Anger and the sniffing mechanic are unchanged. You can escape by leaving the active Subspaces, or hide until their Wardens go away after an undisturbed minute. Each Subspace ends when its own Warden goes away. Death respawns you normally and applies its normal costs, including if your bed or anchor is inside.
 
-Sculk spreads across the ground and the area gains a sculk skybox. New sensors, catalysts, and shriekers can grow. Those shriekers can summon while the Subspace is active, but lose that ability when it ends.
+A small patch of sculk spreads where the Warden appeared, over the blocks a sculk catalyst could turn. A faint sculk shell marks the Subspace's edge, and the sky inside turns sculk-dark. New sensors and shriekers can grow in the patch. Those shriekers can summon while the Subspace is active, but lose that ability when it ends.
 
 Every Warden opens its own Subspace at its spawn point, even inside another one. Subspaces can overlap, and Grounded does not stack with itself. There are no overlap-based shifts or summon failures. Taking an Ancient City's book always summons an angry Warden regardless of Shrieker level or nearby Wardens.
 
-Summoning also changes to stop a distant, repeatedly failing shrieker from disabling the danger. Shriek warnings and cooldowns affect only players in **Warden Territory**, meaning the Deep Dark biome or an Ancient City's bounds. The Warden searches five to fifteen blocks from the player who caused the shriek, or the nearest player in Warden Territory if needed, then widens its search to other spots within the Subspace up to fifty blocks from that player. This spawn search distance is separate from the 100-block Subspace radius. If it still cannot spawn, the cooldown clears. With nobody in Warden Territory, summoning is cancelled. These changes make Warden switches ineffective.
+Summoning also changes to stop a distant, repeatedly failing shrieker from disabling the danger. Shriek warnings and cooldowns affect only players in **Warden Territory**, meaning the Deep Dark biome or an Ancient City's bounds. The Warden searches five to fifteen blocks from the player who caused the shriek, or the nearest player in Warden Territory if needed, then widens its search to other spots within the Subspace up to fifty blocks from that player. This spawn search distance is separate from the Subspace's radius. If it still cannot spawn, the cooldown clears. With nobody in Warden Territory, summoning is cancelled. These changes make Warden switches ineffective.
 
 #### The Wither
 

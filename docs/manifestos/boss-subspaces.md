@@ -16,7 +16,7 @@ Subspaces start with the Warden. The Wither is next, and other bosses come later
 
 ## The Warden's subspace
 
-- **Where:** a fixed sphere centred where the Warden spawns, with a radius of 100 blocks. It doesn't move with the Warden.
+- **Where:** a fixed sphere centred where the Warden spawns, with a radius of 100 blocks. It doesn't move with the Warden. (Ticket 26 shrank the radius to 50 blocks.)
 - **Effect:** Darkness and Grounded. Grounded stops Elytra from working (so Firework Rockets can't boost either), stops Riptide and Zephyr's double jump, and greatly increases Ender Pearl gravity. Pearls fall sharply and travel much shorter distances, but their teleports still work. The gravity multiplier needs playtesting.
 - **Escape:** there is no barrier. Sneaking, hiding and finding a physical route out are valid ways to survive. Short pearl throws can still help you reach nearby cover or cross a gap.
 - **Ending:** each subspace ends when the Warden that opened it goes away, which in vanilla happens after a minute without being disturbed. You can leave earlier if you reach the edge.
@@ -26,7 +26,7 @@ Other escapes cost the player more than they'd gain. Pillaring makes noise unles
 
 ### What it looks like
 
-When the Warden spawns, sculk spreads from it to cover the ground of the subspace, and the subspace gets a sculk skybox. The spreading sculk can grow new sensors, catalysts and shriekers. Grown shriekers can summon Wardens while the subspace is active, and are set to `can_summon: false` when it ends, so the city doesn't escalate after each fight.
+When the Warden spawns, sculk spreads from it to cover the ground of the subspace, and the subspace gets a sculk skybox. The spreading sculk can grow new sensors, catalysts and shriekers. (Ticket 26 changed this: a weak patch spreads only around where the Warden spawns, only sensors and shriekers grow, as from a vanilla catalyst, and a sculk shell marks the edge with a sculk-dark sky inside.) Grown shriekers can summon Wardens while the subspace is active, and are set to `can_summon: false` when it ends, so the city doesn't escalate after each fight.
 
 ### How the Warden finds you
 

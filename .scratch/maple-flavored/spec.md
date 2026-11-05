@@ -221,12 +221,12 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 
 ### Boss Subspaces
 
-166. As a player, I want every Warden to open a fixed Subspace with a 100-block radius where it spawns, applying Darkness and Grounded, so that I can't fly away from it.
+166. As a player, I want every Warden to open a fixed Subspace with a 50-block radius where it spawns, applying Darkness and Grounded, so that I can't fly away from it.
 167. As a player, I want Grounded to stop Elytra gliding, shorten Ender Pearl throws and stop Riptide and Zephyr's jump, so that escape is a journey through the area.
 168. As a player, I want Levitation, Slow Falling, Chorus Fruit and short pearl teleports to still work while Grounded, so that clever play still helps.
 169. As a player, I want no barrier at a Subspace's edge, so that I can sneak out or hide until the Warden leaves.
 170. As a player, I want the Warden to know where every entity in its Subspace is, so that hiding needs real stealth while anger still comes only from sniffing.
-171. As a player, I want sculk to spread across the ground and a sculk sky inside the Subspace, so that I can see that I am in it.
+171. As a player, I want sculk to spread across the ground, a sculk shell at the Subspace's edge and a sculk sky inside it, so that I can see where it is and that I am in it.
 172. As a player, I want shriekers grown inside the Subspace to stop summoning when it ends, so that the city doesn't escalate after each fight.
 173. As a player, I want shrieks to count only for players in Warden Territory, so that a Warden switch can't make Ancient Cities safe.
 174. As a member of a group, I want a Warden to spawn near the player who caused the shriek, or the nearest player in Warden Territory, so that a friend's mistake can matter to me.
@@ -283,7 +283,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 ### Worlds and multiplayer
 
 212. As a world creator, I want vanilla's difficulty setting to set the death rules, so that I don't learn a new setting.
-213. As a world creator, I want one intended experience with no design toggles beyond the three Keep game rules, so that every Maple world plays the same.
+213. As a world creator, I want one intended experience with no design toggles beyond the three Keep game rules and the Warden Subspace playtest rules, so that every Maple world plays the same.
 214. As a member of a group, I want Max Hearts, the Heart Floor, Remnants and Enchantment Slots per player, while Libraries, structure books and spawner counts are shared, so that we play together and still stand apart.
 
 ## Implementation Decisions
@@ -296,7 +296,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 - Prefer Fabric API events and hooks. Use mixins only where no event exists.
 - Per-player and per-block persistent state uses Fabric's data attachment system. Player state that must survive respawn is copied on respawn.
 - Balance numbers live in one place per system, so playtest tuning is a single edit.
-- There is no player-facing configuration for the design. Vanilla's difficulty and game rules, plus the three Keep game rules, are the only settings.
+- There is no player-facing configuration for the design. Vanilla's difficulty and game rules, plus the three Keep game rules and the Warden Subspace playtest rules, are the only settings.
 
 ### Modules
 
@@ -364,10 +364,10 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Breaking a Cleared spawner drops 1 Pith and fires the advancement for the breaker.
 - Interface: is this spawner Cleared, and a Cleared event. The Structure books module uses the event to update the Fortress record.
 
-**Subspaces.** A shared module: a Subspace is a fixed sphere with a centre, a radius, a dimension, an owning boss and a kind (Warden or Wither). Interface: which Subspaces contain this position, and start and end events. Subspaces sync to clients for the sculk sky.
+**Subspaces.** A shared module: a Subspace is a fixed sphere with a centre, a radius, a dimension, an owning boss and a kind (Warden or Wither). Interface: which Subspaces contain this position, and start and end events. Subspaces sync to clients for the sculk sky and the shell that marks their edge.
 - Lifetime: a Subspace starts when its boss spawns or is summoned. Its record is kept in world data, so its centre survives reloads. It ends when its boss dies, digs back down or is otherwise removed for good, never because a chunk unloads. Its rules for players (Darkness and Grounded, blocked Withered Heart recovery) come from the record and keep working while its boss is unloaded. Only work that needs the loaded boss, such as the Warden's awareness and the sculk spread, pauses. Each Subspace ends on its own and runs only its own cleanup.
 - Warden kind: players inside get Darkness and Grounded. The owning Warden is aware of every entity inside and pathfinds to the nearest player; anger and sniffing stay vanilla.
-- Sculk spreads from the centre with vanilla's sculk spreading rules (only blocks a Sculk Catalyst can replace), only inside the Subspace and only while it is active. The spread rate is a playtest value.
+- A weak patch of sculk spreads where the Warden appeared, with vanilla's sculk spreading rules (only blocks a Sculk Catalyst can replace), within about 5 blocks of that spot and only while the Subspace is active and its Warden is loaded. Its size and strength are playtest values.
 - Each shrieker that grows during a Subspace records that Subspace and can summon. When the Subspace ends, its shriekers lose the ability to summon. A shrieker in an unloaded chunk is updated the next time it loads.
 - Wither kind: blocks Withered Heart recovery. It applies no effect by itself.
 - Overlap is allowed. Grounded does not stack.
@@ -438,6 +438,11 @@ Each module below hides its rules behind a small interface. Other modules call t
 - **Keep XP** (default off): when on, death keeps all XP and leaves no Remnant. When off, XP drops as a Remnant. Vanilla's Keep Inventory no longer decides XP.
 - **Keep Inventory** (vanilla's rule, default on in new worlds): decides only items. When off, items drop as in vanilla, and the hearts and XP rules still apply.
 
+Three more game rules hold Warden Subspace playtest values. Each applies to Subspaces that open after it changes:
+- **Warden Subspace radius** (default 50): how many blocks a Warden's Subspace reaches.
+- **Warden sculk patch radius** (default 5): how many blocks from where a Warden appears its sculk patch may spread.
+- **Warden sculk patch charge** (default 150): how much sculk the patch spreads, as a sculk catalyst's charge. 0 spreads none.
+
 ## Testing Decisions
 
 ### The seam
@@ -446,7 +451,7 @@ There is one automated test seam: Fabric's server GameTest framework. Tests run 
 
 The client decides some things, and a headless server can't see them. These are checked by hand in a development client, not automated:
 
-- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced overlay and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and the Blood Moon sky.
+- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced overlay and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, and the Blood Moon sky.
 - Player movement and input: Zephyr's double jump and Clutch, Grounded ending a glide, the Armored Elytra's glide and Firework Rocket penalties, Riptide being blocked, and Shakudo's movement speed.
 - Sync: that the client shows the server's Max Hearts, Withered Hearts, Remnants, Subspaces and Blood Moon.
 
@@ -521,7 +526,7 @@ The design left these small points open. This spec picks a default for each, and
 ### Values left to playtesting or build time
 
 - Grounded's Ender Pearl gravity multiplier, which Mob changes left to playtesting.
-- The sculk spread rate inside a Warden Subspace.
+- The Warden Subspace's radius and its sculk patch's size and strength, set by playtest game rules.
 - The exact book spot in each structure other than the Stronghold, whose book is in the portal room, chosen in that structure's build ticket by the manifesto's rule: the structure's most important spot, fixed and visible. Buried Treasure, Trail Ruins, Abandoned Camps and Shipwrecks need a spot chosen with care.
 - The Warden spawn search: the tickets say it widens "within the Subspace", which doesn't exist until the Warden spawns. This spec reads it as up to 50 blocks from the player.
 
