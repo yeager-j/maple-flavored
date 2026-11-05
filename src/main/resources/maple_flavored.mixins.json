@@ -25,6 +25,8 @@
 		"MonsterRoomFeatureMixin",
 		"NetherFortressStructureMixin",
 		"PiecesContainerMixin",
+		"PiglinAiMixin",
+		"PiglinBruteAiMixin",
 		"PlayerAdvancementsMixin",
 		"PlayerMixin",
 		"ResourceManagerRegistryLoadTaskMixin",

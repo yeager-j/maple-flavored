@@ -23,6 +23,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.player.Inventory;
@@ -31,6 +32,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.RandomState;
@@ -61,7 +64,12 @@ public class BastionBookGameTests {
 	private static final double FAR_FROM_THE_BOOK = 16.0;
 	private static final int OUTSIDE_THE_BASTION = 4;
 	private static final long TEN_MINUTES = 10L * 60L * 20L;
-	private static final BlockPos HAND_SET_BOOK = new BlockPos(3, 2, 3);
+	private static final long VANILLA_ANGER_TICKS = 600L;
+	private static final float HUNT_MIN_DISTANCE = 20.0F;
+	// Four rounds of AI_TICKS in all: time to cover ground, still short of zombifying in the Overworld.
+	private static final int CHASE_ROUNDS = 3;
+	private static final double CLOSED_IN = 3.0;
+	private static final Identifier HUNT_RANGE = Identifier.fromNamespaceAndPath("maple_flavored", "bastion_hunt");	private static final BlockPos HAND_SET_BOOK = new BlockPos(3, 2, 3);
 	// Long enough for a Piglin's sensors and fight behaviour to run, short of its zombifying in the Overworld.
 	private static final int AI_TICKS = 40;
 	// The only templates with a hoglin stable chest; both are optional.
@@ -140,6 +148,80 @@ public class BastionBookGameTests {
 		helper.assertTrue(StructureBooks.take(player, book), "the book is taken");
 		tick(piglin);
 		helper.assertValueEqual(attackTarget(piglin), Optional.of(player), "the Piglin's target once the book is taken");
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void piglinsAcrossTheBastionHuntThePlayerUntilTheirAngerEnds(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = placeRegistered(level, planLayout(level, HOUSING_UNITS, 8));
+		BlockPos book = onlyBook(helper, start);
+		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+
+		player.setPos(Vec3.atBottomCenterOf(book.west()));
+		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.GOLDEN_HELMET));
+
+		List<AbstractPiglin> farAway = piglinsIn(level, start).stream()
+			.filter(piglin -> piglin.isAdult() && piglin.distanceTo(player) > HUNT_MIN_DISTANCE)
+			.toList();
+
+		helper.assertTrue(!farAway.isEmpty(), "the Bastion has adult Piglins more than " + HUNT_MIN_DISTANCE + " blocks from the book");
+
+		AbstractPiglin vanillaAngry = farAway.getFirst();
+		double baseFollowRange = vanillaAngry.getAttributeValue(Attributes.FOLLOW_RANGE);
+
+		vanillaAngry.getBrain().setMemoryWithExpiry(MemoryModuleType.ANGRY_AT, player.getUUID(), VANILLA_ANGER_TICKS);
+		tick(vanillaAngry);
+		helper.assertValueEqual(attackTarget(vanillaAngry), Optional.empty(), "a far Piglin's target with only vanilla's anger");
+
+		helper.assertTrue(StructureBooks.take(player, book), "the book is taken");
+
+		int closedIn = 0;
+
+		for (AbstractPiglin hunter : farAway) {
+			double before = hunter.distanceTo(player);
+
+			tick(hunter);
+			helper.assertValueEqual(attackTarget(hunter), Optional.of(player), "the target of the Piglin " + (int) before + " blocks away");
+			helper.assertTrue(hunter.getAttributeValue(Attributes.FOLLOW_RANGE) > before, "the hunter can plan a path " + (int) before + " blocks");
+
+			for (int round = 0; round < CHASE_ROUNDS; round++) {
+				tick(hunter);
+			}
+
+			if (hunter.distanceTo(player) < before - CLOSED_IN) closedIn++;
+		}
+
+		// Not every hunter: some can only reach the player by a detour that first leads away.
+		helper.assertTrue(closedIn * 2 > farAway.size(), closedIn + " of " + farAway.size() + " hunters closed in");
+
+		AbstractPiglin hunter = farAway.getFirst();
+		Vec3 standingAt = player.position();
+
+		player.teleport(new TeleportTransition(level.getServer().getLevel(Level.NETHER), standingAt, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING));
+		tick(hunter);
+		helper.assertValueEqual(hunter.getAttributeValue(Attributes.FOLLOW_RANGE), baseFollowRange, "the follow range while the quarry is away");
+
+		player.teleport(new TeleportTransition(level, standingAt, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING));
+		tick(hunter);
+		helper.assertValueEqual(attackTarget(hunter), Optional.of(player), "the target once the quarry is back");
+		helper.assertTrue(hunter.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(HUNT_RANGE), "the hunting range once the quarry is back");
+
+		AbstractPiglin retargeted = farAway.getLast();
+		ServerPlayer bystander = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+
+		retargeted.getBrain().setMemoryWithExpiry(MemoryModuleType.ANGRY_AT, bystander.getUUID(), VANILLA_ANGER_TICKS);
+		tick(retargeted);
+		helper.assertTrue(
+			!retargeted.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(HUNT_RANGE),
+			"no hunting range once a hunter's anger turns to someone else"
+		);
+
+		// As vanilla forgets a dead target.
+		hunter.getBrain().eraseMemory(MemoryModuleType.ANGRY_AT);
+		tick(hunter);
+		helper.assertValueEqual(attackTarget(hunter), Optional.empty(), "the target once the hunter's anger ends");
+		helper.assertValueEqual(hunter.getAttributeValue(Attributes.FOLLOW_RANGE), baseFollowRange, "the follow range once the hunt ends");
 		helper.succeed();
 	}
 
