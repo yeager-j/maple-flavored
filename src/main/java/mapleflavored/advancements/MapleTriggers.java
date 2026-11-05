@@ -20,6 +20,12 @@ public final class MapleTriggers {
 	/** A player has an enchanting table open whose Library is Full. */
 	public static final PlayerTrigger FULL_LIBRARY = register("full_library", new PlayerTrigger());
 
+	/** A player broke a Cleared spawner with a tool that drops its Pith. */
+	public static final PlayerTrigger CLEARED_SPAWNER_BROKEN = register("cleared_spawner_broken", new PlayerTrigger());
+
+	/** A player's Max Hearts reached 30. */
+	public static final PlayerTrigger MAX_HEARTS_CAP_REACHED = register("max_hearts_cap_reached", new PlayerTrigger());
+
 	private MapleTriggers() {
 	}
 

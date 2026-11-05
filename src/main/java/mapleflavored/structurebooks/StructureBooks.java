@@ -120,7 +120,7 @@ public final class StructureBooks {
 	}
 
 	/** The enchanted book a structure book gives: {@code enchantment} at level I. */
-	static ItemStack levelOneBook(Holder<Enchantment> enchantment) {
+	public static ItemStack levelOneBook(Holder<Enchantment> enchantment) {
 		return EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, 1));
 	}
 

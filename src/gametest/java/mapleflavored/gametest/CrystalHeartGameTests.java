@@ -10,6 +10,8 @@ import java.util.Optional;
 import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementType;
+import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.core.Holder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -41,6 +43,10 @@ public class CrystalHeartGameTests {
 	private static final long LOOT_SEED = 7L;
 	private static final double DROP_RATE_TOLERANCE = 0.03;
 	private static final String POSTMORTAL = "minecraft:adventure/totem_of_undying";
+	private static final String BREAK_CLEARED_SPAWNER = "maple_flavored:adventure/break_cleared_spawner";
+	private static final String CONSUME_CRYSTAL_HEART = "maple_flavored:adventure/consume_crystal_heart";
+	private static final String SAVED_BY_CRYSTAL_HEART = "maple_flavored:adventure/saved_by_crystal_heart";
+	private static final String MAX_HEARTS_CAP = "maple_flavored:adventure/max_hearts_cap";
 
 	@GameTest
 	public void consumingACrystalHeartAddsOneMaxHeart(GameTestHelper helper) {
@@ -55,9 +61,11 @@ public class CrystalHeartGameTests {
 
 		tickUse(player, CONSUME_TICKS - 1);
 		assertMaxHearts(helper, player, 12);
+		helper.assertFalse(isDone(helper, player, CONSUME_CRYSTAL_HEART), "Consume a Crystal Heart before it is consumed");
 
 		tickUse(player, 1);
 		assertMaxHearts(helper, player, 13);
+		helper.assertTrue(isDone(helper, player, CONSUME_CRYSTAL_HEART), "consuming a Crystal Heart grants its advancement");
 		helper.assertTrue(player.getMainHandItem().isEmpty(), "the Crystal Heart is used up");
 		assertEffect(helper, player, MobEffects.REGENERATION, 10, 60);
 		assertEffect(helper, player, MobEffects.RESISTANCE, 4, 20);
@@ -76,6 +84,28 @@ public class CrystalHeartGameTests {
 		helper.assertFalse(player.isUsingItem(), "the player is not using it");
 		helper.assertTrue(player.getMainHandItem().is(MapleItems.CRYSTAL_HEART), "the Crystal Heart is kept");
 		assertMaxHearts(helper, player, 30);
+		helper.assertFalse(isDone(helper, player, CONSUME_CRYSTAL_HEART), "a refused Crystal Heart doesn't count as consumed");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void reachingThirtyMaxHeartsGrantsTheChallenge(GameTestHelper helper) {
+		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 29);
+
+		helper.assertFalse(isDone(helper, player, MAX_HEARTS_CAP), "Reach 30 Max Hearts at 29");
+
+		runCommand(helper, player, "maxhearts set @s 30");
+
+		helper.assertTrue(isDone(helper, player, MAX_HEARTS_CAP), "Reach 30 Max Hearts at 30");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void theCrystalHeartAdvancementsHangUnderBreakAClearedSpawner(GameTestHelper helper) {
+		assertAdvancement(helper, BREAK_CLEARED_SPAWNER, "minecraft:adventure/kill_a_mob", AdvancementType.TASK, 0);
+		assertAdvancement(helper, CONSUME_CRYSTAL_HEART, BREAK_CLEARED_SPAWNER, AdvancementType.TASK, 0);
+		assertAdvancement(helper, SAVED_BY_CRYSTAL_HEART, CONSUME_CRYSTAL_HEART, AdvancementType.TASK, 0);
+		assertAdvancement(helper, MAX_HEARTS_CAP, CONSUME_CRYSTAL_HEART, AdvancementType.CHALLENGE, 100);
 		helper.succeed();
 	}
 
@@ -115,6 +145,7 @@ public class CrystalHeartGameTests {
 		helper.assertTrue(player.getMainHandItem().isEmpty(), "the Totem is used up");
 		helper.assertTrue(player.getOffhandItem().is(MapleItems.CRYSTAL_HEART), "the Crystal Heart is kept");
 		helper.assertTrue(isDone(helper, player, POSTMORTAL), "a Totem save grants Postmortal");
+		helper.assertFalse(isDone(helper, player, SAVED_BY_CRYSTAL_HEART), "a Totem save isn't a Crystal Heart save");
 		helper.succeed();
 	}
 
@@ -197,6 +228,7 @@ public class CrystalHeartGameTests {
 		assertMaxHearts(helper, player, 12);
 		helper.assertValueEqual(player.totalExperience, 100, "XP after a save");
 		helper.assertFalse(isDone(helper, player, POSTMORTAL), "a Crystal Heart save doesn't grant Postmortal");
+		helper.assertTrue(isDone(helper, player, SAVED_BY_CRYSTAL_HEART), "a Crystal Heart save grants its advancement");
 		helper.succeed();
 	}
 
@@ -274,6 +306,15 @@ public class CrystalHeartGameTests {
 			Math.abs(rate - expectedRate) <= DROP_RATE_TOLERANCE,
 			item + " drop rate " + rate + " is within " + DROP_RATE_TOLERANCE + " of " + expectedRate
 		);
+	}
+
+	private static void assertAdvancement(GameTestHelper helper, String id, String parent, AdvancementType frame, int experience) {
+		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(id));
+
+		helper.assertTrue(holder != null, id + " exists");
+		helper.assertValueEqual(holder.value().parent(), Optional.of(Identifier.parse(parent)), id + " parent");
+		helper.assertValueEqual(holder.value().display().map(DisplayInfo::type), Optional.of(frame), id + " frame");
+		helper.assertValueEqual(holder.value().rewards().experience(), experience, id + " XP reward");
 	}
 
 	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String advancement) {

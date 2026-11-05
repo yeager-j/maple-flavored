@@ -1,0 +1,28 @@
+{
+  "parent": "maple_flavored:adventure/consume_crystal_heart",
+  "criteria": {
+    "max_hearts_cap_reached": {
+      "trigger": "maple_flavored:max_hearts_cap_reached"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.adventure.max_hearts_cap.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "id": "maple_flavored:crystal_heart"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.adventure.max_hearts_cap.title"
+    }
+  },
+  "requirements": [
+    [
+      "max_hearts_cap_reached"
+    ]
+  ],
+  "rewards": {
+    "experience": 100
+  }
+}

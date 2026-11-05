@@ -1,0 +1,29 @@
+{
+  "parent": "maple_flavored:adventure/consume_crystal_heart",
+  "criteria": {
+    "saved_by_crystal_heart": {
+      "conditions": {
+        "item": {
+          "items": "maple_flavored:crystal_heart"
+        }
+      },
+      "trigger": "minecraft:used_totem"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.adventure.saved_by_crystal_heart.description"
+    },
+    "icon": {
+      "id": "maple_flavored:crystal_heart"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.adventure.saved_by_crystal_heart.title"
+    }
+  },
+  "requirements": [
+    [
+      "saved_by_crystal_heart"
+    ]
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "parent": "maple_flavored:adventure/break_cleared_spawner",
+  "criteria": {
+    "consumed_crystal_heart": {
+      "conditions": {
+        "item": {
+          "items": "maple_flavored:crystal_heart"
+        }
+      },
+      "trigger": "minecraft:consume_item"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.adventure.consume_crystal_heart.description"
+    },
+    "icon": {
+      "id": "maple_flavored:crystal_heart"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.adventure.consume_crystal_heart.title"
+    }
+  },
+  "requirements": [
+    [
+      "consumed_crystal_heart"
+    ]
+  ]
+}
