@@ -52,6 +52,7 @@ public final class StructureBookRules {
 		(pieces, random) -> new BookLocks.Keys(BookLocks.Kind.SPAWNERS, StructureBookSpots.fortressBlazeSpawners(pieces))
 	);
 	private static final StructureBookRule END_CITY = ordinary(List.of(Enchantments.FEATHER_FALLING), StructureBookSpots::endCity);
+	private static final StructureBookRule ANCIENT_CITY = ordinary(List.of(Enchantments.SWIFT_SNEAK), StructureBookSpots::ancientCity);
 	private static final StructureBookRule BURIED_TREASURE = new StructureBookRule(
 		List.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION),
 		StructureBookSpots::buriedTreasure,
@@ -180,6 +181,7 @@ public final class StructureBookRules {
 
 		rules.put(BuiltinStructures.FORTRESS, NETHER_FORTRESS);
 		rules.put(BuiltinStructures.END_CITY, END_CITY);
+		rules.put(BuiltinStructures.ANCIENT_CITY, ANCIENT_CITY);
 		rules.put(BuiltinStructures.BURIED_TREASURE, BURIED_TREASURE);
 		rules.put(BuiltinStructures.TRAIL_RUINS, TRAIL_RUINS);
 		ABANDONED_CAMPS.forEach(camp -> rules.put(camp, ABANDONED_CAMP));

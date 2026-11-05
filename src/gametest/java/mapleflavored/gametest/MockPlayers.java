@@ -57,6 +57,24 @@ final class MockPlayers {
 		return player;
 	}
 
+	/** A loaded mock player in Survival with 10 Max Hearts that adds each overlay message it is sent to {@code overlay}. */
+	static ServerPlayer survivalPlayerReadingOverlay(GameTestHelper helper, List<Component> overlay) {
+		var cookie = newCookie();
+		ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation()) {
+			@Override
+			public void sendSystemMessage(Component message, boolean isOverlay) {
+				if (isOverlay) overlay.add(message);
+
+				super.sendSystemMessage(message, isOverlay);
+			}
+		};
+
+		place(helper, player, cookie);
+		player.setGameMode(GameType.SURVIVAL);
+
+		return player;
+	}
+
 	/**
 	 * A loaded mock player in Survival with 10 Max Hearts. Unlike {@link GameTestHelper#makeMockServerPlayerInLevel},
 	 * whose player always reports Creative, mobs can target it.

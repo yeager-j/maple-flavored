@@ -94,6 +94,13 @@ final class StructureBookSpots {
 		.mapToObj(n -> Identifier.withDefaultNamespace("trail_ruins/tower/tower_" + n))
 		.toList();
 
+	private static final List<Identifier> ANCIENT_CITY_CENTRES = IntStream.rangeClosed(1, 3)
+		.mapToObj(n -> Identifier.withDefaultNamespace("ancient_city/city_center/city_center_" + n))
+		.toList();
+	// At head height on the plaza floor in front of the portal, 2.5 blocks off its middle: every centre has a full floor
+	// and room for a Warden here, while centre 2's sunken chest pit fills the middle.
+	private static final BlockPos ANCIENT_CITY_BEFORE_THE_PORTAL = new BlockPos(10, 11, 23);
+
 	private StructureBookSpots() {
 	}
 
@@ -203,6 +210,13 @@ final class StructureBookSpots {
 
 		return lavaWell.or(() -> firstOfType(pieces, NetherFortressPieces.StartPiece.class)
 			.map(start -> inCodeBuiltPiece(start, FORTRESS_START_CROSSING)));
+	}
+
+	/** In front of the portal in the city's centre, with room under the book for a Warden. */
+	static Optional<BookSpot> ancientCity(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		if (startTemplate(pieces).filter(ANCIENT_CITY_CENTRES::contains).isEmpty()) return Optional.empty();
+
+		return Optional.of(inPoolElement((PoolElementStructurePiece) pieces.getFirst(), ANCIENT_CITY_BEFORE_THE_PORTAL));
 	}
 
 	/** Where each of the fortress's spawner rooms will place its Blaze spawner. */

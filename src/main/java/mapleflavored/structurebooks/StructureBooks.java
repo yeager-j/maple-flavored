@@ -113,9 +113,10 @@ public final class StructureBooks {
 
 	/**
 	 * Takes the structure book at {@code pos} for the player, as one action: the player gets its level I book, the
-	 * block is removed and {@link #TAKEN} fires. Refused, with nothing changed and no event, when there's no book with an
-	 * enchantment there, the book is locked or the player has no free inventory slot. A locked book shows the player
-	 * trails leading to the spawners still to be Cleared, or to the keeper Brutes still alive, which glow.
+	 * block is removed and {@link #TAKEN} fires. An Ancient City's book first summons its Warden, angry at the player.
+	 * Refused, with nothing changed and no event, when there's no book with an enchantment there, the book is locked, the
+	 * player has no free inventory slot or an Ancient City's Warden has no room. A locked book shows the player trails
+	 * leading to the spawners still to be Cleared, or to the keeper Brutes still alive, which glow.
 	 *
 	 * @return whether the book was taken
 	 */
@@ -137,6 +138,12 @@ public final class StructureBooks {
 
 		if (player.getInventory().getFreeSlot() == -1) {
 			player.sendOverlayMessage(Component.translatable("block.maple_flavored.structure_book.no_room"));
+
+			return false;
+		}
+
+		if (AncientCityWarden.guards(level, pos) && AncientCityWarden.summon(level, player, pos).isEmpty()) {
+			player.sendOverlayMessage(Component.translatable("block.maple_flavored.structure_book.no_room_for_warden"));
 
 			return false;
 		}

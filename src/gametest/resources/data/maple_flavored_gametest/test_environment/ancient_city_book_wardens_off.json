@@ -1,0 +1,12 @@
+{
+	"type": "minecraft:all_of",
+	"definitions": [
+		"maple_flavored_gametest:normal",
+		{
+			"type": "minecraft:game_rules",
+			"rules": {
+				"minecraft:spawn_wardens": false
+			}
+		}
+	]
+}
