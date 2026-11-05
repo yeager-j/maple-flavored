@@ -16,6 +16,6 @@ Spec: the Maple Flavored spec in this folder.
 - [x] Advancements under it: Consume a Crystal Heart; Be saved by a Crystal Heart (under Consume); Reach 30 Max Hearts (challenge, 100 XP, under Consume)
 - [x] A Cleared event is exposed for the Fortress lock
 - [x] Dungeons: 15 attempts per chunk above Y 0 and 8 below
-- [x] Dungeon books, moved here from 20: Bane of Arthropods or Smite with equal weight, given to the spawner by the dungeon room's own placement, since Dungeons are placed features. The Cleared spawner drops it with its Pith when broken
+- [x] Dungeon books, moved here from 20: the book fights the dungeon's mob (Smite for zombies and skeletons, Bane of Arthropods for spiders), given to the spawner by the dungeon room's own placement, since Dungeons are placed features. The Cleared spawner drops it with its Pith when broken
 - [x] GameTests cover light, the count with several players, lava kills, explosions, the drop and the advancements; worldgen data check for dungeon attempts
 - [ ] Hand check: the forcefield, and dungeon frequency in a fresh world

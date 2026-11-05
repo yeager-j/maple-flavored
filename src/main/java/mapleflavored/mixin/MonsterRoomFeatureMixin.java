@@ -12,7 +12,10 @@ import net.minecraft.world.level.levelgen.feature.MonsterRoomFeature;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-/** Gives each dungeon's spawner its structure book, which drops once the spawner is Cleared and broken. */
+/**
+ * Gives each dungeon's spawner the structure book that fights the mob the dungeon chose for it. The book drops once the
+ * spawner is Cleared and broken.
+ */
 @Mixin(MonsterRoomFeature.class)
 public abstract class MonsterRoomFeatureMixin {
 	@WrapOperation(
@@ -26,6 +29,6 @@ public abstract class MonsterRoomFeatureMixin {
 		SpawnerBlockEntity spawner, EntityType<?> type, RandomSource random, Operation<Void> original, @Local(argsOnly = true) WorldGenLevel level
 	) {
 		original.call(spawner, type, random);
-		DungeonBooks.give(level, spawner, random);
+		DungeonBooks.give(level, spawner, type, random);
 	}
 }
