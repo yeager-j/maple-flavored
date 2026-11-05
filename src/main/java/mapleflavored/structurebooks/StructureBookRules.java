@@ -1,11 +1,14 @@
 package mapleflavored.structurebooks;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -15,6 +18,7 @@ import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
@@ -59,6 +63,9 @@ public final class StructureBookRules {
 		StructureBookRule.Placement.IN_SUSPICIOUS_GRAVEL
 	);
 
+	// Each Bastion layout, named by the template its start piece places, holds its own book.
+	private static final Map<Identifier, StructureBookRule> BASTION_LAYOUTS = bastionLayouts();
+
 	/** Every Abandoned Camp, one per biome variant. */
 	public static final List<ResourceKey<Structure>> ABANDONED_CAMPS = List.of(
 		BuiltinStructures.ABANDONED_CAMP_BAMBOO_JUNGLE,
@@ -88,6 +95,10 @@ public final class StructureBookRules {
 
 	/** The enchantments a structure's book can hold, or none for a structure without a book. */
 	public static List<ResourceKey<Enchantment>> enchantmentsFor(ResourceKey<Structure> structure) {
+		if (structure.equals(BuiltinStructures.BASTION_REMNANT)) {
+			return BASTION_LAYOUTS.values().stream().flatMap(layout -> layout.enchantments().stream()).toList();
+		}
+
 		return Optional.ofNullable(RULES.get(structure)).map(StructureBookRule::enchantments).orElse(List.of());
 	}
 
@@ -113,7 +124,7 @@ public final class StructureBookRules {
 	) {
 		if (pieces.isEmpty()) return pieces;
 
-		Optional<StructureBookRule> rule = structure.unwrapKey().map(RULES::get);
+		Optional<StructureBookRule> rule = structure.unwrapKey().flatMap(key -> ruleFor(key, pieces.pieces()));
 
 		if (rule.isEmpty()) return pieces;
 
@@ -130,6 +141,15 @@ public final class StructureBookRules {
 		BookLocks.plan(dimension, spot.get().pos(), rule.get().lock().spawners(pieces.pieces()));
 
 		return new PiecesContainer(Stream.concat(pieces.pieces().stream(), Stream.of(book)).toList());
+	}
+
+	// A Bastion's rule is its layout's; a layout this mod doesn't know, such as a datapack's, holds no book.
+	private static Optional<StructureBookRule> ruleFor(ResourceKey<Structure> structure, List<StructurePiece> pieces) {
+		if (structure.equals(BuiltinStructures.BASTION_REMNANT)) {
+			return StructureBookSpots.startTemplate(pieces).map(BASTION_LAYOUTS::get);
+		}
+
+		return Optional.ofNullable(RULES.get(structure));
 	}
 
 	private static StructureBookRule ordinary(List<ResourceKey<Enchantment>> enchantments, StructureBookRule.SpotRule spot) {
@@ -157,6 +177,21 @@ public final class StructureBookRules {
 		ABANDONED_CAMPS.forEach(camp -> rules.put(camp, ABANDONED_CAMP));
 
 		return Map.copyOf(rules);
+	}
+
+	private static Map<Identifier, StructureBookRule> bastionLayouts() {
+		Map<Identifier, StructureBookRule> layouts = new LinkedHashMap<>();
+
+		layouts.put(bastionStart("treasure/big_air_full"), ordinary(List.of(Enchantments.FIRE_ASPECT), StructureBookSpots::bastionTreasureRoom));
+		layouts.put(bastionStart("bridge/starting_pieces/entrance_base"), ordinary(List.of(Enchantments.SOUL_SPEED), StructureBookSpots::bastionBridge));
+		layouts.put(bastionStart("units/air_base"), ordinary(List.of(Enchantments.FLAME), StructureBookSpots::bastionHousingUnits));
+		layouts.put(bastionStart("hoglin_stable/air_base"), ordinary(List.of(Enchantments.THORNS), StructureBookSpots::bastionHoglinStables));
+
+		return Collections.unmodifiableMap(layouts);
+	}
+
+	private static Identifier bastionStart(String path) {
+		return Identifier.withDefaultNamespace("bastion/" + path);
 	}
 
 	private static WorldgenRandom bookRandom(long seed, ChunkPos chunkPos) {

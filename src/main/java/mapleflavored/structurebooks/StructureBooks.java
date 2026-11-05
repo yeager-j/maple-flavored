@@ -96,10 +96,11 @@ public final class StructureBooks {
 	private StructureBooks() {
 	}
 
-	/** Registers the block, block entity, structure piece and book locks. Call once from mod init. */
+	/** Registers the block, block entity, structure piece, book locks and wake events. Call once from mod init. */
 	public static void register() {
 		// The block, block entity and piece register in the static fields above; this call makes sure they run.
 		BookLocks.register();
+		PiglinAnger.register();
 	}
 
 	/**
