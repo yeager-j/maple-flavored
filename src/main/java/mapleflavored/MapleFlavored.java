@@ -3,6 +3,7 @@ package mapleflavored;
 import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.enchanting.Enchanting;
 import mapleflavored.gamerules.MapleGameRules;
+import mapleflavored.grounded.Grounded;
 import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import mapleflavored.loot.LootEnchantments;
@@ -34,6 +35,7 @@ public class MapleFlavored implements ModInitializer {
 		Remnants.register();
 		LootSubstitutions.register();
 		LootEnchantments.register();
+		Grounded.register();
 		Zephyr.register();
 		Enchanting.register();
 		StructureBooks.register();

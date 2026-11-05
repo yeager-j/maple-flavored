@@ -17,6 +17,7 @@
 			"mapleflavored.gametest.AnvilGameTests",
 			"mapleflavored.gametest.WorkstationGameTests",
 			"mapleflavored.gametest.ZephyrGameTests",
+			"mapleflavored.gametest.GroundedGameTests",
 			"mapleflavored.gametest.BlightGameTests",
 			"mapleflavored.gametest.RemovedCursesGameTests",
 			"mapleflavored.gametest.EnchantingTableGameTests",

@@ -52,6 +52,7 @@
 	"container.maple_flavored.enchanting_table.too_many": "Needs %s Enchantment Slots, you have %s",
 	"container.maple_flavored.upgrade.enchanted_error_tooltip": "Can't upgrade enchanted items",
 	"deathScreen.maple_flavored.max_hearts_lost": "Max Hearts lost: %s",
+	"effect.maple_flavored.grounded": "Grounded",
 	"enchantment.maple_flavored.blight": "Blight",
 	"enchantment.maple_flavored.zephyr": "Zephyr",
 	"entity.maple_flavored.remnant": "Remnant",
