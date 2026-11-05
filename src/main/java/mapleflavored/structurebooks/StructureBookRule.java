@@ -2,7 +2,6 @@ package mapleflavored.structurebooks;
 
 import java.util.List;
 import java.util.Optional;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -11,10 +10,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 /**
  * How one structure gets its book: the enchantments it can hold, one chosen with equal weight, where the book goes
- * among its planned pieces, how it's placed there when built, and which of the structure's spawners lock it. A spot
+ * among its planned pieces, how it's placed there when built, and what of the structure locks it. A spot
  * rule that finds no spot leaves the structure without a book.
  */
-record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Placement placement, SpawnerLock lock) {
+record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Placement placement, LockRule lock) {
 	StructureBookRule {
 		if (enchantments.isEmpty()) throw new IllegalArgumentException("a structure book rule needs an enchantment");
 
@@ -23,7 +22,7 @@ record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule s
 
 	/** A rule whose book is never locked. */
 	StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Placement placement) {
-		this(enchantments, spot, placement, SpawnerLock.NONE);
+		this(enchantments, spot, placement, LockRule.NONE);
 	}
 
 	/** One of the enchantments, with equal weight. */
@@ -37,14 +36,18 @@ record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule s
 		Optional<BookSpot> spot(List<StructurePiece> pieces, Planning planning);
 	}
 
-	/** Finds the spawners among a structure's planned pieces that must all be Cleared before its book can be taken. */
+	/** Finds what among a structure's planned pieces must all be done before its book can be taken. */
 	@FunctionalInterface
-	interface SpawnerLock {
-		/** No spawner locks the book. */
-		SpawnerLock NONE = pieces -> List.of();
+	interface LockRule {
+		/** Nothing locks the book. */
+		LockRule NONE = (pieces, random) -> BookLocks.Keys.NONE;
 
-		/** Where each locking spawner will be placed. Empty when nothing locks the book. */
-		List<BlockPos> spawners(List<StructurePiece> pieces);
+		/**
+		 * The keys that lock the book, none when nothing does.
+		 *
+		 * @param random the book's planning random, so the same world seed picks the same keys
+		 */
+		BookLocks.Keys keys(List<StructurePiece> pieces, RandomSource random);
 	}
 
 	/**

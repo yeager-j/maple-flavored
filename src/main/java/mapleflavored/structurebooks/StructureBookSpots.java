@@ -1,5 +1,6 @@
 package mapleflavored.structurebooks;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +12,9 @@ import mapleflavored.mixin.SinglePoolElementAccessor;
 import mapleflavored.mixin.StructurePieceInvoker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.Util;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
@@ -28,12 +32,14 @@ import net.minecraft.world.level.levelgen.structure.structures.NetherFortressPie
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.level.storage.loot.LootTable;
 
 /**
- * Where the books of structures without a wake event go: each in the structure's most important spot, where a player
- * exploring it properly will find it. Buried Treasure and Trail Ruins have no open room, so theirs is in the treasure
- * chest and in one of the ruin's gravel blocks. The Nether Fortress's book is also locked by the Blaze spawners found
- * here. Local coordinates come from vanilla's code-built pieces and templates.
+ * Where structures' books go: each in the structure's most important spot, where a player exploring it properly will
+ * find it. Buried Treasure and Trail Ruins have no open room, so theirs is in the treasure chest and in one of the ruin's
+ * gravel blocks. The Nether Fortress's book is also locked by the Blaze spawners found here, and each Bastion layout's
+ * book floats above that layout's own chest. Local coordinates come from vanilla's code-built pieces and templates.
  */
 final class StructureBookSpots {
 	// In the shaft of the hidden treasure room, one block above the TNT pressure plate.
@@ -73,6 +79,16 @@ final class StructureBookSpots {
 	private static final BlockPos FORTRESS_START_CROSSING = new BlockPos(9, 6, 9);
 	// Where a fortress's spawner room places its Blaze spawner.
 	private static final BlockPos FORTRESS_BLAZE_SPAWNER = new BlockPos(3, 5, 5);
+
+	private static final String BASTION_HOUSING_COURTYARDS = "bastion/units/center_pieces/";
+	private static final Identifier BASTION_STABLE_WALL = Identifier.withDefaultNamespace("bastion/hoglin_stable/walls/wall_base");
+	private static final String LOOT_TABLE = "LootTable";
+	// The only templates that place a Piglin Brute, one each.
+	private static final List<Identifier> BASTION_BRUTES = List.of(
+		Identifier.withDefaultNamespace("bastion/mobs/melee_piglin"),
+		Identifier.withDefaultNamespace("bastion/mobs/melee_piglin_always")
+	);
+	private static final int BASTION_KEEPERS = 3;
 
 	private static final List<Identifier> TRAIL_RUINS_TOWERS = IntStream.rangeClosed(1, 5)
 		.mapToObj(n -> Identifier.withDefaultNamespace("trail_ruins/tower/tower_" + n))
@@ -197,6 +213,86 @@ final class StructureBookSpots {
 			.toList();
 	}
 
+	/** The template a jigsaw structure's start piece places, which names its layout. */
+	static Optional<Identifier> startTemplate(List<StructurePiece> pieces) {
+		if (pieces.isEmpty() || !(pieces.getFirst() instanceof PoolElementStructurePiece start)) return Optional.empty();
+
+		return singleElements(start.getElement())
+			.findFirst()
+			.flatMap(single -> ((SinglePoolElementAccessor) single).template().left());
+	}
+
+	/** Above the treasure chest in the gold pile at the treasure room's heart. */
+	static Optional<BookSpot> bastionTreasureRoom(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		return aboveChest(pieces, planning.templates(), template -> true, BuiltInLootTables.BASTION_TREASURE);
+	}
+
+	/** Above the bridge layout's own chest, in the gatehouse at the bridge's end. */
+	static Optional<BookSpot> bastionBridge(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		return aboveChest(pieces, planning.templates(), template -> true, BuiltInLootTables.BASTION_BRIDGE);
+	}
+
+	/** Above the chest in the courtyard every housing unit opens onto. */
+	static Optional<BookSpot> bastionHousingUnits(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		return aboveChest(
+			pieces,
+			planning.templates(),
+			template -> template.getPath().startsWith(BASTION_HOUSING_COURTYARDS),
+			BuiltInLootTables.BASTION_OTHER
+		);
+	}
+
+	/** Above a stable's own chest, or the chest in the stables' base wall when no stable with one generated. */
+	static Optional<BookSpot> bastionHoglinStables(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		StructureTemplateManager templates = planning.templates();
+
+		return aboveChest(pieces, templates, template -> true, BuiltInLootTables.BASTION_HOGLIN_STABLE)
+			.or(() -> aboveChest(pieces, templates, BASTION_STABLE_WALL::equals, BuiltInLootTables.BASTION_OTHER));
+	}
+
+	/**
+	 * Where three of the Bastion's Piglin Brutes, its keepers, spawn, chosen at random: the origins of the pieces that
+	 * place them. Every Brute when there are fewer.
+	 */
+	static List<BlockPos> bastionKeepers(List<StructurePiece> pieces, RandomSource random) {
+		List<BlockPos> brutes = new ArrayList<>(pieces.stream()
+			.filter(PoolElementStructurePiece.class::isInstance)
+			.map(PoolElementStructurePiece.class::cast)
+			.filter(piece -> placesTemplate(piece, BASTION_BRUTES::contains))
+			.map(PoolElementStructurePiece::getPosition)
+			.toList());
+
+		Util.shuffle(brutes, random);
+
+		return List.copyOf(brutes.subList(0, Math.min(BASTION_KEEPERS, brutes.size())));
+	}
+
+	/** The key of the keeper Brute the piece places, if it places one of the {@code keepers} its book was planned with. */
+	static Optional<BlockPos> keeperKey(StructurePiece piece, List<BlockPos> keepers) {
+		if (!(piece instanceof PoolElementStructurePiece pool) || !placesTemplate(pool, BASTION_BRUTES::contains)) return Optional.empty();
+
+		return Optional.of(pool.getPosition()).filter(keepers::contains);
+	}
+
+	private static Optional<BookSpot> aboveChest(
+		List<StructurePiece> pieces,
+		StructureTemplateManager templates,
+		Predicate<Identifier> template,
+		ResourceKey<LootTable> lootTable
+	) {
+		String table = lootTable.identifier().toString();
+
+		return pieces.stream()
+			.filter(PoolElementStructurePiece.class::isInstance)
+			.map(PoolElementStructurePiece.class::cast)
+			.filter(piece -> placesTemplate(piece, template))
+			.flatMap(piece -> blockInfosIn(piece, templates, Blocks.CHEST)
+				.filter(chest -> chest.nbt() != null && table.equals(chest.nbt().getStringOr(LOOT_TABLE, "")))
+				.map(chest -> new BookSpot(piece, chest.pos().above()))
+			)
+			.findFirst();
+	}
+
 	private static Optional<TemplateStructurePiece> highestTemplatePiece(
 		List<StructurePiece> pieces,
 		StructureTemplateManager templates,
@@ -268,14 +364,20 @@ final class StructureBookSpots {
 	}
 
 	private static Stream<BlockPos> blocksIn(PoolElementStructurePiece piece, StructureTemplateManager templates, Block block) {
+		return blockInfosIn(piece, templates, block).map(StructureTemplate.StructureBlockInfo::pos);
+	}
+
+	private static Stream<StructureTemplate.StructureBlockInfo> blockInfosIn(
+		PoolElementStructurePiece piece,
+		StructureTemplateManager templates,
+		Block block
+	) {
 		return poolTemplate(piece, templates).stream()
-			.flatMap(template -> template.filterBlocks(piece.getPosition(), poolSettings(piece), block).stream())
-			.map(StructureTemplate.StructureBlockInfo::pos);
+			.flatMap(template -> template.filterBlocks(piece.getPosition(), poolSettings(piece), block).stream());
 	}
 
 	private static Optional<BlockPos> tentEntrance(PoolElementStructurePiece tent, StructureTemplateManager templates) {
-		return poolTemplate(tent, templates).stream()
-			.flatMap(template -> template.filterBlocks(tent.getPosition(), poolSettings(tent), Blocks.JIGSAW).stream())
+		return blockInfosIn(tent, templates, Blocks.JIGSAW)
 			.filter(jigsaw -> jigsaw.nbt() != null && TENT_ENTRANCE.equals(jigsaw.nbt().getStringOr("name", "")))
 			.map(StructureTemplate.StructureBlockInfo::pos)
 			.findFirst();

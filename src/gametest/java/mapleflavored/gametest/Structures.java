@@ -76,6 +76,17 @@ final class Structures {
 		start.placeInChunk(level, level.structureManager(), level.getChunkSource().getGenerator(), level.getRandom(), chunkBox, chunk);
 	}
 
+	/**
+	 * Records the structure in its start chunk and every chunk it covers, as generation does, so the structure manager
+	 * can find it by position.
+	 */
+	static void register(ServerLevel level, StructureStart start) {
+		ChunkPos startChunk = start.getChunkPos();
+
+		level.getChunk(startChunk.x(), startChunk.z()).setStartForStructure(start.getStructure(), start);
+		chunks(start).forEach(chunk -> level.getChunk(chunk.x(), chunk.z()).addReferenceForStructure(start.getStructure(), startChunk.pack()));
+	}
+
 	/** The chunks the structure covers. */
 	static List<ChunkPos> chunks(StructureStart start) {
 		BoundingBox box = start.getBoundingBox();

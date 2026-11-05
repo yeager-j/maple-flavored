@@ -125,7 +125,7 @@ public class FortressBookGameTests {
 		helper.assertValueEqual(level.getBlockState(expectedBook).is(StructureBooks.BLOCK), true, "the book is still there");
 		helper.assertValueEqual(takes(expectedBook), 0, "takes");
 		helper.assertValueEqual(sentLocked(level, expectedBook), true, "the book is sent locked");
-		helper.assertValueEqual(BookLocks.remainingSpawners(level, expectedBook), spawners, "the spawners left to Clear");
+		helper.assertValueEqual(BookLocks.remainingKeys(level, expectedBook), spawners, "the spawners left to Clear");
 		helper.succeed();
 	}
 
@@ -183,10 +183,10 @@ public class FortressBookGameTests {
 		BlockPos last = spawners.getLast();
 
 		helper.assertValueEqual(BookLocks.isLocked(level, book), true, "locked with one spawner left");
-		helper.assertValueEqual(BookLocks.remainingSpawners(level, book), List.of(last), "the spawner left");
+		helper.assertValueEqual(BookLocks.remainingKeys(level, book), List.of(last), "the spawner left");
 
 		Structures.plan(level, BuiltinStructures.FORTRESS, planned.getChunkPos());
-		helper.assertValueEqual(BookLocks.remainingSpawners(level, book), List.of(last), "the spawner left after planning the fortress again");
+		helper.assertValueEqual(BookLocks.remainingKeys(level, book), List.of(last), "the spawner left after planning the fortress again");
 
 		clear(helper, last);
 
@@ -336,7 +336,7 @@ public class FortressBookGameTests {
 	}
 
 	private static List<BlockPos> lockedSpawners(ServerLevel level, BlockPos book) {
-		return BookLocks.lockAt(level, book).map(BookLocks.Lock::spawners).orElse(List.of());
+		return BookLocks.lockAt(level, book).map(BookLocks.Lock::keys).orElse(List.of());
 	}
 
 	private static void clear(GameTestHelper helper, BlockPos spawner) {
