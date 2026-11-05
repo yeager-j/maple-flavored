@@ -49,7 +49,7 @@ public final class StructureBookRules {
 		List.of(Enchantments.FIRE_PROTECTION),
 		StructureBookSpots::netherFortress,
 		StructureBookRule.Placement.OPEN,
-		StructureBookSpots::fortressBlazeSpawners
+		(pieces, random) -> new BookLocks.Keys(BookLocks.Kind.SPAWNERS, StructureBookSpots.fortressBlazeSpawners(pieces))
 	);
 	private static final StructureBookRule END_CITY = ordinary(List.of(Enchantments.FEATHER_FALLING), StructureBookSpots::endCity);
 	private static final StructureBookRule BURIED_TREASURE = new StructureBookRule(
@@ -135,10 +135,18 @@ public final class StructureBookRules {
 		if (spot.isEmpty()) return pieces;
 
 		ResourceKey<Enchantment> enchantment = rule.get().chooseEnchantment(random);
+		BookLocks.Keys keys = rule.get().lock().keys(pieces.pieces(), random);
 		int anchorIndex = pieces.pieces().indexOf(spot.get().anchor());
-		StructureBookPiece book = new StructureBookPiece(spot.get().pos(), enchantment, anchorIndex, spot.get().anchor(), rule.get().placement());
+		StructureBookPiece book = new StructureBookPiece(
+			spot.get().pos(),
+			enchantment,
+			anchorIndex,
+			spot.get().anchor(),
+			rule.get().placement(),
+			keys.kind() == BookLocks.Kind.BRUTES ? keys.positions() : List.of()
+		);
 
-		BookLocks.plan(dimension, spot.get().pos(), rule.get().lock().spawners(pieces.pieces()));
+		BookLocks.plan(dimension, spot.get().pos(), keys);
 
 		return new PiecesContainer(Stream.concat(pieces.pieces().stream(), Stream.of(book)).toList());
 	}
@@ -182,12 +190,22 @@ public final class StructureBookRules {
 	private static Map<Identifier, StructureBookRule> bastionLayouts() {
 		Map<Identifier, StructureBookRule> layouts = new LinkedHashMap<>();
 
-		layouts.put(bastionStart("treasure/big_air_full"), ordinary(List.of(Enchantments.FIRE_ASPECT), StructureBookSpots::bastionTreasureRoom));
-		layouts.put(bastionStart("bridge/starting_pieces/entrance_base"), ordinary(List.of(Enchantments.SOUL_SPEED), StructureBookSpots::bastionBridge));
-		layouts.put(bastionStart("units/air_base"), ordinary(List.of(Enchantments.FLAME), StructureBookSpots::bastionHousingUnits));
-		layouts.put(bastionStart("hoglin_stable/air_base"), ordinary(List.of(Enchantments.THORNS), StructureBookSpots::bastionHoglinStables));
+		layouts.put(bastionStart("treasure/big_air_full"), bastionLayout(Enchantments.FIRE_ASPECT, StructureBookSpots::bastionTreasureRoom));
+		layouts.put(bastionStart("bridge/starting_pieces/entrance_base"), bastionLayout(Enchantments.SOUL_SPEED, StructureBookSpots::bastionBridge));
+		layouts.put(bastionStart("units/air_base"), bastionLayout(Enchantments.FLAME, StructureBookSpots::bastionHousingUnits));
+		layouts.put(bastionStart("hoglin_stable/air_base"), bastionLayout(Enchantments.THORNS, StructureBookSpots::bastionHoglinStables));
 
 		return Collections.unmodifiableMap(layouts);
+	}
+
+	// Every layout's book is locked by its keeper Brutes.
+	private static StructureBookRule bastionLayout(ResourceKey<Enchantment> enchantment, StructureBookRule.SpotRule spot) {
+		return new StructureBookRule(
+			List.of(enchantment),
+			spot,
+			StructureBookRule.Placement.OPEN,
+			(pieces, random) -> new BookLocks.Keys(BookLocks.Kind.BRUTES, StructureBookSpots.bastionKeepers(pieces, random))
+		);
 	}
 
 	private static Identifier bastionStart(String path) {

@@ -44,6 +44,7 @@ public class StructureBookPiece extends StructurePiece {
 	private static final String ANCHOR = "Anchor";
 	private static final String OFFSET = "Offset";
 	private static final String PLACEMENT = "Placement";
+	private static final String KEEPERS = "Keepers";
 	// Saved before books could be placed other than floating: whether the book carved a pocket.
 	private static final String LEGACY_POCKET = "Pocket";
 	private static final Codec<ResourceKey<Enchantment>> ENCHANTMENT_CODEC = ResourceKey.codec(Registries.ENCHANTMENT);
@@ -54,25 +55,30 @@ public class StructureBookPiece extends StructurePiece {
 	private final int anchorIndex;
 	private final BlockPos offset;
 	private final StructureBookRule.Placement placement;
+	private final List<BlockPos> keepers;
 	// Linked from the structure's pieces whenever they're gathered, so it's never saved.
 	private @Nullable StructurePiece anchor;
 
 	/**
 	 * A book at {@code spot} that gives {@code enchantment} at level I, following the piece at {@code anchorIndex} in
 	 * the structure's pieces.
+	 *
+	 * @param keepers the origins of the pieces that place the Brutes locking the book, if Brutes lock it
 	 */
 	StructureBookPiece(
 		BlockPos spot,
 		ResourceKey<Enchantment> enchantment,
 		int anchorIndex,
 		StructurePiece anchor,
-		StructureBookRule.Placement placement
+		StructureBookRule.Placement placement,
+		List<BlockPos> keepers
 	) {
 		super(StructureBooks.PIECE, 0, new BoundingBox(spot));
 		this.enchantment = enchantment;
 		this.anchorIndex = anchorIndex;
 		this.offset = spot.subtract(originOf(anchor));
 		this.placement = placement;
+		this.keepers = List.copyOf(keepers);
 	}
 
 	/** Loads a saved book piece. A book saved without an anchor stays at its saved spot. */
@@ -84,6 +90,7 @@ public class StructureBookPiece extends StructurePiece {
 		this.placement = tag.getString(PLACEMENT)
 			.map(StructureBookRule.Placement::valueOf)
 			.orElseGet(() -> tag.getBooleanOr(LEGACY_POCKET, true) ? StructureBookRule.Placement.POCKET : StructureBookRule.Placement.OPEN);
+		this.keepers = tag.read(KEEPERS, BlockPos.CODEC.listOf()).orElse(List.of());
 	}
 
 	/** Hands each book among a structure's pieces the piece it follows. Call whenever the pieces are gathered. */
@@ -109,6 +116,11 @@ public class StructureBookPiece extends StructurePiece {
 		return enchantment;
 	}
 
+	/** The origins of the pieces that place the keeper Brutes locking the book, or none when Brutes don't lock it. */
+	public List<BlockPos> keepers() {
+		return keepers;
+	}
+
 	// A piece's bounding box always matches where it was last built: code-built pieces move their box to the ground,
 	// and template pieces recompute theirs from the position they place at, even an Igloo's temporary one.
 	private static BlockPos originOf(StructurePiece piece) {
@@ -123,6 +135,8 @@ public class StructureBookPiece extends StructurePiece {
 		tag.putInt(ANCHOR, anchorIndex);
 		tag.store(OFFSET, BlockPos.CODEC, offset);
 		tag.putString(PLACEMENT, placement.name());
+
+		if (!keepers.isEmpty()) tag.store(KEEPERS, BlockPos.CODEC.listOf(), keepers);
 	}
 
 	@Override

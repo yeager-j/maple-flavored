@@ -1,5 +1,6 @@
 package mapleflavored.structurebooks;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +13,8 @@ import mapleflavored.mixin.StructurePieceInvoker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.Util;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
@@ -80,6 +83,12 @@ final class StructureBookSpots {
 	private static final String BASTION_HOUSING_COURTYARDS = "bastion/units/center_pieces/";
 	private static final Identifier BASTION_STABLE_WALL = Identifier.withDefaultNamespace("bastion/hoglin_stable/walls/wall_base");
 	private static final String LOOT_TABLE = "LootTable";
+	// The only templates that place a Piglin Brute, one each.
+	private static final List<Identifier> BASTION_BRUTES = List.of(
+		Identifier.withDefaultNamespace("bastion/mobs/melee_piglin"),
+		Identifier.withDefaultNamespace("bastion/mobs/melee_piglin_always")
+	);
+	private static final int BASTION_KEEPERS = 3;
 
 	private static final List<Identifier> TRAIL_RUINS_TOWERS = IntStream.rangeClosed(1, 5)
 		.mapToObj(n -> Identifier.withDefaultNamespace("trail_ruins/tower/tower_" + n))
@@ -239,6 +248,30 @@ final class StructureBookSpots {
 
 		return aboveChest(pieces, templates, template -> true, BuiltInLootTables.BASTION_HOGLIN_STABLE)
 			.or(() -> aboveChest(pieces, templates, BASTION_STABLE_WALL::equals, BuiltInLootTables.BASTION_OTHER));
+	}
+
+	/**
+	 * Where three of the Bastion's Piglin Brutes, its keepers, spawn, chosen at random: the origins of the pieces that
+	 * place them. Every Brute when there are fewer.
+	 */
+	static List<BlockPos> bastionKeepers(List<StructurePiece> pieces, RandomSource random) {
+		List<BlockPos> brutes = new ArrayList<>(pieces.stream()
+			.filter(PoolElementStructurePiece.class::isInstance)
+			.map(PoolElementStructurePiece.class::cast)
+			.filter(piece -> placesTemplate(piece, BASTION_BRUTES::contains))
+			.map(PoolElementStructurePiece::getPosition)
+			.toList());
+
+		Util.shuffle(brutes, random);
+
+		return List.copyOf(brutes.subList(0, Math.min(BASTION_KEEPERS, brutes.size())));
+	}
+
+	/** The key of the keeper Brute the piece places, if it places one of the {@code keepers} its book was planned with. */
+	static Optional<BlockPos> keeperKey(StructurePiece piece, List<BlockPos> keepers) {
+		if (!(piece instanceof PoolElementStructurePiece pool) || !placesTemplate(pool, BASTION_BRUTES::contains)) return Optional.empty();
+
+		return Optional.of(pool.getPosition()).filter(keepers::contains);
 	}
 
 	private static Optional<BookSpot> aboveChest(

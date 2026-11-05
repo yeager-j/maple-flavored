@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import mapleflavored.mixin.SinglePoolElementAccessor;
+import mapleflavored.structurebooks.BookLocks;
+import mapleflavored.structurebooks.BruteKeepers;
 import mapleflavored.structurebooks.StructureBookBlockEntity;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
@@ -51,8 +53,9 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Each Bastion layout holds its own level I book above that layout's chest: Fire Aspect in the treasure room, Soul
- * Speed on the bridge, Flame in the housing units and Thorns in the hoglin stables. Taking it angers every Piglin and
- * Piglin Brute in the Bastion at the player, however far away and whatever the player wears.
+ * Speed on the bridge, Flame in the housing units and Thorns in the hoglin stables. Once its keeper Brutes are dead,
+ * taking it sets every Piglin and Piglin Brute in the Bastion hunting the player, however far away and whatever the
+ * player wears. {@link BastionLockGameTests} covers the keepers.
  */
 public class BastionBookGameTests {
 	// Far from every other test's area. Each test plans along its own row, so no two share a Bastion.
@@ -79,10 +82,10 @@ public class BastionBookGameTests {
 	);
 	private static final Identifier STABLES_BASE_WALL = Identifier.withDefaultNamespace("bastion/hoglin_stable/walls/wall_base");
 
-	private static final Layout TREASURE_ROOM = new Layout("treasure/big_air_full", Enchantments.FIRE_ASPECT);
-	private static final Layout BRIDGE = new Layout("bridge/starting_pieces/entrance_base", Enchantments.SOUL_SPEED);
-	private static final Layout HOUSING_UNITS = new Layout("units/air_base", Enchantments.FLAME);
-	private static final Layout HOGLIN_STABLES = new Layout("hoglin_stable/air_base", Enchantments.THORNS);
+	static final Layout TREASURE_ROOM = new Layout("treasure/big_air_full", Enchantments.FIRE_ASPECT);
+	static final Layout BRIDGE = new Layout("bridge/starting_pieces/entrance_base", Enchantments.SOUL_SPEED);
+	static final Layout HOUSING_UNITS = new Layout("units/air_base", Enchantments.FLAME);
+	static final Layout HOGLIN_STABLES = new Layout("hoglin_stable/air_base", Enchantments.THORNS);
 	private static final List<Layout> LAYOUTS = List.of(TREASURE_ROOM, BRIDGE, HOUSING_UNITS, HOGLIN_STABLES);
 
 	@GameTest
@@ -134,7 +137,7 @@ public class BastionBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void anAngeredPiglinAttacksAPlayerWearingGold(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = placeRegistered(level, planLayout(level, HOUSING_UNITS, 6));
+		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, 6));
 		BlockPos book = onlyBook(helper, start);
 		AbstractPiglin piglin = spawn(level, EntityTypes.PIGLIN, book.east());
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
@@ -154,7 +157,7 @@ public class BastionBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void piglinsAcrossTheBastionHuntThePlayerUntilTheirAngerEnds(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = placeRegistered(level, planLayout(level, HOUSING_UNITS, 8));
+		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, 8));
 		BlockPos book = onlyBook(helper, start);
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
 
@@ -266,7 +269,7 @@ public class BastionBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aRefusedBookAngersNoPiglin(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = placeRegistered(level, planLayout(level, TREASURE_ROOM, 5));
+		StructureStart start = placeUnlocked(helper, planLayout(level, TREASURE_ROOM, 5));
 		BlockPos book = onlyBook(helper, start);
 		AbstractPiglin piglin = spawn(level, EntityTypes.PIGLIN, book);
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.DIRT);
@@ -304,7 +307,7 @@ public class BastionBookGameTests {
 	// as a player wearing gold.
 	private static void placeTakeAndCheckAnger(GameTestHelper helper, Layout layout, int row) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = placeRegistered(level, planLayout(level, layout, row));
+		StructureStart start = placeUnlocked(helper, planLayout(level, layout, row));
 		BlockPos book = onlyBook(helper, start);
 
 		helper.assertValueEqual(enchantmentAt(level, book), layout.enchantment(), "the book's enchantment");
@@ -341,7 +344,7 @@ public class BastionBookGameTests {
 		helper.succeed();
 	}
 
-	private static StructureStart planLayout(ServerLevel level, Layout layout, int row) {
+	static StructureStart planLayout(ServerLevel level, Layout layout, int row) {
 		for (int i = 0; i < SCAN_ATTEMPTS; i++) {
 			StructureStart start = Structures.plan(level, BuiltinStructures.BASTION_REMNANT, farChunk(row, i));
 
@@ -351,9 +354,21 @@ public class BastionBookGameTests {
 		throw new IllegalStateException("no " + layout.start() + " Bastion in " + SCAN_ATTEMPTS + " plans");
 	}
 
-	private static StructureStart placeRegistered(ServerLevel level, StructureStart start) {
+	static StructureStart placeRegistered(ServerLevel level, StructureStart start) {
 		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
 		Structures.register(level, start);
+
+		return start;
+	}
+
+	// The book opens once its keepers are dead.
+	private static StructureStart placeUnlocked(GameTestHelper helper, StructureStart planned) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = placeRegistered(level, planned);
+		BlockPos book = onlyBook(helper, start);
+
+		BruteKeepers.liveKeepers(level, book).forEach(keeper -> keeper.kill(level));
+		helper.assertTrue(!BookLocks.isLocked(level, book), "the book is unlocked once its keepers are dead");
 
 		return start;
 	}
@@ -364,7 +379,7 @@ public class BastionBookGameTests {
 		return LAYOUTS.stream().filter(layout -> template.equals(Optional.of(layout.start()))).findFirst();
 	}
 
-	private static Optional<Identifier> templateOf(StructurePiece piece) {
+	static Optional<Identifier> templateOf(StructurePiece piece) {
 		if (!(piece instanceof PoolElementStructurePiece poolPiece)) return Optional.empty();
 		if (!(poolPiece.getElement() instanceof SinglePoolElement single)) return Optional.empty();
 
@@ -381,7 +396,7 @@ public class BastionBookGameTests {
 	}
 
 	// Runs the Piglin's AI by hand, since nothing keeps the far chunk it's in ticking.
-	private static void tick(AbstractPiglin piglin) {
+	static void tick(AbstractPiglin piglin) {
 		for (int i = 0; i < AI_TICKS; i++) {
 			piglin.tick();
 		}
@@ -391,11 +406,11 @@ public class BastionBookGameTests {
 		return piglin.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET);
 	}
 
-	private static List<StructureBookPiece> bookPieces(StructureStart start) {
+	static List<StructureBookPiece> bookPieces(StructureStart start) {
 		return start.getPieces().stream().filter(StructureBookPiece.class::isInstance).map(StructureBookPiece.class::cast).toList();
 	}
 
-	private static BlockPos onlyBook(GameTestHelper helper, StructureStart start) {
+	static BlockPos onlyBook(GameTestHelper helper, StructureStart start) {
 		List<BlockPos> books = Structures.books(helper.getLevel(), start);
 
 		helper.assertValueEqual(books.size(), 1, "the Bastion's books");
@@ -409,11 +424,11 @@ public class BastionBookGameTests {
 		return book.enchantment().flatMap(Holder::unwrapKey).orElseThrow();
 	}
 
-	private static List<AbstractPiglin> piglinsIn(ServerLevel level, StructureStart start) {
+	static List<AbstractPiglin> piglinsIn(ServerLevel level, StructureStart start) {
 		return level.getEntitiesOfClass(
 			AbstractPiglin.class,
 			AABB.of(start.getBoundingBox()),
-			piglin -> level.structureManager().structureHasPieceAt(piglin.blockPosition(), start)
+			piglin -> piglin.isAlive() && level.structureManager().structureHasPieceAt(piglin.blockPosition(), start)
 		);
 	}
 
@@ -433,7 +448,7 @@ public class BastionBookGameTests {
 		return piglin;
 	}
 
-	private static Optional<UUID> angryAt(AbstractPiglin piglin) {
+	static Optional<UUID> angryAt(AbstractPiglin piglin) {
 		return piglin.getBrain().getMemory(MemoryModuleType.ANGRY_AT);
 	}
 
@@ -441,7 +456,7 @@ public class BastionBookGameTests {
 		return new ChunkPos(FAR_CHUNK + attempt * CHUNKS_APART, -FAR_CHUNK - row * CHUNKS_APART);
 	}
 
-	private record Layout(Identifier start, ResourceKey<Enchantment> enchantment) {
+	record Layout(Identifier start, ResourceKey<Enchantment> enchantment) {
 		Layout(String start, ResourceKey<Enchantment> enchantment) {
 			this(Identifier.withDefaultNamespace("bastion/" + start), enchantment);
 		}

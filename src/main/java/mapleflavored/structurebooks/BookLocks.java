@@ -18,6 +18,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,12 +26,16 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
 /**
- * Every locked structure book in a level: the spawners that lock it and which of them are Cleared. A book can be taken
- * once all of its spawners are Cleared; a book with no lock here was never locked. Only the Nether Fortress's book is
- * locked, by the Blaze spawners its fortress generated with.
+ * Every locked structure book in a level: the keys that lock it and which of them are done. A book can be taken once
+ * all of its keys are done; a book with no lock here was never locked. The Nether Fortress's book is locked by the Blaze
+ * spawners its fortress generated with, each done once Cleared, and a Bastion's by its keeper Brutes, each done once
+ * it's gone for good.
  *
  * <p>A lock is planned with its structure and recorded here before any read, whether or not the book's chunk has been
- * built. A Cleared spawner stays counted even once it's broken.
+ * built. A done key stays done: a Cleared spawner still counts once it's broken.
+ *
+ * <p>A level that's Peaceful opens its Brute locks for good. Peaceful has no Brutes: it never spawns a keeper, and drops
+ * a saved one as its chunk loads, both without a death to count.
  */
 public final class BookLocks extends SavedData {
 	private static final Codec<BookLocks> CODEC = Lock.CODEC.listOf().xmap(BookLocks::new, BookLocks::locks);
@@ -54,24 +59,39 @@ public final class BookLocks extends SavedData {
 		locks.forEach(this::put);
 	}
 
-	/** Records planned locks and counts Cleared spawners toward them. Call once from mod init. */
+	/** Records planned locks and counts Cleared spawners toward the spawner locks. Call once from mod init. */
 	static void register() {
 		// A world opened after another in the same game must never receive the first world's locks.
 		ServerLifecycleEvents.SERVER_STARTING.register(server -> PLANNED.clear());
 		ServerTickEvents.END_SERVER_TICK.register(BookLocks::recordPlanned);
+		ServerTickEvents.END_SERVER_TICK.register(BookLocks::openBruteLocksWhilePeaceful);
 		ServerLifecycleEvents.BEFORE_SAVE.register((server, flush, force) -> recordPlanned(server));
 		Spawners.CLEARED.register(BookLocks::countCleared);
 	}
 
 	/**
-	 * Locks the book planned at {@code book} in {@code dimension} until every spawner in {@code spawners} is Cleared.
-	 * Safe to call from any thread. Planning the same book again never resets its Cleared spawners, and a book with no
-	 * spawners stays unlocked.
+	 * Locks the book planned at {@code book} in {@code dimension} until every one of {@code keys} is done. Safe to call
+	 * from any thread. Planning the same book again never resets its done keys, and a book with no keys stays unlocked.
 	 */
-	static void plan(ResourceKey<Level> dimension, BlockPos book, List<BlockPos> spawners) {
-		if (spawners.isEmpty()) return;
+	static void plan(ResourceKey<Level> dimension, BlockPos book, Keys keys) {
+		if (keys.positions().isEmpty()) return;
 
-		PLANNED.add(new Planned(dimension, book.immutable(), List.copyOf(spawners)));
+		PLANNED.add(new Planned(dimension, book.immutable(), keys));
+	}
+
+	/**
+	 * Marks a keeper Brute's key done: the Brute is gone for good. Updates the book's clients once that unlocks a loaded
+	 * book.
+	 *
+	 * @param level the book's level
+	 */
+	static void markKeeperGone(ServerLevel level, BlockPos book, BlockPos key) {
+		BookLocks locks = of(level);
+		Lock lock = locks.locksByBook.get(book);
+
+		if (lock == null || lock.kind() != Kind.BRUTES || !lock.keys().contains(key) || lock.done().contains(key)) return;
+
+		locks.markDone(level, lock, key);
 	}
 
 	/** Whether the book at {@code book} can't be taken yet. */
@@ -79,9 +99,9 @@ public final class BookLocks extends SavedData {
 		return lockAt(level, book).map(Lock::isLocked).orElse(false);
 	}
 
-	/** The spawners still to be Cleared before the book at {@code book} can be taken, in planned order. */
-	public static List<BlockPos> remainingSpawners(ServerLevel level, BlockPos book) {
-		return lockAt(level, book).map(Lock::remainingSpawners).orElse(List.of());
+	/** The keys still to be done before the book at {@code book} can be taken, in planned order. */
+	public static List<BlockPos> remainingKeys(ServerLevel level, BlockPos book) {
+		return lockAt(level, book).map(Lock::remainingKeys).orElse(List.of());
 	}
 
 	/** The lock on the book at {@code book}, if it was ever locked. */
@@ -106,8 +126,24 @@ public final class BookLocks extends SavedData {
 
 			if (locks.locksByBook.containsKey(planned.book())) continue;
 
-			locks.put(new Lock(planned.book(), planned.spawners(), Set.of()));
+			locks.put(new Lock(planned.book(), planned.keys().kind(), planned.keys().positions(), Set.of()));
 			locks.setDirty();
+		}
+	}
+
+	private static void openBruteLocksWhilePeaceful(MinecraftServer server) {
+		for (ServerLevel level : server.getAllLevels()) {
+			BookLocks locks = level.getDataStorage().get(TYPE);
+
+			if (locks == null || level.getDifficulty() != Difficulty.PEACEFUL) continue;
+
+			List<Lock> lockedByBrutes = locks.locksByBook.values().stream()
+				.filter(lock -> lock.kind() == Kind.BRUTES && lock.isLocked())
+				.toList();
+
+			for (Lock lock : lockedByBrutes) {
+				lock.remainingKeys().forEach(key -> locks.markDone(level, locks.locksByBook.get(lock.book()), key));
+			}
 		}
 	}
 
@@ -117,12 +153,16 @@ public final class BookLocks extends SavedData {
 
 		if (book == null) return;
 
-		Lock cleared = locks.locksByBook.get(book).withCleared(spawner);
+		locks.markDone(level, locks.locksByBook.get(book), spawner);
+	}
 
-		locks.put(cleared);
-		locks.setDirty();
+	private void markDone(ServerLevel level, Lock lock, BlockPos key) {
+		Lock withKey = lock.withDone(key);
 
-		if (!cleared.isLocked() && level.isLoaded(book)) showUnlocked(level, book);
+		put(withKey);
+		setDirty();
+
+		if (!withKey.isLocked() && level.isLoaded(lock.book())) showUnlocked(level, lock.book());
 	}
 
 	// Sends the book's block entity again, so clients stop drawing it locked. An unloaded book is sent unlocked when
@@ -139,47 +179,75 @@ public final class BookLocks extends SavedData {
 
 	private void put(Lock lock) {
 		locksByBook.put(lock.book(), lock);
-		lock.spawners().forEach(spawner -> booksBySpawner.put(spawner, lock.book()));
+
+		if (lock.kind() == Kind.SPAWNERS) lock.keys().forEach(spawner -> booksBySpawner.put(spawner, lock.book()));
+	}
+
+	/** What locks a book, and when one of its keys is done. */
+	public enum Kind {
+		/** Blaze spawners, each done once Cleared. */
+		SPAWNERS,
+		/** Keeper Piglin Brutes, keyed by where each spawned, each done once it's gone for good. */
+		BRUTES;
+
+		static final Codec<Kind> CODEC = Codec.STRING.xmap(Kind::valueOf, Kind::name);
+	}
+
+	/**
+	 * What a planned book's lock is made of. No positions means the book isn't locked.
+	 *
+	 * @param positions each key's position, in planned order
+	 */
+	public record Keys(Kind kind, List<BlockPos> positions) {
+		/** Locks nothing. */
+		public static final Keys NONE = new Keys(Kind.SPAWNERS, List.of());
+
+		public Keys {
+			positions = List.copyOf(positions);
+		}
 	}
 
 	/**
 	 * One locked book.
 	 *
 	 * @param book where the book is
-	 * @param spawners the spawners that lock it, as planned with its structure
-	 * @param cleared the spawners among them that have been Cleared, broken or not
+	 * @param kind what its keys are
+	 * @param keys the keys that lock it, as planned with its structure
+	 * @param done the keys among them that are done
 	 */
-	public record Lock(BlockPos book, List<BlockPos> spawners, Set<BlockPos> cleared) {
+	public record Lock(BlockPos book, Kind kind, List<BlockPos> keys, Set<BlockPos> done) {
+		// Saved before Brute locks, as spawners and their Cleared set, so those names and the default kind stay.
 		static final Codec<Lock> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 			BlockPos.CODEC.fieldOf("book").forGetter(Lock::book),
-			BlockPos.CODEC.listOf().fieldOf("spawners").forGetter(Lock::spawners),
-			BlockPos.CODEC.listOf().xmap(Set::copyOf, List::copyOf).fieldOf("cleared").forGetter(Lock::cleared)
+			Kind.CODEC.optionalFieldOf("kind", Kind.SPAWNERS).forGetter(Lock::kind),
+			BlockPos.CODEC.listOf().fieldOf("spawners").forGetter(Lock::keys),
+			BlockPos.CODEC.listOf().xmap(Set::copyOf, List::copyOf).fieldOf("cleared").forGetter(Lock::done)
 		).apply(instance, Lock::new));
 
 		public Lock {
-			spawners = List.copyOf(spawners);
-			cleared = Set.copyOf(cleared);
+			keys = List.copyOf(keys);
+			done = Set.copyOf(done);
 		}
 
-		/** Whether a spawner is still to be Cleared. */
+		/** Whether a key is still to be done. */
 		public boolean isLocked() {
-			return !cleared.containsAll(spawners);
+			return !done.containsAll(keys);
 		}
 
-		/** The spawners still to be Cleared, in planned order. */
-		public List<BlockPos> remainingSpawners() {
-			return spawners.stream().filter(spawner -> !cleared.contains(spawner)).toList();
+		/** The keys still to be done, in planned order. */
+		public List<BlockPos> remainingKeys() {
+			return keys.stream().filter(key -> !done.contains(key)).toList();
 		}
 
-		Lock withCleared(BlockPos spawner) {
-			Set<BlockPos> withSpawner = new HashSet<>(cleared);
+		Lock withDone(BlockPos key) {
+			Set<BlockPos> withKey = new HashSet<>(done);
 
-			withSpawner.add(spawner.immutable());
+			withKey.add(key.immutable());
 
-			return new Lock(book, spawners, withSpawner);
+			return new Lock(book, kind, keys, withKey);
 		}
 	}
 
-	private record Planned(ResourceKey<Level> dimension, BlockPos book, List<BlockPos> spawners) {
+	private record Planned(ResourceKey<Level> dimension, BlockPos book, Keys keys) {
 	}
 }

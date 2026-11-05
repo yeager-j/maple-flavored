@@ -84,7 +84,7 @@ Two matching books of the same level combine in an anvil to make the next level.
 Some structures react when you take their book:
 
 - **Ancient City:** an angry Warden appears and opens a Subspace with a 100-block radius, applying Darkness and Grounded.
-- **Bastion:** every Piglin in the structure becomes angry.
+- **Bastion:** the book stays locked until three of its Piglin Brutes, its keepers, are dead, by any cause. Trying to take it makes the remaining keepers glow and shows trails to them. Once it's taken, every Piglin in the structure hunts you for ten minutes, from anywhere in the Bastion.
 - **Stronghold or Woodland Mansion:** nearby Illagers are alerted and become hostile, even towards a player wearing Orichalcum.
 - **Nether Fortress:** the book stays locked until every Blaze spawner that generated there is Cleared. The spawners can remain for farms. Every fortress generates with at least one Blaze spawner, and trying to take a locked book shows trails to the ones still to Clear.
 

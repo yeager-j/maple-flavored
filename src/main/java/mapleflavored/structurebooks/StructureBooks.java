@@ -1,6 +1,8 @@
 package mapleflavored.structurebooks;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import mapleflavored.MapleFlavored;
@@ -19,6 +21,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.monster.piglin.PiglinBrute;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -46,8 +51,10 @@ public final class StructureBooks {
 	private static final float UNBREAKABLE = -1.0F;
 	private static final float BLAST_PROOF = 3_600_000.0F;
 
-	// Trails to a locked book's remaining spawners, drawn like the Creaking heart's in the forcefield's colour.
-	private static final int TRAILS_PER_SPAWNER = 5;
+	// Trails to what still locks a book, drawn like the Creaking heart's in the forcefield's colour.
+	private static final int TRAILS_PER_TARGET = 5;
+	// As long as a bell makes nearby raiders glow.
+	private static final int KEEPER_GLOW_TICKS = 60;
 	private static final int TRAIL_COLOR = BorderStatus.STATIONARY.getColor();
 	private static final int TRAIL_MIN_TICKS = 10;
 	private static final int TRAIL_EXTRA_TICKS = 40;
@@ -101,13 +108,14 @@ public final class StructureBooks {
 		// The block, block entity and piece register in the static fields above; this call makes sure they run.
 		BookLocks.register();
 		PiglinAnger.register();
+		BruteKeepers.register();
 	}
 
 	/**
 	 * Takes the structure book at {@code pos} for the player, as one action: the player gets its level I book, the
 	 * block is removed and {@link #TAKEN} fires. Refused, with nothing changed and no event, when there's no book with an
 	 * enchantment there, the book is locked or the player has no free inventory slot. A locked book shows the player
-	 * trails leading to the spawners still to be Cleared.
+	 * trails leading to the spawners still to be Cleared, or to the keeper Brutes still alive, which glow.
 	 *
 	 * @return whether the book was taken
 	 */
@@ -142,20 +150,50 @@ public final class StructureBooks {
 	}
 
 	private static void refuseLocked(ServerPlayer player, ServerLevel level, BlockPos book, BookLocks.Lock lock) {
-		List<BlockPos> remaining = lock.remainingSpawners();
-		int cleared = lock.spawners().size() - remaining.size();
+		List<BlockPos> remaining = lock.remainingKeys();
+		int done = lock.keys().size() - remaining.size();
+		String message = switch (lock.kind()) {
+			case SPAWNERS -> "block.maple_flavored.structure_book.locked";
+			case BRUTES -> "block.maple_flavored.structure_book.locked_by_keepers";
+		};
 
-		player.sendOverlayMessage(Component.translatable("block.maple_flavored.structure_book.locked", cleared, lock.spawners().size()));
-		remaining.forEach(spawner -> showTrails(level, book, spawner));
+		player.sendOverlayMessage(Component.translatable(message, done, lock.keys().size()));
+
+		switch (lock.kind()) {
+			case SPAWNERS -> remaining.forEach(spawner -> showTrails(level, book, spawner));
+			case BRUTES -> pointOutKeepers(level, book, remaining);
+		}
 	}
 
-	// Each trail runs from somewhere in the book's block to somewhere in the spawner's.
-	private static void showTrails(ServerLevel level, BlockPos book, BlockPos spawner) {
+	// Each remaining keeper here glows and gets trails; one that isn't loaded gets trails to where it spawned.
+	private static void pointOutKeepers(ServerLevel level, BlockPos book, List<BlockPos> remaining) {
+		Map<BlockPos, PiglinBrute> liveByKey = new HashMap<>();
+
+		for (PiglinBrute keeper : BruteKeepers.liveKeepers(level, book)) {
+			BruteKeepers.keyOf(keeper).filter(remaining::contains).ifPresent(key -> liveByKey.put(key, keeper));
+		}
+
+		for (BlockPos key : remaining) {
+			PiglinBrute keeper = liveByKey.get(key);
+
+			if (keeper == null) {
+				showTrails(level, book, key);
+
+				continue;
+			}
+
+			keeper.addEffect(new MobEffectInstance(MobEffects.GLOWING, KEEPER_GLOW_TICKS));
+			showTrails(level, book, keeper.blockPosition());
+		}
+	}
+
+	// Each trail runs from somewhere in the book's block to somewhere in the target's.
+	private static void showTrails(ServerLevel level, BlockPos book, BlockPos target) {
 		RandomSource random = level.getRandom();
 
-		for (int i = 0; i < TRAILS_PER_SPAWNER; i++) {
+		for (int i = 0; i < TRAILS_PER_TARGET; i++) {
 			Vec3 from = withinBlock(book, random);
-			Vec3 to = withinBlock(spawner, random);
+			Vec3 to = withinBlock(target, random);
 			TrailParticleOption trail = new TrailParticleOption(to, TRAIL_COLOR, TRAIL_MIN_TICKS + random.nextInt(TRAIL_EXTRA_TICKS));
 
 			level.sendParticles(trail, true, true, from.x, from.y, from.z, 1, 0.0, 0.0, 0.0, 0.0);

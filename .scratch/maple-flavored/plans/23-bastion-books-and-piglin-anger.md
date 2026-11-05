@@ -92,3 +92,30 @@ Each layout's book is easy to see next to its chest; the angered Bastion feels l
 ## Exclusions
 
 Piglins in unloaded chunks (they aren't in the world to anger), Hoglins, Blood Moon restores, other structures' wake events.
+
+## Addendum: the Brute lock (Jackson, 2026-11-04)
+
+Taking the book needs a fight first: each Bastion's book is locked until three of its Piglin Brutes, its **keepers**, chosen when the Bastion is planned, are gone. Any death counts (lava, falling, a player or not), so sneaking and luring is fine, and natural deaths count rather than leaving the book stuck. A refused take sends trails to each remaining keeper, like the Fortress's, and makes them glow for 60 ticks, the bell's raider glow. Once open, taking the book still sets the rest of the Bastion hunting.
+
+Evidence:
+- Brutes come only from two single-mob templates, `bastion/mobs/melee_piglin` and `melee_piglin_always`, each its own planned `PoolElementStructurePiece`. 300 plans: treasure room 11–21 Brute pieces, housing units 4–16, stables 3–15, bridge 1–14 (fewer than 3 in 3 of 70).
+- Jigsaw pieces place their template mobs with `finalizeEntities`, calling `PiglinBrute.finalizeSpawn(..., STRUCTURE, null)` before adding them. `StructureStart.placeInChunk` builds each piece with `postProcess`, with the whole start at hand, and the book piece is its last piece.
+- `Entity.RemovalReason`: `KILLED` and `DISCARDED` destroy the entity (death of any kind, conversion, Peaceful's monster removal, `/kill`); unloading and `CHANGED_DIMENSION` don't.
+- `BellBlockEntity` glows raiders with `MobEffects.GLOWING` for 60 ticks.
+
+Decisions:
+1. **Keys, not just spawners.** `BookLocks.Lock(book, kind, keys, done)`, with `Kind.SPAWNERS` (Fortress: Blaze spawners Cleared) or `Kind.BRUTES` (Bastion: keepers gone). Saved field names stay `spawners`/`cleared`, with an optional `kind` defaulting to spawners, so saved Fortress locks still load. `remainingSpawners` becomes `remainingKeys`. Cleared events only count toward spawner locks.
+2. **Choosing keepers.** `StructureBookRule.SpawnerLock` becomes `LockRule.keys(pieces, random) -> BookLocks.Keys`. Each Bastion layout rule locks with `StructureBookSpots.bastionKeepers`: the origins of the Brute pieces, 3 picked with the book's planning random (all of them if fewer, none means unlocked). A Brute piece's origin is its keeper's key.
+3. **Tagging at placement.** The book piece saves its keepers' keys. New `StructureStartMixin` wraps each piece's `postProcess` in `placeInChunk`: when the start's last piece is a book with keepers and this piece is a Brute piece whose origin is one, `BruteKeepers` holds a thread-local `Keeper(GlobalPos book, BlockPos key)` around the call. New `PiglinBruteMixin` at the head of `finalizeSpawn` with reason `STRUCTURE` tags the Brute with that keeper as a persistent attachment.
+4. **Counting the dead.** `ServerEntityEvents.ENTITY_UNLOAD`: a keeper whose removal reason destroys it marks its key done in the book's level's `BookLocks`, as the Cleared event does, and updates a loaded book's clients.
+5. **Refused take.** For a Brute lock: "Locked until every keeper Brute here is dead (n of m)". Each remaining keeper loaded in the book's level glows for 60 ticks and gets trails from the book; a keeper that isn't loaded gets trails to its spawn spot. The locked look is the Fortress's.
+
+Acceptance additions:
+| Case | Expected |
+| --- | --- |
+| 80 plans | each Bastion's lock lists min(3, Brute pieces) keys, each a Brute piece's origin |
+| Placed Bastion | each key has one tagged, living keeper Brute; the book is sent locked |
+| Locked take | refused with nothing changed and no hunt; remaining keepers glow for 60 ticks |
+| Keepers killed, discarded, burnt; a non-keeper killed; a keeper moved to another dimension | only the keepers' deaths count; moving doesn't; the last death unlocks and sends the book unlocked |
+| Unlocked take | taken, and the Bastion hunts as before |
+| Fortress tests | unchanged behaviour on the renamed API |
