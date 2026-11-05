@@ -109,6 +109,7 @@ Decisions:
 3. **Tagging at placement.** The book piece saves its keepers' keys. New `StructureStartMixin` wraps each piece's `postProcess` in `placeInChunk`: when the start's last piece is a book with keepers and this piece is a Brute piece whose origin is one, `BruteKeepers` holds a thread-local `Keeper(GlobalPos book, BlockPos key)` around the call. New `PiglinBruteMixin` at the head of `finalizeSpawn` with reason `STRUCTURE` tags the Brute with that keeper as a persistent attachment.
 4. **Counting the dead.** `ServerEntityEvents.ENTITY_UNLOAD`: a keeper whose removal reason destroys it marks its key done in the book's level's `BookLocks`, as the Cleared event does, and updates a loaded book's clients.
 5. **Refused take.** For a Brute lock: "Locked until every keeper Brute here is dead (n of m)". Each remaining keeper loaded in the book's level glows for 60 ticks and gets trails from the book; a keeper that isn't loaded gets trails to its spawn spot. The locked look is the Fortress's.
+6. **Peaceful opens Brute locks for good** (from the plan review; Jackson confirmed). Peaceful never creates keeper Brutes and drops saved ones as their chunk loads, both without a removal event, so `BookLocks` opens every Brute lock in a Peaceful level each tick, and the done keys stay done after the difficulty changes back.
 
 Acceptance additions:
 | Case | Expected |
