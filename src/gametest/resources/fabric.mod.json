@@ -34,7 +34,8 @@
 			"mapleflavored.gametest.BastionBookGameTests",
 			"mapleflavored.gametest.BastionLockGameTests",
 			"mapleflavored.gametest.SubspaceGameTests",
-			"mapleflavored.gametest.SubspaceSculkGameTests"
+			"mapleflavored.gametest.SubspaceSculkGameTests",
+			"mapleflavored.gametest.WardenSummoningGameTests"
 		]
 	},
 	"mixins": [

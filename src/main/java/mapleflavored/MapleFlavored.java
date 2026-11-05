@@ -12,6 +12,7 @@ import mapleflavored.remnants.Remnants;
 import mapleflavored.spawners.Spawners;
 import mapleflavored.structurebooks.StructureBooks;
 import mapleflavored.subspaces.Subspaces;
+import mapleflavored.wardensummoning.WardenSummoning;
 import mapleflavored.zephyr.Zephyr;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
@@ -42,6 +43,7 @@ public class MapleFlavored implements ModInitializer {
 		StructureBooks.register();
 		Spawners.register();
 		Subspaces.register();
+		WardenSummoning.register();
 
 		LOGGER.info("Maple Flavored initialized");
 	}
