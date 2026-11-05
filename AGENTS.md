@@ -8,6 +8,8 @@ There's no system-wide Java. Set `JAVA_HOME` to the JDK named in `gradle.propert
 
 The design is being worked out on the map at `.scratch/maple-flavored-design/map.md`. Jackson's opinions behind it are in `docs/manifestos/`, and research findings are in `docs/research/`.
 
+When Jackson asks to tweak a tuning value (a radius, rate, charge or count), offer to make it a playtest game rule in `MapleGameRules` instead, so it can be tuned in game without a rebuild.
+
 ## Agent skills
 
 ### Issue tracker

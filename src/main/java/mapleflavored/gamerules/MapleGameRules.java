@@ -6,7 +6,8 @@ import net.minecraft.world.level.gamerules.GameRule;
 import net.minecraft.world.level.gamerules.GameRuleCategory;
 
 /**
- * The game rules that set what death costs, each on its own. Vanilla's Keep Inventory is the third, defaulting to on.
+ * Maple's game rules: those that set what death costs, each on its own, with vanilla's Keep Inventory as the third,
+ * defaulting to on; and playtest values for Warden Subspaces, which apply to Subspaces that open after a change.
  */
 public final class MapleGameRules {
 	/** When on, death costs no Max Hearts. Off by default. */
@@ -18,6 +19,27 @@ public final class MapleGameRules {
 	public static final GameRule<Boolean> KEEP_XP = GameRuleBuilder.forBoolean(false)
 		.category(GameRuleCategory.PLAYER)
 		.buildAndRegister(MapleFlavored.id("keep_xp"));
+
+	/** How far a Warden's Subspace reaches, in blocks. */
+	public static final GameRule<Integer> WARDEN_SUBSPACE_RADIUS = GameRuleBuilder.forInteger(50)
+		.range(1, 256)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("warden_subspace_radius"));
+
+	/** How far from where a Warden appears its Subspace's sculk patch may spread, in blocks. */
+	public static final GameRule<Integer> WARDEN_SCULK_PATCH_RADIUS = GameRuleBuilder.forInteger(5)
+		.range(0, 32)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("warden_sculk_patch_radius"));
+
+	/**
+	 * How much sculk a Warden's Subspace spreads where the Warden appears, as a sculk catalyst's charge: each block turned
+	 * to sculk costs 1, and each sensor or shrieker grown 10. 0 spreads none.
+	 */
+	public static final GameRule<Integer> WARDEN_SCULK_PATCH_CHARGE = GameRuleBuilder.forInteger(150)
+		.range(0, 10_000)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("warden_sculk_patch_charge"));
 
 	private MapleGameRules() {
 	}

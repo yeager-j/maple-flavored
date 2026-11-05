@@ -7,6 +7,7 @@ import mapleflavored.client.items.CrystalHeartActivation;
 import mapleflavored.client.remnants.RemnantRenderer;
 import mapleflavored.client.spawners.SpawnerForcefieldRenderer;
 import mapleflavored.client.structurebooks.StructureBookRenderer;
+import mapleflavored.client.subspaces.SubspaceShellRenderer;
 import mapleflavored.client.zephyr.ZephyrInput;
 import mapleflavored.enchanting.Enchanting;
 import net.fabricmc.api.ClientModInitializer;
@@ -23,5 +24,6 @@ public class MapleFlavoredClient implements ClientModInitializer {
 		AppleTooltip.register();
 		StructureBookRenderer.register();
 		SpawnerForcefieldRenderer.register();
+		SubspaceShellRenderer.register();
 	}
 }

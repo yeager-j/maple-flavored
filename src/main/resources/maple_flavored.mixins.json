@@ -32,6 +32,8 @@
 		"PlayerAdvancementsMixin",
 		"PlayerMixin",
 		"ResourceManagerRegistryLoadTaskMixin",
+		"SculkBlockMixin",
+		"SculkSpreaderChargeCursorMixin",
 		"ServerGamePacketListenerImplMixin",
 		"ServerPlayerMixin",
 		"SinglePoolElementAccessor",
