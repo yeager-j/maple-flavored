@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
@@ -40,6 +41,12 @@ public final class StructureBookRules {
 		StructureBookSpots::pillagerOutpost
 	);
 	private static final StructureBookRule ABANDONED_CAMP = ordinary(List.of(Enchantments.LUNGE), StructureBookSpots::abandonedCamp);
+	private static final StructureBookRule NETHER_FORTRESS = new StructureBookRule(
+		List.of(Enchantments.FIRE_PROTECTION),
+		StructureBookSpots::netherFortress,
+		StructureBookRule.Placement.OPEN,
+		StructureBookSpots::fortressBlazeSpawners
+	);
 	private static final StructureBookRule END_CITY = ordinary(List.of(Enchantments.FEATHER_FALLING), StructureBookSpots::endCity);
 	private static final StructureBookRule BURIED_TREASURE = new StructureBookRule(
 		List.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION),
@@ -86,10 +93,12 @@ public final class StructureBookRules {
 
 	/**
 	 * The structure's planned pieces with its book piece added last, or the same pieces when the structure holds no
-	 * book, its rule finds no spot, or the pieces are empty (a structure that failed to generate).
+	 * book, its rule finds no spot, or the pieces are empty (a structure that failed to generate). A book its rule locks
+	 * is planned into {@link BookLocks} too.
 	 *
 	 * @param seed the world seed
 	 * @param chunkPos the chunk the structure starts in
+	 * @param dimension the dimension the structure is planned in
 	 * @param terrain the terrain the structure is planned into
 	 * @param templates the templates the structure's pieces are built from
 	 */
@@ -98,6 +107,7 @@ public final class StructureBookRules {
 		PiecesContainer pieces,
 		long seed,
 		ChunkPos chunkPos,
+		ResourceKey<Level> dimension,
 		TerrainPreview terrain,
 		StructureTemplateManager templates
 	) {
@@ -116,6 +126,8 @@ public final class StructureBookRules {
 		ResourceKey<Enchantment> enchantment = rule.get().chooseEnchantment(random);
 		int anchorIndex = pieces.pieces().indexOf(spot.get().anchor());
 		StructureBookPiece book = new StructureBookPiece(spot.get().pos(), enchantment, anchorIndex, spot.get().anchor(), rule.get().placement());
+
+		BookLocks.plan(dimension, spot.get().pos(), rule.get().lock().spawners(pieces.pieces()));
 
 		return new PiecesContainer(Stream.concat(pieces.pieces().stream(), Stream.of(book)).toList());
 	}
@@ -138,6 +150,7 @@ public final class StructureBookRules {
 			BuiltinStructures.PILLAGER_OUTPOST, PILLAGER_OUTPOST
 		));
 
+		rules.put(BuiltinStructures.FORTRESS, NETHER_FORTRESS);
 		rules.put(BuiltinStructures.END_CITY, END_CITY);
 		rules.put(BuiltinStructures.BURIED_TREASURE, BURIED_TREASURE);
 		rules.put(BuiltinStructures.TRAIL_RUINS, TRAIL_RUINS);

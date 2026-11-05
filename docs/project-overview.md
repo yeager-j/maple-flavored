@@ -86,7 +86,7 @@ Some structures react when you take their book:
 - **Ancient City:** an angry Warden appears and opens a Subspace with a 100-block radius, applying Darkness and Grounded.
 - **Bastion:** every Piglin in the structure becomes angry.
 - **Stronghold or Woodland Mansion:** nearby Illagers are alerted and become hostile, even towards a player wearing Orichalcum.
-- **Nether Fortress:** the book stays locked until every Blaze spawner that generated there is Cleared. The spawners can remain for farms. A fortress with none starts unlocked.
+- **Nether Fortress:** the book stays locked until every Blaze spawner that generated there is Cleared. The spawners can remain for farms. Every fortress generates with at least one Blaze spawner, and trying to take a locked book shows trails to the ones still to Clear.
 
 Other books need no added event; finding them is the challenge. Clearing a structure before taking its book is a valid approach. Blood Moons can bring its mobs back, but never its book.
 

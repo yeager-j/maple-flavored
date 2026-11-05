@@ -24,6 +24,7 @@ import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
 import net.minecraft.world.level.levelgen.structure.structures.BuriedTreasurePieces;
 import net.minecraft.world.level.levelgen.structure.structures.DesertPyramidPiece;
 import net.minecraft.world.level.levelgen.structure.structures.JungleTemplePiece;
+import net.minecraft.world.level.levelgen.structure.structures.NetherFortressPieces;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
@@ -31,7 +32,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 /**
  * Where the books of structures without a wake event go: each in the structure's most important spot, where a player
  * exploring it properly will find it. Buried Treasure and Trail Ruins have no open room, so theirs is in the treasure
- * chest and in one of the ruin's gravel blocks. Local coordinates come from vanilla's code-built pieces and templates.
+ * chest and in one of the ruin's gravel blocks. The Nether Fortress's book is also locked by the Blaze spawners found
+ * here. Local coordinates come from vanilla's code-built pieces and templates.
  */
 final class StructureBookSpots {
 	// In the shaft of the hidden treasure room, one block above the TNT pressure plate.
@@ -64,6 +66,13 @@ final class StructureBookSpots {
 	private static final BlockPos END_CITY_LOOT_ROOM_CENTRE = new BlockPos(8, 2, 8);
 	// At head height over the top of the tower's spiral stairs, under the Shulker that guards the cap room.
 	private static final BlockPos END_CITY_TOWER_TOP_CENTRE = new BlockPos(4, 2, 4);
+
+	// Two above the courtyard's lava well, at head height for a player standing on the well's rim.
+	private static final BlockPos FORTRESS_LAVA_WELL = new BlockPos(6, 7, 6);
+	// The centre of the bridge crossing every fortress starts from, at head height.
+	private static final BlockPos FORTRESS_START_CROSSING = new BlockPos(9, 6, 9);
+	// Where a fortress's spawner room places its Blaze spawner.
+	private static final BlockPos FORTRESS_BLAZE_SPAWNER = new BlockPos(3, 5, 5);
 
 	private static final List<Identifier> TRAIL_RUINS_TOWERS = IntStream.rangeClosed(1, 5)
 		.mapToObj(n -> Identifier.withDefaultNamespace("trail_ruins/tower/tower_" + n))
@@ -170,6 +179,22 @@ final class StructureBookSpots {
 
 			return Optional.of(new BookSpot(piece, gravel.get(planning.random().nextInt(gravel.size()))));
 		});
+	}
+
+	static Optional<BookSpot> netherFortress(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		Optional<BookSpot> lavaWell = firstOfType(pieces, NetherFortressPieces.CastleEntrance.class)
+			.map(entrance -> inCodeBuiltPiece(entrance, FORTRESS_LAVA_WELL));
+
+		return lavaWell.or(() -> firstOfType(pieces, NetherFortressPieces.StartPiece.class)
+			.map(start -> inCodeBuiltPiece(start, FORTRESS_START_CROSSING)));
+	}
+
+	/** Where each of the fortress's spawner rooms will place its Blaze spawner. */
+	static List<BlockPos> fortressBlazeSpawners(List<StructurePiece> pieces) {
+		return pieces.stream()
+			.filter(NetherFortressPieces.MonsterThrone.class::isInstance)
+			.map(throne -> inCodeBuiltPiece(throne, FORTRESS_BLAZE_SPAWNER).pos())
+			.toList();
 	}
 
 	private static Optional<TemplateStructurePiece> highestTemplatePiece(

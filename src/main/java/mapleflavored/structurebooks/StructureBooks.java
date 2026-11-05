@@ -1,5 +1,6 @@
 package mapleflavored.structurebooks;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import mapleflavored.MapleFlavored;
@@ -8,6 +9,7 @@ import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.particles.TrailParticleOption;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -16,6 +18,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -25,8 +28,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.border.BorderStatus;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * The Structure books module: each structure holds one level I book in a fixed, visible spot, and taking it can wake
@@ -40,6 +45,12 @@ public final class StructureBooks {
 	private static final int LIGHT = 7;
 	private static final float UNBREAKABLE = -1.0F;
 	private static final float BLAST_PROOF = 3_600_000.0F;
+
+	// Trails to a locked book's remaining spawners, drawn like the Creaking heart's in the forcefield's colour.
+	private static final int TRAILS_PER_SPAWNER = 5;
+	private static final int TRAIL_COLOR = BorderStatus.STATIONARY.getColor();
+	private static final int TRAIL_MIN_TICKS = 10;
+	private static final int TRAIL_EXTRA_TICKS = 40;
 
 	/** The structure book block. It has no item. */
 	public static final Block BLOCK = Registry.register(
@@ -85,15 +96,17 @@ public final class StructureBooks {
 	private StructureBooks() {
 	}
 
-	/** Registers the block, block entity and structure piece. Call once from mod init. */
+	/** Registers the block, block entity, structure piece and book locks. Call once from mod init. */
 	public static void register() {
-		// Registration happens in the static fields above; this call makes sure they run.
+		// The block, block entity and piece register in the static fields above; this call makes sure they run.
+		BookLocks.register();
 	}
 
 	/**
 	 * Takes the structure book at {@code pos} for the player, as one action: the player gets its level I book, the
-	 * block is removed and {@link #TAKEN} fires. Refused, with nothing changed and no event, when the player has no free
-	 * inventory slot or there's no book with an enchantment there.
+	 * block is removed and {@link #TAKEN} fires. Refused, with nothing changed and no event, when there's no book with an
+	 * enchantment there, the book is locked or the player has no free inventory slot. A locked book shows the player
+	 * trails leading to the spawners still to be Cleared.
 	 *
 	 * @return whether the book was taken
 	 */
@@ -104,6 +117,14 @@ public final class StructureBooks {
 			: Optional.empty();
 
 		if (enchantment.isEmpty()) return false;
+
+		Optional<BookLocks.Lock> lock = BookLocks.lockAt(level, pos).filter(BookLocks.Lock::isLocked);
+
+		if (lock.isPresent()) {
+			refuseLocked(player, level, pos, lock.get());
+
+			return false;
+		}
 
 		if (player.getInventory().getFreeSlot() == -1) {
 			player.sendOverlayMessage(Component.translatable("block.maple_flavored.structure_book.no_room"));
@@ -117,6 +138,31 @@ public final class StructureBooks {
 		TAKEN.invoker().onTaken(player, level, pos, enchantment.get());
 
 		return true;
+	}
+
+	private static void refuseLocked(ServerPlayer player, ServerLevel level, BlockPos book, BookLocks.Lock lock) {
+		List<BlockPos> remaining = lock.remainingSpawners();
+		int cleared = lock.spawners().size() - remaining.size();
+
+		player.sendOverlayMessage(Component.translatable("block.maple_flavored.structure_book.locked", cleared, lock.spawners().size()));
+		remaining.forEach(spawner -> showTrails(level, book, spawner));
+	}
+
+	// Each trail runs from somewhere in the book's block to somewhere in the spawner's.
+	private static void showTrails(ServerLevel level, BlockPos book, BlockPos spawner) {
+		RandomSource random = level.getRandom();
+
+		for (int i = 0; i < TRAILS_PER_SPAWNER; i++) {
+			Vec3 from = withinBlock(book, random);
+			Vec3 to = withinBlock(spawner, random);
+			TrailParticleOption trail = new TrailParticleOption(to, TRAIL_COLOR, TRAIL_MIN_TICKS + random.nextInt(TRAIL_EXTRA_TICKS));
+
+			level.sendParticles(trail, true, true, from.x, from.y, from.z, 1, 0.0, 0.0, 0.0, 0.0);
+		}
+	}
+
+	private static Vec3 withinBlock(BlockPos pos, RandomSource random) {
+		return Vec3.atLowerCornerOf(pos).add(random.nextDouble(), random.nextDouble(), random.nextDouble());
 	}
 
 	/** The enchanted book a structure book gives: {@code enchantment} at level I. */

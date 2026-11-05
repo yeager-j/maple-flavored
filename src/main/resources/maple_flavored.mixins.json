@@ -23,6 +23,7 @@
 		"MinecraftServerMixin",
 		"MobMixin",
 		"MonsterRoomFeatureMixin",
+		"NetherFortressStructureMixin",
 		"PiecesContainerMixin",
 		"PlayerAdvancementsMixin",
 		"PlayerMixin",
