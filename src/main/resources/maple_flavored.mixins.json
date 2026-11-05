@@ -33,6 +33,7 @@
 		"PlayerMixin",
 		"ResourceManagerRegistryLoadTaskMixin",
 		"SculkBlockMixin",
+		"SculkShriekerBlockEntityMixin",
 		"SculkSpreaderChargeCursorMixin",
 		"ServerGamePacketListenerImplMixin",
 		"ServerPlayerMixin",
@@ -51,6 +52,7 @@
 		"ThrownEnderpearlMixin",
 		"TridentItemMixin",
 		"WardenEntitySensorMixin",
+		"WardenSpawnTrackerAccessor",
 		"WitherSkeletonMixin",
 		"ZombieVillagerMixin"
 	],

@@ -1,8 +1,12 @@
 package mapleflavored.gametest;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Either;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,13 +15,16 @@ import mapleflavored.gametest.mixin.GameTestHelperAccessor;
 import mapleflavored.subspaces.Subspaces;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInfo;
 import net.minecraft.gametest.framework.GameTestListener;
 import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.commands.FillBiomeCommand;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
@@ -30,6 +37,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -86,6 +95,8 @@ final class SubspaceArena {
 	private final List<Entity> mobs = new ArrayList<>();
 	private final Set<UUID> players = ConcurrentHashMap.newKeySet();
 	private final Set<BoundingBox> sculkFloors = new LinkedHashSet<>();
+	private final Set<BoundingBox> floorAreas = new LinkedHashSet<>();
+	private final Map<BlockPos, Holder<Biome>> replacedBiomes = new LinkedHashMap<>();
 
 	private SubspaceArena(GameTestHelper helper) {
 		this.helper = helper;
@@ -261,6 +272,54 @@ final class SubspaceArena {
 		}
 	}
 
+	/**
+	 * Lays a floor over the box from the offsets {@code fromX, fromZ} to {@code toX, toZ}, {@code y} blocks above the
+	 * centre, and keeps its chunks loaded. Teardown removes it.
+	 */
+	void floorArea(int fromX, int toX, int fromZ, int toZ, int y) {
+		BoundingBox area = BoundingBox.fromCorners(blockAt(fromX, y - 1, fromZ), blockAt(toX, y - 1, toZ));
+
+		floorAreas.add(area);
+		keepLoaded(fromX, toX, fromZ, toZ);
+		BlockPos.betweenClosedStream(area).forEach(position -> level.setBlock(position, FLOOR.defaultBlockState(), 3));
+	}
+
+	/**
+	 * Turns the biome around the offset from the centre, at least 4 blocks each way, to the Deep Dark. Teardown puts back
+	 * the biome that was there.
+	 */
+	void deepDark(Vec3 offset) {
+		BlockPos middle = BlockPos.containing(at(offset));
+		BoundingBox box = BoundingBox.fromCorners(middle.offset(-4, -4, -4), middle.offset(4, 4, 4));
+		Holder<Biome> deepDark = level.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.DEEP_DARK);
+
+		// Each cell keeps the biome it had before this arena first changed it, so overlapping boxes still put back what was
+		// there.
+		BlockPos.betweenClosedStream(box)
+			.map(SubspaceArena::biomeCell)
+			.distinct()
+			.forEach(cell -> replacedBiomes.putIfAbsent(cell, level.getBiome(cell)));
+		fillBiome(box, deepDark).ifRight(error -> {
+			throw new IllegalStateException("couldn't fill the biome: " + error.getMessage());
+		});
+	}
+
+	// Biomes are stored per 4-block cell, named here by its lowest corner.
+	private static BlockPos biomeCell(BlockPos position) {
+		return new BlockPos(position.getX() & ~3, position.getY() & ~3, position.getZ() & ~3);
+	}
+
+	private Either<Integer, CommandSyntaxException> fillBiome(BoundingBox box, Holder<Biome> biome) {
+		BlockPos from = new BlockPos(box.minX(), box.minY(), box.minZ());
+		BlockPos to = new BlockPos(box.maxX(), box.maxY(), box.maxZ());
+
+		return FillBiomeCommand.fill(level, from, to, biome);
+	}
+
+	private void restoreBiome(BlockPos cell, Holder<Biome> biome) {
+		fillBiome(BoundingBox.fromCorners(cell, cell.offset(3, 3, 3)), biome);
+	}
+
 	/** Walls in the centre so a Warden there can't walk away. */
 	void pen() {
 		for (int x = -1; x <= 1; x++) {
@@ -372,6 +431,9 @@ final class SubspaceArena {
 		}
 
 		sculkFloors.forEach(this::clear);
+		floorAreas.forEach(this::clear);
+		// Best effort: a chunk unloaded by now keeps the Deep Dark, which only a shriek there would notice.
+		replacedBiomes.forEach(this::restoreBiome);
 
 		level.setAttached(Subspaces.ATTACHMENT, List.of());
 	}
