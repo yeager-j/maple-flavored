@@ -37,6 +37,7 @@
 		"SinglePoolElementAccessor",
 		"SmithingMenuMixin",
 		"SmithingTransformRecipeMixin",
+		"SniffingMixin",
 		"SpawnerBlockEntityMixin",
 		"SpawnerBlockMixin",
 		"StructureMixin",
@@ -47,6 +48,7 @@
 		"ThrowableProjectileMixin",
 		"ThrownEnderpearlMixin",
 		"TridentItemMixin",
+		"WardenEntitySensorMixin",
 		"WitherSkeletonMixin",
 		"ZombieVillagerMixin"
 	],

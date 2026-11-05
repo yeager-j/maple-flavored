@@ -11,6 +11,7 @@ import mapleflavored.loot.LootSubstitutions;
 import mapleflavored.remnants.Remnants;
 import mapleflavored.spawners.Spawners;
 import mapleflavored.structurebooks.StructureBooks;
+import mapleflavored.subspaces.Subspaces;
 import mapleflavored.zephyr.Zephyr;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.Identifier;
@@ -40,6 +41,7 @@ public class MapleFlavored implements ModInitializer {
 		Enchanting.register();
 		StructureBooks.register();
 		Spawners.register();
+		Subspaces.register();
 
 		LOGGER.info("Maple Flavored initialized");
 	}

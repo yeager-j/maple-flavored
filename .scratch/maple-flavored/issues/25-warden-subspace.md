@@ -8,10 +8,11 @@
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] Subspace module: fixed sphere with centre, radius, dimension, boss and kind; a query for Subspaces containing a position; start and end events; record kept in world data
-- [ ] Ends when its boss dies, digs down or is removed for good, never on chunk unload; player rules keep working while the boss is unloaded; boss-driven work pauses
-- [ ] Players inside get Darkness and Grounded; overlap is fine and Grounded doesn't stack; no barrier
-- [ ] The Warden is aware of every entity inside and pathfinds to the nearest player; anger and sniffing stay vanilla
-- [ ] Death inside respawns normally; a Remnant from a collectable death spot stays put, while an uncollectable one still goes to safe ground
-- [ ] Subspaces sync to clients
-- [ ] GameTests cover entering and leaving, two overlapping Subspaces, unloading the Warden and Remnant placement inside
+- [x] Subspace module: fixed sphere with centre, radius, dimension, boss and kind; a query for Subspaces containing a position; start and end events; record kept in world data
+- [x] Ends when its boss dies, digs down or is removed for good, never on chunk unload; player rules keep working while the boss is unloaded; boss-driven work pauses
+- [x] Players inside get Darkness and Grounded; overlap is fine and Grounded doesn't stack; no barrier
+- [x] The Warden is aware of every entity inside and pathfinds to the nearest player; anger and sniffing stay vanilla
+- [x] Death inside respawns normally; a Remnant from a collectable death spot stays put, while an uncollectable one still goes to safe ground
+- [x] Subspaces sync to clients
+- [x] GameTests cover entering and leaving, two overlapping Subspaces, unloading the Warden and Remnant placement inside
+- [ ] Hand check: Darkness and Grounded inside and wearing off past 100 blocks, Elytra blocked, the Subspace surviving an unload and a save and reopen, and the client holding it after joining, changing dimension and respawning into another dimension, then losing it when the Warden dies

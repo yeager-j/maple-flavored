@@ -18,6 +18,7 @@ import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.TagValueInput;
 
 /** Mock players for GameTests, with the steps to give them Max Hearts, run commands as them and kill them. */
@@ -41,7 +42,7 @@ final class MockPlayers {
 	/** A loaded mock player with 10 Max Hearts that adds each chat message it is sent to {@code chat}. */
 	static ServerPlayer playerReadingChat(GameTestHelper helper, List<Component> chat) {
 		var server = helper.getLevel().getServer();
-		var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-mock-player"), false);
+		var cookie = newCookie();
 		ServerPlayer player = new ServerPlayer(server, helper.getLevel(), cookie.gameProfile(), cookie.clientInformation()) {
 			@Override
 			public void sendSystemMessage(Component message, boolean overlay) {
@@ -50,14 +51,37 @@ final class MockPlayers {
 				super.sendSystemMessage(message, overlay);
 			}
 		};
-		Connection connection = new Connection(PacketFlow.SERVERBOUND);
 
-		// Placed the way GameTestHelper.makeMockServerPlayerInLevel places its mock player.
-		new EmbeddedChannel(connection);
-		server.getPlayerList().placeNewPlayer(connection, player, cookie);
-		finishLoading(player);
+		place(helper, player, cookie);
 
 		return player;
+	}
+
+	/**
+	 * A loaded mock player in Survival with 10 Max Hearts. Unlike {@link GameTestHelper#makeMockServerPlayerInLevel},
+	 * whose player always reports Creative, mobs can target it.
+	 */
+	static ServerPlayer survivalPlayer(GameTestHelper helper) {
+		var cookie = newCookie();
+		ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
+
+		place(helper, player, cookie);
+		player.setGameMode(GameType.SURVIVAL);
+
+		return player;
+	}
+
+	private static CommonListenerCookie newCookie() {
+		return CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-mock-player"), false);
+	}
+
+	// Placed the way GameTestHelper.makeMockServerPlayerInLevel places its mock player.
+	private static void place(GameTestHelper helper, ServerPlayer player, CommonListenerCookie cookie) {
+		Connection connection = new Connection(PacketFlow.SERVERBOUND);
+
+		new EmbeddedChannel(connection);
+		helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+		finishLoading(player);
 	}
 
 	/** Fails the test unless the player has these Max Hearts and the max health they give. */
