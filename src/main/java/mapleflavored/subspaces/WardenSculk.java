@@ -32,6 +32,9 @@ public final class WardenSculk {
 		builder -> builder.initializer(HashMap::new)
 	);
 
+	// Further than anything a cursor writes reaches past it: veins wrap around a converted block, up to √5 blocks out.
+	private static final double WRITE_REACH = 3.0;
+
 	private WardenSculk() {
 	}
 
@@ -56,8 +59,14 @@ public final class WardenSculk {
 
 		if (subspace.kind() != Subspace.Kind.WARDEN || charge == 0) return;
 
+		// The patch keeps inside its Subspace, however the two radii are set, so its shriekers stay where the Subspace's
+		// cleanup looks for them.
+		int patchRadius = level.getGameRules().get(MapleGameRules.WARDEN_SCULK_PATCH_RADIUS);
+		double radius = Math.min(patchRadius, subspace.radius() - WRITE_REACH);
+
+		if (radius < 0.0) return;
+
 		BlockPos feet = BlockPos.containing(subspace.centre());
-		int radius = level.getGameRules().get(MapleGameRules.WARDEN_SCULK_PATCH_RADIUS);
 
 		level.getAttachedOrCreate(PATCHES).put(subspace.id(), new SubspaceSculkSpreader(subspace, feet, radius, charge));
 	}

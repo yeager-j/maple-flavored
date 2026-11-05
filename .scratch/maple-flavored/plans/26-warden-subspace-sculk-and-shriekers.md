@@ -34,6 +34,7 @@ Jackson's calls (2026-11-05):
    - **Why a subclass.** It's how the two mixins tell a Subspace's sculk from vanilla's, so inheritance is only a tag.
    - **The guard.** `SculkSpreaderChargeCursorMixin` wraps `canMoveToPos` in `ChargeCursor.getValidMovementPos`. A Subspace cursor may move only where vanilla allows, within the patch radius of the Subspace's centre, and into a ticking chunk.
    - **How far writes reach.** Veins and growths land at most √5 blocks beyond a cursor. Vanilla's knock-on block updates stay vanilla.
+   - **The cap.** The patch radius is capped at the Subspace radius minus 3, so the patch stays inside its Subspace however the rules are set, and cleanup's scan always covers its shriekers.
 5. **Grown shriekers** (`GrownShriekers`).
    - **Recording.** `SculkBlockMixin` wraps the growth `setBlockAndUpdate` in `SculkBlock.attemptUseCharge`. A shrieker grown by a Subspace's patch is placed with `CAN_SUMMON` true and gets a persistent block entity attachment `maple_flavored:grown_in_subspace` holding the Subspace's id.
    - **Silencing at the end.** On `Subspaces.ENDED`, every loaded chunk over the sphere is scanned. Each shrieker recording that id is silenced: `CAN_SUMMON` goes false and the attachment is removed.
@@ -42,6 +43,7 @@ Jackson's calls (2026-11-05):
 6. **Client: sky.** `ClientLevelMixin` injects at the return of `addEnvironmentAttributeLayers`. `SculkSky` adds positional layers for `SKY_COLOR`, `FOG_COLOR`, `CLOUD_COLOR` and `SUNRISE_SUNSET_COLOR` that blend in over the last 8 blocks inside a Warden Subspace.
 7. **Client: shell.** `SubspaceShellRenderer` submits each Warden Subspace on `LevelRenderEvents.COLLECT_SUBMITS` as a 64×32 latitude–longitude sphere.
    - It uses `RenderTypes.entityTranslucentEmissive`, which blends translucently, doesn't cull and doesn't write depth.
+   - A sphere lying wholly beyond the render distance isn't submitted.
    - The texture repeats a whole number of times around the sphere and drifts slowly. A faint vertex alpha makes the opaque texture translucent.
 8. **API.** `Subspaces.inLevel(Level)` is public for the shell. `isActive(Level, UUID)` is package-private.
 
@@ -57,6 +59,7 @@ Jackson's calls (2026-11-05):
     - Killed Wardens' experience orbs, left from an earlier batch, landed by the next Warden and reset its dig timer through the vibration. The arena now clears every non-player entity, not only mobs.
 - **`SubspaceSculkGameTests`**:
   - **Limits.** After 400 ticks, sculk has spread, nothing sculk-family lies beyond 5 + √5 blocks, and deepslate bricks inside the patch are unchanged.
+  - **Small Subspace.** With game rules setting a 6-block Subspace and a 32-block patch, the sculk stays inside the Subspace.
   - **Pausing.** Sculk doesn't change while the Warden is unloaded, grows again once it reloads, and stops once the Subspace ends.
   - **Overlap.** Two Wardens 30 blocks apart, so each Subspace covers both patches. Ending the first silences only the first's grown shrieker, and a hand-placed shrieker stays able to summon.
   - **Unloaded shrieker, through a real chunk unload.** The Warden opens its Subspace 100 blocks out, then moves into the test's always-loaded chunk. The shrieker stays able to summon after its chunk unloads and reloads while the Subspace lasts. Once the Subspace ends while the chunk is unloaded, the shrieker is silenced when the chunk loads.

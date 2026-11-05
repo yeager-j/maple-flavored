@@ -49,10 +49,13 @@ public final class SubspaceShellRenderer {
 		if (level == null) return;
 
 		Vec3 camera = context.levelState().cameraRenderState.pos;
+		double renderDistance = Minecraft.getInstance().options.getEffectiveRenderDistance() * 16.0;
 		float drift = (float) (Util.getMillis() % DRIFT_MILLIS) / DRIFT_MILLIS;
 
 		for (Subspace subspace : Subspaces.inLevel(level)) {
-			if (subspace.kind() == Subspace.Kind.WARDEN) submit(context, subspace, camera, drift);
+			boolean isInRange = subspace.centre().distanceTo(camera) - subspace.radius() <= renderDistance;
+
+			if (subspace.kind() == Subspace.Kind.WARDEN && isInRange) submit(context, subspace, camera, drift);
 		}
 	}
 

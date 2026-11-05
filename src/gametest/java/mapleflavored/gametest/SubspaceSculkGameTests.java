@@ -66,6 +66,29 @@ public class SubspaceSculkGameTests {
 			.thenSucceed();
 	}
 
+	// Set by the environment's game rules: a Subspace smaller than the patch would otherwise be.
+	@GameTest(environment = "maple_flavored_gametest:subspace_sculk_small_subspace", maxTicks = 600)
+	public void aPatchStaysInsideASubspaceSmallerThanIt(GameTestHelper helper) {
+		SubspaceArena arena = SubspaceArena.clearedWithoutRunway(helper);
+		ServerLevel level = arena.level();
+		Vec3 centre = arena.centre();
+
+		arena.stillWarden(Vec3.ZERO);
+
+		BoundingBox floor = arena.sculkFloor(-FLOOR_REACH, -FLOOR_REACH, FLOOR_REACH, FLOOR_REACH);
+		double subspaceRadius = level.getGameRules().get(MapleGameRules.WARDEN_SUBSPACE_RADIUS);
+
+		helper.startSequence()
+			.thenExecuteAfter(SETTLING_TICKS, () -> {
+				List<BlockPos> sculk = sculkIn(level, floor);
+				List<BlockPos> outside = sculk.stream().filter(position -> distance(centre, position) > subspaceRadius).toList();
+
+				helper.assertFalse(sculk.isEmpty(), "No sculk spread");
+				helper.assertValueEqual(outside, List.of(), "sculk outside the Subspace");
+			})
+			.thenSucceed();
+	}
+
 	@GameTest(environment = "maple_flavored_gametest:subspace_sculk_pausing", maxTicks = 1500)
 	public void aPatchSpreadsOnlyWhileItsWardenIsLoadedAndItsSubspaceLasts(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.clearedWithoutRunway(helper);
