@@ -1,6 +1,7 @@
 package mapleflavored.zephyr;
 
 import mapleflavored.MapleFlavored;
+import mapleflavored.grounded.Grounded;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -60,6 +61,7 @@ public final class Zephyr {
 			&& !player.onGround()
 			&& !endsAirTime(player)
 			&& !player.isFallFlying()
+			&& !Grounded.isGrounded(player)
 			&& !player.hasAttached(AIR_JUMP)
 			&& level(player) > 0;
 	}

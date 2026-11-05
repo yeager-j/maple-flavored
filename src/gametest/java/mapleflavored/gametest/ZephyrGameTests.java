@@ -1,5 +1,6 @@
 package mapleflavored.gametest;
 
+import mapleflavored.grounded.Grounded;
 import mapleflavored.zephyr.Zephyr;
 import mapleflavored.zephyr.ZephyrJumpPayload;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -12,6 +13,7 @@ import net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket;
 import net.minecraft.network.protocol.game.ServerboundClientTickEndPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
@@ -98,6 +100,18 @@ public class ZephyrGameTests {
 	@GameTest(maxTicks = 200)
 	public void aJumpWithoutZephyrBootsIsRefused(GameTestHelper helper) {
 		Faller.wearingZephyr(helper, 0)
+			.startAt(16.0)
+			.moveTo(4.0)
+			.jump()
+			.moveTo(0.0)
+			// The whole 16 blocks; an accepted jump would have counted 12 × 0.75 + 4 = 13.
+			.thenAssertFallDamage(13);
+	}
+
+	@GameTest(maxTicks = 200)
+	public void aJumpWhileGroundedIsRefused(GameTestHelper helper) {
+		Faller.wearingZephyr(helper, 3)
+			.grounded()
 			.startAt(16.0)
 			.moveTo(4.0)
 			.jump()
@@ -259,6 +273,13 @@ public class ZephyrGameTests {
 			helper.setBlock(FLOOR, Blocks.STONE);
 
 			return new Faller(helper, player);
+		}
+
+		/** Makes the player Grounded for the rest of the test. */
+		Faller grounded() {
+			player.addEffect(new MobEffectInstance(Grounded.EFFECT, MobEffectInstance.INFINITE_DURATION));
+
+			return this;
 		}
 
 		/** Teleports the player to this height, at rest, the way a server places a player. */

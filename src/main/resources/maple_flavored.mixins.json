@@ -18,6 +18,7 @@
 		"GrindstoneMenuMixin",
 		"GrindstoneResultSlotMixin",
 		"ListPoolElementAccessor",
+		"LivingEntityMixin",
 		"MineShaftCorridorAccessor",
 		"MineShaftCorridorMixin",
 		"MinecraftServerMixin",
@@ -43,6 +44,9 @@
 		"StructurePieceInvoker",
 		"StructurePieceMixin",
 		"StructureTemplateMixin",
+		"ThrowableProjectileMixin",
+		"ThrownEnderpearlMixin",
+		"TridentItemMixin",
 		"WitherSkeletonMixin",
 		"ZombieVillagerMixin"
 	],

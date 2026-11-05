@@ -287,7 +287,7 @@ The [boss manifesto](manifestos/boss-subspaces.md) identifies a problem: a boss 
 
 The Warden's **Subspace** is a fixed sphere with a 100-block radius, centered where it spawns. Darkness and **Grounded** make sneaking, hiding, and finding a route out the ways to survive.
 
-Grounded applies an additional 0.97 multiplier to horizontal glide movement each tick and reduces Firework Rocket boost by 95%. These stack with Armored Elytra penalties. It also greatly increases Ender Pearl gravity, so pearls fall sharply and travel much shorter distances. Their teleports still work, letting you reach nearby cover or cross a gap. The exact gravity multiplier needs playtesting. Riptide and Zephyr's double jump do not work; Levitation, Slow Falling, and Chorus Fruit still do.
+Grounded stops Elytra, including Armored Elytra, from gliding: no glide can start, and one under way ends, so Firework Rockets have nothing to boost. It also greatly increases Ender Pearl gravity, so pearls fall sharply and travel much shorter distances. Their teleports still work, letting you reach nearby cover or cross a gap. The exact gravity multiplier needs playtesting. Riptide and Zephyr's double jump do not work; Levitation, Slow Falling, and Chorus Fruit still do.
 
 The Warden is aware of all entities within the Subspace and will attempt to pathfind to the nearest player. Anger and the sniffing mechanic are unchanged. You can escape by leaving the active Subspaces, or hide until their Wardens go away after an undisturbed minute. Each Subspace ends when its own Warden goes away. Death respawns you normally and applies its normal costs, including if your bed or anchor is inside.
 
