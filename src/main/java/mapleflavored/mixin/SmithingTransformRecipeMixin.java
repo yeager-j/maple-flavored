@@ -12,14 +12,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Material upgrades make nothing from a base that {@link MaterialUpgrades} refuses, and Alloy gear keeps the share of
+ * Material upgrades make nothing from inputs that {@link MaterialUpgrades} refuses, and Alloy gear keeps the share of
  * durability its base had left.
  */
 @Mixin(SmithingTransformRecipe.class)
 public abstract class SmithingTransformRecipeMixin {
 	@Inject(method = "assemble(Lnet/minecraft/world/item/crafting/SmithingRecipeInput;)Lnet/minecraft/world/item/ItemStack;", at = @At("HEAD"), cancellable = true)
 	private void refuseEnchantedGear(SmithingRecipeInput input, CallbackInfoReturnable<ItemStack> callback) {
-		if (MaterialUpgrades.refuses(input.base())) callback.setReturnValue(ItemStack.EMPTY);
+		if (MaterialUpgrades.refuses(input)) callback.setReturnValue(ItemStack.EMPTY);
 	}
 
 	// Vanilla copies the base's damage as it is, which could break gear smithed into an Alloy with less durability.

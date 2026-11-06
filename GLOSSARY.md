@@ -44,6 +44,9 @@ The block that smelts a Netherite Ingot and a storage block into an Alloy ingot,
 The Alloy Furnace's fuel, dropped by Piglin Brutes when a player kills them and found in Bastion chests alongside ancient debris. One makes one Alloy ingot.
 _Avoid_: Brute Ember
 
+**Armored Elytra**:
+An Alloy chestplate permanently combined with an Elytra at a Smithing Table, one per Alloy. It counts as that Alloy's chestplate for armor, traits, enchanting, repairs and set bonuses, and glides worse than a plain Elytra.
+
 **Illager neutrality**:
 Orichalcum armor's trait: Illagers, and an Evoker's Vexes, leave a player wearing any Orichalcum piece alone, except in a raid or for a while after the player attacks one or takes a structure's book.
 

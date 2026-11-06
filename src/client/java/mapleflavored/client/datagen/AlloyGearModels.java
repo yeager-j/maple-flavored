@@ -10,7 +10,7 @@ import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.ItemModelGenerators;
 import net.minecraft.client.data.models.model.ModelTemplates;
 
-/** The Alloy gear's item models, made the way vanilla makes the Netherite versions'. */
+/** The Alloy gear's item models, made the way vanilla makes the Netherite versions' and the Elytra's. */
 class AlloyGearModels extends FabricModelProvider {
 	AlloyGearModels(FabricPackOutput output) {
 		super(output);
@@ -38,6 +38,7 @@ class AlloyGearModels extends FabricModelProvider {
 			);
 			generators.generateFlatItem(AlloyGear.of(alloy, GearKind.HORSE_ARMOR), ModelTemplates.FLAT_ITEM);
 			generators.generateFlatItem(AlloyGear.of(alloy, GearKind.NAUTILUS_ARMOR), ModelTemplates.FLAT_ITEM);
+			generators.generateElytra(AlloyGear.armoredElytra(alloy));
 		}
 	}
 }

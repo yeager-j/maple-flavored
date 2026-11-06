@@ -4,14 +4,14 @@
 
 **Blocked by:** 33 (Alloy gear and numeric traits), 35 (Alloy set bonuses), 24 (Grounded effect)
 
-**Status:** ready-for-agent
+**Status:** done
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] One Armored Elytra item per Alloy, made at a Smithing Table from an Elytra and that Alloy's chestplate, keeping its armor and effects; Netherite chestplates don't qualify
-- [ ] Accepts a chestplate's enchantments; repaired and enchanted with its Alloy ingot
-- [ ] Counts as the chest piece for set bonuses
-- [ ] Glide gets an extra 0.995 per tick and Firework Rocket boost is cut by 25%; Grounded stops it gliding like any Elytra
-- [ ] Advancement: Get an Armored Elytra (End goal, under Sky's the Limit)
-- [ ] GameTests cover smithing, armor, enchanting and the set bonus
+- [x] One Armored Elytra item per Alloy, made at a Smithing Table from an Elytra and that Alloy's chestplate, keeping its armor and effects; Netherite chestplates don't qualify
+- [x] Accepts a chestplate's enchantments; repaired and enchanted with its Alloy ingot
+- [x] Counts as the chest piece for set bonuses
+- [x] Glide gets an extra 0.995 per tick and Firework Rocket boost is cut by 25%; Grounded stops it gliding like any Elytra
+- [x] Advancement: Get an Armored Elytra (End goal, under Sky's the Limit)
+- [x] GameTests cover smithing, armor, enchanting and the set bonus
 - [ ] Hand check: flight feel, and that Grounded stops the glide

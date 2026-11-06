@@ -27,6 +27,6 @@ abstract class SmithingScreenMixin extends ItemCombinerScreen<SmithingMenu> {
 		at = @At(value = "FIELD", target = "Lnet/minecraft/client/gui/screens/inventory/SmithingScreen;ERROR_TOOLTIP:Lnet/minecraft/network/chat/Component;")
 	)
 	private Component explainEnchantedRefusal(Component vanillaTooltip) {
-		return ((UpgradeRefusalMenu) menu).mapleflavored$refusedEnchantedBase() ? ENCHANTED_ERROR_TOOLTIP : vanillaTooltip;
+		return ((UpgradeRefusalMenu) menu).mapleflavored$refusedEnchantedInput() ? ENCHANTED_ERROR_TOOLTIP : vanillaTooltip;
 	}
 }

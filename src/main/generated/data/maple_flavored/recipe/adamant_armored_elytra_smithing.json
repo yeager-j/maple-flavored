@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "minecraft:elytra",
+  "base": "maple_flavored:adamant_chestplate",
+  "result": {
+    "id": "maple_flavored:adamant_armored_elytra"
+  }
+}

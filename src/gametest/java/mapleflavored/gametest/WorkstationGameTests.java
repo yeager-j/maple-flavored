@@ -119,12 +119,12 @@ public class WorkstationGameTests {
 		SmithingMenu upgraded = smithing(helper, player, Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE, new ItemStack(Items.DIAMOND_SWORD), Items.NETHERITE_INGOT);
 		SmithingMenu trimmed = smithing(helper, player, Items.COAST_ARMOR_TRIM_SMITHING_TEMPLATE, enchantedChestplate, Items.AMETHYST_SHARD);
 
-		helper.assertTrue(refusedEnchantedBase(refused), "an enchanted diamond sword's upgrade is refused for its enchantment");
+		helper.assertTrue(refusedEnchantedInput(refused), "an enchanted diamond sword's upgrade is refused for its enchantment");
 		helper.assertTrue(refused.hasRecipeError(), "the refused upgrade shows the error icon");
-		helper.assertFalse(refusedEnchantedBase(noUpgrade), "an enchanted iron sword, which has no upgrade, is refused for its enchantment");
+		helper.assertFalse(refusedEnchantedInput(noUpgrade), "an enchanted iron sword, which has no upgrade, is refused for its enchantment");
 		helper.assertTrue(noUpgrade.hasRecipeError(), "the iron sword shows the error icon");
-		helper.assertFalse(refusedEnchantedBase(upgraded), "an unenchanted upgrade is refused for its enchantment");
-		helper.assertFalse(refusedEnchantedBase(trimmed), "a trim on enchanted armor is refused for its enchantment");
+		helper.assertFalse(refusedEnchantedInput(upgraded), "an unenchanted upgrade is refused for its enchantment");
+		helper.assertFalse(refusedEnchantedInput(trimmed), "a trim on enchanted armor is refused for its enchantment");
 		helper.succeed();
 	}
 
@@ -145,8 +145,8 @@ public class WorkstationGameTests {
 	}
 
 	// The flag the menu syncs to its screen to pick the error tooltip.
-	private static boolean refusedEnchantedBase(SmithingMenu smithing) {
-		return ((UpgradeRefusalMenu) smithing).mapleflavored$refusedEnchantedBase();
+	private static boolean refusedEnchantedInput(SmithingMenu smithing) {
+		return ((UpgradeRefusalMenu) smithing).mapleflavored$refusedEnchantedInput();
 	}
 
 	private static GrindstoneMenu grindstone(GameTestHelper helper, ServerPlayer player) {

@@ -175,7 +175,7 @@ public class AlloyGearGameTests {
 
 		helper.assertTrue(withTemplate.isEmpty(), "smithing with a template makes something");
 		helper.assertTrue(enchanted.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(), "an enchanted sword is smithed");
-		helper.assertTrue(((UpgradeRefusalMenu) enchanted).mapleflavored$refusedEnchantedBase(), "the menu says the enchantment is why");
+		helper.assertTrue(((UpgradeRefusalMenu) enchanted).mapleflavored$refusedEnchantedInput(), "the menu says the enchantment is why");
 		helper.succeed();
 	}
 

@@ -11,6 +11,7 @@ import net.minecraft.world.inventory.ItemCombinerMenuSlotDefinition;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.item.crafting.SmithingTransformRecipe;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Final;
@@ -22,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Syncs to the client whether the inputs match a material upgrade that refused the enchanted base, so the screen can
+ * Syncs to the client whether the inputs match a material upgrade that refused an enchanted input, so the screen can
  * say why. Only the server has the recipes to tell.
  */
 @Mixin(SmithingMenu.class)
@@ -32,7 +33,7 @@ public abstract class SmithingMenuMixin extends ItemCombinerMenu implements Upgr
 	private Level level;
 
 	@Unique
-	private final DataSlot refusedEnchantedBase = DataSlot.standalone();
+	private final DataSlot refusedEnchantedInput = DataSlot.standalone();
 
 	private SmithingMenuMixin(MenuType<?> menuType, int containerId, Inventory inventory, ContainerLevelAccess access, ItemCombinerMenuSlotDefinition slots) {
 		super(menuType, containerId, inventory, access, slots);
@@ -40,7 +41,7 @@ public abstract class SmithingMenuMixin extends ItemCombinerMenu implements Upgr
 
 	@Inject(method = "<init>(ILnet/minecraft/world/entity/player/Inventory;Lnet/minecraft/world/inventory/ContainerLevelAccess;Lnet/minecraft/world/level/Level;)V", at = @At("TAIL"))
 	private void syncRefusal(int containerId, Inventory inventory, ContainerLevelAccess access, Level level, CallbackInfo callback) {
-		addDataSlot(refusedEnchantedBase);
+		addDataSlot(refusedEnchantedInput);
 	}
 
 	// The menu records the matched recipe even when it assembled nothing, which is how a refusal shows.
@@ -51,13 +52,15 @@ public abstract class SmithingMenuMixin extends ItemCombinerMenu implements Upgr
 		RecipeHolder<?> matched = resultSlots.getRecipeUsed();
 		boolean refused = matched != null
 			&& matched.value() instanceof SmithingTransformRecipe
-			&& MaterialUpgrades.refuses(inputSlots.getItem(SmithingMenu.BASE_SLOT));
+			&& MaterialUpgrades.refuses(new SmithingRecipeInput(
+				inputSlots.getItem(SmithingMenu.TEMPLATE_SLOT), inputSlots.getItem(SmithingMenu.BASE_SLOT), inputSlots.getItem(SmithingMenu.ADDITIONAL_SLOT)
+			));
 
-		refusedEnchantedBase.set(refused ? 1 : 0);
+		refusedEnchantedInput.set(refused ? 1 : 0);
 	}
 
 	@Override
-	public boolean mapleflavored$refusedEnchantedBase() {
-		return refusedEnchantedBase.get() > 0;
+	public boolean mapleflavored$refusedEnchantedInput() {
+		return refusedEnchantedInput.get() > 0;
 	}
 }

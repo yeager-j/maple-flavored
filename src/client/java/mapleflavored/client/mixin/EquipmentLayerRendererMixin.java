@@ -11,17 +11,32 @@ import net.minecraft.client.resources.model.EquipmentClientInfo;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.equipment.trim.ArmorTrim;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** PROTOTYPE: draws {@link PortalTrim}'s starfield over the worn layers, after vanilla's layers, trim and glint. */
+/**
+ * Draws no trim on wings, and (PROTOTYPE) draws {@link PortalTrim}'s starfield over the worn layers, after vanilla's
+ * layers, trim and glint.
+ */
 @Mixin(EquipmentLayerRenderer.class)
 public abstract class EquipmentLayerRendererMixin {
 	// Past the orders vanilla used: one per layer, then the trim and its glint.
 	private static final int ORDER_AFTER_VANILLA = 8;
+
+	// Vanilla trims every layer but baby armor, though no vanilla wings can be trimmed. An Armored Elytra keeps its
+	// chestplate's trim, which belongs on the body; wings have no trim textures, so they'd draw missing ones.
+	@ModifyVariable(
+		method = "renderLayers(Lnet/minecraft/client/resources/model/EquipmentClientInfo$LayerType;Lnet/minecraft/resources/ResourceKey;Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lnet/minecraft/world/item/ItemStack;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;ILnet/minecraft/resources/Identifier;II)V",
+		at = @At("STORE")
+	)
+	private ArmorTrim noTrimOnWings(ArmorTrim trim, EquipmentClientInfo.LayerType layerType) {
+		return layerType == EquipmentClientInfo.LayerType.WINGS ? null : trim;
+	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Inject(

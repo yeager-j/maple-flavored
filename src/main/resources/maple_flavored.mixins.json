@@ -23,6 +23,7 @@
 		"EntityMixin",
 		"EntitySpawnReasonMixin",
 		"FeaturePoolElementAccessor",
+		"FireworkRocketEntityMixin",
 		"GameRulesMixin",
 		"GrindstoneInputSlotMixin",
 		"GrindstoneMenuMixin",

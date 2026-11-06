@@ -1,0 +1,20 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "maple_flavored:orichalcum"
+      }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "maple_flavored:orichalcum"
+      }
+    ],
+    "wings": [
+      {
+        "texture": "maple_flavored:orichalcum",
+        "use_player_texture": true
+      }
+    ]
+  }
+}

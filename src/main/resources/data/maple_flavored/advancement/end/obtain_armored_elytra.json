@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:end/elytra",
+  "criteria": {
+    "armored_elytra": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#maple_flavored:armored_elytras"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.end.obtain_armored_elytra.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "maple_flavored:steel_armored_elytra"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.end.obtain_armored_elytra.title"
+    }
+  },
+  "requirements": [
+    [
+      "armored_elytra"
+    ]
+  ]
+}
