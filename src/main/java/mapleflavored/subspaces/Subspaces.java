@@ -14,11 +14,14 @@ import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -98,6 +101,26 @@ public final class Subspaces {
 	static boolean ownsAny(MinecraftServer server, UUID boss) {
 		for (ServerLevel level : server.getAllLevels()) {
 			if (ownedBy(level, boss).isPresent()) return true;
+		}
+
+		return false;
+	}
+
+	/** Triggers {@code trigger} for every player inside the Subspace, but spectators. */
+	static void triggerForPlayersInside(ServerLevel level, Subspace subspace, PlayerTrigger trigger) {
+		for (ServerPlayer player : level.players()) {
+			if (!player.isSpectator() && subspace.contains(player.position())) trigger.trigger(player);
+		}
+	}
+
+	/**
+	 * Whether the Subspace's boss is dying. A Subspace ends while its dying boss is still in the level, but a boss removed
+	 * without dying, such as by Peaceful, isn't.
+	 */
+	static boolean bossIsDying(MinecraftServer server, Subspace subspace) {
+		// A boss can carry its UUID to another level by command, while its Subspace stays where it opened.
+		for (ServerLevel level : server.getAllLevels()) {
+			if (level.getEntity(subspace.boss()) instanceof LivingEntity boss) return boss.isDeadOrDying();
 		}
 
 		return false;

@@ -1,0 +1,30 @@
+{
+  "parent": "minecraft:adventure/avoid_vibration",
+  "criteria": {
+    "warden_survived": {
+      "trigger": "maple_flavored:warden_survived"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.adventure.survive_warden.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "minecraft:echo_shard"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.adventure.survive_warden.title"
+    }
+  },
+  "requirements": [
+    [
+      "warden_survived"
+    ]
+  ],
+  "rewards": {
+    "loot": [
+      "maple_flavored:advancement_reward/crystal_heart"
+    ]
+  }
+}

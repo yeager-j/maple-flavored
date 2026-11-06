@@ -33,6 +33,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
@@ -231,15 +232,20 @@ final class SubspaceArena {
 
 	/** A Wither that stays where it's put, even in midair, and never attacks, so its Subspace lasts until the test ends it. */
 	WitherBoss stillWither(Vec3 offset) {
+		return still(EntityTypes.WITHER, offset);
+	}
+
+	/** A mob that stays where it's put, even in midair, at the offset from the centre, with its chunk kept loaded. */
+	<E extends Mob> E still(EntityType<E> type, Vec3 offset) {
 		BlockPos fromCentre = BlockPos.containing(at(offset)).subtract(centreBlock);
 
 		keepLoaded(fromCentre.getX(), fromCentre.getX(), fromCentre.getZ(), fromCentre.getZ());
 
-		WitherBoss wither = track(helper.spawn(EntityTypes.WITHER, relativeAt(offset)));
+		E mob = track(helper.spawn(type, relativeAt(offset)));
 
-		wither.setNoAi(true);
+		mob.setNoAi(true);
 
-		return wither;
+		return mob;
 	}
 
 	/** A pig that stays where it's put. */

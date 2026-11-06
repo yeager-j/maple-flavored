@@ -1,0 +1,30 @@
+{
+  "parent": "minecraft:adventure/kill_a_mob",
+  "criteria": {
+    "elder_guardian_killed": {
+      "trigger": "maple_flavored:elder_guardian_killed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.adventure.kill_elder_guardian.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "minecraft:wet_sponge"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.adventure.kill_elder_guardian.title"
+    }
+  },
+  "requirements": [
+    [
+      "elder_guardian_killed"
+    ]
+  ],
+  "rewards": {
+    "loot": [
+      "maple_flavored:advancement_reward/crystal_heart"
+    ]
+  }
+}

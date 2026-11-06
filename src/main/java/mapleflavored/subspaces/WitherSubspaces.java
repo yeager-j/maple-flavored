@@ -14,7 +14,6 @@ import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
@@ -112,7 +111,7 @@ public final class WitherSubspaces {
 	public static void triggerForPlayersInside(WitherBoss wither, PlayerTrigger trigger) {
 		if (!(wither.level() instanceof ServerLevel level)) return;
 
-		Subspaces.ownedBy(level, wither.getUUID()).ifPresent(subspace -> trigger(level, subspace, trigger));
+		Subspaces.ownedBy(level, wither.getUUID()).ifPresent(subspace -> Subspaces.triggerForPlayersInside(level, subspace, trigger));
 	}
 
 	// Every way a Wither appears adds it to a level, so this catches both building one and /summon. One that already
@@ -134,24 +133,10 @@ public final class WitherSubspaces {
 		wither.setHomeTo(BlockPos.containing(subspace.centre()), leash);
 	}
 
-	// The Subspace ends while its dying Wither is still in the level. A Wither discarded, such as by Peaceful, isn't
-	// dying, so it credits nobody.
+	// A Wither discarded, such as by Peaceful, credits nobody.
 	private static void creditKill(ServerLevel level, Subspace subspace) {
-		if (subspace.kind() == Subspace.Kind.WITHER && isDying(level, subspace)) trigger(level, subspace, MapleTriggers.WITHER_KILLED);
-	}
+		if (subspace.kind() != Subspace.Kind.WITHER || !Subspaces.bossIsDying(level.getServer(), subspace)) return;
 
-	private static void trigger(ServerLevel level, Subspace subspace, PlayerTrigger trigger) {
-		for (ServerPlayer player : level.players()) {
-			if (!player.isSpectator() && subspace.contains(player.position())) trigger.trigger(player);
-		}
-	}
-
-	// A Wither can carry its UUID to another level by command, while its Subspace stays where it opened.
-	private static boolean isDying(ServerLevel level, Subspace subspace) {
-		for (ServerLevel candidate : level.getServer().getAllLevels()) {
-			if (candidate.getEntity(subspace.boss()) instanceof WitherBoss wither) return wither.isDeadOrDying();
-		}
-
-		return false;
+		Subspaces.triggerForPlayersInside(level, subspace, MapleTriggers.WITHER_KILLED);
 	}
 }

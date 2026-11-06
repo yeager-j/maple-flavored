@@ -3,6 +3,7 @@ package mapleflavored.subspaces;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
+import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.grounded.Grounded;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
@@ -28,6 +29,8 @@ import net.minecraft.world.phys.AABB;
  *
  * <p>Anger and sniffing stay vanilla. Awareness only steers the Warden: a target it senses through its Subspace alone,
  * outside vanilla's awareness box, never keeps it from digging back down.
+ *
+ * <p>Every player inside when the Warden dies or digs back down has survived it.
  */
 public final class WardenSubspaces {
 	// Playtest values. Long enough to bridge top-ups, short enough to wear off soon after a player leaves. Topping up
@@ -40,6 +43,7 @@ public final class WardenSubspaces {
 
 	static void register() {
 		ServerEntityEvents.ENTITY_LOAD.register(WardenSubspaces::openIfNew);
+		Subspaces.ENDED.register(WardenSubspaces::creditSurvivalOnDeath);
 		ServerTickEvents.END_LEVEL_TICK.register(level -> {
 			for (ServerPlayer player : level.players()) {
 				applyEffects(level, player);
@@ -85,6 +89,28 @@ public final class WardenSubspaces {
 
 		disturb.run();
 		brain.setMemoryWithExpiry(MemoryModuleType.DIG_COOLDOWN, Unit.INSTANCE, ticksUntilDigging);
+	}
+
+	/**
+	 * Credits every player inside the Warden's Subspace with surviving it. Call as the Warden digs back down, before it's
+	 * removed.
+	 */
+	public static void creditDiggingDown(Warden warden) {
+		if (!(warden.level() instanceof ServerLevel wardenLevel)) return;
+
+		// A Warden can carry its UUID to another level by command, while its Subspace stays where it opened.
+		for (ServerLevel level : wardenLevel.getServer().getAllLevels()) {
+			Subspaces.ownedBy(level, warden.getUUID())
+				.ifPresent(subspace -> Subspaces.triggerForPlayersInside(level, subspace, MapleTriggers.WARDEN_SURVIVED));
+		}
+	}
+
+	// Dying is one of the two ways to survive a Warden; digging down is the other. Any other removal, such as by Peaceful,
+	// credits nobody.
+	private static void creditSurvivalOnDeath(ServerLevel level, Subspace subspace) {
+		if (subspace.kind() != Subspace.Kind.WARDEN || !Subspaces.bossIsDying(level.getServer(), subspace)) return;
+
+		Subspaces.triggerForPlayersInside(level, subspace, MapleTriggers.WARDEN_SURVIVED);
 	}
 
 	// Every way a Warden appears adds it to a level. One that already has a Subspace is only loading again, perhaps after
