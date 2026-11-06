@@ -1,5 +1,6 @@
 package mapleflavored.gametest;
 
+import java.util.Comparator;
 import java.util.List;
 import mapleflavored.echoshard.ShriekerPulses;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -24,6 +25,7 @@ public class ShriekerPulseGameTests {
 	private static final int ABOVE = 100;
 	private static final int LISTENING_TICKS = 80;
 	private static final int RANGE = 15;
+	private static final double MAX_PACKET_ERROR = 2.0;
 
 	@GameTest(maxTicks = 300)
 	public void anEchoShardHearsNearbyShriekersPulseFasterTheCloserTheyAre(GameTestHelper helper) {
@@ -59,14 +61,14 @@ public class ShriekerPulseGameTests {
 		helper.startSequence()
 			.thenExecuteAfter(LISTENING_TICKS, () -> {
 				List<ClientboundSoundPacket> heard = pulses(holder);
-				long fromNear = heard.stream().filter(pulse -> from(pulse, near)).count();
-				long fromMiddling = heard.stream().filter(pulse -> from(pulse, middling)).count();
+				long fromNear = heard.stream().filter(pulse -> from(pulse, near, shriekers)).count();
+				long fromMiddling = heard.stream().filter(pulse -> from(pulse, middling, shriekers)).count();
 
 				String heardWhere = " (the holder at " + holder.player().position() + " heard pulses from " + heard.stream().map(pulse -> new Vec3(pulse.getX(), pulse.getY(), pulse.getZ())).toList() + ")";
 
 				helper.assertTrue(fromMiddling >= 2, "The shrieker 10 blocks away pulsed " + fromMiddling + " times" + heardWhere);
 				helper.assertTrue(fromNear > fromMiddling, "The nearer shrieker pulsed " + fromNear + " times, no faster than the farther" + heardWhere);
-				helper.assertTrue(heard.stream().noneMatch(pulse -> from(pulse, tooFar)), "A shrieker 20 blocks away pulsed");
+				helper.assertTrue(heard.stream().noneMatch(pulse -> from(pulse, tooFar, shriekers)), "A shrieker 20 blocks away pulsed");
 				helper.assertValueEqual(heard.size(), (int) (fromNear + fromMiddling), "pulses from anywhere else");
 				helper.assertFalse(pulses(offhand).isEmpty(), "An Echo Shard in the offhand heard nothing");
 				helper.assertValueEqual(pulses(bystander), List.of(), "the pulses a player without a shard heard");
@@ -93,7 +95,14 @@ public class ShriekerPulseGameTests {
 		return listening.sent(ClientboundSoundPacket.class).stream().filter(packet -> packet.getSound().equals(ShriekerPulses.PULSE)).toList();
 	}
 
-	private static boolean from(ClientboundSoundPacket pulse, BlockPos shrieker) {
-		return Vec3.atCenterOf(shrieker).distanceToSqr(pulse.getX(), pulse.getY(), pulse.getZ()) < 0.01;
+	// A sound packet's position comes back as a float, which can be a block out this far from the world's centre, where
+	// tests are often placed. The test's shriekers are blocks apart, so a pulse is from the one nearest it, within 2.
+	private static boolean from(ClientboundSoundPacket pulse, BlockPos shrieker, List<BlockPos> shriekers) {
+		Vec3 heardFrom = new Vec3(pulse.getX(), pulse.getY(), pulse.getZ());
+		BlockPos nearest = shriekers.stream()
+			.min(Comparator.comparingDouble(candidate -> Vec3.atCenterOf(candidate).distanceToSqr(heardFrom)))
+			.orElseThrow();
+
+		return nearest.equals(shrieker) && Vec3.atCenterOf(shrieker).distanceTo(heardFrom) <= MAX_PACKET_ERROR;
 	}
 }
