@@ -9,7 +9,8 @@ import net.minecraft.world.level.gamerules.GameRuleCategory;
  * Maple's game rules: those that set what death costs, each on its own, with vanilla's Keep Inventory as the third,
  * defaulting to on; playtest values for Warden and Wither Subspaces, which apply to Subspaces that open after a change,
  * except the Wither's leash and its Subspace's light level, which apply at once; how near a Warden a player must be to
- * survive it; how far a held Echo Shard hears shriekers; and Shakudo's and Adamant's mining, which apply at once.
+ * survive it; how far a held Echo Shard hears shriekers; Shakudo's and Adamant's mining, which apply at once; and how
+ * long an Illager stays angry at an Orichalcum wearer who attacks it.
  */
 public final class MapleGameRules {
 	/** When on, death costs no Max Hearts. Off by default. */
@@ -96,6 +97,15 @@ public final class MapleGameRules {
 		.range(1, 72_000)
 		.category(GameRuleCategory.PLAYER)
 		.buildAndRegister(MapleFlavored.id("adamant_bedrock_break_time"));
+
+	/**
+	 * How many ticks an Illager stays hostile to an Orichalcum wearer after they attack it or one it can see. Applies to
+	 * attacks after a change.
+	 */
+	public static final GameRule<Integer> ORICHALCUM_ILLAGER_ANGER_TIME = GameRuleBuilder.forInteger(600)
+		.range(1, 72_000)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("orichalcum_illager_anger_time"));
 
 	private MapleGameRules() {
 	}

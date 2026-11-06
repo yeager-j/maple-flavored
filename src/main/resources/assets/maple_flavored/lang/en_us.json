@@ -96,6 +96,8 @@
 	"gamerule.maple_flavored.keep_hearts.description": "When on, death costs no Max Hearts.",
 	"gamerule.maple_flavored.keep_xp": "Keep XP after death",
 	"gamerule.maple_flavored.keep_xp.description": "When on, death keeps all XP and leaves no Remnant.",
+	"gamerule.maple_flavored.orichalcum_illager_anger_time": "Orichalcum Illager anger time",
+	"gamerule.maple_flavored.orichalcum_illager_anger_time.description": "How many ticks an Illager stays hostile to an Orichalcum wearer after they attack it or one it can see. Playtest value.",
 	"gamerule.maple_flavored.shakudo_mining_bonus": "Shakudo mining bonus",
 	"gamerule.maple_flavored.shakudo_mining_bonus.description": "How much faster Shakudo tools mine, as a percentage of the final break speed. Applies at once. Playtest value.",
 	"gamerule.maple_flavored.warden_sculk_patch_charge": "Warden sculk patch charge",

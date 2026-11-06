@@ -44,6 +44,12 @@ The block that smelts a Netherite Ingot and a storage block into an Alloy ingot,
 The Alloy Furnace's fuel, dropped by Piglin Brutes when a player kills them and found in Bastion chests alongside ancient debris. One makes one Alloy ingot.
 _Avoid_: Brute Ember
 
+**Illager neutrality**:
+Orichalcum armor's trait: Illagers, and an Evoker's Vexes, leave a player wearing any Orichalcum piece alone, except in a raid or for a while after the player attacks one or takes a structure's book.
+
+**Orichalcum drop bonus**:
+Orichalcum tools' trait: drops that Fortune or Looting affect gain half again on top of the enchantment, except Ancient Embers, Pith and enchanted books.
+
 **Material unit**:
 The one material that repairs and enchants an item, such as an iron ingot for iron gear or string for a bow. A full repair takes one fewer than the item's recipe uses, at least 1.
 _Avoid_: Repair item, repair material
