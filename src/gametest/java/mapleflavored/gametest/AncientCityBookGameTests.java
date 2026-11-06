@@ -32,13 +32,13 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * The Ancient City's book: Swift Sneak, in front of the portal, and taking it always summons a Warden angry at the
@@ -60,8 +60,14 @@ public class AncientCityBookGameTests {
 		Identifier.withDefaultNamespace("ancient_city/city_center/city_center_2"),
 		Identifier.withDefaultNamespace("ancient_city/city_center/city_center_3")
 	);
-	// How far the book stands out from the portal's plane.
-	private static final int BEFORE_THE_PORTAL = 3;
+	// How far out from the portal's plane the altar's centre block is.
+	private static final int ALTAR_OUT = 6;
+	// The centre whose altar is a sunken pit, the deepest floor under the book.
+	private static final Identifier PIT_ALTAR_CENTRE = Identifier.withDefaultNamespace("ancient_city/city_center/city_center_2");
+	// The centre whose altar is marked by a chiseled block in the plaza floor.
+	private static final Identifier CHISELED_ALTAR_CENTRE = Identifier.withDefaultNamespace("ancient_city/city_center/city_center_3");
+	// How far under the book a Warden may stand, as deep as the floor of centre 2's sunken altar.
+	private static final int WARDEN_FLOOR_REACH = 4;
 	// Below the build limit, far above any terrain, by more than the search's 12-block vertical reach.
 	private static final int BELOW_THE_BUILD_LIMIT = 20;
 	// Covers the search's near ring, 15 blocks across.
@@ -99,7 +105,7 @@ public class AncientCityBookGameTests {
 	}
 
 	@GameTest(maxTicks = 1200)
-	public void everyCityCentreHasItsBookInFrontOfThePortalWithRoomForAWarden(GameTestHelper helper) {
+	public void everyCityCentreHasItsBookAboveTheAltarWithRoomForAWarden(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Set<Identifier> seen = new HashSet<>();
 
@@ -113,8 +119,12 @@ public class AncientCityBookGameTests {
 			String where = "the book at " + book + " in " + centre;
 
 			helper.assertTrue(level.getBlockState(book).is(StructureBooks.BLOCK), where + " is placed");
-			assertInFrontOfThePortal(helper, level, start.getPieces().getFirst(), book, where);
+			assertAboveTheAltar(helper, level, start.getPieces().getFirst(), book, where);
 			assertRoomForAWardenUnder(helper, level, book, where);
+
+			if (centre.equals(CHISELED_ALTAR_CENTRE)) {
+				helper.assertTrue(level.getBlockState(book.below(2)).is(Blocks.CHISELED_DEEPSLATE), where + " is above the altar's chiseled block");
+			}
 		}
 
 		helper.assertValueEqual(seen, Set.copyOf(CENTRES), "the city centres checked");
@@ -141,9 +151,9 @@ public class AncientCityBookGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:ancient_city_book_blocked_search", maxTicks = 400)
-	public void withNoRoomNearThePlayerTheWardenRisesUnderTheBook(GameTestHelper helper) {
+	public void withNoRoomNearThePlayerTheWardenRisesUnderTheBookEvenInThePit(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
-		City city = placeCity(helper, 1);
+		City city = place(helper, planWithCentre(helper.getLevel(), PIT_ALTAR_CENTRE));
 		ServerPlayer player = arena.track(MockPlayers.survivalPlayer(helper));
 
 		SubspaceArena.teleport(player, city.inMidairAbove());
@@ -153,7 +163,14 @@ public class AncientCityBookGameTests {
 
 		Warden warden = arena.track(onlyWarden(helper, city));
 
-		helper.assertValueEqual(warden.blockPosition(), city.book().below(), "where the Warden appeared");
+		BlockPos book = city.book();
+		BlockPos appeared = warden.blockPosition();
+		boolean underTheBook = appeared.getX() == book.getX()
+			&& appeared.getZ() == book.getZ()
+			&& appeared.getY() < book.getY()
+			&& appeared.getY() >= book.getY() - WARDEN_FLOOR_REACH;
+
+		helper.assertTrue(underTheBook, "The Warden appeared at " + appeared + ", not under the book at " + book);
 		assertAngryAt(helper, warden, player);
 		helper.succeed();
 	}
@@ -165,7 +182,9 @@ public class AncientCityBookGameTests {
 		List<Component> overlay = new ArrayList<>();
 		ServerPlayer player = arena.track(MockPlayers.survivalPlayerReadingOverlay(helper, overlay));
 
+		// A Warden would stand on the stone under the book, but the stone over it leaves no headroom.
 		helper.getLevel().setBlock(city.book().below(), Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
+		helper.getLevel().setBlock(city.book().above(), Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
 		SubspaceArena.teleport(player, city.inMidairAbove());
 
 		helper.assertFalse(StructureBooks.take(player, city.book()), "The book was taken");
@@ -240,8 +259,22 @@ public class AncientCityBookGameTests {
 	}
 
 	private static City placeCity(GameTestHelper helper, int index) {
+		return place(helper, Structures.plan(helper.getLevel(), BuiltinStructures.ANCIENT_CITY, takeChunk(index)));
+	}
+
+	// Plans cities along a row of their own until one has the centre.
+	private static StructureStart planWithCentre(ServerLevel level, Identifier centre) {
+		for (int i = 0; i < CENTRE_SCAN_ATTEMPTS; i++) {
+			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, new ChunkPos(FAR_CHUNK + i * CHUNKS_APART, FAR_CHUNK + 2 * CHUNKS_APART));
+
+			if (BastionBookGameTests.templateOf(start.getPieces().getFirst()).equals(Optional.of(centre))) return start;
+		}
+
+		throw new IllegalStateException("no city with " + centre + " in " + CENTRE_SCAN_ATTEMPTS + " plans");
+	}
+
+	private static City place(GameTestHelper helper, StructureStart start) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, takeChunk(index));
 		BlockPos book = buildCentre(level, start);
 
 		Structures.register(level, start);
@@ -264,8 +297,9 @@ public class AncientCityBookGameTests {
 		return BastionBookGameTests.bookPieces(start).getFirst().spot();
 	}
 
-	// The portal frame stands in one vertical plane: the book is a few blocks out from it, within its span.
-	private static void assertInFrontOfThePortal(GameTestHelper helper, ServerLevel level, StructurePiece centre, BlockPos book, String where) {
+	// The portal frame stands in one vertical plane. The altar is out from its middle, on the axis the city's entrance
+	// lines up with; the frame is an even number of blocks wide, so that axis is half a block off its exact middle.
+	private static void assertAboveTheAltar(GameTestHelper helper, ServerLevel level, StructurePiece centre, BlockPos book, String where) {
 		List<BlockPos> frame = BlockPos.betweenClosedStream(centre.getBoundingBox())
 			.filter(pos -> level.getBlockState(pos).is(Blocks.REINFORCED_DEEPSLATE))
 			.map(BlockPos::immutable)
@@ -278,20 +312,30 @@ public class AncientCityBookGameTests {
 		int alongMax = facesX ? span.maxZ() : span.maxX();
 
 		helper.assertTrue(facesX || span.getZSpan() == 1, "the portal in " + where + " stands in one plane");
-		helper.assertValueEqual(Math.abs(out), BEFORE_THE_PORTAL, "how far " + where + " is out from the portal");
-		helper.assertTrue(along > alongMin && along < alongMax, where + " is within the portal's span");
-		helper.assertTrue(book.getY() > span.minY() - BEFORE_THE_PORTAL * 3 && book.getY() < span.minY(), where + " is below the portal, on the plaza");
+		helper.assertValueEqual(Math.abs(out), ALTAR_OUT, "how far " + where + " is out from the portal");
+		helper.assertValueEqual(Math.abs(2 * along - (alongMin + alongMax)), 1, "how far, in half blocks, " + where + " is off the portal's middle");
+		helper.assertTrue(book.getY() < span.minY(), where + " is below the portal, over the plaza");
 	}
 
+	// The fallback stands a Warden on the first floor under the book, within reach.
 	private static void assertRoomForAWardenUnder(GameTestHelper helper, ServerLevel level, BlockPos book, String where) {
-		BlockPos feet = book.below();
-		BlockState floor = level.getBlockState(feet.below());
+		for (int depth = 1; depth <= WARDEN_FLOOR_REACH; depth++) {
+			BlockPos below = book.below(depth);
+			VoxelShape floor = level.getBlockState(below).getCollisionShape(level, below);
 
-		helper.assertTrue(Block.isFaceFull(floor.getCollisionShape(level, feet.below()), Direction.UP), "the floor under " + where + " is full");
-		helper.assertTrue(
-			level.noCollision(EntityTypes.WARDEN.getSpawnAABB(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5)),
-			"a Warden has room under " + where
-		);
+			if (floor.isEmpty()) continue;
+
+			double feet = below.getY() + floor.max(Direction.Axis.Y);
+
+			helper.assertTrue(
+				level.noCollision(EntityTypes.WARDEN.getSpawnAABB(below.getX() + 0.5, feet, below.getZ() + 0.5)),
+				"a Warden has room on the floor under " + where
+			);
+
+			return;
+		}
+
+		helper.fail("no floor within " + WARDEN_FLOOR_REACH + " blocks under " + where);
 	}
 
 	private static void assertTaken(GameTestHelper helper, City city, ServerPlayer player) {

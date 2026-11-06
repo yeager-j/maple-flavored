@@ -14,8 +14,8 @@ Every structure book is a prize with a cost. The Ancient City's is Swift Sneak, 
 
 ## Decisions
 
-1. **Spot.** `StructureBookSpots.ancientCity`: the start piece, if it places one of the three city centres, with the book at local (10, 11, 23) through `inPoolElement`, so rotation is handled. That's head height above the plaza floor directly in front of the portal, 2.5 blocks off its centre line. Placement is `OPEN`. A city whose start isn't a known centre (a datapack's) gets no book.
-2. **The book's spot for a Warden** is the block under the book, where a Warden stands on the plaza floor with the book at its chest. Checked and spawned in one call, `SpawnUtil.trySpawnMob(WARDEN, TRIGGERED, level, book.below(), 1, 0, 0, ON_TOP_OF_COLLIDER, false)`, so it's rechecked at the moment of taking, with vanilla's emerging animation.
+1. **Spot.** `StructureBookSpots.ancientCity`: the start piece, if it places one of the three city centres, with the book at local (7, 11, 20) through `inPoolElement`, so rotation is handled. That's head height above the centre block of the altar in front of the portal, on the axis the city's entrance lines up with (Jackson's hand check: the first spot, 3 blocks off that axis, looked off centre). Centre 3 marks it with a chiseled block between two tile walls; centre 1 is flat there; centre 2's altar is a sunken pit with a bottom-slab floor. Placement is `OPEN`. A city whose start isn't a known centre (a datapack's) gets no book.
+2. **The book's spot for a Warden** is the first floor under the book, up to 4 blocks down (the pit's slab floor), checked as it is at the moment of taking: border, then `Warden.checkSpawnObstruction` (no liquid, no player in the way, room for its whole box). It spawns with the `TRIGGERED` reason, so it emerges. Vanilla's `ON_TOP_OF_COLLIDER` strategy isn't used, since it needs a full top face and the pit's floor is slabs.
 3. **Taking.** `StructureBooks.take` gains one step, after the lock and inventory checks (so a refused take for those spawns nothing) and before the book is given: if the book is in an Ancient City (`getStructureWithPieceAt(pos, ANCIENT_CITY)`, as the Bastion finds itself), summon its Warden: `spawnNear(level, player)`, else the book's spot. If neither has room, the player gets the overlay message "No room here for the book's Warden" and nothing changes. Otherwise the take goes on as before, firing `TAKEN`.
 4. **Angry.** The Warden gets 150 anger at the player, the most a Warden holds, so it's still angry when it has emerged and roared, about 70 seconds in all, and vibrations keep it going from there. Not a game rule: the spec only says "angry".
 5. **Module.** A new `structurebooks.AncientCityWarden` holds the Ancient City's wake: whether a book is the city's, and summoning its Warden. It depends on `wardensummoning.WardenSummoning`; nothing depends back.
@@ -51,12 +51,12 @@ Cities are planned at their own far chunks; the GameTest world is flat near the 
 
 - Planning: every city planned holds exactly one book, Swift Sneak, in its start piece; `enchantmentsFor(ANCIENT_CITY)` is Swift Sneak.
 - Room: for each of the three centres (planning until each is seen), the built book's chunk has the book at its spot, a full floor under the block below it and no collision for a Warden's box there.
-- Portal: in each built centre, the book is 3 blocks out from the portal frame's plane and within the frame's span along it, found from the reinforced deepslate, independent of the spot's local coordinates.
+- Altar: in each built centre, the book is 6 blocks out from the portal frame's plane and half a block off its middle, found from the reinforced deepslate, independent of the spot's local coordinates; in centre 3 it's over the chiseled block.
 - Taking (alone in its batch, `SubspaceArena` for cleanup): the player stands on a floor laid high above the city, so the near ring is sure to have room, and takes the book (`take` has no reach check). They hold Swift Sneak I, the block is gone, one Warden is 5–15 blocks across from them, angry at them, owning a Subspace.
 - Full inventory in a city: refused, with no Warden or Subspace, the book in place.
 - Peaceful, and `spawn_wardens` off: the book is taken and no Warden appears.
-- Blocked search: the player hangs in midair well above the city's top, so the search has nothing within its scans; the Warden rises standing under the book, angry.
-- Fully blocked: the same, with stone in the block under the book; the take is refused with the message, the book stays, there's no Warden and the player has no book.
+- Blocked search, in the pit centre: the player hangs in midair near the build limit, so the search has nothing within its scans; the Warden rises standing on the floor under the book, angry.
+- Fully blocked: the same, with stone under and over the book; the take is refused with the message, the book stays, there's no Warden and the player has no book.
 - Existing structure book, Bastion and Warden summoning tests keep passing.
 
 ## Exclusions
