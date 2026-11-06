@@ -1,0 +1,31 @@
+{
+  "parent": "maple_flavored:nether/obtain_ancient_ember",
+  "criteria": {
+    "alloy_ingot": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#maple_flavored:alloy_ingots"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.nether.smelt_alloy_ingot.description"
+    },
+    "icon": {
+      "id": "maple_flavored:steel_ingot"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.nether.smelt_alloy_ingot.title"
+    }
+  },
+  "requirements": [
+    [
+      "alloy_ingot"
+    ]
+  ]
+}

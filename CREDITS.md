@@ -22,5 +22,11 @@ Each reused asset is listed with its original path, its author, and whether it w
 - `assets/maple_flavored/textures/item/pith.png`: Matcha Flavoured's Pith, `assets/minecraft/textures/item/turtle_scute.png` by Klei, from the 1.12.8-beta mod jar. Unchanged.
 
 - `assets/maple_flavored/textures/environment/subspace_shell.png`: Minecraft's `assets/minecraft/textures/environment/end_sky.png` by Mojang Studios, recoloured sculk teal by Jackson Yeager.
+- `assets/maple_flavored/textures/item/steel_ingot.png`, `electrum_ingot.png`, `shakudo_ingot.png` and `adamant_ingot.png`: Matcha Flavoured's Steel, Electrum, Shakudo and Adamant by Klei, at commit `71c6e65`: `MF_resourcepack/assets/matcha/textures/item/steel_alloy.png` and `MF_resourcepack/assets/minecraft/textures/item/heart_of_the_sea.png`, `shulker_shell.png` and `netherite_ingot.png`. Unchanged.
+- `assets/maple_flavored/textures/item/orichalcum_ingot.png`: Matcha Flavoured's Electrum (`MF_resourcepack/assets/minecraft/textures/item/heart_of_the_sea.png`) by Klei, at commit `71c6e65`, recoloured emerald green by Jackson Yeager.
+- `assets/maple_flavored/textures/block/{steel,electrum,shakudo,adamant,orichalcum}_block.png`: Minecraft's `assets/minecraft/textures/block/netherite_block.png` by Mojang Studios, recoloured in each Alloy ingot's colours by Jackson Yeager.
+- `assets/maple_flavored/textures/item/ancient_ember.png`: Minecraft's `assets/minecraft/textures/item/fire_charge.png` by Mojang Studios, recoloured by Jackson Yeager.
+- `assets/maple_flavored/textures/block/alloy_furnace_{front,front_on,side,top}.png` and `alloy_furnace_front_on.png.mcmeta`: Minecraft's `assets/minecraft/textures/block/blast_furnace_{front,front_on,side,top}.png` and its animation file by Mojang Studios, recoloured to blackstone and gold by Jackson Yeager.
+- `assets/maple_flavored/textures/gui/container/alloy_furnace.png`: Minecraft's `assets/minecraft/textures/gui/container/furnace.png` by Mojang Studios, with its input slot doubled and its flame and fuel slot moved by Jackson Yeager.
 
 Matcha's own credits name other authors for some assets (for example the 3D food models, fish models and music). Credit those authors rather than Klei.

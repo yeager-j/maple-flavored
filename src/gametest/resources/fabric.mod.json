@@ -40,7 +40,8 @@
 			"mapleflavored.gametest.WitherGameTests",
 			"mapleflavored.gametest.WardenSummoningGameTests",
 			"mapleflavored.gametest.AncientCityBookGameTests",
-			"mapleflavored.gametest.ShriekerPulseGameTests"
+			"mapleflavored.gametest.ShriekerPulseGameTests",
+			"mapleflavored.gametest.AlloyGameTests"
 		]
 	},
 	"mixins": [

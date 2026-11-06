@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "electrum_ingot",
+  "ingredients": [
+    "maple_flavored:electrum_block"
+  ],
+  "result": {
+    "count": 9,
+    "id": "maple_flavored:electrum_ingot"
+  }
+}

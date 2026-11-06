@@ -1,0 +1,8 @@
+{
+  "type": "maple_flavored:alloying",
+  "base": "minecraft:netherite_ingot",
+  "addition": "minecraft:copper_block",
+  "result": {
+    "id": "maple_flavored:shakudo_ingot"
+  }
+}

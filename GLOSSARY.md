@@ -38,7 +38,7 @@ A material made from a Netherite Ingot and a storage block: Steel from iron, Ele
 The block that smelts a Netherite Ingot and a storage block into an Alloy ingot, using an Ancient Ember as fuel.
 
 **Ancient Ember**:
-The Alloy Furnace's fuel, dropped by Piglin Brutes when a player kills them. One makes one Alloy ingot.
+The Alloy Furnace's fuel, dropped by Piglin Brutes when a player kills them and found in Bastion chests alongside ancient debris. One makes one Alloy ingot.
 _Avoid_: Brute Ember
 
 **Material unit**:

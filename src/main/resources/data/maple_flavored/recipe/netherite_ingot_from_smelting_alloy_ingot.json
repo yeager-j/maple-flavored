@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 0.0,
+  "group": "netherite_ingot",
+  "ingredient": "#maple_flavored:alloy_ingots",
+  "result": {
+    "id": "minecraft:netherite_ingot"
+  }
+}

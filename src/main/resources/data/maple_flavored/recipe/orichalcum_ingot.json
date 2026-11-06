@@ -1,0 +1,8 @@
+{
+  "type": "maple_flavored:alloying",
+  "base": "minecraft:netherite_ingot",
+  "addition": "minecraft:emerald_block",
+  "result": {
+    "id": "maple_flavored:orichalcum_ingot"
+  }
+}
