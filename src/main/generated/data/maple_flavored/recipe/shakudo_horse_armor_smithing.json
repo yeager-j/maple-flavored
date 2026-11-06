@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "maple_flavored:shakudo_ingot",
+  "base": [
+    "minecraft:netherite_horse_armor",
+    "maple_flavored:steel_horse_armor",
+    "maple_flavored:electrum_horse_armor",
+    "maple_flavored:adamant_horse_armor",
+    "maple_flavored:orichalcum_horse_armor"
+  ],
+  "result": {
+    "id": "maple_flavored:shakudo_horse_armor"
+  }
+}

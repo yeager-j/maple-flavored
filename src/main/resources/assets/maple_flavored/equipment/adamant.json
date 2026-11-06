@@ -1,0 +1,29 @@
+{
+  "layers": {
+    "horse_body": [
+      {
+        "texture": "maple_flavored:adamant"
+      }
+    ],
+    "humanoid": [
+      {
+        "texture": "maple_flavored:adamant"
+      }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "maple_flavored:adamant"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "maple_flavored:adamant"
+      }
+    ],
+    "nautilus_body": [
+      {
+        "texture": "maple_flavored:adamant"
+      }
+    ]
+  }
+}

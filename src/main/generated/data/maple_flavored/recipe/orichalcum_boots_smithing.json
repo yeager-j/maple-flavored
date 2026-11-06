@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "maple_flavored:orichalcum_ingot",
+  "base": [
+    "minecraft:netherite_boots",
+    "maple_flavored:steel_boots",
+    "maple_flavored:electrum_boots",
+    "maple_flavored:shakudo_boots",
+    "maple_flavored:adamant_boots"
+  ],
+  "result": {
+    "id": "maple_flavored:orichalcum_boots"
+  }
+}

@@ -9,6 +9,7 @@
 		"BaseSpawnerMixin",
 		"BeaconBlockEntityMixin",
 		"BeardifierMixin",
+		"BlockBehaviourMixin",
 		"BrushableBlockEntityAccessor",
 		"ChestBlockEntityMixin",
 		"ChiseledBookShelfBlockMixin",

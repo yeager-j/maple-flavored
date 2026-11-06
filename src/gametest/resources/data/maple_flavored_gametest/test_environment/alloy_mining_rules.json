@@ -1,0 +1,8 @@
+{
+	"type": "minecraft:game_rules",
+	"rules": {
+		"maple_flavored:shakudo_mining_bonus": 0,
+		"maple_flavored:adamant_hardness_cap": 50,
+		"maple_flavored:adamant_bedrock_break_time": 100
+	}
+}

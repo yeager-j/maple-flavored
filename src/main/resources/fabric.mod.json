@@ -9,7 +9,8 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": ["mapleflavored.MapleFlavored"],
-		"client": ["mapleflavored.client.MapleFlavoredClient"]
+		"client": ["mapleflavored.client.MapleFlavoredClient"],
+		"fabric-datagen": ["mapleflavored.client.datagen.MapleDataGenerator"]
 	},
 	"mixins": [
 		"maple_flavored.mixins.json",

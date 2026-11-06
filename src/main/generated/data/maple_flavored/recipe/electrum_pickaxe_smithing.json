@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "maple_flavored:electrum_ingot",
+  "base": [
+    "minecraft:netherite_pickaxe",
+    "maple_flavored:steel_pickaxe",
+    "maple_flavored:shakudo_pickaxe",
+    "maple_flavored:adamant_pickaxe",
+    "maple_flavored:orichalcum_pickaxe"
+  ],
+  "result": {
+    "id": "maple_flavored:electrum_pickaxe"
+  }
+}

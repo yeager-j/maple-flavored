@@ -34,6 +34,9 @@ _Avoid_: Divine Fragment
 **Alloy**:
 A material made from a Netherite Ingot and a storage block: Steel from iron, Electrum from gold, Shakudo from copper, Adamant from diamond, or Orichalcum from emerald. Each improves on Netherite in its own way.
 
+**Alloy gear**:
+The Alloy version of a Netherite item, made at a Smithing Table from the Netherite item, or another Alloy's version of it, and one Alloy ingot, with no template. It has Netherite's stats plus its Alloy's traits, and is repaired and enchanted with its own Alloy ingot.
+
 **Alloy Furnace**:
 The block that smelts a Netherite Ingot and a storage block into an Alloy ingot, using an Ancient Ember as fuel.
 
