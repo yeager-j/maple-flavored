@@ -17,7 +17,6 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.illager.AbstractIllager;
 import net.minecraft.world.entity.player.Player;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Orichalcum armor's Illager neutrality: an Illager, and an Evoker's Vexes, won't attack a player wearing any Orichalcum
@@ -35,25 +34,39 @@ public final class IllagerNeutrality {
 		builder -> builder.persistent(Codec.unboundedMap(UUIDUtil.STRING_CODEC, Codec.LONG))
 	);
 
+	// Marks a Vex an Illager summoned, since its owner stops resolving once the Illager dies or unloads. Saved with the Vex.
+	private static final AttachmentType<Boolean> ILLAGER_VEX = AttachmentRegistry.create(
+		MapleFlavored.id("illager_vex"),
+		builder -> builder.persistent(Codec.BOOL)
+	);
+
 	private IllagerNeutrality() {
 	}
 
-	/** Registers the Illagers' saved anger. Call once from {@link Alloys#register()}. */
+	/** Registers the Illagers' saved anger and Vexes' Illager owners. Call once from {@link Alloys#register()}. */
 	static void register() {
 	}
 
 	/**
 	 * Whether the mob leaves the target alone: an Illager, or a Vex an Illager summoned, facing a player in Orichalcum the
-	 * Illager isn't raiding or angry at.
+	 * Illager isn't raiding or angry at. A Vex whose Illager is gone leaves every Orichalcum wearer alone.
 	 */
 	public static boolean isNeutralTo(Mob attacker, LivingEntity target) {
-		AbstractIllager illager = attacker instanceof Vex vex ? asIllager(vex.getOwner()) : asIllager(attacker);
+		if (!(target instanceof Player player) || AlloyGear.piecesWorn(player, Alloy.ORICHALCUM) == 0) return false;
 
-		if (illager == null || !(target instanceof Player player)) return false;
+		if (attacker instanceof AbstractIllager illager) return isNeutral(illager, player);
 
-		if (AlloyGear.piecesWorn(player, Alloy.ORICHALCUM) == 0 || illager.hasActiveRaid()) return false;
+		if (!(attacker instanceof Vex vex)) return false;
 
-		return !isAngryAt(illager, player);
+		return vex.getOwner() instanceof AbstractIllager owner ? isNeutral(owner, player) : vex.hasAttached(ILLAGER_VEX);
+	}
+
+	/**
+	 * Remembers that an Illager summoned the Vex, so it stays neutral once the Illager is gone. Call whenever a Vex gets an
+	 * owner.
+	 */
+	public static void ownerSet(Vex vex, Mob owner) {
+		if (owner instanceof AbstractIllager) vex.setAttached(ILLAGER_VEX, true);
 	}
 
 	/**
@@ -86,8 +99,8 @@ public final class IllagerNeutrality {
 		illager.setAttached(ANGER, anger);
 	}
 
-	private static @Nullable AbstractIllager asIllager(@Nullable LivingEntity entity) {
-		return entity instanceof AbstractIllager illager ? illager : null;
+	private static boolean isNeutral(AbstractIllager illager, Player player) {
+		return !illager.hasActiveRaid() && !isAngryAt(illager, player);
 	}
 
 	private static boolean isAngryAt(AbstractIllager illager, Player player) {

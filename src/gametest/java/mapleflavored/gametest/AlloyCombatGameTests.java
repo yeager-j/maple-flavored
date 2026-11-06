@@ -160,12 +160,11 @@ public class AlloyCombatGameTests {
 
 		vindicator.hurtServer(level, level.damageSources().playerAttack(player), 1.0F);
 
-		// The environment's anger lasts 20 ticks.
-		helper.runAfterDelay(10, () -> assertTargets(helper, vindicator, player));
-		helper.runAfterDelay(TARGETING_TICKS + 20, () -> {
-			helper.assertTrue(vindicator.getTarget() == null, "the Vindicator has no target once its anger wore off");
-			helper.succeed();
-		});
+		// The environment's anger lasts 60 ticks: long enough for the Vindicator to turn on the player first.
+		helper.startSequence()
+			.thenWaitUntil(() -> assertTargets(helper, vindicator, player))
+			.thenWaitUntil(() -> helper.assertTrue(vindicator.getTarget() == null, "the Vindicator still targets the player"))
+			.thenSucceed();
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
@@ -209,6 +208,21 @@ public class AlloyCombatGameTests {
 		wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
 
 		Vex vex = vexOf(helper, helper.spawnWithNoFreeWill(EntityTypes.EVOKER, HIDDEN_POS));
+
+		helper.runAfterDelay(TARGETING_TICKS, () -> {
+			helper.assertTrue(vex.getTarget() == null, "the Vex has no target");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
+	public void aVexStaysNeutralAfterItsEvokerIsGone(GameTestHelper helper) {
+		wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
+
+		Evoker evoker = helper.spawnWithNoFreeWill(EntityTypes.EVOKER, HIDDEN_POS);
+		Vex vex = vexOf(helper, evoker);
+
+		evoker.discard();
 
 		helper.runAfterDelay(TARGETING_TICKS, () -> {
 			helper.assertTrue(vex.getTarget() == null, "the Vex has no target");

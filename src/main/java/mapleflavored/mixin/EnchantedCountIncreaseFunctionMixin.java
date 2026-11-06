@@ -33,9 +33,10 @@ public abstract class EnchantedCountIncreaseFunctionMixin {
 		int countBefore = drop.getCount();
 		ItemStack result = original.call(drop, context);
 
-		OrichalcumDrops.addCountBonus(result, countBefore, enchantment, OrichalcumDrops.killerWeapon(context), context.getRandom());
+		boolean bonusAdded = OrichalcumDrops.addCountBonus(result, countBefore, enchantment, OrichalcumDrops.killerWeapon(context), context.getRandom());
 
-		if (hasLimit()) result.limitSize(limit);
+		// Vanilla caps its own bonus; only a count the bonus grew needs capping again.
+		if (bonusAdded && hasLimit()) result.limitSize(limit);
 
 		return result;
 	}

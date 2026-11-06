@@ -68,6 +68,7 @@
 		"ThrowableProjectileMixin",
 		"ThrownEnderpearlMixin",
 		"TridentItemMixin",
+		"VexMixin",
 		"WardenEntitySensorMixin",
 		"WardenSpawnTrackerAccessor",
 		"WitherBossMixin",

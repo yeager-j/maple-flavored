@@ -53,6 +53,12 @@ public class OrichalcumDropsGameTests {
 	}
 
 	@GameTest
+	public void heldOrichalcumArmorGivesNoBonus(GameTestHelper helper) {
+		helper.assertValueEqual(blockDrop(helper, "orichalcum_fortune_stone", tool(Alloy.ORICHALCUM, GearKind.BOOTS)), 10, "stone from held Orichalcum boots");
+		helper.succeed();
+	}
+
+	@GameTest
 	public void theBonusAddsHalfTheCountBeforeFortuneOnTopOfFortune(GameTestHelper helper) {
 		// Vanilla's roll comes first from the same seed, so Fortune III gives both pickaxes the same count before the bonus.
 		int orichalcum = blockDrop(helper, "orichalcum_fortune_stone", enchanted(helper, tool(Alloy.ORICHALCUM, GearKind.PICKAXE), Enchantments.FORTUNE));
@@ -81,6 +87,16 @@ public class OrichalcumDropsGameTests {
 		helper.assertValueEqual(count(roll(helper, "orichalcum_looting_stone", victim, orichalcum), Items.STONE), 15, "stone killed with Orichalcum");
 		helper.assertValueEqual(count(roll(helper, "orichalcum_looting_stone", victim, netherite), Items.STONE), 10, "stone killed with Netherite");
 		helper.assertValueEqual(count(roll(helper, "orichalcum_looting_stone_limited", victim, orichalcum), Items.STONE), 12, "stone capped at 12");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void aLootingLimitStillOnlyCapsVanillasOwnBonusWithoutOrichalcum(GameTestHelper helper) {
+		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, VICTIM_POS);
+		ServerPlayer netherite = holding(helper, new ItemStack(Items.NETHERITE_SWORD));
+
+		// Vanilla skips its limit of 5 without Looting.
+		helper.assertValueEqual(count(roll(helper, "orichalcum_looting_stone_low_limit", victim, netherite), Items.STONE), 10, "stone killed with Netherite");
 		helper.succeed();
 	}
 

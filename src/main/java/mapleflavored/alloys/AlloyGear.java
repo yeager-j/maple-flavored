@@ -59,8 +59,8 @@ public final class AlloyGear {
 	}
 
 	/** The kind of gear the stack is, or empty if it isn't Alloy gear. */
-	public static Optional<GearKind> kindOf(ItemStack stack) {
-		return pieceOf(stack).map(Piece::kind);
+	public static Optional<GearKind> kindOf(ItemInstance item) {
+		return pieceOf(item).map(Piece::kind);
 	}
 
 	/** How many pieces of the Alloy's gear the entity wears in its armor slots, mob body armor included. */

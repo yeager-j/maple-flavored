@@ -1,7 +1,6 @@
 package mapleflavored.alloys;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import mapleflavored.MapleFlavored;
 import mapleflavored.mixin.LootItemAccessor;
@@ -24,7 +23,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Orichalcum tools' drop bonus: on drops that Fortune or Looting affect, an Orichalcum tool adds half of the drop again,
+ * Orichalcum tools' drop bonus: on drops that Fortune or Looting affect, an Orichalcum tool or weapon adds half of the drop again,
  * on top of what the enchantment adds, at any enchantment level. A count gains half the count it had before Fortune or
  * Looting; a Looting chance gains half its unenchanted chance. Drops in the {@code maple_flavored:no_orichalcum_bonus}
  * item tag (Ancient Embers, Pith and enchanted books) never gain it.
@@ -47,23 +46,27 @@ public final class OrichalcumDrops {
 	}
 
 	/**
-	 * Adds the bonus to a drop a Fortune or Looting count function just changed, if the item it used is Orichalcum.
+	 * Adds the bonus to a drop a Fortune or Looting count function just changed, if the item it used is an Orichalcum tool
+	 * or weapon.
 	 *
 	 * @param drop the function's result, grown in place
 	 * @param countBefore the drop's count before the function
-	 * @param heldItem the tool or weapon the function read the enchantment from
+	 * @param heldItem the item the function read the enchantment from
+	 * @return whether the bonus applied, so the function's own limit should cap the result again
 	 */
-	public static void addCountBonus(
+	public static boolean addCountBonus(
 		ItemStack drop, int countBefore, Holder<Enchantment> enchantment, @Nullable ItemInstance heldItem, RandomSource random
 	) {
-		if (drop.is(NO_BONUS) || !appliesTo(enchantment, heldItem)) return;
+		if (drop.is(NO_BONUS) || !appliesTo(enchantment, heldItem)) return false;
 
 		drop.grow(Mth.floor(countBefore * BONUS + random.nextFloat()));
+
+		return true;
 	}
 
 	/**
 	 * The chance a Looting chance condition passes at: {@code chance}, plus half of {@code unenchantedChance} if the item it
-	 * used is Orichalcum and the drop it guards isn't excluded.
+	 * used is an Orichalcum tool or weapon and the drop it guards isn't excluded.
 	 */
 	public static float withChanceBonus(float chance, float unenchantedChance, Holder<Enchantment> enchantment, @Nullable ItemInstance heldItem) {
 		if (EXCLUDED_DEPTH.get()[0] > 0 || !appliesTo(enchantment, heldItem)) return chance;
@@ -113,6 +116,8 @@ public final class OrichalcumDrops {
 	private static boolean appliesTo(Holder<Enchantment> enchantment, @Nullable ItemInstance heldItem) {
 		boolean fortuneOrLooting = enchantment.is(Enchantments.FORTUNE) || enchantment.is(Enchantments.LOOTING);
 
-		return fortuneOrLooting && heldItem != null && AlloyGear.alloyOf(heldItem).equals(Optional.of(Alloy.ORICHALCUM));
+		if (!fortuneOrLooting || heldItem == null) return false;
+
+		return AlloyGear.alloyOf(heldItem).orElse(null) == Alloy.ORICHALCUM && AlloyGear.kindOf(heldItem).map(GearKind::isHeld).orElse(false);
 	}
 }

@@ -5,7 +5,7 @@
 		{
 			"type": "minecraft:game_rules",
 			"rules": {
-				"maple_flavored:orichalcum_illager_anger_time": 20
+				"maple_flavored:orichalcum_illager_anger_time": 60
 			}
 		}
 	]
