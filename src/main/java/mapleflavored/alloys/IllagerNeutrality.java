@@ -13,12 +13,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.monster.illager.AbstractIllager;
 import net.minecraft.world.entity.player.Player;
+import org.jspecify.annotations.Nullable;
 
 /**
- * Orichalcum armor's Illager neutrality: an Illager won't attack a player wearing any Orichalcum piece, as a Piglin won't
- * attack one wearing gold. It still attacks them in a raid, and while it's angry at them: for
+ * Orichalcum armor's Illager neutrality: an Illager, and an Evoker's Vexes, won't attack a player wearing any Orichalcum
+ * piece, as a Piglin won't attack one wearing gold. It still attacks them in a raid, and while it's angry at them: for
  * {@link MapleGameRules#ORICHALCUM_ILLAGER_ANGER_TIME} after they attack it or an Illager it can see nearby, or after a
  * book alert ({@link #anger}).
  */
@@ -39,9 +42,14 @@ public final class IllagerNeutrality {
 	static void register() {
 	}
 
-	/** Whether the Illager leaves the target alone: a player in Orichalcum it isn't raiding or angry at. */
-	public static boolean isNeutralTo(AbstractIllager illager, LivingEntity target) {
-		if (!(target instanceof Player player)) return false;
+	/**
+	 * Whether the mob leaves the target alone: an Illager, or a Vex an Illager summoned, facing a player in Orichalcum the
+	 * Illager isn't raiding or angry at.
+	 */
+	public static boolean isNeutralTo(Mob attacker, LivingEntity target) {
+		AbstractIllager illager = attacker instanceof Vex vex ? asIllager(vex.getOwner()) : asIllager(attacker);
+
+		if (illager == null || !(target instanceof Player player)) return false;
 
 		if (AlloyGear.piecesWorn(player, Alloy.ORICHALCUM) == 0 || illager.hasActiveRaid()) return false;
 
@@ -76,6 +84,10 @@ public final class IllagerNeutrality {
 		anger.values().removeIf(end -> end <= now);
 		anger.put(player.getUUID(), until);
 		illager.setAttached(ANGER, anger);
+	}
+
+	private static @Nullable AbstractIllager asIllager(@Nullable LivingEntity entity) {
+		return entity instanceof AbstractIllager illager ? illager : null;
 	}
 
 	private static boolean isAngryAt(AbstractIllager illager, Player player) {

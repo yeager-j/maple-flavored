@@ -5,6 +5,7 @@ import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyGear;
 import mapleflavored.alloys.Alloys;
 import mapleflavored.alloys.GearKind;
+import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -20,6 +21,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -32,56 +35,109 @@ import net.minecraft.world.phys.Vec3;
  * a count function started with, or half a chance's unenchanted chance. Ancient Embers, Pith and enchanted books never
  * get it.
  *
- * <p>The fixture tables in {@code maple_flavored_gametest:loot_table} start each drop at 10, so the bonus is a whole 5
- * and the counts are exact.
+ * <p>The fixture tables in {@code maple_flavored_gametest:loot_table} start each counted drop at 10, so the bonus is a
+ * whole 5 and the counts are exact.
  */
 public class OrichalcumDropsGameTests {
 	private static final int ROLLS = 200;
-	private static final int BRUTE_ROLLS = 2000;
+	private static final int RATE_ROLLS = 2000;
 	private static final long SEED = 7L;
 	private static final double DROP_RATE_TOLERANCE = 0.03;
+	private static final BlockPos VICTIM_POS = new BlockPos(1, 1, 1);
 
 	@GameTest
 	public void anOrichalcumPickaxeAddsHalfToFortuneDrops(GameTestHelper helper) {
-		helper.assertValueEqual(blockDrop(helper, "orichalcum_fortune_stone", AlloyGear.of(Alloy.ORICHALCUM, GearKind.PICKAXE)), 15, "stone from an Orichalcum pickaxe");
-		helper.assertValueEqual(blockDrop(helper, "orichalcum_fortune_stone", Items.NETHERITE_PICKAXE), 10, "stone from a Netherite pickaxe");
+		helper.assertValueEqual(blockDrop(helper, "orichalcum_fortune_stone", tool(Alloy.ORICHALCUM, GearKind.PICKAXE)), 15, "stone from an Orichalcum pickaxe");
+		helper.assertValueEqual(blockDrop(helper, "orichalcum_fortune_stone", new ItemStack(Items.NETHERITE_PICKAXE)), 10, "stone from a Netherite pickaxe");
 		helper.succeed();
 	}
 
 	@GameTest
-	public void fortuneDropsOfAncientEmbersGetNoBonus(GameTestHelper helper) {
-		helper.assertValueEqual(blockDrop(helper, "orichalcum_fortune_ember", AlloyGear.of(Alloy.ORICHALCUM, GearKind.PICKAXE)), 10, "Embers from an Orichalcum pickaxe");
+	public void theBonusAddsHalfTheCountBeforeFortuneOnTopOfFortune(GameTestHelper helper) {
+		// Vanilla's roll comes first from the same seed, so Fortune III gives both pickaxes the same count before the bonus.
+		int orichalcum = blockDrop(helper, "orichalcum_fortune_stone", enchanted(helper, tool(Alloy.ORICHALCUM, GearKind.PICKAXE), Enchantments.FORTUNE));
+		int netherite = blockDrop(helper, "orichalcum_fortune_stone", enchanted(helper, new ItemStack(Items.NETHERITE_PICKAXE), Enchantments.FORTUNE));
+
+		helper.assertValueEqual(orichalcum - netherite, 5, "the stone Orichalcum adds to Fortune III's " + netherite);
+		helper.succeed();
+	}
+
+	@GameTest
+	public void fortuneDropsOfEmbersPithAndEnchantedBooksGetNoBonus(GameTestHelper helper) {
+		List<ItemStack> drops = blockDrops(helper, "orichalcum_fortune_excluded", tool(Alloy.ORICHALCUM, GearKind.PICKAXE));
+
+		helper.assertValueEqual(count(drops, Alloys.ANCIENT_EMBER), 10, "Embers from an Orichalcum pickaxe");
+		helper.assertValueEqual(count(drops, MapleItems.PITH), 10, "Pith from an Orichalcum pickaxe");
+		helper.assertValueEqual(count(drops, Items.ENCHANTED_BOOK), 10, "enchanted books from an Orichalcum pickaxe");
 		helper.succeed();
 	}
 
 	@GameTest
 	public void anOrichalcumWeaponAddsHalfToLootingDropsWithinTheirLimit(GameTestHelper helper) {
-		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(1, 1, 1));
-		ServerPlayer orichalcum = holding(helper, AlloyGear.of(Alloy.ORICHALCUM, GearKind.SWORD));
-		ServerPlayer netherite = holding(helper, Items.NETHERITE_SWORD);
+		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, VICTIM_POS);
+		ServerPlayer orichalcum = holding(helper, tool(Alloy.ORICHALCUM, GearKind.SWORD));
+		ServerPlayer netherite = holding(helper, new ItemStack(Items.NETHERITE_SWORD));
 
-		helper.assertValueEqual(count(roll(helper, fixture(helper, "orichalcum_looting_stone"), victim, orichalcum), Items.STONE), 15, "stone killed with Orichalcum");
-		helper.assertValueEqual(count(roll(helper, fixture(helper, "orichalcum_looting_stone"), victim, netherite), Items.STONE), 10, "stone killed with Netherite");
-		helper.assertValueEqual(count(roll(helper, fixture(helper, "orichalcum_looting_stone_limited"), victim, orichalcum), Items.STONE), 12, "stone capped at 12");
+		helper.assertValueEqual(count(roll(helper, "orichalcum_looting_stone", victim, orichalcum), Items.STONE), 15, "stone killed with Orichalcum");
+		helper.assertValueEqual(count(roll(helper, "orichalcum_looting_stone", victim, netherite), Items.STONE), 10, "stone killed with Netherite");
+		helper.assertValueEqual(count(roll(helper, "orichalcum_looting_stone_limited", victim, orichalcum), Items.STONE), 12, "stone capped at 12");
 		helper.succeed();
 	}
 
 	@GameTest
-	public void anOrichalcumWeaponAddsHalfTheUnenchantedChanceToLootingChances(GameTestHelper helper) {
-		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(1, 1, 1));
+	public void theBonusAddsHalfTheCountBeforeLootingOnTopOfLooting(GameTestHelper helper) {
+		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, VICTIM_POS);
+		ServerPlayer orichalcum = holding(helper, enchanted(helper, tool(Alloy.ORICHALCUM, GearKind.SWORD), Enchantments.LOOTING));
+		ServerPlayer netherite = holding(helper, enchanted(helper, new ItemStack(Items.NETHERITE_SWORD), Enchantments.LOOTING));
+
+		// The fixture adds 1 per Looting level to 10.
+		helper.assertValueEqual(count(roll(helper, "orichalcum_looting_stone", victim, netherite), Items.STONE), 13, "stone killed with Netherite and Looting III");
+		helper.assertValueEqual(count(roll(helper, "orichalcum_looting_stone", victim, orichalcum), Items.STONE), 18, "stone killed with Orichalcum and Looting III");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void anOrichalcumWeaponCanLiftALootingChanceToCertain(GameTestHelper helper) {
+		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, VICTIM_POS);
 		LootTable table = fixture(helper, "orichalcum_looting_chance_stone");
 
 		// 70% plus half of 70% is over 100%, so every roll drops; 70% alone misses some of 200.
-		helper.assertValueEqual(dropRolls(helper, table, victim, holding(helper, AlloyGear.of(Alloy.ORICHALCUM, GearKind.SWORD)), Items.STONE), ROLLS, "drops with Orichalcum");
-		helper.assertTrue(dropRolls(helper, table, victim, holding(helper, Items.NETHERITE_SWORD), Items.STONE) < ROLLS, "every roll drops with Netherite");
+		helper.assertValueEqual(dropRolls(helper, table, victim, holding(helper, tool(Alloy.ORICHALCUM, GearKind.SWORD)), Items.STONE), ROLLS, "rolls that drop with Orichalcum");
+		helper.assertTrue(dropRolls(helper, table, victim, holding(helper, new ItemStack(Items.NETHERITE_SWORD)), Items.STONE) < ROLLS, "every roll drops with Netherite");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void theChanceBonusIsHalfTheUnenchantedChanceWithOrWithoutLooting(GameTestHelper helper) {
+		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, VICTIM_POS);
+		LootTable table = fixture(helper, "orichalcum_looting_chance_low");
+		ServerPlayer netherite = holding(helper, new ItemStack(Items.NETHERITE_SWORD));
+		ServerPlayer orichalcum = holding(helper, tool(Alloy.ORICHALCUM, GearKind.SWORD));
+		ServerPlayer orichalcumLooting = holding(helper, enchanted(helper, tool(Alloy.ORICHALCUM, GearKind.SWORD), Enchantments.LOOTING));
+
+		// 20% unenchanted, 40% with Looting; Orichalcum adds half of 20% to each.
+		assertNear(helper, dropRate(helper, table, victim, netherite, Items.STONE), 0.2, "the drop rate with Netherite");
+		assertNear(helper, dropRate(helper, table, victim, orichalcum, Items.STONE), 0.3, "the drop rate with Orichalcum");
+		assertNear(helper, dropRate(helper, table, victim, orichalcumLooting, Items.STONE), 0.5, "the drop rate with Orichalcum and Looting III");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void anEmberPoolsChanceGetsNoBonusAndTheNextPoolDoes(GameTestHelper helper) {
+		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, VICTIM_POS);
+		LootTable table = fixture(helper, "orichalcum_looting_chance_after_ember");
+		ServerPlayer orichalcum = holding(helper, tool(Alloy.ORICHALCUM, GearKind.SWORD));
+
+		helper.assertTrue(dropRolls(helper, table, victim, orichalcum, Alloys.ANCIENT_EMBER) < ROLLS, "every roll drops an Ember with Orichalcum");
+		helper.assertValueEqual(dropRolls(helper, table, victim, orichalcum, Items.STONE), ROLLS, "rolls that drop stone after the Ember pool");
 		helper.succeed();
 	}
 
 	@GameTest
 	public void anAncientEmberEntrysChanceGetsNoBonus(GameTestHelper helper) {
-		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(1, 1, 1));
+		Mob victim = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, VICTIM_POS);
 		LootTable table = fixture(helper, "orichalcum_looting_chance_ember_entry");
-		int drops = dropRolls(helper, table, victim, holding(helper, AlloyGear.of(Alloy.ORICHALCUM, GearKind.SWORD)), Alloys.ANCIENT_EMBER);
+		int drops = dropRolls(helper, table, victim, holding(helper, tool(Alloy.ORICHALCUM, GearKind.SWORD)), Alloys.ANCIENT_EMBER);
 
 		helper.assertTrue(drops < ROLLS, "every roll drops an Ember with Orichalcum");
 		helper.succeed();
@@ -89,54 +145,67 @@ public class OrichalcumDropsGameTests {
 
 	@GameTest
 	public void piglinBrutesDropEmbersNoMoreOftenToOrichalcum(GameTestHelper helper) {
-		Mob brute = helper.spawnWithNoFreeWill(EntityTypes.PIGLIN_BRUTE, new BlockPos(1, 1, 1));
+		Mob brute = helper.spawnWithNoFreeWill(EntityTypes.PIGLIN_BRUTE, VICTIM_POS);
 		LootTable table = helper.getLevel().getServer().reloadableRegistries().getLootTable(brute.getLootTable().orElseThrow());
-		ServerPlayer player = holding(helper, AlloyGear.of(Alloy.ORICHALCUM, GearKind.SWORD));
-		RandomSource random = RandomSource.create(SEED);
-		int drops = 0;
+		ServerPlayer player = holding(helper, tool(Alloy.ORICHALCUM, GearKind.SWORD));
 
-		for (int roll = 0; roll < BRUTE_ROLLS; roll++) {
-			if (count(table.getRandomItems(entityParams(helper, brute, player), random), Alloys.ANCIENT_EMBER) > 0) drops++;
-		}
-
-		double rate = (double) drops / BRUTE_ROLLS;
-
-		helper.assertTrue(Math.abs(rate - 0.25) <= DROP_RATE_TOLERANCE, "Ember drop rate " + rate + " is within " + DROP_RATE_TOLERANCE + " of 0.25");
+		assertNear(helper, dropRate(helper, table, brute, player, Alloys.ANCIENT_EMBER), 0.25, "the Ember drop rate with Orichalcum");
 		helper.succeed();
 	}
 
-	private static ServerPlayer holding(GameTestHelper helper, Item item) {
+	private static ItemStack tool(Alloy alloy, GearKind kind) {
+		return new ItemStack(AlloyGear.of(alloy, kind));
+	}
+
+	// The stack with the enchantment at level III.
+	private static ItemStack enchanted(GameTestHelper helper, ItemStack stack, ResourceKey<Enchantment> enchantment) {
+		stack.enchant(helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(enchantment), 3);
+
+		return stack;
+	}
+
+	private static ServerPlayer holding(GameTestHelper helper, ItemStack item) {
 		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
-		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(item));
+		player.setItemInHand(InteractionHand.MAIN_HAND, item);
 
 		return player;
 	}
 
+	private static int blockDrop(GameTestHelper helper, String name, ItemStack tool) {
+		return blockDrops(helper, name, tool).stream().mapToInt(ItemStack::getCount).sum();
+	}
+
 	// Rolls a fixture block table as if the tool broke stone, once, from a seeded random.
-	private static int blockDrop(GameTestHelper helper, String name, Item tool) {
-		ServerLevel level = helper.getLevel();
-		LootParams params = new LootParams.Builder(level)
+	private static List<ItemStack> blockDrops(GameTestHelper helper, String name, ItemStack tool) {
+		LootParams params = new LootParams.Builder(helper.getLevel())
 			.withParameter(LootContextParams.BLOCK_STATE, Blocks.STONE.defaultBlockState())
 			.withParameter(LootContextParams.ORIGIN, helper.absoluteVec(Vec3.ZERO))
-			.withParameter(LootContextParams.TOOL, new ItemStack(tool))
+			.withParameter(LootContextParams.TOOL, tool)
 			.create(LootContextParamSets.BLOCK);
-		List<ItemStack> drops = fixture(helper, name).getRandomItems(params, RandomSource.create(SEED));
 
-		return drops.stream().mapToInt(ItemStack::getCount).sum();
+		return fixture(helper, name).getRandomItems(params, RandomSource.create(SEED));
 	}
 
-	private static List<ItemStack> roll(GameTestHelper helper, LootTable table, Mob victim, ServerPlayer killer) {
-		return table.getRandomItems(entityParams(helper, victim, killer), RandomSource.create(SEED));
+	private static List<ItemStack> roll(GameTestHelper helper, String name, Mob victim, ServerPlayer killer) {
+		return fixture(helper, name).getRandomItems(entityParams(helper, victim, killer), RandomSource.create(SEED));
 	}
 
-	// How many of ROLLS rolls drop the item, from one seeded random.
 	private static int dropRolls(GameTestHelper helper, LootTable table, Mob victim, ServerPlayer killer, Item item) {
+		return droppingRolls(helper, table, victim, killer, item, ROLLS);
+	}
+
+	private static double dropRate(GameTestHelper helper, LootTable table, Mob victim, ServerPlayer killer, Item item) {
+		return (double) droppingRolls(helper, table, victim, killer, item, RATE_ROLLS) / RATE_ROLLS;
+	}
+
+	// How many of the rolls drop the item, from one seeded random.
+	private static int droppingRolls(GameTestHelper helper, LootTable table, Mob victim, ServerPlayer killer, Item item, int rolls) {
 		LootParams params = entityParams(helper, victim, killer);
 		RandomSource random = RandomSource.create(SEED);
 		int drops = 0;
 
-		for (int roll = 0; roll < ROLLS; roll++) {
+		for (int roll = 0; roll < rolls; roll++) {
 			if (count(table.getRandomItems(params, random), item) > 0) drops++;
 		}
 
@@ -160,6 +229,10 @@ public class OrichalcumDropsGameTests {
 		ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("maple_flavored_gametest", name));
 
 		return helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
+	}
+
+	private static void assertNear(GameTestHelper helper, double rate, double expected, String what) {
+		helper.assertTrue(Math.abs(rate - expected) <= DROP_RATE_TOLERANCE, what + " " + rate + " is within " + DROP_RATE_TOLERANCE + " of " + expected);
 	}
 
 	private static int count(List<ItemStack> stacks, Item item) {

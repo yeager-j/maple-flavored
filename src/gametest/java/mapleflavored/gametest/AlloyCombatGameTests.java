@@ -18,6 +18,8 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.equine.Horse;
+import net.minecraft.world.entity.monster.Vex;
+import net.minecraft.world.entity.monster.illager.Evoker;
 import net.minecraft.world.entity.monster.illager.Vindicator;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.raid.Raid;
@@ -29,8 +31,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Alloy armor's code traits: Steel, Electrum and Orichalcum take a share off sonic booms and explosions, fire, and magic
- * per piece; Piglins treat Electrum as gold; and Illagers leave Orichalcum wearers alone until a raid, an attack or a
- * book alert.
+ * per piece; Piglins treat Electrum as gold; and Illagers and their Vexes leave Orichalcum wearers alone until a raid,
+ * an attack or a book alert.
  */
 public class AlloyCombatGameTests {
 	private static final float HIT = 4.0F;
@@ -187,6 +189,50 @@ public class AlloyCombatGameTests {
 		helper.assertTrue(vindicator.canAttack(alerted), "the Vindicator can attack the alerted player");
 		helper.assertFalse(vindicator.canAttack(bystander), "the Vindicator can attack the other Orichalcum wearer");
 		helper.succeedWhen(() -> assertTargets(helper, vindicator, alerted));
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
+	public void anIllagerDropsAPlayerWhoPutsOnOrichalcum(GameTestHelper helper) {
+		ServerPlayer player = wearing(helper, EquipmentSlot.FEET, Items.NETHERITE_BOOTS);
+		Vindicator vindicator = helper.spawn(EntityTypes.VINDICATOR, ILLAGER_POS);
+
+		helper.startSequence()
+			.thenWaitUntil(() -> assertTargets(helper, vindicator, player))
+			.thenExecute(() -> player.setItemSlot(EquipmentSlot.FEET, new ItemStack(AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS))))
+			.thenIdle(TARGETING_TICKS)
+			.thenExecute(() -> helper.assertTrue(vindicator.getTarget() == null, "the Vindicator has no target"))
+			.thenSucceed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
+	public void anEvokersVexesLeaveOrichalcumWearersAlone(GameTestHelper helper) {
+		wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
+
+		Vex vex = vexOf(helper, helper.spawnWithNoFreeWill(EntityTypes.EVOKER, HIDDEN_POS));
+
+		helper.runAfterDelay(TARGETING_TICKS, () -> {
+			helper.assertTrue(vex.getTarget() == null, "the Vex has no target");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
+	public void anAngryEvokersVexesAttackOrichalcumWearers(GameTestHelper helper) {
+		ServerPlayer player = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
+		Evoker evoker = helper.spawnWithNoFreeWill(EntityTypes.EVOKER, HIDDEN_POS);
+		Vex vex = vexOf(helper, evoker);
+
+		IllagerNeutrality.anger(helper.getLevel(), evoker, player);
+
+		helper.succeedWhen(() -> helper.assertTrue(vex.getTarget() == player, "the Vex targets the player, not " + vex.getTarget()));
+	}
+
+	private static Vex vexOf(GameTestHelper helper, Evoker evoker) {
+		Vex vex = helper.spawn(EntityTypes.VEX, ILLAGER_POS.above());
+
+		vex.setOwner(evoker);
+
+		return vex;
 	}
 
 	private static List<Item> alloySet(Alloy alloy) {
