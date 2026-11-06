@@ -9,8 +9,10 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
 
@@ -30,6 +32,11 @@ public final class Grounded {
 		new GroundedEffect()
 	);
 
+	// Long enough to bridge top-ups, short enough to wear off soon after the player leaves what Grounds them. Topping up
+	// before it runs low keeps it from flickering.
+	private static final int EFFECT_TICKS = 60;
+	private static final int TOP_UP_TICKS = 40;
+
 	// Vanilla's pearl gravity is 0.03. A playtest value: a flat throw lands about 4 blocks out instead of 13, and the
 	// longest throw reaches about 11 blocks instead of 51.
 	private static final double HEAVY_PEARL_GRAVITY = 0.2;
@@ -48,6 +55,18 @@ public final class Grounded {
 	/** Registers the effect. Call once from mod init. */
 	public static void register() {
 		// Registration happens when the class loads; this call makes sure it loads during mod init.
+	}
+
+	/**
+	 * Keeps the player Grounded a few seconds longer. Call every tick something should keep them Grounded; it wears off
+	 * soon after the calls stop. A longer Grounded is left alone.
+	 */
+	public static void keepGrounded(ServerPlayer player) {
+		MobEffectInstance current = player.getEffect(EFFECT);
+
+		if (current != null && !current.endsWithin(TOP_UP_TICKS - 1)) return;
+
+		player.addEffect(new MobEffectInstance(EFFECT, EFFECT_TICKS, 0, false, false));
 	}
 
 	/** Whether the entity is Grounded. */

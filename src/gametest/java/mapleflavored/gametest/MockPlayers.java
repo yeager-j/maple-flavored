@@ -2,6 +2,7 @@ package mapleflavored.gametest;
 
 import com.mojang.authlib.GameProfile;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -57,6 +58,24 @@ final class MockPlayers {
 		return player;
 	}
 
+	/** A loaded mock player in Survival with 10 Max Hearts that adds each overlay message it is sent to {@code overlay}. */
+	static ServerPlayer survivalPlayerReadingOverlay(GameTestHelper helper, List<Component> overlay) {
+		var cookie = newCookie();
+		ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation()) {
+			@Override
+			public void sendSystemMessage(Component message, boolean isOverlay) {
+				if (isOverlay) overlay.add(message);
+
+				super.sendSystemMessage(message, isOverlay);
+			}
+		};
+
+		place(helper, player, cookie);
+		player.setGameMode(GameType.SURVIVAL);
+
+		return player;
+	}
+
 	/**
 	 * A loaded mock player in Survival with 10 Max Hearts. Unlike {@link GameTestHelper#makeMockServerPlayerInLevel},
 	 * whose player always reports Creative, mobs can target it.
@@ -75,13 +94,43 @@ final class MockPlayers {
 		return CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-mock-player"), false);
 	}
 
-	// Placed the way GameTestHelper.makeMockServerPlayerInLevel places its mock player.
-	private static void place(GameTestHelper helper, ServerPlayer player, CommonListenerCookie cookie) {
-		Connection connection = new Connection(PacketFlow.SERVERBOUND);
+	/**
+	 * A loaded mock player in Survival with 10 Max Hearts, with the channel its connection writes to, where every packet
+	 * the server sends it can be read.
+	 */
+	static Listening survivalPlayerWithChannel(GameTestHelper helper) {
+		var cookie = newCookie();
+		ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
+		EmbeddedChannel channel = place(helper, player, cookie);
 
-		new EmbeddedChannel(connection);
+		player.setGameMode(GameType.SURVIVAL);
+
+		return new Listening(player, channel);
+	}
+
+	/** A mock player and the channel the server's packets to it are written to. */
+	record Listening(ServerPlayer player, EmbeddedChannel channel) {
+		/** The packets sent since this was last called, of the type. */
+		<P> List<P> sent(Class<P> type) {
+			List<P> packets = new ArrayList<>();
+
+			for (Object message = channel.readOutbound(); message != null; message = channel.readOutbound()) {
+				if (type.isInstance(message)) packets.add(type.cast(message));
+			}
+
+			return packets;
+		}
+	}
+
+	// Placed the way GameTestHelper.makeMockServerPlayerInLevel places its mock player.
+	private static EmbeddedChannel place(GameTestHelper helper, ServerPlayer player, CommonListenerCookie cookie) {
+		Connection connection = new Connection(PacketFlow.SERVERBOUND);
+		EmbeddedChannel channel = new EmbeddedChannel(connection);
+
 		helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
 		finishLoading(player);
+
+		return channel;
 	}
 
 	/** Fails the test unless the player has these Max Hearts and the max health they give. */

@@ -70,7 +70,7 @@ An area a boss opens around itself to shut down the cheapest way of avoiding its
 _Avoid_: Domain, aura
 
 **Grounded**:
-An effect that stops Elytra gliding, greatly increases Ender Pearl gravity to shorten throws, and stops Riptide and Zephyr's double jump.
+An effect that stops Elytra gliding, greatly increases Ender Pearl gravity to shorten throws, and stops Riptide and Zephyr's double jump. It applies inside a Warden's Subspace, and inside an Ancient City until its book is taken.
 _Avoid_: Heavy, gravity
 
 **Warden Territory**:
@@ -80,10 +80,10 @@ _Avoid_: Warden zone
 ### Enchanting
 
 **Keeper**:
-One of the three Piglin Brutes chosen when a Bastion is planned whose deaths unlock its book. Any death counts. A refused take makes the keepers still alive glow and sends trails to them.
+One of up to three guards chosen when a structure is planned, which unlock its book once all are gone. A Bastion's keepers are Piglin Brutes: any death counts, and a refused take makes the living ones glow and sends trails to them. An Ancient City's keepers are sculk shriekers placed in a ring near its edge: breaking them by any means counts, and a refused take sends trails to the ones still standing.
 
 **Structure book**:
-The one level I enchanted book a structure or Dungeon holds, in a fixed spot. Most float where they can be seen. Buried Treasure keeps its book in the treasure chest, Trail Ruins keep theirs in one suspicious gravel, and a Dungeon's spawner holds its book and drops it with its Pith once Cleared and broken. Mineshaft cave spider spawners each hold a Bane of Arthropods book the same way, besides the Mineshaft's own book. The Nether Fortress's book is locked until every Blaze spawner the fortress generated with is Cleared, and a Bastion's until its keepers are dead. Taking it can wake the structure.
+The one level I enchanted book a structure or Dungeon holds, in a fixed spot. Most float where they can be seen. Buried Treasure keeps its book in the treasure chest, Trail Ruins keep theirs in one suspicious gravel, and a Dungeon's spawner holds its book and drops it with its Pith once Cleared and broken. Mineshaft cave spider spawners each hold a Bane of Arthropods book the same way, besides the Mineshaft's own book. The Nether Fortress's book is locked until every Blaze spawner the fortress generated with is Cleared, and a Bastion's or Ancient City's until its keepers are gone. Taking it can wake the structure, as a Bastion's, Stronghold's or Woodland Mansion's does.
 _Avoid_: Floating book, book pedestal
 
 **Library**:

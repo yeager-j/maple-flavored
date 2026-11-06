@@ -20,7 +20,8 @@ Enchanting stops being a loot box. Enchantments are found in the world as books 
 
 - Every book found is level I. Two books of a level combine in the anvil into the next level, so a level n book takes 2^(n-1) finds.
 - Most books float in a fixed spot in a structure: one book per structure, per world, guaranteed. A structure with several possible enchantments is given one when it generates.
-- Some books wake their structure when taken. The Ancient City's spawns an angry Warden with a barrierless Subspace of 100 block radius, applying Darkness and Grounded (see [Mob changes](05-mob-changes.md)). A Bastion's angers every Piglin. Taking a Stronghold's or Woodland Mansion's alerts every Illager nearby and turns them hostile, even to Orichalcum. Other structures don't wake; finding them is the challenge.
+- Some books wake their structure when taken. A Bastion's angers every Piglin. Taking a Stronghold's or Woodland Mansion's alerts every Illager nearby and turns them hostile, even to Orichalcum. Other structures don't wake; finding them is the challenge.
+- The Ancient City's book wakes nothing, since a Warden should come only from poor play. It's locked until three keeper shriekers in a ring near the city's edge are broken, and players inside the city are Grounded until it's taken, so it can't be flown in and out for.
 - Strongholds are filled with Illagers. Blood Moons Restore them, so reaching the End Portal is a fight.
 - Some books are chance drops. Illagers drop some, including from Strongholds, and Evokers can drop several. Illagers spawned by a raid don't, except raid-only drops such as Knockback from Ravagers.
 - The Ender Dragon drops a Zephyr book and the Wither a Blight book, every kill.
@@ -117,5 +118,7 @@ From [Getting villagers and removing villages](08-villagers-and-villages.md):
 - The Library progress bar now has a defined measure, Library Progress: the sum of the highest level shelved for each enchantment, over a Full Library's 130. Its first reward before Mending is the enchanted golden apple's Regeneration II at 15%, with more apple effects to follow (see Brewing). The table also takes golden apples, with a block of gold as their material unit.
 
 From [The role of XP](12-role-of-xp.md): repairs cost no XP, so the anvil charges points only for combining books (50 × the resulting level) and renaming (10). The anvil can't apply books to gear, the grindstone gives no XP, and the crafting grid and grindstone can't combine damaged items.
+
+Jackson's change on 2026-11-05: taking the Ancient City's book no longer summons an angry Warden. Summoning one punished the correct play of finding and taking the book, while the Warden is meant to punish being loud in the Deep Dark. The lock follows the Fortress's and the Bastion's, and the city's Grounded stops an Elytra grab once the Warden no longer guards the book. Keepers are chosen from the city's sculk patch origins, which are fixed when it's planned. Its shriekers aren't, since none are in the templates (see `docs/research/vanilla-ancient-city-sculk.md`). The full rule is in the spec and ticket 28.
 
 From [Advancements](17-advancements.md): a golden apple saved at the table with effects becomes the vanilla `enchanted_golden_apple` item, and the grindstone turns it back into a `golden_apple`, so A Balanced Diet still works. The reworked table must still fire vanilla's `enchanted_item` trigger for Enchanter.

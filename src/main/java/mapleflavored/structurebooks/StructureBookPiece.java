@@ -63,7 +63,8 @@ public class StructureBookPiece extends StructurePiece {
 	 * A book at {@code spot} that gives {@code enchantment} at level I, following the piece at {@code anchorIndex} in
 	 * the structure's pieces.
 	 *
-	 * @param keepers the origins of the pieces that place the Brutes locking the book, if Brutes lock it
+	 * @param keepers the origins of the pieces that place the keepers locking the book, Brutes or shriekers, if keepers
+	 * lock it
 	 */
 	StructureBookPiece(
 		BlockPos spot,
@@ -116,7 +117,10 @@ public class StructureBookPiece extends StructurePiece {
 		return enchantment;
 	}
 
-	/** The origins of the pieces that place the keeper Brutes locking the book, or none when Brutes don't lock it. */
+	/**
+	 * The origins of the pieces that place the keepers locking the book: Brutes for a Bastion, sculk patches for an
+	 * Ancient City. None when keepers don't lock it.
+	 */
 	public List<BlockPos> keepers() {
 		return keepers;
 	}

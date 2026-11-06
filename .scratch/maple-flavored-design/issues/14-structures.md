@@ -30,7 +30,7 @@ Dungeons generate at Matcha Flavoured's frequency, so early Pith isn't too rare:
 ### Books
 
 - The Nether Fortress's book is locked, visibly caged or chained, until every Blaze spawner that generated in that fortress is Cleared. Clearing is enough, so a blaze farm can stay. A fortress with no Blaze spawners has its book unlocked from the start. Taking it wakes nothing.
-- No other structure wakes when its book is taken beyond those [Enchanting](10-enchanting.md) named: the Ancient City, Bastion, Stronghold and Woodland Mansion.
+- No other structure wakes when its book is taken beyond those [Enchanting](10-enchanting.md) named: the Bastion, Stronghold and Woodland Mansion. The Ancient City's book is locked behind keeper shriekers instead (see Enchanting).
 - Stronghold Illagers are Restored by a [Blood Moon](15-blood-moons.md) only where the stone bricks family is still beneath their spot.
 
 ### Crystal Hearts and Pith in chests

@@ -1,0 +1,11 @@
+{
+	"item.echo_shard.shrieker_pulse": {
+		"sounds": [
+			{
+				"name": "entity.warden.heartbeat",
+				"type": "event"
+			}
+		],
+		"subtitle": "subtitles.maple_flavored.item.echo_shard.shrieker_pulse"
+	}
+}

@@ -369,7 +369,7 @@ public class FortressBookGameTests {
 	}
 
 	// Saves the level's locks and loads them back in their place, as a restart would.
-	private static void reloadBookLocks(ServerLevel level) {
+	static void reloadBookLocks(ServerLevel level) {
 		RegistryOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
 
 		level.getDataStorage().set(BookLocks.TYPE, BookLocks.TYPE.codec().parse(ops, savedBookLocks(level)).getOrThrow());

@@ -28,8 +28,8 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 /**
  * Every locked structure book in a level: the keys that lock it and which of them are done. A book can be taken once
  * all of its keys are done; a book with no lock here was never locked. The Nether Fortress's book is locked by the Blaze
- * spawners its fortress generated with, each done once Cleared, and a Bastion's by its keeper Brutes, each done once
- * it's gone for good.
+ * spawners its fortress generated with, each done once Cleared; a Bastion's by its keeper Brutes, each done once it's
+ * gone for good; and an Ancient City's by its keeper shriekers, each done once broken.
  *
  * <p>A lock is planned with its structure and recorded here before any read, whether or not the book's chunk has been
  * built. A done key stays done: a Cleared spawner still counts once it's broken.
@@ -50,7 +50,8 @@ public final class BookLocks extends SavedData {
 	private static final Queue<Planned> PLANNED = new ConcurrentLinkedQueue<>();
 
 	private final Map<BlockPos, Lock> locksByBook = new HashMap<>();
-	private final Map<BlockPos, BlockPos> booksBySpawner = new HashMap<>();
+	// The books locked by blocks, Blaze spawners and keeper shriekers, by each key's position.
+	private final Map<BlockPos, BlockPos> booksByBlockKey = new HashMap<>();
 
 	private BookLocks() {
 	}
@@ -92,6 +93,26 @@ public final class BookLocks extends SavedData {
 		if (lock == null || lock.kind() != Kind.BRUTES || !lock.keys().contains(key) || lock.done().contains(key)) return;
 
 		locks.markDone(level, lock, key);
+	}
+
+	/**
+	 * Marks a keeper shrieker's key done, if {@code key} is one: the shrieker is broken. Updates the book's clients once
+	 * that unlocks a loaded book.
+	 *
+	 * @param level the keeper's level, which is its book's
+	 */
+	static void markShriekerBroken(ServerLevel level, BlockPos key) {
+		BookLocks locks = of(level);
+		Lock lock = Optional.ofNullable(locks.booksByBlockKey.get(key)).map(locks.locksByBook::get).orElse(null);
+
+		if (lock == null || lock.kind() != Kind.SHRIEKERS || lock.done().contains(key)) return;
+
+		locks.markDone(level, lock, key);
+	}
+
+	/** Every lock of the kind in the level, locked or not. */
+	public static List<Lock> locksOf(ServerLevel level, Kind kind) {
+		return of(level).locksByBook.values().stream().filter(lock -> lock.kind() == kind).toList();
 	}
 
 	/** Whether the book at {@code book} can't be taken yet. */
@@ -149,9 +170,9 @@ public final class BookLocks extends SavedData {
 
 	private static void countCleared(ServerLevel level, BlockPos spawner) {
 		BookLocks locks = of(level);
-		BlockPos book = locks.booksBySpawner.get(spawner);
+		BlockPos book = locks.booksByBlockKey.get(spawner);
 
-		if (book == null) return;
+		if (book == null || locks.locksByBook.get(book).kind() != Kind.SPAWNERS) return;
 
 		locks.markDone(level, locks.locksByBook.get(book), spawner);
 	}
@@ -180,7 +201,7 @@ public final class BookLocks extends SavedData {
 	private void put(Lock lock) {
 		locksByBook.put(lock.book(), lock);
 
-		if (lock.kind() == Kind.SPAWNERS) lock.keys().forEach(spawner -> booksBySpawner.put(spawner, lock.book()));
+		if (lock.kind().isBlock()) lock.keys().forEach(key -> booksByBlockKey.put(key, lock.book()));
 	}
 
 	/** What locks a book, and when one of its keys is done. */
@@ -188,9 +209,27 @@ public final class BookLocks extends SavedData {
 		/** Blaze spawners, each done once Cleared. */
 		SPAWNERS,
 		/** Keeper Piglin Brutes, keyed by where each spawned, each done once it's gone for good. */
-		BRUTES;
+		BRUTES,
+		/**
+		 * Keeper sculk shriekers, keyed by the origin of the sculk patch each stands at, each done once broken. A keeper
+		 * stands at its origin, or on the patch's catalyst just above it.
+		 */
+		SHRIEKERS;
 
 		static final Codec<Kind> CODEC = Codec.STRING.xmap(Kind::valueOf, Kind::name);
+
+		/** Whether each key is a block at the key's position, found again by that position when it changes. */
+		boolean isBlock() {
+			return this != BRUTES;
+		}
+
+		/**
+		 * Whether the keys are keepers: guards one of the structure's pieces places, which the book's piece saves so that
+		 * building the piece can find them.
+		 */
+		public boolean isKeeper() {
+			return this != SPAWNERS;
+		}
 	}
 
 	/**

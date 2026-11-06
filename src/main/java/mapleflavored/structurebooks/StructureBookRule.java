@@ -2,6 +2,7 @@ package mapleflavored.structurebooks;
 
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -40,14 +41,15 @@ record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule s
 	@FunctionalInterface
 	interface LockRule {
 		/** Nothing locks the book. */
-		LockRule NONE = (pieces, random) -> BookLocks.Keys.NONE;
+		LockRule NONE = (pieces, book, random) -> BookLocks.Keys.NONE;
 
 		/**
 		 * The keys that lock the book, none when nothing does.
 		 *
+		 * @param book the book's spot as planned
 		 * @param random the book's planning random, so the same world seed picks the same keys
 		 */
-		BookLocks.Keys keys(List<StructurePiece> pieces, RandomSource random);
+		BookLocks.Keys keys(List<StructurePiece> pieces, BlockPos book, RandomSource random);
 	}
 
 	/**
