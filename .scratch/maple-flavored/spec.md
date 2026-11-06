@@ -283,8 +283,8 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 ### Worlds and multiplayer
 
 212. As a world creator, I want vanilla's difficulty setting to set the death rules, so that I don't learn a new setting.
-213. As a world creator, I want one intended experience with no design toggles beyond the three Keep game rules and the Warden Subspace playtest rules, so that every Maple world plays the same.
-214. As a member of a group, I want Max Hearts, the Heart Floor, Remnants and Enchantment Slots per player, while Libraries, structure books and spawner counts are shared, so that we play together and still stand apart.
+213. As a member of a group, I want Max Hearts, the Heart Floor, Remnants and Enchantment Slots per player, while Libraries, structure books and spawner counts are shared, so that we play together and still stand apart.
+214. As an explorer, I want a held Echo Shard to let me hear every sculk shrieker near me pulse from where it is, faster the closer I get, so that I can find a keeper hidden in a wall and pick my way around shriekers in the Deep Dark.
 
 ## Implementation Decisions
 
@@ -296,7 +296,6 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 - Prefer Fabric API events and hooks. Use mixins only where no event exists.
 - Per-player and per-block persistent state uses Fabric's data attachment system. Player state that must survive respawn is copied on respawn.
 - Balance numbers live in one place per system, so playtest tuning is a single edit.
-- There is no player-facing configuration for the design. Vanilla's difficulty and game rules, plus the three Keep game rules and the Warden Subspace playtest rules, are the only settings.
 
 ### Modules
 
@@ -380,6 +379,8 @@ Each module below hides its rules behind a small interface. Other modules call t
 
 **Grounded.** A registered status effect, applied inside a Warden Subspace and inside an Ancient City until its book is taken. It stops Elytra gliding the way Levitation does (no glide starts, and one under way ends), which also leaves Firework Rockets nothing to boost. It greatly increases the gravity of Ender Pearls thrown while Grounded and stops Riptide and Zephyr's double jump. Armored Elytra are Elytra, so it stops them too. Levitation, Slow Falling and Chorus Fruit still work.
 
+**Echo Shards.** A player holding an Echo Shard in either hand hears every sculk shrieker within the Echo Shard shrieker range (15 blocks) pulse like a Warden's heartbeat, from the shrieker's position, so 3D sound and directional subtitles ("Shrieker pulses") lead to it, even through walls. A pulse comes every 40 ticks at the edge of hearing, quickening evenly to every 6 ticks beside the shrieker. Only the holder hears it, and a pulse makes no vibration. Spectators hear nothing.
+
 **Warden summoning.** Replaces the vanilla rule. A shriek gives warning levels and cooldowns only to players in Warden Territory (the Deep Dark biome or an Ancient City's bounds). The Warden spawns 5 to 15 blocks from the player who caused the shriek, or the nearest player in Warden Territory if that player is outside it. With no room, the search widens to 50 blocks from that player. If that fails, the cooldown clears. With nobody in Warden Territory, the summon is cancelled.
 
 **Wither changes.** Its AI stays within 50 blocks of its Subspace's centre. It is immune to suffocation and passes through bedrock and obsidian. It drops a level I Blight book every kill.
@@ -448,6 +449,9 @@ Three more game rules hold Warden Subspace playtest values. Each applies to Subs
 - **Warden Subspace radius** (default 50): how many blocks a Warden's Subspace reaches.
 - **Warden sculk patch radius** (default 5): how many blocks from where a Warden appears its sculk patch may spread.
 - **Warden sculk patch charge** (default 150): how much sculk the patch spreads, as a sculk catalyst's charge. 0 spreads none.
+
+One more holds an Echo Shard playtest value:
+- **Echo Shard shrieker range** (default 15): how many blocks away a held Echo Shard hears sculk shriekers.
 
 ## Testing Decisions
 

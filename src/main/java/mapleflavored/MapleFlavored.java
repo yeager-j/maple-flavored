@@ -1,6 +1,7 @@
 package mapleflavored;
 
 import mapleflavored.advancements.MapleTriggers;
+import mapleflavored.echoshard.ShriekerPulses;
 import mapleflavored.enchanting.Enchanting;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.grounded.Grounded;
@@ -44,6 +45,7 @@ public class MapleFlavored implements ModInitializer {
 		Spawners.register();
 		Subspaces.register();
 		WardenSummoning.register();
+		ShriekerPulses.register();
 
 		LOGGER.info("Maple Flavored initialized");
 	}

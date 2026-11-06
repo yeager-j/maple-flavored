@@ -64,6 +64,8 @@
 	"enchantment.maple_flavored.blight": "Blight",
 	"enchantment.maple_flavored.zephyr": "Zephyr",
 	"entity.maple_flavored.remnant": "Remnant",
+	"gamerule.maple_flavored.echo_shard_shrieker_range": "Echo Shard shrieker range",
+	"gamerule.maple_flavored.echo_shard_shrieker_range.description": "How many blocks away a held Echo Shard hears sculk shriekers.",
 	"gamerule.maple_flavored.keep_hearts": "Keep Max Hearts after death",
 	"gamerule.maple_flavored.keep_hearts.description": "When on, death costs no Max Hearts.",
 	"gamerule.maple_flavored.keep_xp": "Keep XP after death",
@@ -76,6 +78,7 @@
 	"gamerule.maple_flavored.warden_subspace_radius.description": "How many blocks a Warden's Subspace reaches. Applies to Subspaces that open afterwards. Playtest value.",
 	"item.maple_flavored.crystal_heart": "Crystal Heart",
 	"item.maple_flavored.pith": "Pith",
+	"subtitles.maple_flavored.item.echo_shard.shrieker_pulse": "Shrieker pulses",
 	"tag.item.minecraft.stone_tool_materials": "Cobblestone",
 	"tag.item.minecraft.wooden_tool_materials": "Planks"
 }

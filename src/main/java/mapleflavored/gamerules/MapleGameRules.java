@@ -7,7 +7,8 @@ import net.minecraft.world.level.gamerules.GameRuleCategory;
 
 /**
  * Maple's game rules: those that set what death costs, each on its own, with vanilla's Keep Inventory as the third,
- * defaulting to on; and playtest values for Warden Subspaces, which apply to Subspaces that open after a change.
+ * defaulting to on; playtest values for Warden Subspaces, which apply to Subspaces that open after a change; and how far
+ * a held Echo Shard hears shriekers.
  */
 public final class MapleGameRules {
 	/** When on, death costs no Max Hearts. Off by default. */
@@ -40,6 +41,12 @@ public final class MapleGameRules {
 		.range(0, 10_000)
 		.category(GameRuleCategory.MOBS)
 		.buildAndRegister(MapleFlavored.id("warden_sculk_patch_charge"));
+
+	/** How far a held Echo Shard hears sculk shriekers, in blocks. */
+	public static final GameRule<Integer> ECHO_SHARD_SHRIEKER_RANGE = GameRuleBuilder.forInteger(15)
+		.range(1, 64)
+		.category(GameRuleCategory.PLAYER)
+		.buildAndRegister(MapleFlavored.id("echo_shard_shrieker_range"));
 
 	private MapleGameRules() {
 	}
