@@ -450,8 +450,9 @@ Three more game rules hold Warden Subspace playtest values. Each applies to Subs
 - **Warden sculk patch radius** (default 5): how many blocks from where a Warden appears its sculk patch may spread.
 - **Warden sculk patch charge** (default 150): how much sculk the patch spreads, as a sculk catalyst's charge. 0 spreads none.
 
-Two more hold Wither Subspace playtest values:
+Three more hold Wither playtest values:
 - **Wither Subspace radius** (default 100): how many blocks a Wither's Subspace reaches. It applies to Subspaces that open after it changes.
+- **Wither leash radius** (default 50): how many blocks from its Subspace's centre a Wither can move. It applies at once.
 - **Wither Subspace light level** (default 3): the light level clients draw everything inside a Wither's Subspace at. It applies at once.
 
 One more holds an Echo Shard playtest value:
@@ -544,7 +545,7 @@ The design left these small points open. This spec picks a default for each, and
 
 - Grounded's Ender Pearl gravity multiplier, which Mob changes left to playtesting.
 - The Warden Subspace's radius and its sculk patch's size and strength, set by playtest game rules.
-- The Wither Subspace's radius and light level, set by playtest game rules.
+- The Wither Subspace's radius and light level, and the Wither's leash, set by playtest game rules.
 - The Ancient City keeper ring: the 30-block minimum distance from the book and the 30° windows.
 - The exact book spot in each structure other than the Stronghold, whose book is in the portal room, chosen in that structure's build ticket by the manifesto's rule: the structure's most important spot, fixed and visible. Buried Treasure, Trail Ruins, Abandoned Camps and Shipwrecks need a spot chosen with care.
 - The Warden spawn search: the tickets say it widens "within the Subspace", which doesn't exist until the Warden spawns. This spec reads it as up to 50 blocks from the player.

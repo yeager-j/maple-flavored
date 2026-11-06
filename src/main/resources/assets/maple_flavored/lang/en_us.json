@@ -80,6 +80,8 @@
 	"gamerule.maple_flavored.warden_sculk_patch_radius.description": "How many blocks from where a Warden appears its sculk patch may spread. Playtest value.",
 	"gamerule.maple_flavored.warden_subspace_radius": "Warden Subspace radius",
 	"gamerule.maple_flavored.warden_subspace_radius.description": "How many blocks a Warden's Subspace reaches. Applies to Subspaces that open afterwards. Playtest value.",
+	"gamerule.maple_flavored.wither_leash_radius": "Wither leash radius",
+	"gamerule.maple_flavored.wither_leash_radius.description": "How many blocks from its Subspace's centre a Wither can move. Applies at once. Playtest value.",
 	"gamerule.maple_flavored.wither_subspace_light_level": "Wither Subspace light level",
 	"gamerule.maple_flavored.wither_subspace_light_level.description": "The light level everything inside a Wither's Subspace is drawn at. Applies at once. Playtest value.",
 	"gamerule.maple_flavored.wither_subspace_radius": "Wither Subspace radius",

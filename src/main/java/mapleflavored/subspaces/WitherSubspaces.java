@@ -23,8 +23,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The Wither's Subspace: every Wither opens one where it appears, as far as a game rule sets, and another game rule sets
- * the light level clients draw inside it. Withered Hearts can't return inside it, and the
- * Wither never moves further than 50 blocks from its centre, so it can't be lured away. Every player inside when the
+ * the light level clients draw inside it. Withered Hearts can't return inside it, and the Wither never moves further from
+ * its centre than a third game rule allows, 50 blocks by default, so it can't be lured away. Every player inside when the
  * Wither dies is credited with the kill.
  */
 public final class WitherSubspaces {
@@ -36,9 +36,6 @@ public final class WitherSubspaces {
 		MapleFlavored.id("wither_subspace_light_level"),
 		builder -> builder.syncWith(ByteBufCodecs.VAR_INT, AttachmentSyncPredicate.all())
 	);
-
-	/** How far from its Subspace's centre a Wither can move, in blocks. */
-	public static final int LEASH_RADIUS = 50;
 
 	// Rounding in a move's arithmetic, so a move ending on the leash's edge isn't undone.
 	private static final double LEASH_TOLERANCE = 1.0E-6;
@@ -67,11 +64,12 @@ public final class WitherSubspaces {
 
 	/**
 	 * Makes the Wither's move of {@code delta} with {@code move}, vanilla's call, kept on its leash: it never ends further
-	 * from its Subspace's centre than {@link #LEASH_RADIUS}, or than the Wither already is. A Wither without a Subspace
-	 * in its level moves freely. A piston's push past the leash is refused rather than turned along its edge.
+	 * from its Subspace's centre than the Wither leash radius game rule allows, or than the Wither already is. A Wither
+	 * without a Subspace in its level moves freely. A piston's push past the leash is refused rather than turned along its edge.
 	 */
 	public static void moveLeashed(WitherBoss wither, MoverType type, Vec3 delta, Consumer<Vec3> move) {
-		Subspace subspace = wither.level() instanceof ServerLevel level ? Subspaces.ownedBy(level, wither.getUUID()).orElse(null) : null;
+		ServerLevel level = wither.level() instanceof ServerLevel serverLevel ? serverLevel : null;
+		Subspace subspace = level == null ? null : Subspaces.ownedBy(level, wither.getUUID()).orElse(null);
 
 		if (subspace == null) {
 			move.accept(delta);
@@ -79,8 +77,12 @@ public final class WitherSubspaces {
 			return;
 		}
 
+		int leash = level.getGameRules().get(MapleGameRules.WITHER_LEASH_RADIUS);
 		Vec3 start = wither.position();
-		double limit = Math.max(LEASH_RADIUS, start.distanceTo(subspace.centre()));
+		double limit = Math.max(leash, start.distanceTo(subspace.centre()));
+
+		// The rule can change at any time, so the home its wandering flight stays in follows it.
+		leashHome(wither, subspace, leash);
 
 		// Vanilla keeps only the first axis a piston's push moves along, so turning the push would move the Wither sideways.
 		move.accept(type == MoverType.PISTON ? delta : leashed(start.subtract(subspace.centre()), delta, limit));
@@ -114,7 +116,7 @@ public final class WitherSubspaces {
 	}
 
 	// Every way a Wither appears adds it to a level, so this catches both building one and /summon. One that already
-	// has a Subspace is only loading again; its home keeps its wandering flight inside the leash.
+	// has a Subspace is only loading again.
 	private static void openOrLeash(Entity entity, ServerLevel level) {
 		if (!(entity instanceof WitherBoss wither) || !wither.isAlive()) return;
 
@@ -122,8 +124,14 @@ public final class WitherSubspaces {
 			Subspaces.open(level, wither, Subspace.Kind.WITHER, level.getGameRules().get(MapleGameRules.WITHER_SUBSPACE_RADIUS));
 		}
 
-		Subspaces.ownedBy(level, wither.getUUID())
-			.ifPresent(subspace -> wither.setHomeTo(BlockPos.containing(subspace.centre()), LEASH_RADIUS));
+		int leash = level.getGameRules().get(MapleGameRules.WITHER_LEASH_RADIUS);
+
+		Subspaces.ownedBy(level, wither.getUUID()).ifPresent(subspace -> leashHome(wither, subspace, leash));
+	}
+
+	// The home keeps the Wither's wandering flight picking spots within its leash.
+	private static void leashHome(WitherBoss wither, Subspace subspace, int leash) {
+		wither.setHomeTo(BlockPos.containing(subspace.centre()), leash);
 	}
 
 	// The Subspace ends while its dying Wither is still in the level. A Wither discarded, such as by Peaceful, isn't

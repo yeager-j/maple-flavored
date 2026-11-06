@@ -6,6 +6,7 @@
 			"type": "minecraft:game_rules",
 			"rules": {
 				"maple_flavored:wither_subspace_radius": 60,
+				"maple_flavored:wither_leash_radius": 20,
 				"maple_flavored:wither_subspace_light_level": 7
 			}
 		}

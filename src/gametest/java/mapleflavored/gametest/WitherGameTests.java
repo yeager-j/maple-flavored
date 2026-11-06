@@ -108,12 +108,18 @@ public class WitherGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:wither_rules", maxTicks = 100)
-	public void gameRulesSetTheSubspacesRadiusAndLightLevel(GameTestHelper helper) {
+	public void gameRulesSetTheSubspacesRadiusLeashAndLightLevel(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
+		WitherBoss wither = arena.stillWither(new Vec3(0.0, 5.0, 0.0));
+		Vec3 centre = wither.position();
 
-		arena.stillWither(Vec3.ZERO);
-		helper.assertValueEqual(Subspaces.containing(level, arena.centre()).getFirst().radius(), 60.0, "the Subspace's radius");
+		helper.assertValueEqual(Subspaces.containing(level, centre).getFirst().radius(), 60.0, "the Subspace's radius");
+
+		place(wither, centre.add(18.0, 0.0, 0.0));
+		wither.move(MoverType.SELF, new Vec3(5.0, 0.0, 0.0));
+		helper.assertTrue(Math.abs(wither.position().distanceTo(centre) - 20.0) < EPSILON, "the Wither stops at its 20-block leash");
+		helper.assertValueEqual(wither.getHomeRadius(), 20, "the radius the Wither's wandering keeps to");
 
 		helper.startSequence()
 			.thenExecuteAfter(1, () -> helper.assertValueEqual(WitherSubspaces.lightLevel(level), 7, "the light level clients draw"))
