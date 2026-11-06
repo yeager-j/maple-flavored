@@ -44,6 +44,9 @@
 			"mapleflavored.gametest.AlloyGameTests",
 			"mapleflavored.gametest.AlloyGearGameTests",
 			"mapleflavored.gametest.AlloyMiningGameTests"
+		],
+		"fabric-client-gametest": [
+			"mapleflavored.gametest.client.PortalTrimClientGameTest"
 		]
 	},
 	"mixins": [

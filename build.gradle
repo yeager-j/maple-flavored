@@ -25,7 +25,7 @@ fabricApi {
 	configureTests {
 		createSourceSet = true
 		modId = "maple_flavored_gametest"
-		enableClientGameTests = false
+		enableClientGameTests = true
 	}
 }
 

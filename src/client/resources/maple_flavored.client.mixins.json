@@ -6,6 +6,7 @@
 		"AnvilScreenMixin",
 		"ClientLevelMixin",
 		"EntityRendererMixin",
+		"EquipmentLayerRendererMixin",
 		"HudMixin",
 		"LightCoordsUtilMixin",
 		"SmithingScreenMixin"
