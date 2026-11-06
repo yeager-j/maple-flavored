@@ -62,3 +62,8 @@ Kill an Elder Guardian with a friend at ~60 blocks; survive a Warden until it di
 
 - Whether shared Free the End credit is wanted (design says yes in prose; ticket bullet is silent). Going with design.
 - Fabric AFTER_DEATH firing for the dragon's die() (handleKillingBlow is overridden and doesn't set `dead`). Test 3/4 will prove it.
+
+## Revision (Jackson, 2026-11-05, after PR review)
+
+- No new Survive the Warden advancement: vanilla Sneak 100 (`minecraft:adventure/avoid_vibration`) is overridden instead. Its criterion becomes `maple_flavored:warden_survived`, its frame a goal, and it rewards a Crystal Heart. The title stays, and the description is new.
+- Credit goes to every non-spectator player within the `warden_survival_range` game rule (default 50, applies at once) of the Warden, not to everyone inside its Subspace, when it dies or digs down. It moves into `BossKillCredit`: on death through `AFTER_DEATH`, and on digging down through `DiggingMixin`. The Subspace helper refactor is reverted, since nothing shares it any more.

@@ -33,8 +33,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The boss rewards: an Elder Guardian's 2 Pith and its Crystal Heart for every player within 64 blocks, the Ender Dragon's
- * Zephyr book and Free the End's Crystal Heart for every player in its fight's range, and Survive the Warden's Crystal
- * Heart for every player inside its Subspace when it dies or digs back down.
+ * Zephyr book and Free the End's Crystal Heart for every player in its fight's range, and Sneak 100's Crystal Heart for
+ * every player within 50 blocks of a Warden when it dies or digs back down.
  *
  * <p>Each test credits players across the arena, so each runs alone, in its own environment's batch, in a
  * {@link SubspaceArena}.
@@ -42,7 +42,7 @@ import net.minecraft.world.phys.Vec3;
 public class BossRewardGameTests {
 	private static final String ELDER_GUARDIAN_ADVANCEMENT = "maple_flavored:adventure/kill_elder_guardian";
 	private static final String FREE_THE_END = "minecraft:end/kill_dragon";
-	private static final String WARDEN_ADVANCEMENT = "maple_flavored:adventure/survive_warden";
+	private static final String SNEAK_100 = "minecraft:adventure/avoid_vibration";
 	private static final ResourceKey<Enchantment> ZEPHYR = ResourceKey.create(Registries.ENCHANTMENT, MapleFlavored.id("zephyr"));
 
 	// A dragon fight counts players within 192 blocks of the point 128 blocks above its origin.
@@ -158,57 +158,77 @@ public class BossRewardGameTests {
 		helper.succeed();
 	}
 
+	// The killed Warden stands 30 blocks from its Subspace's centre, so the credit is measured from the Warden: one player
+	// is near it but outside the Subspace, another inside the Subspace but far from it.
 	@GameTest(environment = "maple_flavored_gametest:boss_rewards_warden_death", maxTicks = 100)
-	public void aWardensDeathCreditsEveryPlayerInsideItsSubspace(GameTestHelper helper) {
+	public void aWardensDeathCreditsEveryPlayerWithin50BlocksOfIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
-		List<ServerPlayer> inside = List.of(
-			arena.player(new Vec3(40.0, 0.0, 0.0), GameType.SURVIVAL),
-			arena.player(new Vec3(-40.0, 0.0, 0.0), GameType.SURVIVAL)
+		List<ServerPlayer> near = List.of(
+			arena.player(new Vec3(75.0, 0.0, 0.0), GameType.SURVIVAL),
+			arena.player(new Vec3(10.0, 0.0, 0.0), GameType.SURVIVAL)
 		);
-		ServerPlayer outside = arena.player(new Vec3(51.0, 0.0, 0.0), GameType.SURVIVAL);
-		ServerPlayer spectator = arena.player(new Vec3(10.0, 0.0, 0.0), GameType.SPECTATOR);
+		ServerPlayer far = arena.player(new Vec3(-40.0, 0.0, 0.0), GameType.SURVIVAL);
+		ServerPlayer spectator = arena.player(new Vec3(35.0, 0.0, 0.0), GameType.SPECTATOR);
 		Warden discarded = arena.stillWarden(Vec3.ZERO);
 
 		discarded.discard();
 
-		for (ServerPlayer player : inside) {
-			helper.assertFalse(isDone(helper, player, WARDEN_ADVANCEMENT), "a discarded Warden credits surviving it");
+		for (ServerPlayer player : near) {
+			helper.assertFalse(isDone(helper, player, SNEAK_100), "a discarded Warden credits surviving it");
 		}
 
 		Warden killed = arena.stillWarden(Vec3.ZERO);
+		Vec3 wandered = arena.at(new Vec3(30.0, 0.0, 0.0));
 
+		killed.snapTo(wandered.x, wandered.y, wandered.z);
 		killed.kill(level);
 
-		for (ServerPlayer player : inside) {
-			helper.assertTrue(isDone(helper, player, WARDEN_ADVANCEMENT), "Survive the Warden is granted inside");
+		for (ServerPlayer player : near) {
+			helper.assertTrue(isDone(helper, player, SNEAK_100), "Sneak 100 is granted within 50 blocks of the Warden");
 			helper.assertValueEqual(player.getInventory().countItem(MapleItems.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
 		}
 
-		helper.assertFalse(isDone(helper, outside, WARDEN_ADVANCEMENT), "Survive the Warden is granted outside");
-		helper.assertFalse(isDone(helper, spectator, WARDEN_ADVANCEMENT), "Survive the Warden is granted to a spectator");
+		helper.assertFalse(isDone(helper, far, SNEAK_100), "Sneak 100 is granted 70 blocks from the Warden");
+		helper.assertFalse(isDone(helper, spectator, SNEAK_100), "Sneak 100 is granted to a spectator");
 		helper.succeed();
 	}
 
-	// The player inside stands past vanilla's awareness box, so the penned Warden digs down.
+	// The environment sets the Warden survival range to 20 blocks.
+	@GameTest(environment = "maple_flavored_gametest:boss_rewards_warden_range", maxTicks = 100)
+	public void theWardenSurvivalRangeGameRuleSetsHowNearPlayersMustBe(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		SubspaceArena arena = SubspaceArena.cleared(helper);
+		ServerPlayer inRange = arena.player(new Vec3(20.0, 0.0, 0.0), GameType.SURVIVAL);
+		ServerPlayer pastRange = arena.player(new Vec3(-21.0, 0.0, 0.0), GameType.SURVIVAL);
+		Warden warden = arena.stillWarden(Vec3.ZERO);
+
+		warden.kill(level);
+
+		helper.assertTrue(isDone(helper, inRange, SNEAK_100), "Sneak 100 is granted 20 blocks out");
+		helper.assertFalse(isDone(helper, pastRange, SNEAK_100), "Sneak 100 is granted 21 blocks out");
+		helper.succeed();
+	}
+
+	// The near player stands past vanilla's awareness box, so the penned Warden digs down.
 	@GameTest(environment = "maple_flavored_gametest:boss_rewards_warden_digging", maxTicks = 1100)
-	public void aWardenDiggingDownCreditsEveryPlayerInsideItsSubspace(GameTestHelper helper) {
+	public void aWardenDiggingDownCreditsEveryPlayerWithin50BlocksOfIt(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 
 		arena.pen();
 
 		Warden warden = arena.warden(Vec3.ZERO);
-		ServerPlayer inside = arena.player(new Vec3(40.0, 0.0, 0.0), GameType.SURVIVAL);
-		ServerPlayer outside = arena.player(new Vec3(-51.0, 0.0, 0.0), GameType.SURVIVAL);
+		ServerPlayer near = arena.player(new Vec3(40.0, 0.0, 0.0), GameType.SURVIVAL);
+		ServerPlayer far = arena.player(new Vec3(-51.0, 0.0, 0.0), GameType.SURVIVAL);
 
 		warden.getBrain().setMemoryWithExpiry(MemoryModuleType.DIG_COOLDOWN, Unit.INSTANCE, DIG_COOLDOWN_TICKS);
 
 		helper.succeedWhen(() -> {
 			helper.assertTrue(warden.isRemoved(), "the Warden dug down");
 			helper.assertValueEqual(warden.getRemovalReason(), Entity.RemovalReason.DISCARDED, "how the Warden was removed");
-			helper.assertTrue(isDone(helper, inside, WARDEN_ADVANCEMENT), "Survive the Warden is granted inside");
-			helper.assertValueEqual(inside.getInventory().countItem(MapleItems.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
-			helper.assertFalse(isDone(helper, outside, WARDEN_ADVANCEMENT), "Survive the Warden is granted outside");
+			helper.assertTrue(isDone(helper, near, SNEAK_100), "Sneak 100 is granted 40 blocks from the Warden");
+			helper.assertValueEqual(near.getInventory().countItem(MapleItems.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
+			helper.assertFalse(isDone(helper, far, SNEAK_100), "Sneak 100 is granted 51 blocks from the Warden");
 		});
 	}
 

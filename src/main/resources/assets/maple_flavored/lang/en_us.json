@@ -1,4 +1,5 @@
 {
+	"advancements.maple_flavored.adventure.avoid_vibration.description": "Be near a Warden when it digs back down or dies",
 	"advancements.maple_flavored.adventure.break_cleared_spawner.description": "Break a Cleared spawner",
 	"advancements.maple_flavored.adventure.break_cleared_spawner.title": "Cage Breaker",
 	"advancements.maple_flavored.adventure.collect_remnant.description": "Collect your own Remnant",
@@ -11,8 +12,6 @@
 	"advancements.maple_flavored.adventure.max_hearts_cap.title": "Wholehearted",
 	"advancements.maple_flavored.adventure.saved_by_crystal_heart.description": "Be saved from death by a Crystal Heart",
 	"advancements.maple_flavored.adventure.saved_by_crystal_heart.title": "Change of Heart",
-	"advancements.maple_flavored.adventure.survive_warden.description": "Be inside a Warden's Subspace when it digs back down or dies",
-	"advancements.maple_flavored.adventure.survive_warden.title": "Lived to Tell",
 	"advancements.maple_flavored.nether.kill_wither.description": "Kill the Wither",
 	"advancements.maple_flavored.nether.kill_wither.title": "Withered Away",
 	"advancements.maple_flavored.nether.nice_try.description": "Watch the Wither pass through bedrock or obsidian",
@@ -82,6 +81,8 @@
 	"gamerule.maple_flavored.warden_sculk_patch_charge.description": "How much sculk a Warden's Subspace spreads where the Warden appears, as a sculk catalyst's charge. 0 spreads none. Playtest value.",
 	"gamerule.maple_flavored.warden_sculk_patch_radius": "Warden sculk patch radius",
 	"gamerule.maple_flavored.warden_sculk_patch_radius.description": "How many blocks from where a Warden appears its sculk patch may spread. Playtest value.",
+	"gamerule.maple_flavored.warden_survival_range": "Warden survival range",
+	"gamerule.maple_flavored.warden_survival_range.description": "How many blocks from a Warden a player must be when it digs back down or dies to get Sneak 100. Applies at once. Playtest value.",
 	"gamerule.maple_flavored.warden_subspace_radius": "Warden Subspace radius",
 	"gamerule.maple_flavored.warden_subspace_radius.description": "How many blocks a Warden's Subspace reaches. Applies to Subspaces that open afterwards. Playtest value.",
 	"gamerule.maple_flavored.wither_leash_radius": "Wither leash radius",

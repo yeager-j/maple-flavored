@@ -35,7 +35,7 @@ public final class MapleTriggers {
 	/** An Elder Guardian died within 64 blocks of the player. */
 	public static final PlayerTrigger ELDER_GUARDIAN_KILLED = register("elder_guardian_killed", new PlayerTrigger());
 
-	/** A Warden died or dug back down while the player was inside its Subspace. */
+	/** A Warden died or dug back down near the player. */
 	public static final PlayerTrigger WARDEN_SURVIVED = register("warden_survived", new PlayerTrigger());
 
 	/** An Ender Dragon died while the player was in its fight's range. */

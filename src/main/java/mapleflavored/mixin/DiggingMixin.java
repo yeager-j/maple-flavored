@@ -1,6 +1,6 @@
 package mapleflavored.mixin;
 
-import mapleflavored.subspaces.WardenSubspaces;
+import mapleflavored.bosses.BossKillCredit;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.warden.Digging;
 import net.minecraft.world.entity.monster.warden.Warden;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** A Warden digging back down credits the players inside its Subspace with surviving it. */
+/** A Warden digging back down credits the players near it with surviving it. */
 @Mixin(Digging.class)
 public abstract class DiggingMixin {
 	// The removal here is the Warden digging down. Any other discard reaches no Digging behavior, so it credits nobody.
@@ -21,6 +21,6 @@ public abstract class DiggingMixin {
 		)
 	)
 	private void creditSurvivors(ServerLevel level, Warden body, long timestamp, CallbackInfo info) {
-		WardenSubspaces.creditDiggingDown(body);
+		BossKillCredit.creditWardenSurvivors(body);
 	}
 }

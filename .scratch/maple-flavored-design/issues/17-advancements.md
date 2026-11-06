@@ -55,7 +55,6 @@ Advancements guide players through Maple Flavored inside vanilla's own tabs. Eac
 | Adventure | Be saved by a Crystal Heart | Consume a Crystal Heart | task | |
 | Adventure | Reach 30 Max Hearts | Consume a Crystal Heart | challenge | 100 XP |
 | Adventure | Kill an Elder Guardian | Monster Hunter | goal | Crystal Heart |
-| Adventure | Survive the Warden | Sneak 100 | goal | Crystal Heart |
 | Adventure | Collect your own Remnant | Adventure | task | |
 | Adventure | Be in the Overworld when a Blood Moon rises | Adventure | task | |
 
@@ -65,7 +64,7 @@ Criteria details:
 
 - **Break a Cleared spawner** goes to the player who breaks it, as they get its Pith.
 - **But why?**: a level 4 beacon whose whole pyramid is Alloy blocks, in any mix. At 164 blocks, or 1,476 Ancient Embers, almost nobody will earn it, and that's the joke.
-- **Survive the Warden**: every player inside the Warden's Subspace when it digs back down, or when it's killed. There's no other condition, so a player who stays quietly inside the Subspace until it leaves has survived it.
+- **Survive the Warden**: every player within 50 blocks of the Warden when it digs back down, or when it's killed. There's no other condition, so a player who stays quietly near it until it leaves has survived it. (Changed by Jackson on 2026-11-05, from every player inside its Subspace.)
 - **Boss credit**: Kill the Wither goes to every player inside its Subspace. Kill an Elder Guardian goes to every player within 64 blocks. Free the End uses vanilla's dragon-fight player range.
 
 ### Vanilla advancements
@@ -73,6 +72,7 @@ Criteria details:
 - **Getting an Upgrade** asks for a copper pickaxe, as [Early-game tiers](07-early-game-tiers.md) decided.
 - **Stone Age** keeps its criterion, so the `#stone_tool_materials` tag must survive the removal of stone tools.
 - **Free the End** also rewards a Crystal Heart.
+- **Sneak 100** becomes Survive the Warden: its criterion is replaced, it becomes a goal, and it rewards a Crystal Heart. Its title stays. (Jackson's change on 2026-11-05, replacing a new Survive the Warden advancement under Sneak 100.)
 - **Postmortal** still counts only a Totem of Undying. Crystal Heart saves have their own advancement.
 - **Enchanter** still fires on vanilla's `enchanted_item` trigger, so the reworked table must keep firing it.
 - Every other vanilla advancement keeps its criteria and position, including ones our systems now delay:
