@@ -374,7 +374,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Warden kind: players inside get Darkness and Grounded. The owning Warden is aware of every entity inside and pathfinds to the nearest player; anger and sniffing stay vanilla.
 - A weak patch of sculk spreads where the Warden appeared, with vanilla's sculk spreading rules (only blocks a Sculk Catalyst can replace), within about 5 blocks of that spot and only while the Subspace is active and its Warden is loaded. Its size and strength are playtest values.
 - Each shrieker that grows during a Subspace records that Subspace and can summon. When the Subspace ends, its shriekers lose the ability to summon. A shrieker in an unloaded chunk is updated the next time it loads.
-- Wither kind: blocks Withered Heart recovery. It applies no effect by itself. Clients draw every block and entity inside it at light level 3, from the sky and from blocks alike, while blocks and entities that glow on their own still glow; the server's light, and so mob spawning, is unchanged. The level is a hand-check value.
+- Wither kind: blocks Withered Heart recovery. It applies no effect by itself. Clients draw every block and entity inside it at light level 3, from the sky and from blocks alike, while blocks and entities that glow on their own still glow; the server's light, and so mob spawning, is unchanged. A game rule sets the level.
 - Overlap is allowed. Grounded does not stack.
 
 **Grounded.** A registered status effect, applied inside a Warden Subspace and inside an Ancient City until its book is taken. It stops Elytra gliding the way Levitation does (no glide starts, and one under way ends), which also leaves Firework Rockets nothing to boost. It greatly increases the gravity of Ender Pearls thrown while Grounded and stops Riptide and Zephyr's double jump. Armored Elytra are Elytra, so it stops them too. Levitation, Slow Falling and Chorus Fruit still work.
@@ -449,6 +449,10 @@ Three more game rules hold Warden Subspace playtest values. Each applies to Subs
 - **Warden Subspace radius** (default 50): how many blocks a Warden's Subspace reaches.
 - **Warden sculk patch radius** (default 5): how many blocks from where a Warden appears its sculk patch may spread.
 - **Warden sculk patch charge** (default 150): how much sculk the patch spreads, as a sculk catalyst's charge. 0 spreads none.
+
+Two more hold Wither Subspace playtest values:
+- **Wither Subspace radius** (default 100): how many blocks a Wither's Subspace reaches. It applies to Subspaces that open after it changes.
+- **Wither Subspace light level** (default 3): the light level clients draw everything inside a Wither's Subspace at. It applies at once.
 
 One more holds an Echo Shard playtest value:
 - **Echo Shard shrieker range** (default 15): how many blocks away a held Echo Shard hears sculk shriekers.
@@ -540,6 +544,7 @@ The design left these small points open. This spec picks a default for each, and
 
 - Grounded's Ender Pearl gravity multiplier, which Mob changes left to playtesting.
 - The Warden Subspace's radius and its sculk patch's size and strength, set by playtest game rules.
+- The Wither Subspace's radius and light level, set by playtest game rules.
 - The Ancient City keeper ring: the 30-block minimum distance from the book and the 30° windows.
 - The exact book spot in each structure other than the Stronghold, whose book is in the portal room, chosen in that structure's build ticket by the manifesto's rule: the structure's most important spot, fixed and visible. Buried Treasure, Trail Ruins, Abandoned Camps and Shipwrecks need a spot chosen with care.
 - The Warden spawn search: the tickets say it widens "within the Subspace", which doesn't exist until the Warden spawns. This spec reads it as up to 50 blocks from the player.

@@ -1,9 +1,17 @@
 package mapleflavored.subspaces;
 
+import java.util.Objects;
 import java.util.function.Consumer;
+import mapleflavored.MapleFlavored;
 import mapleflavored.advancements.MapleTriggers;
-import net.minecraft.advancements.triggers.PlayerTrigger;
+import mapleflavored.gamerules.MapleGameRules;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.advancements.triggers.PlayerTrigger;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,13 +22,20 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The Wither's Subspace: every Wither opens one where it appears. Withered Hearts can't return inside it, and the
+ * The Wither's Subspace: every Wither opens one where it appears, as far as a game rule sets, and another game rule sets
+ * the light level clients draw inside it. Withered Hearts can't return inside it, and the
  * Wither never moves further than 50 blocks from its centre, so it can't be lured away. Every player inside when the
  * Wither dies is credited with the kill.
  */
 public final class WitherSubspaces {
-	/** How far a Wither's Subspace reaches, in blocks. */
-	public static final double RADIUS = 100.0;
+	/**
+	 * The light level the Wither Subspace light level game rule sets, synced to every player in the level so their client
+	 * can draw it. Read it through {@link #lightLevel}; only this module writes it.
+	 */
+	private static final AttachmentType<Integer> LIGHT_LEVEL = AttachmentRegistry.create(
+		MapleFlavored.id("wither_subspace_light_level"),
+		builder -> builder.syncWith(ByteBufCodecs.VAR_INT, AttachmentSyncPredicate.all())
+	);
 
 	/** How far from its Subspace's centre a Wither can move, in blocks. */
 	public static final int LEASH_RADIUS = 50;
@@ -34,6 +49,15 @@ public final class WitherSubspaces {
 	static void register() {
 		ServerEntityEvents.ENTITY_LOAD.register(WitherSubspaces::openOrLeash);
 		Subspaces.ENDED.register(WitherSubspaces::creditKill);
+		ServerTickEvents.END_LEVEL_TICK.register(WitherSubspaces::syncLightLevel);
+	}
+
+	/**
+	 * The light level everything inside a Wither's Subspace in the level is drawn at, from 0 to 15, as the game rule sets
+	 * it. Works on both the server and the client.
+	 */
+	public static int lightLevel(Level level) {
+		return level.getAttachedOrElse(LIGHT_LEVEL, MapleGameRules.WITHER_SUBSPACE_LIGHT_LEVEL.defaultValue());
 	}
 
 	/** Whether the position is inside any Wither's Subspace in the level. Works on both the server and the client. */
@@ -75,6 +99,13 @@ public final class WitherSubspaces {
 		return toCentre.normalize().scale(limit).subtract(fromCentre);
 	}
 
+	// Game rules stay on the server, so the light level reaches clients as level data, and a change shows at once.
+	private static void syncLightLevel(ServerLevel level) {
+		int rule = level.getGameRules().get(MapleGameRules.WITHER_SUBSPACE_LIGHT_LEVEL);
+
+		if (!Objects.equals(level.getAttached(LIGHT_LEVEL), rule)) level.setAttached(LIGHT_LEVEL, rule);
+	}
+
 	/** Triggers {@code trigger} for every player inside the Wither's Subspace, but spectators. Server only. */
 	public static void triggerForPlayersInside(WitherBoss wither, PlayerTrigger trigger) {
 		if (!(wither.level() instanceof ServerLevel level)) return;
@@ -87,7 +118,9 @@ public final class WitherSubspaces {
 	private static void openOrLeash(Entity entity, ServerLevel level) {
 		if (!(entity instanceof WitherBoss wither) || !wither.isAlive()) return;
 
-		if (!Subspaces.ownsAny(level.getServer(), wither.getUUID())) Subspaces.open(level, wither, Subspace.Kind.WITHER, RADIUS);
+		if (!Subspaces.ownsAny(level.getServer(), wither.getUUID())) {
+			Subspaces.open(level, wither, Subspace.Kind.WITHER, level.getGameRules().get(MapleGameRules.WITHER_SUBSPACE_RADIUS));
+		}
 
 		Subspaces.ownedBy(level, wither.getUUID())
 			.ifPresent(subspace -> wither.setHomeTo(BlockPos.containing(subspace.centre()), LEASH_RADIUS));

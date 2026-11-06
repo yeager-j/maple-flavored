@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.gametest.mixin.GameTestHelperAccessor;
 import mapleflavored.subspaces.Subspaces;
-import mapleflavored.subspaces.WitherSubspaces;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -71,7 +70,7 @@ final class SubspaceArena {
 
 	private static final int HEIGHT = 160;
 	// Past the largest Subspace's reach, so nothing an earlier batch left is aware of the arena or affected by it.
-	private static final double CLEARED_RADIUS = Math.max(RADIUS, WitherSubspaces.RADIUS) + 10.0;
+	private static final double CLEARED_RADIUS = Math.max(RADIUS, MapleGameRules.WITHER_SUBSPACE_RADIUS.defaultValue()) + 10.0;
 	// How far along the arena's x axis a runway keeps chunks loaded, past every Warden and target the tests place.
 	private static final int RUNWAY_REACH = 80;
 	// Room above a sculk floor for the veins and growths that spread over it.

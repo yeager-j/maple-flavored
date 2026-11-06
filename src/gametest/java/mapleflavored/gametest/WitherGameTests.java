@@ -7,6 +7,7 @@ import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import mapleflavored.subspaces.Subspace;
 import mapleflavored.subspaces.Subspaces;
+import mapleflavored.subspaces.WitherSubspaces;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
@@ -89,6 +90,7 @@ public class WitherGameTests {
 				helper.assertFalse(inside.hasEffect(MobEffects.DARKNESS), "the Wither's Subspace gives Darkness");
 				helper.assertFalse(inside.hasEffect(Grounded.EFFECT), "the Wither's Subspace gives Grounded");
 				helper.assertValueEqual(Hearts.witheredHearts(outside), 0, "Withered Hearts 101 blocks out");
+				helper.assertValueEqual(WitherSubspaces.lightLevel(level), 3, "the light level clients draw by default");
 				helper.assertTrue(isDone(helper, outside, RECOVERY_ADVANCEMENT), "getting a Withered Heart back is granted outside");
 
 				WitherBoss reloaded = (WitherBoss) arena.track(SubspaceArena.load(helper, savedWither[0]));
@@ -105,10 +107,28 @@ public class WitherGameTests {
 			.thenSucceed();
 	}
 
+	@GameTest(environment = "maple_flavored_gametest:wither_rules", maxTicks = 100)
+	public void gameRulesSetTheSubspacesRadiusAndLightLevel(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		SubspaceArena arena = SubspaceArena.cleared(helper);
+
+		arena.stillWither(Vec3.ZERO);
+		helper.assertValueEqual(Subspaces.containing(level, arena.centre()).getFirst().radius(), 60.0, "the Subspace's radius");
+
+		helper.startSequence()
+			.thenExecuteAfter(1, () -> helper.assertValueEqual(WitherSubspaces.lightLevel(level), 7, "the light level clients draw"))
+			.thenSucceed();
+	}
+
 	@GameTest(environment = "maple_flavored_gametest:wither_passage", maxTicks = 100)
 	public void theWitherPassesThroughBedrockAndObsidianButNotStone(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
-		// Each joins before its wall's Wither moves, so each sees only that Wither's move for Nice Try.
+		// Each joins before its Wither moves, so each sees only that Wither's move for Nice Try.
+		ServerPlayer nearMissWitness = arena.player(new Vec3(20.0, 0.0, -3.0), GameType.SURVIVAL);
+
+		helper.assertFalse(diagonalNearMissPassesThrough(arena), "a diagonal move past obsidian passes into it");
+		helper.assertFalse(isDone(helper, nearMissWitness, NICE_TRY_ADVANCEMENT), "Nice Try is granted for a diagonal near miss");
+
 		ServerPlayer bedrockWitness = arena.player(new Vec3(20.0, 0.0, 0.0), GameType.SURVIVAL);
 
 		helper.assertValueEqual(advanceThroughWall(helper, arena, Blocks.BEDROCK, 0), 2.0, "the Wither's move through bedrock");
@@ -249,6 +269,23 @@ public class WitherGameTests {
 		fill(arena, Blocks.AIR, 1, 1, 5, 9, z - 1, z + 1);
 
 		return Math.round((wither.getX() - startX) * 1000.0) / 1000.0;
+	}
+
+	// A Wither's 0.9-block-wide box moving diagonally past an obsidian column's corner, close enough that the box
+	// enclosing the whole move overlaps the column, though no point of the move does. Returns whether it ended inside.
+	private static boolean diagonalNearMissPassesThrough(SubspaceArena arena) {
+		WitherBoss wither = arena.stillWither(new Vec3(0.0, 5.0, 20.0));
+		Vec3 corner = Vec3.atLowerCornerOf(arena.blockAt(0, 5, 20));
+
+		place(wither, corner.add(1.3, 0.0, 1.4));
+		fill(arena, Blocks.OBSIDIAN, 0, 0, 5, 9, 22, 22);
+		wither.move(MoverType.SELF, new Vec3(0.3, 0.0, 0.3));
+
+		boolean inside = arena.level().getBlockStates(wither.getBoundingBox().deflate(1.0E-4)).anyMatch(state -> state.is(Blocks.OBSIDIAN));
+
+		fill(arena, Blocks.AIR, 0, 0, 5, 9, 22, 22);
+
+		return inside;
 	}
 
 	private static void fill(SubspaceArena arena, Block block, int fromX, int toX, int fromY, int toY, int fromZ, int toZ) {
