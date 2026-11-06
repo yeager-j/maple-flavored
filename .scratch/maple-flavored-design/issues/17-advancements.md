@@ -15,7 +15,7 @@ Advancements guide players through Maple Flavored inside vanilla's own tabs. Eac
 
 - Vanilla's five tabs stay. Each new advancement sits in the tab and branch where its step happens, rather than in a separate guide tab as Matcha does.
 - Each system gets one advancement for the first step a player might otherwise miss, plus at most one goal or challenge for mastering it. There are no new collect-everything lists, and vanilla's stay as they are.
-- Descriptions teach the mechanic in plain words, without lore. Exact titles and descriptions are written at build time. Titles may be vanilla-style puns, except **But why?**, which is fixed.
+- Descriptions teach the mechanic in plain words, without lore. Exact titles and descriptions are written at build time. Titles may be vanilla-style puns, except **But why?** and **Breaking the Rules**, which are fixed.
 - No new advancement is hidden except **But why?**.
 - Rewards:
   - Crystal Hearts come only from the four boss advancements.
@@ -49,6 +49,7 @@ Advancements guide players through Maple Flavored inside vanilla's own tabs. Eac
 | Nether | **Nice Try** (hidden): watch the Wither pass through bedrock or obsidian | Withering Heights | task | |
 | Nether | Get a Withered Heart back | A Terrible Fortress | task | |
 | Nether | **But why?** (hidden) | Beaconator | challenge | 100 XP |
+| Nether | **Breaking the Rules**: break bedrock | Beaconator | challenge | 100 XP |
 | End | Get an Armored Elytra | Sky's the Limit | goal | |
 | Adventure | Break a Cleared spawner | Monster Hunter | task | |
 | Adventure | Consume a Crystal Heart | Break a Cleared spawner | task | |
@@ -64,6 +65,7 @@ Criteria details:
 
 - **Break a Cleared spawner** goes to the player who breaks it, as they get its Pith.
 - **But why?**: a level 4 beacon whose whole pyramid is Alloy blocks, in any mix. At 164 blocks, or 1,476 Ancient Embers, almost nobody will earn it, and that's the joke.
+- **Breaking the Rules**: the player breaks a bedrock block in Survival, which takes an Adamant pickaxe with Efficiency V and Haste II (see [Material roles and alloys](06-material-roles-and-alloys.md)). It sits under Beaconator because Haste II needs a full beacon, and it's visible so that players learn the feature exists. Its title is fixed. (Jackson's addition on 2026-11-06.)
 - **Survive the Warden**: every player within 50 blocks of the Warden when it digs back down, or when it's killed. There's no other condition, so a player who stays quietly near it until it leaves has survived it. (Changed by Jackson on 2026-11-05, from every player inside its Subspace.)
 - **Boss credit**: Kill the Wither goes to every player inside its Subspace. Kill an Elder Guardian goes to every player within 64 blocks. Free the End uses vanilla's dragon-fight player range.
 
