@@ -42,6 +42,7 @@
 		"SculkShriekerBlockEntityMixin",
 		"SculkSpreaderChargeCursorMixin",
 		"ServerGamePacketListenerImplMixin",
+		"ServerLevelMixin",
 		"ServerPlayerMixin",
 		"SinglePoolElementAccessor",
 		"SmithingMenuMixin",
@@ -49,6 +50,7 @@
 		"SniffingMixin",
 		"SpawnerBlockEntityMixin",
 		"SpawnerBlockMixin",
+		"SpawnPlacementsMixin",
 		"StructureMixin",
 		"StructureStartMixin",
 		"StructurePieceInvoker",
@@ -61,6 +63,7 @@
 		"WardenSpawnTrackerAccessor",
 		"WitherBossMixin",
 		"WitherSkeletonMixin",
+		"WorldGenRegionMixin",
 		"ZombieVillagerMixin"
 	],
 	"injectors": {
