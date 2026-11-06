@@ -102,7 +102,7 @@ public final class WardenSubspaces {
 		if (!isInsideWardenSubspace(level, player)) return;
 
 		topUp(player, MobEffects.DARKNESS);
-		topUp(player, Grounded.EFFECT);
+		Grounded.keepGrounded(player);
 	}
 
 	private static boolean isInsideWardenSubspace(ServerLevel level, ServerPlayer player) {

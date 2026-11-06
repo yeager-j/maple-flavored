@@ -1,15 +1,20 @@
 # 28: Ancient City book
 
-**What to build:** The Ancient City's Swift Sneak book sits in front of the portal, and taking it always summons an angry Warden.
+**What to build:** The Ancient City's Swift Sneak book floats above the altar in front of the portal. It's locked until three keeper shriekers in a ring near the city's edge are broken. The city keeps players Grounded until the book is taken, and taking it summons nothing.
 
-**Blocked by:** 18 (Structure book framework, with Mineshafts), 27 (Warden summoning in Warden Territory)
+**Blocked by:** 18 (Structure book framework, with Mineshafts), 22 (Nether Fortress book lock), 23 (Bastion books and keeper locks), 24 (Grounded)
 
 **Status:** ready-for-agent
 
-Spec: the Maple Flavored spec in this folder. Plan: `../plans/28-ancient-city-book.md`.
+Spec: the Maple Flavored spec in this folder. Research: `docs/research/vanilla-ancient-city-sculk.md`. Plan: `../plans/28-ancient-city-book.md`.
 
-- [x] The book sits in the centre piece in front of the portal, with room for a Warden
-- [x] Taking it finds a Warden spot through the summoning rules, skipping shrieker level and nearby-Warden checks, else uses the book's spot, rechecked at that moment; if neither is free, the book stays and the player gets a short message
-- [x] The Warden is angry and opens its Subspace
-- [x] GameTests cover taking the book, a blocked search and a fully blocked spot
-- [ ] Hand check: in an Ancient City, the book floats in front of the portal; taking it brings a Warden out of the ground near you that comes straight for you
+Jackson's change on 2026-11-05: the Warden is a punishment for being loud, so taking the book no longer summons one. The lock and the city's Grounded replace it, so players can't fly in, grab the book and fly out.
+
+- [x] The book sits in the centre piece above the altar in front of the portal, on the city's axis
+- [x] Taking it summons no Warden: remove the angry-Warden summon, its room checks and message, and their GameTests
+- [x] Keepers are chosen when the city is planned, from its sculk patch origins, by the spec's ring rule; fewer origins give fewer keepers, and none leaves the book unlocked
+- [x] Each keeper's origin gets a summoning sculk shrieker after its patch generates, on top of the catalyst if there is one; the city's record holds the keepers and which are broken
+- [x] The book shows the locked look until every keeper is broken by any means; a refused take says how many are broken and sends trails to the rest
+- [x] Players inside the city's bounds are Grounded while the book is in place, and no longer once it's taken; a Warden Subspace's Grounded is unaffected
+- [x] GameTests cover keeper choice and spread, a keeper placed with and without a catalyst, breaking keepers while the book is unloaded, the refused take, and Grounded before and after the take
+- [ ] Hand check: in an Ancient City, the locked book over the altar, the trails to the keepers, gliding ending at the city's edge, and Elytra working again once the book is taken

@@ -81,9 +81,9 @@ Every found book is level I. Most float in a fixed, visible place in a structure
 
 Two matching books of the same level combine in an anvil to make the next level. A level III book needs four level I finds, a level IV needs eight, and a level V needs sixteen. Higher levels build on useful earlier rewards: eight Sharpness books already give Sharpness IV while you work towards V.
 
-Some structures react when you take their book:
+Some structures guard their book or react when you take it:
 
-- **Ancient City:** an angry Warden appears and opens a Subspace with a 50-block radius, applying Darkness and Grounded.
+- **Ancient City:** the book stays locked until three keeper shriekers, spread in a ring near the city's edge, are broken. Breaking a block makes a vibration that sensors hear even when you sneak, so a careless break can call a Warden. The whole city keeps you Grounded until the book is taken, so you can't fly in, grab it and fly out. Taking it summons nothing; a Warden comes only when you're loud. Trying to take the locked book shows trails to the keepers still standing.
 - **Bastion:** the book stays locked until three of its Piglin Brutes, its keepers, are dead, by any cause. Trying to take it makes the remaining keepers glow and shows trails to them. Once it's taken, every Piglin in the structure hunts you for ten minutes, from anywhere in the Bastion.
 - **Stronghold or Woodland Mansion:** nearby Illagers are alerted and become hostile, even towards a player wearing Orichalcum.
 - **Nether Fortress:** the book stays locked until every Blaze spawner that generated there is Cleared. The spawners can remain for farms. Every fortress generates with at least one Blaze spawner, and trying to take a locked book shows trails to the ones still to Clear.
@@ -293,7 +293,7 @@ The Warden is aware of all entities within the Subspace and will attempt to path
 
 A small patch of sculk spreads where the Warden appeared, over the blocks a sculk catalyst could turn. A faint sculk shell marks the Subspace's edge, and the sky inside turns sculk-dark. New sensors and shriekers can grow in the patch. Those shriekers can summon while the Subspace is active, but lose that ability when it ends.
 
-Every Warden opens its own Subspace at its spawn point, even inside another one. Subspaces can overlap, and Grounded does not stack with itself. There are no overlap-based shifts or summon failures. Taking an Ancient City's book always summons an angry Warden regardless of Shrieker level or nearby Wardens.
+Every Warden opens its own Subspace at its spawn point, even inside another one. Subspaces can overlap, and Grounded does not stack with itself. There are no overlap-based shifts or summon failures.
 
 Summoning also changes to stop a distant, repeatedly failing shrieker from disabling the danger. Shriek warnings and cooldowns affect only players in **Warden Territory**, meaning the Deep Dark biome or an Ancient City's bounds. The Warden searches five to fifteen blocks from the player who caused the shriek, or the nearest player in Warden Territory if needed, then widens its search to other spots within the Subspace up to fifty blocks from that player. This spawn search distance is separate from the Subspace's radius. If it still cannot spawn, the cooldown clears. With nobody in Warden Territory, summoning is cancelled. These changes make Warden switches ineffective.
 

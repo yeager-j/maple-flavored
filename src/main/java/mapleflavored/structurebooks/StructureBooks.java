@@ -28,12 +28,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.border.BorderStatus;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.Vec3;
@@ -103,20 +105,36 @@ public final class StructureBooks {
 	private StructureBooks() {
 	}
 
-	/** Registers the block, block entity, structure piece, book locks and wake events. Call once from mod init. */
+	/**
+	 * Registers the block, block entity, structure piece, book locks, wake events and the Ancient City's Grounding. Call
+	 * once from mod init.
+	 */
 	public static void register() {
 		// The block, block entity and piece register in the static fields above; this call makes sure they run.
 		BookLocks.register();
+		TakenBooks.register();
 		PiglinAnger.register();
 		BruteKeepers.register();
+		AncientCityGrounding.register();
+	}
+
+	/**
+	 * Builds a structure's piece along with the keepers it places: it tags a Bastion's keeper Brutes as they're placed,
+	 * and places an Ancient City's keeper shrieker once its sculk patch has grown. Call around every piece's build.
+	 *
+	 * @param pieces the structure's pieces, its book last if it has one
+	 */
+	public static void buildPiece(StructurePiece piece, List<StructurePiece> pieces, WorldGenLevel level, Runnable buildPiece) {
+		BruteKeepers.build(piece, pieces, level.getLevel().dimension(), buildPiece);
+		ShriekerKeepers.placeIfKeeper(piece, pieces, level);
 	}
 
 	/**
 	 * Takes the structure book at {@code pos} for the player, as one action: the player gets its level I book, the
-	 * block is removed and {@link #TAKEN} fires. An Ancient City's book first summons its Warden, angry at the player.
-	 * Refused, with nothing changed and no event, when there's no book with an enchantment there, the book is locked, the
-	 * player has no free inventory slot or an Ancient City's Warden has no room. A locked book shows the player trails
-	 * leading to the spawners still to be Cleared, or to the keeper Brutes still alive, which glow.
+	 * block is removed and {@link #TAKEN} fires. Refused, with nothing changed and no event, when there's no book with an
+	 * enchantment there, the book is locked or the player has no free inventory slot. A locked book shows the player
+	 * trails leading to the spawners still to be Cleared, the keeper Brutes still alive, which glow, or the keeper
+	 * shriekers still standing.
 	 *
 	 * @return whether the book was taken
 	 */
@@ -142,12 +160,6 @@ public final class StructureBooks {
 			return false;
 		}
 
-		if (AncientCityWarden.guards(level, pos) && AncientCityWarden.summon(level, player, pos).isEmpty()) {
-			player.sendOverlayMessage(Component.translatable("block.maple_flavored.structure_book.no_room_for_warden"));
-
-			return false;
-		}
-
 		player.getInventory().add(levelOneBook(enchantment.get()));
 		level.removeBlock(pos, false);
 		level.playSound(null, pos, SoundEvents.BOOK_PAGE_TURN, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -162,12 +174,13 @@ public final class StructureBooks {
 		String message = switch (lock.kind()) {
 			case SPAWNERS -> "block.maple_flavored.structure_book.locked";
 			case BRUTES -> "block.maple_flavored.structure_book.locked_by_keepers";
+			case SHRIEKERS -> "block.maple_flavored.structure_book.locked_by_shriekers";
 		};
 
 		player.sendOverlayMessage(Component.translatable(message, done, lock.keys().size()));
 
 		switch (lock.kind()) {
-			case SPAWNERS -> remaining.forEach(spawner -> showTrails(level, book, spawner));
+			case SPAWNERS, SHRIEKERS -> remaining.forEach(key -> showTrails(level, book, key));
 			case BRUTES -> pointOutKeepers(level, book, remaining);
 		}
 	}

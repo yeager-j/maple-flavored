@@ -1,6 +1,6 @@
 # Bosses need subspaces
 
-Jackson's opinion on bosses, written down while working out [enchanting](enchanting.md). It's a summary of intent rather than a quote. Where a resolved ticket on the design map differs, the ticket wins. [Mob changes](../../.scratch/maple-flavored-design/issues/05-mob-changes.md) adopted this and replaced parts of it, including how a Warden summons and where Withered Hearts recover.
+Jackson's opinion on bosses, written down while working out [enchanting](enchanting.md). It's a summary of intent rather than a quote. Where a resolved ticket on the design map differs, the ticket wins. [Mob changes](../../.scratch/maple-flavored-design/issues/05-mob-changes.md) adopted this and replaced parts of it, including how a Warden summons and where Withered Hearts recover. Later, [Enchanting](../../.scratch/maple-flavored-design/issues/10-enchanting.md) dropped the Warden from the Ancient City's book: the book is locked behind keeper shriekers and the city keeps players Grounded until it's taken, so the lines below about the book's Warden no longer hold.
 
 ## The problem
 

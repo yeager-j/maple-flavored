@@ -49,10 +49,15 @@ public final class StructureBookRules {
 		List.of(Enchantments.FIRE_PROTECTION),
 		StructureBookSpots::netherFortress,
 		StructureBookRule.Placement.OPEN,
-		(pieces, random) -> new BookLocks.Keys(BookLocks.Kind.SPAWNERS, StructureBookSpots.fortressBlazeSpawners(pieces))
+		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.SPAWNERS, StructureBookSpots.fortressBlazeSpawners(pieces))
 	);
 	private static final StructureBookRule END_CITY = ordinary(List.of(Enchantments.FEATHER_FALLING), StructureBookSpots::endCity);
-	private static final StructureBookRule ANCIENT_CITY = ordinary(List.of(Enchantments.SWIFT_SNEAK), StructureBookSpots::ancientCity);
+	private static final StructureBookRule ANCIENT_CITY = new StructureBookRule(
+		List.of(Enchantments.SWIFT_SNEAK),
+		StructureBookSpots::ancientCity,
+		StructureBookRule.Placement.OPEN,
+		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.SHRIEKERS, ShriekerKeepers.choose(book, ShriekerKeepers.origins(pieces), random))
+	);
 	private static final StructureBookRule BURIED_TREASURE = new StructureBookRule(
 		List.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION),
 		StructureBookSpots::buriedTreasure,
@@ -136,7 +141,7 @@ public final class StructureBookRules {
 		if (spot.isEmpty()) return pieces;
 
 		ResourceKey<Enchantment> enchantment = rule.get().chooseEnchantment(random);
-		BookLocks.Keys keys = rule.get().lock().keys(pieces.pieces(), random);
+		BookLocks.Keys keys = rule.get().lock().keys(pieces.pieces(), spot.get().pos(), random);
 		int anchorIndex = pieces.pieces().indexOf(spot.get().anchor());
 		StructureBookPiece book = new StructureBookPiece(
 			spot.get().pos(),
@@ -144,7 +149,7 @@ public final class StructureBookRules {
 			anchorIndex,
 			spot.get().anchor(),
 			rule.get().placement(),
-			keys.kind() == BookLocks.Kind.BRUTES ? keys.positions() : List.of()
+			keys.kind().isKeeper() ? keys.positions() : List.of()
 		);
 
 		BookLocks.plan(dimension, spot.get().pos(), keys);
@@ -206,7 +211,7 @@ public final class StructureBookRules {
 			List.of(enchantment),
 			spot,
 			StructureBookRule.Placement.OPEN,
-			(pieces, random) -> new BookLocks.Keys(BookLocks.Kind.BRUTES, StructureBookSpots.bastionKeepers(pieces, random))
+			(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.BRUTES, StructureBookSpots.bastionKeepers(pieces, random))
 		);
 	}
 
