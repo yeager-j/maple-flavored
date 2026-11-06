@@ -29,6 +29,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
@@ -70,6 +71,10 @@ public class AlloyGameTests {
 	private static final int LOOT_ROLLS = 2000;
 	private static final long LOOT_SEED = 7L;
 	private static final double DROP_RATE_TOLERANCE = 0.03;
+	// Embers share every pool, count and weight with ancient debris, so their totals differ only by chance. Chests are
+	// rolled more often than mobs, as their two-item entries make the totals noisier.
+	private static final int CHEST_ROLLS = 10_000;
+	private static final double CHEST_COUNT_TOLERANCE = 0.10;
 
 	private static final BlockPos FURNACE = new BlockPos(1, 2, 1);
 
@@ -102,6 +107,24 @@ public class AlloyGameTests {
 
 		player.setItemInHand(InteractionHand.MAIN_HAND, lootingSword(helper, 3));
 		assertNear(helper, dropRate(helper, brute, player, Alloys.ANCIENT_EMBER), 0.40, "Ember drop rate with Looting III");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void bastionChestsHoldAncientEmbersAsOftenAsAncientDebris(GameTestHelper helper) {
+		for (String chest : List.of("bastion_treasure", "bastion_other", "bastion_hoglin_stable")) {
+			List<ItemStack> rolled = rollChest(helper, chest);
+			int embers = count(rolled, Alloys.ANCIENT_EMBER);
+			int debris = count(rolled, Items.ANCIENT_DEBRIS);
+
+			helper.assertTrue(debris > 0, chest + " gives ancient debris");
+			helper.assertTrue(
+				Math.abs(embers - debris) <= debris * CHEST_COUNT_TOLERANCE,
+				chest + " gives " + embers + " Embers to " + debris + " ancient debris"
+			);
+		}
+
+		helper.assertValueEqual(count(rollChest(helper, "bastion_bridge"), Alloys.ANCIENT_EMBER), 0, "Embers from bastion_bridge, which has no debris");
 		helper.succeed();
 	}
 
@@ -543,6 +566,24 @@ public class AlloyGameTests {
 		}
 
 		return (double) drops / LOOT_ROLLS;
+	}
+
+	// Every item a Bastion chest gives over many seeded rolls, with Maple's loot changes applied.
+	private static List<ItemStack> rollChest(GameTestHelper helper, String chest) {
+		ServerLevel level = helper.getLevel();
+		ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace("chests/" + chest));
+		LootTable table = level.getServer().reloadableRegistries().getLootTable(key);
+		LootParams params = new LootParams.Builder(level)
+			.withParameter(LootContextParams.ORIGIN, helper.absoluteVec(Vec3.ZERO))
+			.create(LootContextParamSets.CHEST);
+		RandomSource random = RandomSource.create(LOOT_SEED);
+		List<ItemStack> rolled = new ArrayList<>();
+
+		for (int roll = 0; roll < CHEST_ROLLS; roll++) {
+			rolled.addAll(table.getRandomItems(params, random));
+		}
+
+		return rolled;
 	}
 
 	private static void assertNear(GameTestHelper helper, double rate, double expected, String what) {
