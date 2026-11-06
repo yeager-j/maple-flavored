@@ -1,0 +1,8 @@
+{
+  "type": "maple_flavored:alloying",
+  "base": "minecraft:netherite_ingot",
+  "addition": "minecraft:iron_block",
+  "result": {
+    "id": "maple_flavored:steel_ingot"
+  }
+}

@@ -1,6 +1,7 @@
 package mapleflavored;
 
 import mapleflavored.advancements.MapleTriggers;
+import mapleflavored.alloys.Alloys;
 import mapleflavored.bosses.BossKillCredit;
 import mapleflavored.echoshard.ShriekerPulses;
 import mapleflavored.enchanting.Enchanting;
@@ -36,6 +37,7 @@ public class MapleFlavored implements ModInitializer {
 		MapleTriggers.register();
 		Hearts.register();
 		MapleItems.register();
+		Alloys.register();
 		Remnants.register();
 		LootSubstitutions.register();
 		LootEnchantments.register();

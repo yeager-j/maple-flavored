@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "shakudo_ingot",
+  "ingredients": [
+    "maple_flavored:shakudo_block"
+  ],
+  "result": {
+    "count": 9,
+    "id": "maple_flavored:shakudo_ingot"
+  }
+}

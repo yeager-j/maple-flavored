@@ -41,6 +41,9 @@ public final class MapleTriggers {
 	/** An Ender Dragon died while the player was in its fight's range. */
 	public static final PlayerTrigger ENDER_DRAGON_KILLED = register("ender_dragon_killed", new PlayerTrigger());
 
+	/** A level 4 beacon whose whole pyramid is Alloy blocks is lit near the player. */
+	public static final PlayerTrigger ALLOY_BEACON_CONSTRUCTED = register("alloy_beacon_constructed", new PlayerTrigger());
+
 	private MapleTriggers() {
 	}
 

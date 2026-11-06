@@ -1,0 +1,31 @@
+{
+  "parent": "minecraft:nether/find_bastion",
+  "criteria": {
+    "ancient_ember": {
+      "conditions": {
+        "items": [
+          {
+            "items": "maple_flavored:ancient_ember"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.nether.obtain_ancient_ember.description"
+    },
+    "icon": {
+      "id": "maple_flavored:ancient_ember"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.nether.obtain_ancient_ember.title"
+    }
+  },
+  "requirements": [
+    [
+      "ancient_ember"
+    ]
+  ]
+}

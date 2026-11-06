@@ -1,5 +1,7 @@
 package mapleflavored.client;
 
+import mapleflavored.alloys.Alloys;
+import mapleflavored.client.alloys.AlloyFurnaceScreen;
 import mapleflavored.client.enchanting.AppleTooltip;
 import mapleflavored.client.enchanting.EnchantingTableScreen;
 import mapleflavored.client.hearts.DeathScreenMaxHearts;
@@ -22,6 +24,7 @@ public class MapleFlavoredClient implements ClientModInitializer {
 		RemnantRenderer.register();
 		ZephyrInput.register();
 		MenuScreens.register(Enchanting.MENU, EnchantingTableScreen::new);
+		MenuScreens.register(Alloys.ALLOY_FURNACE_MENU, AlloyFurnaceScreen::new);
 		AppleTooltip.register();
 		StructureBookRenderer.register();
 		SpawnerForcefieldRenderer.register();

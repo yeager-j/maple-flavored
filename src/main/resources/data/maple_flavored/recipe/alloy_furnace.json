@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:gold_ingot",
+    "B": "minecraft:blast_furnace",
+    "P": "minecraft:polished_blackstone_bricks"
+  },
+  "pattern": [
+    "###",
+    "#B#",
+    "PPP"
+  ],
+  "result": {
+    "id": "maple_flavored:alloy_furnace"
+  }
+}
