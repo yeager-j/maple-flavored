@@ -249,8 +249,11 @@ public class AlloyGearGameTests {
 		wearFullSet(player, null);
 		helper.assertValueEqual(round(player.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE)), 0.4, "knockback resistance in Netherite");
 
+		// Three pieces, since a full Steel set's bonus makes it immune to knockback.
 		wearFullSet(player, Alloy.STEEL);
-		helper.assertValueEqual(round(player.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE)), 0.8, "knockback resistance in Steel");
+		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.NETHERITE_HELMET));
+		player.doTick();
+		helper.assertValueEqual(round(player.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE)), 0.7, "knockback resistance in three Steel pieces");
 		helper.succeed();
 	}
 

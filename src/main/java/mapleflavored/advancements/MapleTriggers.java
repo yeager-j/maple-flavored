@@ -47,6 +47,9 @@ public final class MapleTriggers {
 	/** A player in Survival broke a bedrock block. */
 	public static final PlayerTrigger BEDROCK_BROKEN = register("bedrock_broken", new PlayerTrigger());
 
+	/** A player put on the last piece of a full set of one Alloy. */
+	public static final AlloySetWornTrigger ALLOY_SET_WORN = register("alloy_set_worn", new AlloySetWornTrigger());
+
 	private MapleTriggers() {
 	}
 

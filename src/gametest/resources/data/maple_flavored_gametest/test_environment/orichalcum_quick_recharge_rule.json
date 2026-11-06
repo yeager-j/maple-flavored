@@ -1,0 +1,6 @@
+{
+	"type": "minecraft:game_rules",
+	"rules": {
+		"maple_flavored:orichalcum_save_recharge_time": 40
+	}
+}

@@ -57,11 +57,12 @@ public class AlloyCombatGameTests {
 		helper.succeed();
 	}
 
+	// Three pieces, since a full set is immune to fire and lava.
 	@GameTest
 	public void electrumArmorTakesFifteenPercentPerPieceOffFire(GameTestHelper helper) {
-		assertReduced(helper, alloySet(Alloy.ELECTRUM), level -> level.damageSources().inFire(), 0.6F, "a full Electrum set's fire damage");
-		assertReduced(helper, alloySet(Alloy.ELECTRUM), level -> level.damageSources().lava(), 0.6F, "a full Electrum set's lava damage");
-		assertReduced(helper, alloySet(Alloy.ELECTRUM), level -> level.damageSources().magic(), 0.0F, "a full Electrum set's magic damage");
+		assertReduced(helper, electrumWithNetheriteHelmet(), level -> level.damageSources().inFire(), 0.45F, "three Electrum pieces' fire damage");
+		assertReduced(helper, electrumWithNetheriteHelmet(), level -> level.damageSources().lava(), 0.45F, "three Electrum pieces' lava damage");
+		assertReduced(helper, electrumWithNetheriteHelmet(), level -> level.damageSources().magic(), 0.0F, "three Electrum pieces' magic damage");
 		helper.succeed();
 	}
 
@@ -255,6 +256,15 @@ public class AlloyCombatGameTests {
 			AlloyGear.of(alloy, GearKind.CHESTPLATE),
 			AlloyGear.of(alloy, GearKind.LEGGINGS),
 			AlloyGear.of(alloy, GearKind.BOOTS)
+		);
+	}
+
+	private static List<Item> electrumWithNetheriteHelmet() {
+		return List.of(
+			Items.NETHERITE_HELMET,
+			AlloyGear.of(Alloy.ELECTRUM, GearKind.CHESTPLATE),
+			AlloyGear.of(Alloy.ELECTRUM, GearKind.LEGGINGS),
+			AlloyGear.of(Alloy.ELECTRUM, GearKind.BOOTS)
 		);
 	}
 
