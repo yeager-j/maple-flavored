@@ -1,0 +1,20 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "maple_flavored:steel"
+      }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "maple_flavored:steel"
+      }
+    ],
+    "wings": [
+      {
+        "texture": "maple_flavored:steel",
+        "use_player_texture": true
+      }
+    ]
+  }
+}

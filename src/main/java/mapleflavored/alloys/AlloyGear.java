@@ -6,11 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import mapleflavored.MapleFlavored;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTabOutput;
 import net.fabricmc.fabric.api.item.v1.DefaultItemComponentEvents;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
@@ -19,15 +22,23 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.equipment.EquipmentAssets;
+import net.minecraft.world.item.equipment.Equippable;
 
 /**
  * Alloy gear: an Alloy version of every Netherite item, made at a Smithing Table from the Netherite item, or another
  * Alloy's version, and the Alloy's ingot. It is Netherite's item with the Alloy's {@link AlloyTraits}, repaired and
  * enchanted with the Alloy's ingot.
+ *
+ * <p>Each Alloy also has an Armored Elytra: its chestplate, smithed with an Elytra, that glides. It counts as that
+ * Alloy's chestplate for everything but flight ({@link ArmoredElytraFlight}).
  */
 public final class AlloyGear {
 	private static final Map<Alloy, Map<GearKind, Item>> ITEMS = new EnumMap<>(Alloy.class);
+	private static final Map<Alloy, Item> ARMORED_ELYTRAS = new EnumMap<>(Alloy.class);
 	private static final Map<Item, Piece> PIECES = new HashMap<>();
 
 	static {
@@ -42,6 +53,11 @@ public final class AlloyGear {
 			}
 
 			ITEMS.put(alloy, items);
+
+			Item armoredElytra = registerArmoredElytra(alloy);
+
+			ARMORED_ELYTRAS.put(alloy, armoredElytra);
+			PIECES.put(armoredElytra, new Piece(alloy, GearKind.CHESTPLATE));
 		}
 	}
 
@@ -53,12 +69,22 @@ public final class AlloyGear {
 		return ITEMS.get(alloy).get(kind);
 	}
 
-	/** The Alloy the item is gear of, or empty if it isn't Alloy gear. */
+	/** The Alloy's Armored Elytra. */
+	public static Item armoredElytra(Alloy alloy) {
+		return ARMORED_ELYTRAS.get(alloy);
+	}
+
+	/** Whether the item is an Armored Elytra, of any Alloy. */
+	public static boolean isArmoredElytra(ItemInstance item) {
+		return ARMORED_ELYTRAS.containsValue(item.typeHolder().value());
+	}
+
+	/** The Alloy the item is gear of, or empty if it isn't Alloy gear. An Armored Elytra is its Alloy's gear. */
 	public static Optional<Alloy> alloyOf(ItemInstance item) {
 		return pieceOf(item).map(Piece::alloy);
 	}
 
-	/** The kind of gear the stack is, or empty if it isn't Alloy gear. */
+	/** The kind of gear the stack is, or empty if it isn't Alloy gear. An Armored Elytra is a chestplate. */
 	public static Optional<GearKind> kindOf(ItemInstance item) {
 		return pieceOf(item).map(Piece::kind);
 	}
@@ -92,6 +118,11 @@ public final class AlloyGear {
 
 		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(AlloyGear::addToTab);
 		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(AlloyGear::addToTab);
+		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(output -> output.insertAfter(
+			Items.ELYTRA,
+			Arrays.stream(Alloy.values()).map(alloy -> new ItemStack(armoredElytra(alloy))).toList(),
+			CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
+		));
 	}
 
 	private static Item registerItem(Alloy alloy, GearKind kind) {
@@ -101,6 +132,25 @@ public final class AlloyGear {
 		if (kind.hasDurability()) properties.repairable(alloy.ingot());
 
 		return Alloys.registerItem(alloy.path() + "_" + kind.path(), Item::new, properties);
+	}
+
+	// The chestplate, so the same armor, durability and enchantability, that glides as an Elytra does. It is worn
+	// with its own equipment asset, which draws the chestplate and the wings.
+	private static Item registerArmoredElytra(Alloy alloy) {
+		String name = alloy.path() + "_armored_elytra";
+		AlloyTraits traits = alloy.traits();
+		Equippable chestplate = Equippable.builder(EquipmentSlot.CHEST)
+			.setEquipSound(traits.armorMaterial(alloy).equipSound())
+			.setAsset(ResourceKey.create(EquipmentAssets.ROOT_ID, MapleFlavored.id(name)))
+			.build();
+		Item.Properties properties = GearKind.CHESTPLATE.properties(traits.toolMaterial(), traits.armorMaterial(alloy))
+			.component(DataComponents.GLIDER, Unit.INSTANCE)
+			.component(DataComponents.EQUIPPABLE, chestplate)
+			.rarity(Rarity.EPIC)
+			.fireResistant()
+			.repairable(alloy.ingot());
+
+		return Alloys.registerItem(name, Item::new, properties);
 	}
 
 	// Vanilla's helpers build the base attributes and durability; the traits go on top of them.

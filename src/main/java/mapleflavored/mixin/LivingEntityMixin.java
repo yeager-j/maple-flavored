@@ -6,6 +6,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyDamage;
 import mapleflavored.alloys.AlloySets;
+import mapleflavored.alloys.ArmoredElytraFlight;
 import mapleflavored.alloys.OrichalcumSave;
 import mapleflavored.grounded.Grounded;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,6 +15,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,16 +24,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Stops a Grounded entity gliding, the way vanilla stops it under Levitation: no glide can start, and the server ends
- * one already under way. Applies Alloy armor's damage reductions last, after armor, Resistance and Protection, so they
- * also reduce damage that bypasses those, such as a sonic boom. Applies the Alloy set bonuses that live on a living
- * entity: Steel's Levitation immunity, Shakudo's freedom from block and frost slowdown, Adamant's armor piercing and
- * Orichalcum's save.
+ * one already under way. Slows an Armored Elytra's glide. Applies Alloy armor's damage reductions last, after armor,
+ * Resistance and Protection, so they also reduce damage that bypasses those, such as a sonic boom. Applies the Alloy
+ * set bonuses that live on a living entity: Steel's Levitation immunity, Shakudo's freedom from block and frost
+ * slowdown, Adamant's armor piercing and Orichalcum's save.
  */
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 	@ModifyReturnValue(method = "canGlide", at = @At("RETURN"))
 	private boolean noGlidingWhileGrounded(boolean canGlide) {
 		return canGlide && !Grounded.isGrounded((LivingEntity) (Object) this);
+	}
+
+	@ModifyReturnValue(method = "updateFallFlyingMovement", at = @At("RETURN"))
+	private Vec3 armoredElytraGlidesSlower(Vec3 movement) {
+		return ArmoredElytraFlight.afterGlideDrag((LivingEntity) (Object) this, movement);
 	}
 
 	@ModifyReturnValue(method = "getDamageAfterMagicAbsorb", at = @At("RETURN"))
