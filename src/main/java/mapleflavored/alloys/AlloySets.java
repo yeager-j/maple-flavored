@@ -29,7 +29,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * <ul>
  * <li>Steel: knockback and Levitation immunity.</li>
  * <li>Electrum: fire and lava immunity, and Withered Hearts form every 10 seconds.</li>
- * <li>Shakudo: no slowdown from soul sand, honey, cobwebs or powder snow.</li>
+ * <li>Shakudo: no slowdown from soul sand, honey, cobwebs or powder snow, full-height jumps off honey, and walking on powder snow as leather boots do.</li>
  * <li>Adamant: 25% of melee damage ignores armor points, though not Protection.</li>
  * <li>Orichalcum: a lethal-hit save ({@link OrichalcumSave}).</li>
  * </ul>

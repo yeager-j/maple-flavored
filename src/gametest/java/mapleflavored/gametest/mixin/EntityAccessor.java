@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-/** Reads the movement slowdowns blocks put on an entity, which vanilla keeps protected. */
+/** Reads the movement slowdowns and jump limits blocks put on an entity, which vanilla keeps protected. */
 @Mixin(Entity.class)
 public interface EntityAccessor {
 	/** The speed multiplier a block such as a cobweb set this tick, or zero when none did. */
@@ -16,4 +16,8 @@ public interface EntityAccessor {
 	/** The speed factor of the block the entity stands on, such as soul sand's 0.4. */
 	@Invoker("getBlockSpeedFactor")
 	float maple$blockSpeedFactor();
+
+	/** The jump factor of the block the entity stands on, such as honey's 0.5. */
+	@Invoker("getBlockJumpFactor")
+	float maple$blockJumpFactor();
 }

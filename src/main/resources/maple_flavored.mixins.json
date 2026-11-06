@@ -46,6 +46,7 @@
 		"PiglinBruteAiMixin",
 		"PlayerAdvancementsMixin",
 		"PlayerMixin",
+		"PowderSnowBlockMixin",
 		"RaiderMixin",
 		"ResourceManagerRegistryLoadTaskMixin",
 		"SculkBlockMixin",

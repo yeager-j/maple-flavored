@@ -44,6 +44,8 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Alloy set bonuses: what counts as a full set, each Alloy's bonus, Orichalcum's save and its recharge, and the
@@ -175,6 +177,21 @@ public class AlloySetGameTests {
 	}
 
 	@GameTest
+	public void aFullShakudoSetJumpsFullHeightOffHoney(GameTestHelper helper) {
+		helper.setBlock(FLOOR_POS, Blocks.HONEY_BLOCK);
+
+		ServerPlayer player = standingPlayer(helper);
+
+		wearSet(player, Alloy.SHAKUDO);
+		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.NETHERITE_HELMET));
+		helper.assertTrue(((EntityAccessor) player).maple$blockJumpFactor() < 1.0F, "honey shortens three Shakudo pieces' jump");
+
+		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(AlloyGear.of(Alloy.SHAKUDO, GearKind.HELMET)));
+		helper.assertValueEqual(((EntityAccessor) player).maple$blockJumpFactor(), 1.0F, "honey's jump factor for a full Shakudo set");
+		helper.succeed();
+	}
+
+	@GameTest
 	public void aFullShakudoSetIsNeverStuckInCobwebsOrPowderSnow(GameTestHelper helper) {
 		assertNeverStuck(helper, Blocks.COBWEB);
 		assertNeverStuck(helper, Blocks.POWDER_SNOW);
@@ -184,6 +201,21 @@ public class AlloySetGameTests {
 		wearSet(player, Alloy.SHAKUDO);
 		player.makeStuckInBlock(Blocks.SWEET_BERRY_BUSH.defaultBlockState(), new Vec3(0.8, 0.75, 0.8));
 		helper.assertFalse(stuckSpeedMultiplier(player).equals(Vec3.ZERO), "a sweet berry bush still slows a full Shakudo set");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void aFullShakudoSetWalksOnPowderSnow(GameTestHelper helper) {
+		helper.setBlock(FLOOR_POS, Blocks.POWDER_SNOW);
+
+		ServerPlayer player = standingPlayer(helper);
+
+		wearSet(player, Alloy.SHAKUDO);
+		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.NETHERITE_HELMET));
+		helper.assertTrue(powderSnowShapeUnder(helper, player).isEmpty(), "three Shakudo pieces sink into powder snow");
+
+		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(AlloyGear.of(Alloy.SHAKUDO, GearKind.HELMET)));
+		helper.assertFalse(powderSnowShapeUnder(helper, player).isEmpty(), "a full Shakudo set stands on powder snow");
 		helper.succeed();
 	}
 
@@ -391,6 +423,12 @@ public class AlloySetGameTests {
 		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.NETHERITE_HELMET));
 		player.makeStuckInBlock(block.defaultBlockState(), slowdown);
 		helper.assertValueEqual(stuckSpeedMultiplier(player), slowdown, block + "'s slowdown on three Shakudo pieces");
+	}
+
+	private static VoxelShape powderSnowShapeUnder(GameTestHelper helper, ServerPlayer player) {
+		BlockPos floor = helper.absolutePos(FLOOR_POS);
+
+		return helper.getLevel().getBlockState(floor).getCollisionShape(helper.getLevel(), floor, CollisionContext.of(player));
 	}
 
 	private static double knockedBackDistance(GameTestHelper helper, ServerPlayer player) {
