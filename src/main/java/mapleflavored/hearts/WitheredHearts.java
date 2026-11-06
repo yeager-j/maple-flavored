@@ -3,6 +3,8 @@ package mapleflavored.hearts;
 import com.mojang.serialization.Codec;
 import mapleflavored.MapleFlavored;
 import mapleflavored.advancements.MapleTriggers;
+import mapleflavored.alloys.Alloy;
+import mapleflavored.alloys.AlloySets;
 import mapleflavored.subspaces.WitherSubspaces;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
@@ -15,7 +17,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
 /**
- * Withered Hearts: hearts the Wither effect makes unusable, one every 5 seconds down to 1 usable heart.
+ * Withered Hearts: hearts the Wither effect makes unusable, one every 5 seconds down to 1 usable heart, or every 10
+ * seconds in a full Electrum set. The interval follows the armor worn each tick, so a swap changes it at once.
  *
  * <p>All return at once when the player has no Wither effect and is outside the Nether and every Wither's Subspace.
  * Death clears them, as neither
@@ -23,6 +26,7 @@ import net.minecraft.world.level.Level;
  */
 final class WitheredHearts {
 	private static final int WITHERING_INTERVAL_TICKS = 5 * 20;
+	private static final int ELECTRUM_WITHERING_INTERVAL_TICKS = 10 * 20;
 	private static final int FEWEST_USABLE_HEARTS = 1;
 
 	private static final AttachmentType<Integer> WITHERED_HEARTS = AttachmentRegistry.create(
@@ -75,7 +79,7 @@ final class WitheredHearts {
 	private static void advanceWithering(ServerPlayer player) {
 		int ticks = player.getAttachedOrElse(WITHERING_TICKS, 0) + 1;
 
-		if (ticks < WITHERING_INTERVAL_TICKS) {
+		if (ticks < witheringInterval(player)) {
 			player.setAttached(WITHERING_TICKS, ticks);
 
 			return;
@@ -87,6 +91,10 @@ final class WitheredHearts {
 			player.setAttached(WITHERED_HEARTS, count(player) + 1);
 			Hearts.applyMaxHealth(player);
 		}
+	}
+
+	private static int witheringInterval(ServerPlayer player) {
+		return AlloySets.wearsFullSet(player, Alloy.ELECTRUM) ? ELECTRUM_WITHERING_INTERVAL_TICKS : WITHERING_INTERVAL_TICKS;
 	}
 
 	// Checks the stored count, not the clamped one, so hearts hidden by low Max Hearts can't come back withered later.

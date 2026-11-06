@@ -97,6 +97,8 @@ public final class Alloys {
 		AlloyGear.register();
 		AlloyMining.register();
 		IllagerNeutrality.register();
+		AlloySets.register();
+		OrichalcumSave.register();
 
 		// The furnace's slots read the alloying recipes on the client too, to know what each slot accepts.
 		RecipeSynchronization.synchronizeRecipeSerializer(ALLOYING_SERIALIZER);

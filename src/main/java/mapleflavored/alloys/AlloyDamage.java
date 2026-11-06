@@ -10,8 +10,8 @@ import net.minecraft.world.entity.LivingEntity;
 
 /**
  * Alloy armor's damage reductions: each piece of Steel takes 10% off sonic booms and explosions, each piece of Electrum
- * 15% off fire, and each piece of Orichalcum 10% off magic and indirect magic. Pieces add up, so a full Electrum set
- * takes 60% off fire. The damage types are the {@code maple_flavored:reduced_by_<alloy>_armor} damage type tags.
+ * 15% off fire, and each piece of Orichalcum 10% off magic and indirect magic. Pieces add up, so a full Steel set
+ * takes 40% off explosions (a full Electrum set is immune to fire, from {@link AlloySets}). The damage types are the {@code maple_flavored:reduced_by_<alloy>_armor} damage type tags.
  */
 public final class AlloyDamage {
 	private static final Map<Alloy, Reduction> REDUCTIONS = Map.of(

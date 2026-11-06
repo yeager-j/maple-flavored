@@ -1,5 +1,7 @@
 package mapleflavored.alloys;
 
+import com.mojang.serialization.Codec;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -10,7 +12,7 @@ import net.minecraft.world.level.material.MapColor;
  * The five Alloys. Each is made in an Alloy Furnace from a Netherite Ingot and one storage block, and has its own ingot,
  * a block that stores 9 of them, and a version of every Netherite item ({@link AlloyGear}).
  */
-public enum Alloy {
+public enum Alloy implements StringRepresentable {
 	/** Made from a block of iron. */
 	STEEL("steel", MapColor.METAL, AlloyTraits.STEEL),
 	/** Made from a block of gold. */
@@ -21,6 +23,9 @@ public enum Alloy {
 	ADAMANT("adamant", MapColor.DIAMOND, AlloyTraits.ADAMANT),
 	/** Made from a block of emerald. */
 	ORICHALCUM("orichalcum", MapColor.EMERALD, AlloyTraits.ORICHALCUM);
+
+	/** Reads and writes an Alloy by its {@link #path()}. */
+	public static final Codec<Alloy> CODEC = StringRepresentable.fromEnum(Alloy::values);
 
 	// A block of Netherite's hardness, blast resistance and sound.
 	private static final float BLOCK_HARDNESS = 50.0F;
@@ -49,6 +54,11 @@ public enum Alloy {
 
 	/** The Alloy's name in ids, such as {@code steel}. */
 	public String path() {
+		return path;
+	}
+
+	@Override
+	public String getSerializedName() {
 		return path;
 	}
 

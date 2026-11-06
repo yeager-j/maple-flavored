@@ -9,8 +9,9 @@ import net.minecraft.world.level.gamerules.GameRuleCategory;
  * Maple's game rules: those that set what death costs, each on its own, with vanilla's Keep Inventory as the third,
  * defaulting to on; playtest values for Warden and Wither Subspaces, which apply to Subspaces that open after a change,
  * except the Wither's leash and its Subspace's light level, which apply at once; how near a Warden a player must be to
- * survive it; how far a held Echo Shard hears shriekers; Shakudo's and Adamant's mining, which apply at once; and how
- * long an Illager stays angry at an Orichalcum wearer who attacks it.
+ * survive it; how far a held Echo Shard hears shriekers; Shakudo's and Adamant's mining, which apply at once; how
+ * long an Illager stays angry at an Orichalcum wearer who attacks it; and how long the Orichalcum set's save takes to
+ * recharge.
  */
 public final class MapleGameRules {
 	/** When on, death costs no Max Hearts. Off by default. */
@@ -106,6 +107,15 @@ public final class MapleGameRules {
 		.range(1, 72_000)
 		.category(GameRuleCategory.MOBS)
 		.buildAndRegister(MapleFlavored.id("orichalcum_illager_anger_time"));
+
+	/**
+	 * How many ticks of online play a full Orichalcum set's save takes to recharge after saving its wearer: 36 000 is 30
+	 * minutes. Applies at once, to a recharge already under way too.
+	 */
+	public static final GameRule<Integer> ORICHALCUM_SAVE_RECHARGE_TIME = GameRuleBuilder.forInteger(36_000)
+		.range(1, 1_728_000)
+		.category(GameRuleCategory.PLAYER)
+		.buildAndRegister(MapleFlavored.id("orichalcum_save_recharge_time"));
 
 	private MapleGameRules() {
 	}
