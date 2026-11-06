@@ -49,7 +49,7 @@ public class ShriekerPulseGameTests {
 		}
 
 		for (MockPlayers.Listening listening : List.of(holder, offhand, bystander)) {
-			listening.player().snapTo(Vec3.atBottomCenterOf(feet));
+			SubspaceArena.teleport(listening.player(), Vec3.atBottomCenterOf(feet));
 			listening.sent(Object.class);
 		}
 
@@ -62,8 +62,10 @@ public class ShriekerPulseGameTests {
 				long fromNear = heard.stream().filter(pulse -> from(pulse, near)).count();
 				long fromMiddling = heard.stream().filter(pulse -> from(pulse, middling)).count();
 
-				helper.assertTrue(fromMiddling >= 2, "The shrieker 10 blocks away pulsed " + fromMiddling + " times");
-				helper.assertTrue(fromNear > fromMiddling, "The nearer shrieker pulsed " + fromNear + " times, no faster than the farther");
+				String heardWhere = " (the holder at " + holder.player().position() + " heard pulses from " + heard.stream().map(pulse -> new Vec3(pulse.getX(), pulse.getY(), pulse.getZ())).toList() + ")";
+
+				helper.assertTrue(fromMiddling >= 2, "The shrieker 10 blocks away pulsed " + fromMiddling + " times" + heardWhere);
+				helper.assertTrue(fromNear > fromMiddling, "The nearer shrieker pulsed " + fromNear + " times, no faster than the farther" + heardWhere);
 				helper.assertTrue(heard.stream().noneMatch(pulse -> from(pulse, tooFar)), "A shrieker 20 blocks away pulsed");
 				helper.assertValueEqual(heard.size(), (int) (fromNear + fromMiddling), "pulses from anywhere else");
 				helper.assertFalse(pulses(offhand).isEmpty(), "An Echo Shard in the offhand heard nothing");
