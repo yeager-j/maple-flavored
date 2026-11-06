@@ -36,7 +36,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The Wither: its 100-block Subspace, where Withered Hearts can't return, its 50-block leash, passing through bedrock
- * and obsidian, suffocation immunity, its Blight book and the kill credit for every player inside its Subspace.
+ * and obsidian, which grants Nice Try, suffocation immunity, its Blight book and the kill credit for every player inside
+ * its Subspace.
  *
  * <p>A Subspace reaches far past the few blocks between tests, so each test runs alone, in its own environment's batch,
  * in a {@link SubspaceArena}. Its Withers have no AI, so they never attack or wander.
@@ -47,6 +48,7 @@ public class WitherGameTests {
 	private static final int MARGIN = 10;
 	private static final String RECOVERY_ADVANCEMENT = "maple_flavored:nether/recover_withered_heart";
 	private static final String KILL_ADVANCEMENT = "maple_flavored:nether/kill_wither";
+	private static final String NICE_TRY_ADVANCEMENT = "maple_flavored:nether/nice_try";
 	private static final ResourceKey<Enchantment> BLIGHT = ResourceKey.create(Registries.ENCHANTMENT, MapleFlavored.id("blight"));
 	private static final double EPSILON = 1.0E-6;
 
@@ -106,10 +108,21 @@ public class WitherGameTests {
 	@GameTest(environment = "maple_flavored_gametest:wither_passage", maxTicks = 100)
 	public void theWitherPassesThroughBedrockAndObsidianButNotStone(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
+		// Each joins before its wall's Wither moves, so each sees only that Wither's move for Nice Try.
+		ServerPlayer bedrockWitness = arena.player(new Vec3(20.0, 0.0, 0.0), GameType.SURVIVAL);
 
 		helper.assertValueEqual(advanceThroughWall(helper, arena, Blocks.BEDROCK, 0), 2.0, "the Wither's move through bedrock");
+		helper.assertTrue(isDone(helper, bedrockWitness, NICE_TRY_ADVANCEMENT), "Nice Try is granted for bedrock");
+
+		ServerPlayer obsidianWitness = arena.player(new Vec3(20.0, 0.0, 3.0), GameType.SURVIVAL);
+
 		helper.assertValueEqual(advanceThroughWall(helper, arena, Blocks.OBSIDIAN, 6), 2.0, "the Wither's move through obsidian");
+		helper.assertTrue(isDone(helper, obsidianWitness, NICE_TRY_ADVANCEMENT), "Nice Try is granted for obsidian");
+
+		ServerPlayer stoneWitness = arena.player(new Vec3(20.0, 0.0, 6.0), GameType.SURVIVAL);
+
 		helper.assertTrue(advanceThroughWall(helper, arena, Blocks.STONE, 12) < 1.0, "the Wither moves through stone");
+		helper.assertFalse(isDone(helper, stoneWitness, NICE_TRY_ADVANCEMENT), "Nice Try is granted for stone");
 		helper.succeed();
 	}
 

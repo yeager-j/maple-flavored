@@ -5,7 +5,9 @@
 	"client": [
 		"AnvilScreenMixin",
 		"ClientLevelMixin",
+		"EntityRendererMixin",
 		"HudMixin",
+		"LightCoordsUtilMixin",
 		"SmithingScreenMixin"
 	],
 	"injectors": {

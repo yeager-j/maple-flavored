@@ -29,6 +29,9 @@ public final class MapleTriggers {
 	/** A Wither died while the player was inside its Subspace. */
 	public static final PlayerTrigger WITHER_KILLED = register("wither_killed", new PlayerTrigger());
 
+	/** A Wither moved through bedrock or obsidian while the player was inside its Subspace. */
+	public static final PlayerTrigger WITHER_PASSED_THROUGH = register("wither_passed_through", new PlayerTrigger());
+
 	private MapleTriggers() {
 	}
 

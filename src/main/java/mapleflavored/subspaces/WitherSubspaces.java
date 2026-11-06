@@ -2,6 +2,7 @@ package mapleflavored.subspaces;
 
 import java.util.function.Consumer;
 import mapleflavored.advancements.MapleTriggers;
+import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -74,6 +75,13 @@ public final class WitherSubspaces {
 		return toCentre.normalize().scale(limit).subtract(fromCentre);
 	}
 
+	/** Triggers {@code trigger} for every player inside the Wither's Subspace, but spectators. Server only. */
+	public static void triggerForPlayersInside(WitherBoss wither, PlayerTrigger trigger) {
+		if (!(wither.level() instanceof ServerLevel level)) return;
+
+		Subspaces.ownedBy(level, wither.getUUID()).ifPresent(subspace -> trigger(level, subspace, trigger));
+	}
+
 	// Every way a Wither appears adds it to a level, so this catches both building one and /summon. One that already
 	// has a Subspace is only loading again; its home keeps its wandering flight inside the leash.
 	private static void openOrLeash(Entity entity, ServerLevel level) {
@@ -88,10 +96,12 @@ public final class WitherSubspaces {
 	// The Subspace ends while its dying Wither is still in the level. A Wither discarded, such as by Peaceful, isn't
 	// dying, so it credits nobody.
 	private static void creditKill(ServerLevel level, Subspace subspace) {
-		if (subspace.kind() != Subspace.Kind.WITHER || !isDying(level, subspace)) return;
+		if (subspace.kind() == Subspace.Kind.WITHER && isDying(level, subspace)) trigger(level, subspace, MapleTriggers.WITHER_KILLED);
+	}
 
+	private static void trigger(ServerLevel level, Subspace subspace, PlayerTrigger trigger) {
 		for (ServerPlayer player : level.players()) {
-			if (!player.isSpectator() && subspace.contains(player.position())) MapleTriggers.WITHER_KILLED.trigger(player);
+			if (!player.isSpectator() && subspace.contains(player.position())) trigger.trigger(player);
 		}
 	}
 
