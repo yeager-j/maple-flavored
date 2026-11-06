@@ -32,6 +32,15 @@ public final class MapleTriggers {
 	/** A Wither moved through bedrock or obsidian while the player was inside its Subspace. */
 	public static final PlayerTrigger WITHER_PASSED_THROUGH = register("wither_passed_through", new PlayerTrigger());
 
+	/** An Elder Guardian died within 64 blocks of the player. */
+	public static final PlayerTrigger ELDER_GUARDIAN_KILLED = register("elder_guardian_killed", new PlayerTrigger());
+
+	/** A Warden died or dug back down near the player. */
+	public static final PlayerTrigger WARDEN_SURVIVED = register("warden_survived", new PlayerTrigger());
+
+	/** An Ender Dragon died while the player was in its fight's range. */
+	public static final PlayerTrigger ENDER_DRAGON_KILLED = register("ender_dragon_killed", new PlayerTrigger());
+
 	private MapleTriggers() {
 	}
 

@@ -8,7 +8,8 @@ import net.minecraft.world.level.gamerules.GameRuleCategory;
 /**
  * Maple's game rules: those that set what death costs, each on its own, with vanilla's Keep Inventory as the third,
  * defaulting to on; playtest values for Warden and Wither Subspaces, which apply to Subspaces that open after a change,
- * except the Wither's leash and its Subspace's light level, which apply at once; and how far a held Echo Shard hears shriekers.
+ * except the Wither's leash and its Subspace's light level, which apply at once; how near a Warden a player must be to
+ * survive it; and how far a held Echo Shard hears shriekers.
  */
 public final class MapleGameRules {
 	/** When on, death costs no Max Hearts. Off by default. */
@@ -41,6 +42,15 @@ public final class MapleGameRules {
 		.range(0, 10_000)
 		.category(GameRuleCategory.MOBS)
 		.buildAndRegister(MapleFlavored.id("warden_sculk_patch_charge"));
+
+	/**
+	 * How far from a Warden a player must be, in blocks, when it digs back down or dies, to be credited with surviving it.
+	 * Applies at once.
+	 */
+	public static final GameRule<Integer> WARDEN_SURVIVAL_RANGE = GameRuleBuilder.forInteger(50)
+		.range(1, 256)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("warden_survival_range"));
 
 	/** How far a Wither's Subspace reaches, in blocks. */
 	public static final GameRule<Integer> WITHER_SUBSPACE_RADIUS = GameRuleBuilder.forInteger(100)

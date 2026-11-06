@@ -1,0 +1,31 @@
+{
+  "parent": "minecraft:adventure/root",
+  "criteria": {
+    "warden_survived": {
+      "trigger": "maple_flavored:warden_survived"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.adventure.avoid_vibration.description"
+    },
+    "icon": {
+      "id": "minecraft:sculk_sensor"
+    },
+    "title": {
+      "translate": "advancements.adventure.avoid_vibration.title"
+    },
+    "frame": "goal"
+  },
+  "requirements": [
+    [
+      "warden_survived"
+    ]
+  ],
+  "sends_telemetry_event": true,
+  "rewards": {
+    "loot": [
+      "maple_flavored:advancement_reward/crystal_heart"
+    ]
+  }
+}

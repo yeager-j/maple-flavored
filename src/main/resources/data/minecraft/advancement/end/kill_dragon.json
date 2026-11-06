@@ -1,0 +1,43 @@
+{
+  "parent": "minecraft:end/root",
+  "criteria": {
+    "killed_dragon": {
+      "conditions": {
+        "entity": {
+          "type": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "minecraft:entity_type": "minecraft:ender_dragon"
+          }
+        }
+      },
+      "trigger": "minecraft:player_killed_entity"
+    },
+    "ender_dragon_killed": {
+      "trigger": "maple_flavored:ender_dragon_killed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.end.kill_dragon.description"
+    },
+    "icon": {
+      "id": "minecraft:dragon_head"
+    },
+    "title": {
+      "translate": "advancements.end.kill_dragon.title"
+    }
+  },
+  "requirements": [
+    [
+      "killed_dragon",
+      "ender_dragon_killed"
+    ]
+  ],
+  "sends_telemetry_event": true,
+  "rewards": {
+    "loot": [
+      "maple_flavored:advancement_reward/crystal_heart"
+    ]
+  }
+}

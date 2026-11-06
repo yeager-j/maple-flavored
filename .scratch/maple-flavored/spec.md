@@ -323,8 +323,8 @@ Each module below hides its rules behind a small interface. Other modules call t
 
 **Milestones and advancements.** Advancement data for the 23 new advancements, the reparented vanilla ones and the changed criteria.
 - Milestones are seven advancements: Acquire Hardware, Diamonds!, We Need to Go Deeper and The End?, plus new ones for a copper ingot, a Netherite Ingot and an Eye of Ender. Each description starts with a red broken heart icon, as in Matcha Flavoured, and the chat message when one lowers the floor begins "[Milestone]". The Hearts module reads which Milestones a player holds.
-- New advancements, parents, frames and rewards follow the table in the Advancements decision. Custom criteria triggers cover: shelving a book in a Library, a Full Library, making an enchanted golden apple, Reinforcing a piece, getting an Ancient Ember, smelting an Alloy ingot, wearing each full Alloy set at any time, getting a Withered Heart back, an all-Alloy level 4 beacon, getting an Armored Elytra, breaking a Cleared spawner (to the breaker), consuming a Crystal Heart, being saved by one, reaching 30 Max Hearts, killing the Wither (every player inside its Subspace), a Wither passing through bedrock or obsidian (every player inside its Subspace), killing an Elder Guardian (every player within 64 blocks), surviving the Warden (every player inside its Subspace when it digs back down or dies), collecting your own Remnant, and being in the Overworld when a Blood Moon rises.
-- Crystal Hearts come only from Kill the Wither, Kill an Elder Guardian, Survive the Warden and Free the End, as advancement reward loot. New challenges give 100 XP. Only But why? and Nice Try are hidden.
+- New advancements, parents, frames and rewards follow the table in the Advancements decision. Custom criteria triggers cover: shelving a book in a Library, a Full Library, making an enchanted golden apple, Reinforcing a piece, getting an Ancient Ember, smelting an Alloy ingot, wearing each full Alloy set at any time, getting a Withered Heart back, an all-Alloy level 4 beacon, getting an Armored Elytra, breaking a Cleared spawner (to the breaker), consuming a Crystal Heart, being saved by one, reaching 30 Max Hearts, killing the Wither (every player inside its Subspace), a Wither passing through bedrock or obsidian (every player inside its Subspace), killing an Elder Guardian (every player within 64 blocks), surviving the Warden (every player within the Warden survival range of it when it digs back down or dies), collecting your own Remnant, and being in the Overworld when a Blood Moon rises.
+- Crystal Hearts come only from Kill the Wither, Kill an Elder Guardian, Sneak 100 (which becomes Survive the Warden) and Free the End, as advancement reward loot. New challenges give 100 XP. Only But why? and Nice Try are hidden.
 - Vanilla changes: Getting an Upgrade asks for a copper pickaxe. Stone Age keeps its criterion, so the stone tool materials tag stays. Postmortal still counts only a Totem. Enchanter still fires on vanilla's enchanted item trigger. Getting an Upgrade, Enchanter, Zombie Doctor, Eye Spy and Cover Me in Debris move under their new parents. Subspace Bubble and Respecting the Remnants keep their titles.
 
 **Enchanting and Library.** Replaces the enchanting table's menu.
@@ -449,6 +449,9 @@ Three more game rules hold Warden Subspace playtest values. Each applies to Subs
 - **Warden Subspace radius** (default 50): how many blocks a Warden's Subspace reaches.
 - **Warden sculk patch radius** (default 5): how many blocks from where a Warden appears its sculk patch may spread.
 - **Warden sculk patch charge** (default 150): how much sculk the patch spreads, as a sculk catalyst's charge. 0 spreads none.
+
+One more holds a Warden playtest value, and applies at once:
+- **Warden survival range** (default 50): how many blocks from a Warden a player must be, when it digs back down or dies, to get Sneak 100.
 
 Three more hold Wither playtest values:
 - **Wither Subspace radius** (default 100): how many blocks a Wither's Subspace reaches. It applies to Subspaces that open after it changes.
