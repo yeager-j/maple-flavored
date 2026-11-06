@@ -321,10 +321,10 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Decay must reach Remnants in unloaded chunks and other dimensions, so it is worked out lazily. Each player has a persistent death count. Each Remnant stores its starting points and its owner's death count when it was made. Whenever a Remnant loads, is collected or is checked, its points are reduced once for every later death: each time, the points become 80% of the current points, rounded down. A death counts even at 0 XP. The death that makes a Remnant does not cut that Remnant. A Remnant whose points reach 0 is removed.
 - The Recovery Compass stays vanilla and points to the player's recorded last death location. When a Remnant is moved to safe ground, that recorded location is set to the Remnant's spot, so the compass leads to it.
 
-**Milestones and advancements.** Advancement data for the 22 new advancements, the reparented vanilla ones and the changed criteria.
+**Milestones and advancements.** Advancement data for the 23 new advancements, the reparented vanilla ones and the changed criteria.
 - Milestones are seven advancements: Acquire Hardware, Diamonds!, We Need to Go Deeper and The End?, plus new ones for a copper ingot, a Netherite Ingot and an Eye of Ender. Each description starts with a red broken heart icon, as in Matcha Flavoured, and the chat message when one lowers the floor begins "[Milestone]". The Hearts module reads which Milestones a player holds.
-- New advancements, parents, frames and rewards follow the table in the Advancements decision. Custom criteria triggers cover: shelving a book in a Library, a Full Library, making an enchanted golden apple, Reinforcing a piece, getting an Ancient Ember, smelting an Alloy ingot, wearing each full Alloy set at any time, getting a Withered Heart back, an all-Alloy level 4 beacon, getting an Armored Elytra, breaking a Cleared spawner (to the breaker), consuming a Crystal Heart, being saved by one, reaching 30 Max Hearts, killing the Wither (every player inside its Subspace), killing an Elder Guardian (every player within 64 blocks), surviving the Warden (every player inside its Subspace when it digs back down or dies), collecting your own Remnant, and being in the Overworld when a Blood Moon rises.
-- Crystal Hearts come only from Kill the Wither, Kill an Elder Guardian, Survive the Warden and Free the End, as advancement reward loot. New challenges give 100 XP. Only But why? is hidden.
+- New advancements, parents, frames and rewards follow the table in the Advancements decision. Custom criteria triggers cover: shelving a book in a Library, a Full Library, making an enchanted golden apple, Reinforcing a piece, getting an Ancient Ember, smelting an Alloy ingot, wearing each full Alloy set at any time, getting a Withered Heart back, an all-Alloy level 4 beacon, getting an Armored Elytra, breaking a Cleared spawner (to the breaker), consuming a Crystal Heart, being saved by one, reaching 30 Max Hearts, killing the Wither (every player inside its Subspace), a Wither passing through bedrock or obsidian (every player inside its Subspace), killing an Elder Guardian (every player within 64 blocks), surviving the Warden (every player inside its Subspace when it digs back down or dies), collecting your own Remnant, and being in the Overworld when a Blood Moon rises.
+- Crystal Hearts come only from Kill the Wither, Kill an Elder Guardian, Survive the Warden and Free the End, as advancement reward loot. New challenges give 100 XP. Only But why? and Nice Try are hidden.
 - Vanilla changes: Getting an Upgrade asks for a copper pickaxe. Stone Age keeps its criterion, so the stone tool materials tag stays. Postmortal still counts only a Totem. Enchanter still fires on vanilla's enchanted item trigger. Getting an Upgrade, Enchanter, Zombie Doctor, Eye Spy and Cover Me in Debris move under their new parents. Subspace Bubble and Respecting the Remnants keep their titles.
 
 **Enchanting and Library.** Replaces the enchanting table's menu.
@@ -374,7 +374,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Warden kind: players inside get Darkness and Grounded. The owning Warden is aware of every entity inside and pathfinds to the nearest player; anger and sniffing stay vanilla.
 - A weak patch of sculk spreads where the Warden appeared, with vanilla's sculk spreading rules (only blocks a Sculk Catalyst can replace), within about 5 blocks of that spot and only while the Subspace is active and its Warden is loaded. Its size and strength are playtest values.
 - Each shrieker that grows during a Subspace records that Subspace and can summon. When the Subspace ends, its shriekers lose the ability to summon. A shrieker in an unloaded chunk is updated the next time it loads.
-- Wither kind: blocks Withered Heart recovery. It applies no effect by itself.
+- Wither kind: blocks Withered Heart recovery. It applies no effect by itself. Clients draw every block and entity inside it at light level 3, from the sky and from blocks alike, while blocks and entities that glow on their own still glow; the server's light, and so mob spawning, is unchanged. A game rule sets the level.
 - Overlap is allowed. Grounded does not stack.
 
 **Grounded.** A registered status effect, applied inside a Warden Subspace and inside an Ancient City until its book is taken. It stops Elytra gliding the way Levitation does (no glide starts, and one under way ends), which also leaves Firework Rockets nothing to boost. It greatly increases the gravity of Ender Pearls thrown while Grounded and stops Riptide and Zephyr's double jump. Armored Elytra are Elytra, so it stops them too. Levitation, Slow Falling and Chorus Fruit still work.
@@ -450,6 +450,11 @@ Three more game rules hold Warden Subspace playtest values. Each applies to Subs
 - **Warden sculk patch radius** (default 5): how many blocks from where a Warden appears its sculk patch may spread.
 - **Warden sculk patch charge** (default 150): how much sculk the patch spreads, as a sculk catalyst's charge. 0 spreads none.
 
+Three more hold Wither playtest values:
+- **Wither Subspace radius** (default 100): how many blocks a Wither's Subspace reaches. It applies to Subspaces that open after it changes.
+- **Wither leash radius** (default 50): how many blocks from its Subspace's centre a Wither can move. It applies at once.
+- **Wither Subspace light level** (default 3): the light level clients draw everything inside a Wither's Subspace at. It applies at once.
+
 One more holds an Echo Shard playtest value:
 - **Echo Shard shrieker range** (default 15): how many blocks away a held Echo Shard hears sculk shriekers.
 
@@ -461,7 +466,7 @@ There is one automated test seam: Fabric's server GameTest framework. Tests run 
 
 The client decides some things, and a headless server can't see them. These are checked by hand in a development client, not automated:
 
-- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced overlay and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, and the Blood Moon sky.
+- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced overlay and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, the Wither Subspace's dim light, and the Blood Moon sky.
 - Player movement and input: Zephyr's double jump and Clutch, Grounded ending a glide, the Armored Elytra's glide and Firework Rocket penalties, Riptide being blocked, and Shakudo's movement speed.
 - Sync: that the client shows the server's Max Hearts, Withered Hearts, Remnants, Subspaces and Blood Moon.
 
@@ -540,6 +545,7 @@ The design left these small points open. This spec picks a default for each, and
 
 - Grounded's Ender Pearl gravity multiplier, which Mob changes left to playtesting.
 - The Warden Subspace's radius and its sculk patch's size and strength, set by playtest game rules.
+- The Wither Subspace's radius and light level, and the Wither's leash, set by playtest game rules.
 - The Ancient City keeper ring: the 30-block minimum distance from the book and the 30° windows.
 - The exact book spot in each structure other than the Stronghold, whose book is in the portal room, chosen in that structure's build ticket by the manifesto's rule: the structure's most important spot, fixed and visible. Buried Treasure, Trail Ruins, Abandoned Camps and Shipwrecks need a spot chosen with care.
 - The Warden spawn search: the tickets say it widens "within the Subspace", which doesn't exist until the Warden spawns. This spec reads it as up to 50 blocks from the player.

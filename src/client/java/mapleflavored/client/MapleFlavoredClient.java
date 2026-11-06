@@ -8,6 +8,7 @@ import mapleflavored.client.remnants.RemnantRenderer;
 import mapleflavored.client.spawners.SpawnerForcefieldRenderer;
 import mapleflavored.client.structurebooks.StructureBookRenderer;
 import mapleflavored.client.subspaces.SubspaceShellRenderer;
+import mapleflavored.client.subspaces.WitherSubspaceLight;
 import mapleflavored.client.zephyr.ZephyrInput;
 import mapleflavored.enchanting.Enchanting;
 import net.fabricmc.api.ClientModInitializer;
@@ -25,5 +26,6 @@ public class MapleFlavoredClient implements ClientModInitializer {
 		StructureBookRenderer.register();
 		SpawnerForcefieldRenderer.register();
 		SubspaceShellRenderer.register();
+		WitherSubspaceLight.register();
 	}
 }

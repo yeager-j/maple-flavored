@@ -7,8 +7,8 @@ import net.minecraft.world.level.gamerules.GameRuleCategory;
 
 /**
  * Maple's game rules: those that set what death costs, each on its own, with vanilla's Keep Inventory as the third,
- * defaulting to on; playtest values for Warden Subspaces, which apply to Subspaces that open after a change; and how far
- * a held Echo Shard hears shriekers.
+ * defaulting to on; playtest values for Warden and Wither Subspaces, which apply to Subspaces that open after a change,
+ * except the Wither's leash and its Subspace's light level, which apply at once; and how far a held Echo Shard hears shriekers.
  */
 public final class MapleGameRules {
 	/** When on, death costs no Max Hearts. Off by default. */
@@ -41,6 +41,24 @@ public final class MapleGameRules {
 		.range(0, 10_000)
 		.category(GameRuleCategory.MOBS)
 		.buildAndRegister(MapleFlavored.id("warden_sculk_patch_charge"));
+
+	/** How far a Wither's Subspace reaches, in blocks. */
+	public static final GameRule<Integer> WITHER_SUBSPACE_RADIUS = GameRuleBuilder.forInteger(100)
+		.range(1, 256)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("wither_subspace_radius"));
+
+	/** How far from its Subspace's centre a Wither can move, in blocks. Applies at once. */
+	public static final GameRule<Integer> WITHER_LEASH_RADIUS = GameRuleBuilder.forInteger(50)
+		.range(1, 256)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("wither_leash_radius"));
+
+	/** The light level clients draw everything inside a Wither's Subspace at, from 0 to 15. */
+	public static final GameRule<Integer> WITHER_SUBSPACE_LIGHT_LEVEL = GameRuleBuilder.forInteger(3)
+		.range(0, 15)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("wither_subspace_light_level"));
 
 	/** How far a held Echo Shard hears sculk shriekers, in blocks. */
 	public static final GameRule<Integer> ECHO_SHARD_SHRIEKER_RANGE = GameRuleBuilder.forInteger(15)

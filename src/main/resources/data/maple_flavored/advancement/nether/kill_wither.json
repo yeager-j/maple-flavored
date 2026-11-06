@@ -1,0 +1,30 @@
+{
+  "parent": "minecraft:nether/summon_wither",
+  "criteria": {
+    "wither_killed": {
+      "trigger": "maple_flavored:wither_killed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.nether.kill_wither.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "minecraft:nether_star"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.nether.kill_wither.title"
+    }
+  },
+  "requirements": [
+    [
+      "wither_killed"
+    ]
+  ],
+  "rewards": {
+    "loot": [
+      "maple_flavored:advancement_reward/crystal_heart"
+    ]
+  }
+}

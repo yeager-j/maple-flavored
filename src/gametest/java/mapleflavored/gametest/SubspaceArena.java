@@ -35,6 +35,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.biome.Biome;
@@ -68,8 +69,8 @@ final class SubspaceArena {
 	static final Block FLOOR = Blocks.SMOOTH_STONE;
 
 	private static final int HEIGHT = 160;
-	// Past the Subspace's reach, so nothing an earlier batch left is aware of the arena or affected by it.
-	private static final double CLEARED_RADIUS = RADIUS + 10.0;
+	// Past the largest Subspace's reach, so nothing an earlier batch left is aware of the arena or affected by it.
+	private static final double CLEARED_RADIUS = Math.max(RADIUS, MapleGameRules.WITHER_SUBSPACE_RADIUS.defaultValue()) + 10.0;
 	// How far along the arena's x axis a runway keeps chunks loaded, past every Warden and target the tests place.
 	private static final int RUNWAY_REACH = 80;
 	// Room above a sculk floor for the veins and growths that spread over it.
@@ -226,6 +227,19 @@ final class SubspaceArena {
 		warden.setNoAi(true);
 
 		return warden;
+	}
+
+	/** A Wither that stays where it's put, even in midair, and never attacks, so its Subspace lasts until the test ends it. */
+	WitherBoss stillWither(Vec3 offset) {
+		BlockPos fromCentre = BlockPos.containing(at(offset)).subtract(centreBlock);
+
+		keepLoaded(fromCentre.getX(), fromCentre.getX(), fromCentre.getZ(), fromCentre.getZ());
+
+		WitherBoss wither = track(helper.spawn(EntityTypes.WITHER, relativeAt(offset)));
+
+		wither.setNoAi(true);
+
+		return wither;
 	}
 
 	/** A pig that stays where it's put. */

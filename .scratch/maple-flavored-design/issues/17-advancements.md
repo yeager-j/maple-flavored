@@ -46,6 +46,7 @@ Advancements guide players through Maple Flavored inside vanilla's own tabs. Eac
 | Nether | Smelt an Alloy ingot | Get an Ancient Ember | task | |
 | Nether | Wear a full set of each Alloy, at any time | Smelt an Alloy ingot | challenge | 100 XP |
 | Nether | Kill the Wither | Withering Heights | goal | Crystal Heart |
+| Nether | **Nice Try** (hidden): watch the Wither pass through bedrock or obsidian | Withering Heights | task | |
 | Nether | Get a Withered Heart back | A Terrible Fortress | task | |
 | Nether | **But why?** (hidden) | Beaconator | challenge | 100 XP |
 | End | Get an Armored Elytra | Sky's the Limit | goal | |

@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:nether/summon_wither",
+  "criteria": {
+    "wither_passed_through": {
+      "trigger": "maple_flavored:wither_passed_through"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.nether.nice_try.description"
+    },
+    "hidden": true,
+    "icon": {
+      "id": "minecraft:obsidian"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.nether.nice_try.title"
+    }
+  },
+  "requirements": [
+    [
+      "wither_passed_through"
+    ]
+  ]
+}
