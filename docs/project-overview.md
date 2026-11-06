@@ -249,11 +249,13 @@ Piglin Brutes drop Ancient Embers on player kills at 25%, plus five percentage p
 | --- | --- | --- | --- | --- |
 | Steel | Iron | 50% more durability and more weapon knockback | 50% more durability, more knockback resistance, 10% less Warden sonic boom and explosion damage | Knockback and Levitation immunity |
 | Electrum | Gold | One extra Enchantment Slot | One extra slot, 15% less fire damage, counts as gold to Piglins | Fire and lava immunity; Withered Hearts form every ten seconds instead of five |
-| Shakudo | Copper | 25% faster mining and 10% faster attacks | 2.5% faster movement | No slowdown from soul sand, honey, cobwebs, or powder snow |
-| Adamant | Diamond | One extra damage | One extra armor toughness | 25% of melee damage ignores armor points, but not Protection |
+| Shakudo | Copper | 30% faster mining and 10% faster attacks | 2.5% faster movement | No slowdown from soul sand, honey, cobwebs, or powder snow |
+| Adamant | Diamond | One extra damage; hard blocks mine like deepslate; the pickaxe can break bedrock | One extra armor toughness | 25% of melee damage ignores armor points, but not Protection |
 | Orichalcum | Emerald | A flat 50% bonus to Looting/Fortune drops | 10% less magic damage; Illager neutrality | Survive a lethal hit with Totem effects, recharging over thirty minutes of play |
 
 Orichalcum's drop bonus adds to Fortune or Looting rather than multiplying them, and affects only drops those enchantments already affect. It excludes Ancient Embers, Pith, and enchanted books. One Orichalcum armor piece grants Illager neutrality, which ends during raids, after attacking an Illager, or when a structure's book alerts them. Its death save belongs to the player and triggers before a held Totem or Crystal Heart.
+
+Shakudo's mining bonus applies after Efficiency, so a Shakudo pickaxe with Efficiency V breaks stone instantly without Haste. Adamant is the brute-force miner instead. Its tools mine any block they're suited to, such as obsidian or ancient debris, no slower than deepslate, though stone and deepslate themselves stay at Netherite speed. An Adamant pickaxe with Efficiency V, used under Haste II from a full beacon, breaks bedrock in fifteen seconds. The bedrock drops nothing, and breaking it earns the challenge **Breaking the Rules**.
 
 Gold's extra slot and Electrum's extra slot preserve gold's enchanting identity. Emerald gives Orichalcum its wealth theme.
 

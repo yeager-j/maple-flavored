@@ -41,7 +41,9 @@
 			"mapleflavored.gametest.WardenSummoningGameTests",
 			"mapleflavored.gametest.AncientCityBookGameTests",
 			"mapleflavored.gametest.ShriekerPulseGameTests",
-			"mapleflavored.gametest.AlloyGameTests"
+			"mapleflavored.gametest.AlloyGameTests",
+			"mapleflavored.gametest.AlloyGearGameTests",
+			"mapleflavored.gametest.AlloyMiningGameTests"
 		]
 	},
 	"mixins": [

@@ -44,6 +44,9 @@ public final class MapleTriggers {
 	/** A level 4 beacon whose whole pyramid is Alloy blocks is lit near the player. */
 	public static final PlayerTrigger ALLOY_BEACON_CONSTRUCTED = register("alloy_beacon_constructed", new PlayerTrigger());
 
+	/** A player in Survival broke a bedrock block. */
+	public static final PlayerTrigger BEDROCK_BROKEN = register("bedrock_broken", new PlayerTrigger());
+
 	private MapleTriggers() {
 	}
 

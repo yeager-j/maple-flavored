@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "maple_flavored:electrum_ingot",
+  "base": [
+    "minecraft:netherite_shovel",
+    "maple_flavored:steel_shovel",
+    "maple_flavored:shakudo_shovel",
+    "maple_flavored:adamant_shovel",
+    "maple_flavored:orichalcum_shovel"
+  ],
+  "result": {
+    "id": "maple_flavored:electrum_shovel"
+  }
+}

@@ -30,8 +30,9 @@ import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.MapColor;
 
 /**
- * The Materials and Alloys module's registrations: the Ancient Ember, the five {@link Alloy}s' ingots and blocks, and the
- * Alloy Furnace with its block entity, menu and {@code maple_flavored:alloying} recipe type.
+ * The Materials and Alloys module's registrations: the Ancient Ember, the five {@link Alloy}s' ingots, blocks and
+ * {@link AlloyGear}, the Alloy Furnace with its block entity, menu and {@code maple_flavored:alloying} recipe type, and
+ * {@link AlloyMining}.
  */
 public final class Alloys {
 	// A blast furnace's hardness and light while lit.
@@ -87,11 +88,14 @@ public final class Alloys {
 	}
 
 	/**
-	 * Registers the Ember, the Alloys, the Alloy Furnace, the alloying recipes' sync to clients and the creative tab
-	 * places. Call once from mod init.
+	 * Registers the Ember, the Alloys and their gear, the Alloy Furnace, the alloying recipes' sync to clients, Alloy
+	 * mining and the creative tab places. Call once from mod init.
 	 */
 	public static void register() {
 		List<Alloy> alloys = Arrays.asList(Alloy.values());
+
+		AlloyGear.register();
+		AlloyMining.register();
 
 		// The furnace's slots read the alloying recipes on the client too, to know what each slot accepts.
 		RecipeSynchronization.synchronizeRecipeSerializer(ALLOYING_SERIALIZER);

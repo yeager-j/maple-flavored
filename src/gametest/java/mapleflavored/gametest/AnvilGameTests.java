@@ -1,6 +1,9 @@
 package mapleflavored.gametest;
 
 import java.util.List;
+import mapleflavored.alloys.Alloy;
+import mapleflavored.alloys.AlloyGear;
+import mapleflavored.alloys.GearKind;
 import mapleflavored.anvil.AnvilResults;
 import mapleflavored.materialunits.MaterialUnits;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -49,6 +52,20 @@ public class AnvilGameTests {
 			new RepairCase(Items.TURTLE_HELMET, Items.TURTLE_SCUTE, 4),
 			new RepairCase(Items.WOLF_ARMOR, Items.ARMADILLO_SCUTE, 5),
 			new RepairCase(Items.MACE, Items.BREEZE_ROD, 1)
+		));
+	}
+
+	@GameTest
+	public void alloyGearRepairsFullyFromOneOfItsOwnIngot(GameTestHelper helper) {
+		Item steelSword = AlloyGear.of(Alloy.STEEL, GearKind.SWORD);
+		Item steelChestplate = AlloyGear.of(Alloy.STEEL, GearKind.CHESTPLATE);
+
+		assertNoResult(helper, damaged(steelSword), new ItemStack(Items.NETHERITE_INGOT), "a Steel sword with a Netherite Ingot");
+		assertNoResult(helper, damaged(steelSword), new ItemStack(Alloy.ELECTRUM.ingot()), "a Steel sword with an Electrum ingot");
+		assertFullRepairs(helper, List.of(
+			new RepairCase(steelSword, Alloy.STEEL.ingot(), 1),
+			new RepairCase(steelChestplate, Alloy.STEEL.ingot(), 1),
+			new RepairCase(AlloyGear.of(Alloy.ADAMANT, GearKind.SPEAR), Alloy.ADAMANT.ingot(), 1)
 		));
 	}
 

@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import mapleflavored.MapleFlavored;
+import mapleflavored.alloys.Alloy;
+import mapleflavored.alloys.AlloyGear;
+import mapleflavored.alloys.GearKind;
 import mapleflavored.enchanting.EnchantmentChecklist;
 import mapleflavored.enchanting.EnchantingDeposit;
 import mapleflavored.enchanting.EnchantingTableMenu;
@@ -192,6 +195,47 @@ public class EnchantingTableGameTests {
 		assertGoldSave(helper, 0, List.of(sharpness), true);
 		assertGoldSave(helper, 30, List.of(sharpness, unbreaking), true);
 		assertGoldSave(helper, 30, List.of(sharpness, unbreaking, looting), false);
+		helper.succeed();
+	}
+
+	@GameTest
+	public void electrumGearGetsAnExtraSlot(GameTestHelper helper) {
+		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
+		Holder<Enchantment> protection = enchantment(helper, Enchantments.PROTECTION);
+		Holder<Enchantment> unbreaking = enchantment(helper, Enchantments.UNBREAKING);
+
+		placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 1), book(protection, 1), book(unbreaking, 1))));
+
+		List<Holder<Enchantment>> swordChoices = List.of(sharpness, unbreaking);
+		Item electrumSword = AlloyGear.of(Alloy.ELECTRUM, GearKind.SWORD);
+		Item electrumChestplate = AlloyGear.of(Alloy.ELECTRUM, GearKind.CHESTPLATE);
+		Item steelSword = AlloyGear.of(Alloy.STEEL, GearKind.SWORD);
+
+		assertChoicesSave(helper, 30, new ItemStack(electrumSword), new ItemStack(Alloy.ELECTRUM.ingot()), swordChoices, true);
+		assertChoicesSave(helper, 30, new ItemStack(electrumChestplate), new ItemStack(Alloy.ELECTRUM.ingot()), List.of(protection, unbreaking), true);
+		assertChoicesSave(helper, 30, new ItemStack(Items.NETHERITE_SWORD), new ItemStack(Items.NETHERITE_INGOT), swordChoices, false);
+		assertChoicesSave(helper, 30, new ItemStack(steelSword), new ItemStack(Alloy.STEEL.ingot()), swordChoices, false);
+		helper.succeed();
+	}
+
+	@GameTest
+	public void alloyGearsDepositIsItsOwnIngot(GameTestHelper helper) {
+		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
+		ServerPlayer player = survivalPlayer(helper, 30);
+		Item steelSword = AlloyGear.of(Alloy.STEEL, GearKind.SWORD);
+
+		placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 1))));
+
+		EnchantingTableMenu table = table(helper, player);
+
+		fill(table, new ItemStack(steelSword), 1, new ItemStack(Items.NETHERITE_INGOT));
+		toggle(helper, table, player, sharpness);
+		assertRefuses(helper, table, player, "Sharpness on a Steel sword paid with a Netherite Ingot");
+
+		ItemStack saved = save(helper, player, new ItemStack(steelSword), new ItemStack(Alloy.STEEL.ingot()), sharpness);
+
+		helper.assertTrue(ItemStack.matches(EnchantingDeposit.refund(saved), new ItemStack(Alloy.STEEL.ingot())), "the deposit is a Steel ingot");
+		assertGrindingRefunds(helper, player, saved, Alloy.STEEL.ingot(), 1);
 		helper.succeed();
 	}
 

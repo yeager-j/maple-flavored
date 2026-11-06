@@ -1,0 +1,28 @@
+{
+  "parent": "minecraft:nether/create_full_beacon",
+  "criteria": {
+    "bedrock_broken": {
+      "trigger": "maple_flavored:bedrock_broken"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.nether.break_bedrock.description"
+    },
+    "icon": {
+      "id": "minecraft:bedrock"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.nether.break_bedrock.title"
+    },
+    "frame": "challenge"
+  },
+  "requirements": [
+    [
+      "bedrock_broken"
+    ]
+  ],
+  "rewards": {
+    "experience": 100
+  }
+}

@@ -9,6 +9,16 @@
     "minecraft:golden_helmet",
     "minecraft:golden_chestplate",
     "minecraft:golden_leggings",
-    "minecraft:golden_boots"
+    "minecraft:golden_boots",
+    "maple_flavored:electrum_sword",
+    "maple_flavored:electrum_spear",
+    "maple_flavored:electrum_shovel",
+    "maple_flavored:electrum_pickaxe",
+    "maple_flavored:electrum_axe",
+    "maple_flavored:electrum_hoe",
+    "maple_flavored:electrum_helmet",
+    "maple_flavored:electrum_chestplate",
+    "maple_flavored:electrum_leggings",
+    "maple_flavored:electrum_boots"
   ]
 }

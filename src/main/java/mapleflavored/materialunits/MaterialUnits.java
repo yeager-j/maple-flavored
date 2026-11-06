@@ -3,8 +3,10 @@ package mapleflavored.materialunits;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import mapleflavored.MapleFlavored;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
@@ -42,6 +44,7 @@ public final class MaterialUnits {
 		Map.entry(Items.CARROT_ON_A_STICK, Items.CARROT),
 		Map.entry(Items.WARPED_FUNGUS_ON_A_STICK, Items.WARPED_FUNGUS)
 	);
+	private static final TagKey<Item> ALLOY_INGOTS = TagKey.create(Registries.ITEM, MapleFlavored.id("alloy_ingots"));
 	/** Units for a full repair of items with no crafting recipe, matching vanilla's 25% per unit. */
 	private static final Map<Item, Integer> UNCRAFTED_FULL_REPAIR_UNITS = Map.of(Items.ELYTRA, 4, Items.TRIDENT, 4);
 	/** Chainmail has no recipe, so it repairs like the iron piece for the same slot. */
@@ -70,7 +73,7 @@ public final class MaterialUnits {
 
 	/**
 	 * The units of the item's material a full repair takes, at least 1: one fewer than its cheapest crafting recipe
-	 * uses, or 1 for Netherite gear.
+	 * uses, or 1 for Netherite and Alloy gear.
 	 *
 	 * @param recipes the server's recipes, which the client doesn't have
 	 * @throws IllegalArgumentException if the item has no material
@@ -78,7 +81,7 @@ public final class MaterialUnits {
 	public static int fullRepairUnits(ItemStack item, RecipeManager recipes) {
 		Ingredient material = materialOf(item).orElseThrow(() -> new IllegalArgumentException(item + " has no material unit"));
 
-		if (material.test(new ItemStack(Items.NETHERITE_INGOT))) return 1;
+		if (isIngotRepaired(material)) return 1;
 
 		Integer uncraftedUnits = UNCRAFTED_FULL_REPAIR_UNITS.get(item.getItem());
 
@@ -88,6 +91,12 @@ public final class MaterialUnits {
 		OptionalInt craftingUnits = cheapestCraftingUnits(craftedItem, material, recipes);
 
 		return Math.max(craftingUnits.orElse(1) - 1, 1);
+	}
+
+	// Netherite and Alloy gear have no crafting recipe to count; one of their ingot repairs them fully.
+	@SuppressWarnings("deprecation")
+	private static boolean isIngotRepaired(Ingredient material) {
+		return material.items().anyMatch(item -> item.value() == Items.NETHERITE_INGOT || item.is(ALLOY_INGOTS));
 	}
 
 	private static Optional<HolderSet<Item>> materialItems(ItemStack item) {

@@ -9,7 +9,7 @@ import net.minecraft.world.level.gamerules.GameRuleCategory;
  * Maple's game rules: those that set what death costs, each on its own, with vanilla's Keep Inventory as the third,
  * defaulting to on; playtest values for Warden and Wither Subspaces, which apply to Subspaces that open after a change,
  * except the Wither's leash and its Subspace's light level, which apply at once; how near a Warden a player must be to
- * survive it; and how far a held Echo Shard hears shriekers.
+ * survive it; how far a held Echo Shard hears shriekers; and Shakudo's and Adamant's mining, which apply at once.
  */
 public final class MapleGameRules {
 	/** When on, death costs no Max Hearts. Off by default. */
@@ -75,6 +75,27 @@ public final class MapleGameRules {
 		.range(1, 64)
 		.category(GameRuleCategory.PLAYER)
 		.buildAndRegister(MapleFlavored.id("echo_shard_shrieker_range"));
+
+	/** How much faster a Shakudo tool mines, as a percentage of the final break speed. Applies at once. */
+	public static final GameRule<Integer> SHAKUDO_MINING_BONUS = GameRuleBuilder.forInteger(30)
+		.range(0, 1000)
+		.category(GameRuleCategory.PLAYER)
+		.buildAndRegister(MapleFlavored.id("shakudo_mining_bonus"));
+
+	/**
+	 * The hardness an Adamant tool mines the blocks it's made for at, at most: 3 is deepslate's. Harder blocks mine as
+	 * if they were this hard. Applies at once.
+	 */
+	public static final GameRule<Integer> ADAMANT_HARDNESS_CAP = GameRuleBuilder.forInteger(3)
+		.range(1, 100)
+		.category(GameRuleCategory.PLAYER)
+		.buildAndRegister(MapleFlavored.id("adamant_hardness_cap"));
+
+	/** How many ticks an Adamant pickaxe with Efficiency V, under Haste II, takes to break bedrock. Applies at once. */
+	public static final GameRule<Integer> ADAMANT_BEDROCK_BREAK_TIME = GameRuleBuilder.forInteger(300)
+		.range(1, 72_000)
+		.category(GameRuleCategory.PLAYER)
+		.buildAndRegister(MapleFlavored.id("adamant_bedrock_break_time"));
 
 	private MapleGameRules() {
 	}
