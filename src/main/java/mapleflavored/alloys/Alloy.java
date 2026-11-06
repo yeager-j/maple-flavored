@@ -16,7 +16,7 @@ public enum Alloy {
 	/** Made from a block of gold. */
 	ELECTRUM("electrum", MapColor.GOLD, AlloyTraits.ELECTRUM),
 	/** Made from a block of copper. */
-	SHAKUDO("shakudo", MapColor.COLOR_PURPLE, AlloyTraits.SHAKUDO),
+	SHAKUDO("shakudo", MapColor.COLOR_ORANGE, AlloyTraits.SHAKUDO),
 	/** Made from a block of diamond. */
 	ADAMANT("adamant", MapColor.DIAMOND, AlloyTraits.ADAMANT),
 	/** Made from a block of emerald. */
