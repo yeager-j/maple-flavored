@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import mapleflavored.MapleFlavored;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.core.BlockPos;
@@ -106,8 +107,8 @@ public final class StructureBooks {
 	}
 
 	/**
-	 * Registers the block, block entity, structure piece, book locks, wake events and the Ancient City's Grounding. Call
-	 * once from mod init.
+	 * Registers the block, block entity, structure piece, book locks, wake events, the Ancient City's Grounding and
+	 * keepers, and {@code /keepers}. Call once from mod init.
 	 */
 	public static void register() {
 		// The block, block entity and piece register in the static fields above; this call makes sure they run.
@@ -116,6 +117,8 @@ public final class StructureBooks {
 		PiglinAnger.register();
 		BruteKeepers.register();
 		AncientCityGrounding.register();
+		ShriekerKeepers.register();
+		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> KeepersCommand.register(dispatcher));
 	}
 
 	/**

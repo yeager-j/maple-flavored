@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import mapleflavored.mixin.FeaturePoolElementAccessor;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -27,7 +31,7 @@ import net.minecraft.world.level.material.Fluids;
  * An Ancient City's keepers: up to three sculk shriekers in a ring near the city's edge whose breaking unlocks its book.
  * They're chosen from the city's sculk patch origins when it's planned, since its shriekers don't exist until its
  * patches grow. Each is placed with its patch, and counts as broken once a summoning shrieker leaves its spot by any
- * means.
+ * means. A standing keeper bubbles with sculk charge, so it can be found.
  */
 public final class ShriekerKeepers {
 	private static final ResourceKey<PlacedFeature> SCULK_PATCH = ResourceKey.create(
@@ -38,6 +42,13 @@ public final class ShriekerKeepers {
 	private static final double MIN_DISTANCE = 30.0;
 	private static final List<Double> TURNS = List.of(120.0, 240.0);
 	private static final List<Double> WINDOWS = List.of(30.0, 45.0, 60.0);
+
+	// Playtest values: a few bubbles twice a second, seen within vanilla's 32 blocks for particles.
+	private static final int BUBBLE_INTERVAL_TICKS = 10;
+	private static final int BUBBLES = 2;
+	private static final double BUBBLE_SPREAD = 0.25;
+	// The top of a shrieker, which is half a block tall.
+	private static final double SHRIEKER_TOP = 0.5;
 
 	private ShriekerKeepers() {
 	}
@@ -71,6 +82,25 @@ public final class ShriekerKeepers {
 		}
 
 		return List.copyOf(keepers);
+	}
+
+	/** Makes standing keepers bubble. Call once from mod init. */
+	static void register() {
+		ServerTickEvents.END_LEVEL_TICK.register(level -> {
+			if (level.getGameTime() % BUBBLE_INTERVAL_TICKS == 0) bubbleStandingKeepers(level);
+		});
+	}
+
+	/**
+	 * Where the keeper with this key stands: a summoning shrieker at the key, or on the catalyst above it. Empty when the
+	 * keeper isn't standing there or its chunk isn't loaded, which is never loaded to check.
+	 */
+	public static Optional<BlockPos> standingSpot(ServerLevel level, BlockPos key) {
+		if (level.getChunkSource().getChunkNow(SectionPos.blockToSectionCoord(key.getX()), SectionPos.blockToSectionCoord(key.getZ())) == null) {
+			return Optional.empty();
+		}
+
+		return Stream.of(key, key.above()).filter(spot -> isSummoningShrieker(level.getBlockState(spot))).findFirst();
 	}
 
 	/** The origins of a city's sculk patches: the positions of its pieces that place one. */
@@ -110,11 +140,33 @@ public final class ShriekerKeepers {
 	 * @param oldState the block that was at {@code pos}
 	 */
 	public static void onBlockChanged(ServerLevel level, BlockPos pos, BlockState oldState) {
-		if (!oldState.is(Blocks.SCULK_SHRIEKER) || !oldState.getValue(SculkShriekerBlock.CAN_SUMMON)) return;
+		if (!isSummoningShrieker(oldState)) return;
 		if (level.getBlockState(pos).is(Blocks.SCULK_SHRIEKER)) return;
 
 		BookLocks.markShriekerBroken(level, pos);
 		BookLocks.markShriekerBroken(level, pos.below());
+	}
+
+	private static void bubbleStandingKeepers(ServerLevel level) {
+		for (BookLocks.Lock lock : BookLocks.locksOf(level, BookLocks.Kind.SHRIEKERS)) {
+			for (BlockPos key : lock.remainingKeys()) {
+				standingSpot(level, key).ifPresent(spot -> level.sendParticles(
+					ParticleTypes.SCULK_CHARGE_POP,
+					spot.getX() + 0.5,
+					spot.getY() + SHRIEKER_TOP,
+					spot.getZ() + 0.5,
+					BUBBLES,
+					BUBBLE_SPREAD,
+					BUBBLE_SPREAD,
+					BUBBLE_SPREAD,
+					0.0
+				));
+			}
+		}
+	}
+
+	private static boolean isSummoningShrieker(BlockState state) {
+		return state.is(Blocks.SCULK_SHRIEKER) && state.getValue(SculkShriekerBlock.CAN_SUMMON);
 	}
 
 	private static boolean isSculkPatch(StructurePiece piece) {

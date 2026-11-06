@@ -110,6 +110,11 @@ public final class BookLocks extends SavedData {
 		locks.markDone(level, lock, key);
 	}
 
+	/** Every lock of the kind in the level, locked or not. */
+	public static List<Lock> locksOf(ServerLevel level, Kind kind) {
+		return of(level).locksByBook.values().stream().filter(lock -> lock.kind() == kind).toList();
+	}
+
 	/** Whether the book at {@code book} can't be taken yet. */
 	public static boolean isLocked(ServerLevel level, BlockPos book) {
 		return lockAt(level, book).map(Lock::isLocked).orElse(false);

@@ -4,6 +4,7 @@ import com.mojang.serialization.DynamicOps;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
@@ -15,6 +16,7 @@ import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
 import mapleflavored.structurebooks.TakenBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.commands.CommandSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
@@ -25,6 +27,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -79,6 +82,8 @@ public class AncientCityBookGameTests {
 	private static final int FIRST_PICKS = 200;
 
 	private static final String LOCKED_BY_SHRIEKERS = "block.maple_flavored.structure_book.locked_by_shriekers";
+	private static final String KEEPERS_BOOK = "commands.maple_flavored.keepers.book";
+	private static final String KEEPERS_KEEPER = "commands.maple_flavored.keepers.keeper";
 	private static final double SUBSPACE_RADIUS = SubspaceArena.RADIUS;
 	// Past the Grounded the city last topped up, which lasts 60 ticks.
 	private static final int GROUNDED_WEARS_OFF = 70;
@@ -350,6 +355,38 @@ public class AncientCityBookGameTests {
 		helper.succeed();
 	}
 
+	@GameTest(maxTicks = 400)
+	public void keepersListsTheNearestCitysKeepersAndWhetherEachStands(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = planWithKeepers(level, 9, MAX_KEEPERS);
+		BlockPos book = BastionBookGameTests.bookPieces(start).getFirst().spot();
+		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
+		List<Component> output = new ArrayList<>();
+
+		placeKeeper(level, keepers.get(0));
+		placeKeeper(level, keepers.get(1));
+		level.destroyBlock(keepers.get(1), false);
+		level.setBlock(keepers.get(2), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+		runAt(level, Vec3.atCenterOf(book), "keepers", output);
+
+		helper.assertValueEqual(
+			output.stream().map(AncientCityBookGameTests::key).toList(),
+			List.of(KEEPERS_BOOK, KEEPERS_KEEPER, KEEPERS_KEEPER, KEEPERS_KEEPER),
+			"the lines /keepers wrote"
+		);
+		helper.assertValueEqual(args(output.get(0)).subList(1, 3), List.<Object>of(1, MAX_KEEPERS), "the broken keepers counted");
+		helper.assertValueEqual(
+			output.stream().skip(1).map(line -> key((Component) args(line).get(3))).toList(),
+			List.of("commands.maple_flavored.keepers.standing", "commands.maple_flavored.keepers.broken", "commands.maple_flavored.keepers.missing"),
+			"each keeper's status"
+		);
+
+		level.setBlock(keepers.get(2), Blocks.SCULK_CATALYST.defaultBlockState(), Block.UPDATE_ALL);
+		placeKeeper(level, keepers.get(2).above());
+		helper.assertValueEqual(ShriekerKeepers.standingSpot(level, keepers.get(2)), Optional.of(keepers.get(2).above()), "where the keeper on a catalyst stands");
+		helper.succeed();
+	}
+
 	@GameTest(environment = "maple_flavored_gametest:ancient_city_grounding", maxTicks = 400)
 	public void theCityGroundsPlayersUntilItsBookIsTaken(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -500,6 +537,42 @@ public class AncientCityBookGameTests {
 		int z = book.getZ() - bounds.minZ() > bounds.maxZ() - book.getZ() ? bounds.minZ() + 2 : bounds.maxZ() - 2;
 
 		return new BlockPos(x, book.getY(), z);
+	}
+
+	// Runs the command as an operator at the position, adding each line it writes to the output.
+	private static void runAt(ServerLevel level, Vec3 position, String command, List<Component> output) {
+		CommandSource capture = new CommandSource() {
+			@Override
+			public void sendSystemMessage(Component message) {
+				output.add(message);
+			}
+
+			@Override
+			public boolean acceptsSuccess() {
+				return true;
+			}
+
+			@Override
+			public boolean acceptsFailure() {
+				return true;
+			}
+
+			@Override
+			public boolean shouldInformAdmins() {
+				return false;
+			}
+		};
+		MinecraftServer server = level.getServer();
+
+		server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSource(capture).withLevel(level).withPosition(position), command);
+	}
+
+	private static String key(Component message) {
+		return ((TranslatableContents) message.getContents()).getKey();
+	}
+
+	private static List<Object> args(Component message) {
+		return List.of(((TranslatableContents) message.getContents()).getArgs());
 	}
 
 	private static void reloadTakenBooks(ServerLevel level) {
