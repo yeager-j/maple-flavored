@@ -71,6 +71,7 @@ public final class Subspaces {
 		});
 		ServerTickEvents.END_SERVER_TICK.register(Subspaces::endAllWhilePeaceful);
 		WardenSubspaces.register();
+		WitherSubspaces.register();
 	}
 
 	/** The Subspaces in the level that contain the position. Works on both the server and the client. */

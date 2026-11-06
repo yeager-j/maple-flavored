@@ -43,7 +43,10 @@ public record Subspace(UUID id, UUID boss, Kind kind, Vec3 centre, double radius
 	/** Which boss opened a Subspace, which decides its rules. */
 	public enum Kind {
 		/** Darkness and Grounded for players inside, and its Warden is aware of everything inside. */
-		WARDEN;
+		WARDEN,
+
+		/** Withered Hearts can't return inside. It gives no effect of its own. */
+		WITHER;
 
 		static final Codec<Kind> CODEC = Codec.STRING.xmap(Kind::valueOf, Kind::name);
 		static final StreamCodec<ByteBuf, Kind> STREAM_CODEC = ByteBufCodecs.STRING_UTF8.map(Kind::valueOf, Kind::name);

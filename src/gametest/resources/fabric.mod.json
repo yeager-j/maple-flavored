@@ -35,6 +35,7 @@
 			"mapleflavored.gametest.BastionLockGameTests",
 			"mapleflavored.gametest.SubspaceGameTests",
 			"mapleflavored.gametest.SubspaceSculkGameTests",
+			"mapleflavored.gametest.WitherGameTests",
 			"mapleflavored.gametest.WardenSummoningGameTests",
 			"mapleflavored.gametest.AncientCityBookGameTests",
 			"mapleflavored.gametest.ShriekerPulseGameTests"

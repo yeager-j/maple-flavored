@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:advancement_reward",
+  "pools": [
+    {
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "maple_flavored:crystal_heart"
+        }
+      ],
+      "rolls": 1
+    }
+  ]
+}

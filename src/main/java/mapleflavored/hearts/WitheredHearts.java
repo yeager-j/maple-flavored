@@ -3,6 +3,7 @@ package mapleflavored.hearts;
 import com.mojang.serialization.Codec;
 import mapleflavored.MapleFlavored;
 import mapleflavored.advancements.MapleTriggers;
+import mapleflavored.subspaces.WitherSubspaces;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
@@ -16,7 +17,8 @@ import net.minecraft.world.level.Level;
 /**
  * Withered Hearts: hearts the Wither effect makes unusable, one every 5 seconds down to 1 usable heart.
  *
- * <p>All return at once when the player has no Wither effect and is outside the Nether. Death clears them, as neither
+ * <p>All return at once when the player has no Wither effect and is outside the Nether and every Wither's Subspace.
+ * Death clears them, as neither
  * attachment is copied to the respawned player; logging out keeps them and the timer's progress.
  */
 final class WitheredHearts {
@@ -89,7 +91,9 @@ final class WitheredHearts {
 
 	// Checks the stored count, not the clamped one, so hearts hidden by low Max Hearts can't come back withered later.
 	private static boolean canRecover(ServerPlayer player) {
-		return player.hasAttached(WITHERED_HEARTS) && player.level().dimension() != Level.NETHER;
+		return player.hasAttached(WITHERED_HEARTS)
+			&& player.level().dimension() != Level.NETHER
+			&& !WitherSubspaces.contains(player.level(), player.position());
 	}
 
 	private static void recover(ServerPlayer player) {
