@@ -4,6 +4,7 @@ import java.util.List;
 import mapleflavored.echoshard.ShriekerPulses;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -35,7 +36,15 @@ public class ShriekerPulseGameTests {
 		MockPlayers.Listening offhand = MockPlayers.survivalPlayerWithChannel(helper);
 		MockPlayers.Listening bystander = MockPlayers.survivalPlayerWithChannel(helper);
 
-		for (BlockPos shrieker : List.of(near, middling, tooFar)) {
+		List<BlockPos> shriekers = List.of(near, middling, tooFar);
+
+		// A shrieker in a chunk that isn't loaded can't be heard, and setting a block loads its chunk only for a moment.
+		// The runner releases forced chunks as the batch ends.
+		for (BlockPos pos : List.of(feet, near, middling, tooFar)) {
+			level.setChunkForced(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), true);
+		}
+
+		for (BlockPos shrieker : shriekers) {
 			level.setBlock(shrieker, Blocks.SCULK_SHRIEKER.defaultBlockState(), Block.UPDATE_ALL);
 		}
 
@@ -63,7 +72,10 @@ public class ShriekerPulseGameTests {
 				holder.player().setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
 			})
 			.thenExecuteAfter(LISTENING_TICKS, () -> helper.assertValueEqual(pulses(holder), List.of(), "the pulses heard once the shard was put away"))
-			.thenExecute(() -> List.of(holder, offhand, bystander).forEach(listening -> MockPlayers.logOut(helper, listening.player())))
+			.thenExecute(() -> {
+				List.of(holder, offhand, bystander).forEach(listening -> MockPlayers.logOut(helper, listening.player()));
+				shriekers.forEach(shrieker -> level.removeBlock(shrieker, false));
+			})
 			.thenSucceed();
 	}
 
