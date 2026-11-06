@@ -15,7 +15,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 
-/** Puts Alloy gear in every item tag that names its Netherite version. */
+/** Puts Alloy gear in every item tag that names its Netherite version, and Electrum armor in Piglins' gold armor tag. */
 class AlloyGearTags extends FabricTagsProvider.ItemTagsProvider {
 	// The item tags, vanilla's and Fabric's convention tags, that list Netherite gear by name. Tags such as the
 	// enchantable ones include these.
@@ -37,6 +37,9 @@ class AlloyGearTags extends FabricTagsProvider.ItemTagsProvider {
 		Map.entry(conventionTag("armors/nautilus"), List.of(GearKind.NAUTILUS_ARMOR))
 	);
 
+	// The pieces a player wears, which is all Piglins check; mob body armor can't make Piglins neutral.
+	private static final List<GearKind> PIGLIN_SAFE_PIECES = List.of(GearKind.HELMET, GearKind.CHESTPLATE, GearKind.LEGGINGS, GearKind.BOOTS);
+
 	AlloyGearTags(FabricPackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
 		super(output, registries);
 	}
@@ -50,6 +53,10 @@ class AlloyGearTags extends FabricTagsProvider.ItemTagsProvider {
 				for (Alloy alloy : Alloy.values()) appender.add(AlloyGear.of(alloy, kind).builtInRegistryHolder().key());
 			}
 		});
+
+		var piglinSafeArmor = builder(ItemTags.PIGLIN_SAFE_ARMOR);
+
+		for (GearKind kind : PIGLIN_SAFE_PIECES) piglinSafeArmor.add(AlloyGear.of(Alloy.ELECTRUM, kind).builtInRegistryHolder().key());
 	}
 
 	private static TagKey<Item> conventionTag(String path) {

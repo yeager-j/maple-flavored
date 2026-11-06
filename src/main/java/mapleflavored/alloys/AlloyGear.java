@@ -11,9 +11,13 @@ import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTabOutput;
 import net.fabricmc.fabric.api.item.v1.DefaultItemComponentEvents;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 
@@ -49,14 +53,25 @@ public final class AlloyGear {
 		return ITEMS.get(alloy).get(kind);
 	}
 
-	/** The Alloy the stack is gear of, or empty if it isn't Alloy gear. */
-	public static Optional<Alloy> alloyOf(ItemStack stack) {
-		return pieceOf(stack).map(Piece::alloy);
+	/** The Alloy the item is gear of, or empty if it isn't Alloy gear. */
+	public static Optional<Alloy> alloyOf(ItemInstance item) {
+		return pieceOf(item).map(Piece::alloy);
 	}
 
 	/** The kind of gear the stack is, or empty if it isn't Alloy gear. */
 	public static Optional<GearKind> kindOf(ItemStack stack) {
 		return pieceOf(stack).map(Piece::kind);
+	}
+
+	/** How many pieces of the Alloy's gear the entity wears in its armor slots, mob body armor included. */
+	public static int piecesWorn(LivingEntity entity, Alloy alloy) {
+		int pieces = 0;
+
+		for (EquipmentSlot slot : EquipmentSlotGroup.ARMOR) {
+			if (alloyOf(entity.getItemBySlot(slot)).equals(Optional.of(alloy))) pieces++;
+		}
+
+		return pieces;
 	}
 
 	/**
@@ -114,8 +129,8 @@ public final class AlloyGear {
 		}
 	}
 
-	private static Optional<Piece> pieceOf(ItemStack stack) {
-		return Optional.ofNullable(PIECES.get(stack.getItem()));
+	private static Optional<Piece> pieceOf(ItemInstance item) {
+		return Optional.ofNullable(PIECES.get(item.typeHolder().value()));
 	}
 
 	private record Piece(Alloy alloy, GearKind kind) {

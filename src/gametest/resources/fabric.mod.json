@@ -43,7 +43,9 @@
 			"mapleflavored.gametest.ShriekerPulseGameTests",
 			"mapleflavored.gametest.AlloyGameTests",
 			"mapleflavored.gametest.AlloyGearGameTests",
-			"mapleflavored.gametest.AlloyMiningGameTests"
+			"mapleflavored.gametest.AlloyMiningGameTests",
+			"mapleflavored.gametest.AlloyCombatGameTests",
+			"mapleflavored.gametest.OrichalcumDropsGameTests"
 		],
 		"fabric-client-gametest": [
 			"mapleflavored.gametest.client.PortalTrimClientGameTest"
