@@ -2,6 +2,7 @@ package mapleflavored;
 
 import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.alloys.Alloys;
+import mapleflavored.bloodmoons.BloodMoons;
 import mapleflavored.bosses.BossKillCredit;
 import mapleflavored.brewing.Brewing;
 import mapleflavored.echoshard.ShriekerPulses;
@@ -56,6 +57,7 @@ public class MapleFlavored implements ModInitializer {
 		WardenSummoning.register();
 		BossKillCredit.register();
 		ShriekerPulses.register();
+		BloodMoons.register();
 
 		LOGGER.info("Maple Flavored initialized");
 	}

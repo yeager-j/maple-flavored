@@ -1,5 +1,7 @@
 {
 	"advancements.maple_flavored.adventure.avoid_vibration.description": "Be near a Warden when it digs back down or dies",
+	"advancements.maple_flavored.adventure.blood_moon.description": "Be in the Overworld when a Blood Moon rises",
+	"advancements.maple_flavored.adventure.blood_moon.title": "Once in a Blood Moon",
 	"advancements.maple_flavored.adventure.break_cleared_spawner.description": "Break a Cleared spawner",
 	"advancements.maple_flavored.adventure.break_cleared_spawner.title": "Cage Breaker",
 	"advancements.maple_flavored.adventure.collect_remnant.description": "Collect your own Remnant",
@@ -55,6 +57,7 @@
 	"block.maple_flavored.structure_book.locked": "Locked until every Blaze spawner here is Cleared (%s of %s)",
 	"block.maple_flavored.structure_book.locked_by_keepers": "Locked until every keeper Brute here is dead (%s of %s)",
 	"block.maple_flavored.structure_book.locked_by_shriekers": "Locked until every keeper shrieker here is broken (%s of %s)",
+	"chat.maple_flavored.blood_moon_rises": "A Blood Moon is rising",
 	"chat.maple_flavored.heart_floor_lowered": "[Milestone] Your Heart Floor is now %s",
 	"commands.maple_flavored.keepers.book": "The Ancient City book at %s has %s of %s keepers broken",
 	"commands.maple_flavored.keepers.broken": "broken",

@@ -1,0 +1,32 @@
+{
+  "clock": "minecraft:overworld",
+  "period_ticks": 768000,
+  "time_markers": {
+    "maple_flavored:blood_moon": {
+      "show_in_commands": true,
+      "ticks": 588000
+    }
+  },
+  "tracks": {
+    "maple_flavored:gameplay/blood_moon": {
+      "keyframes": [
+        {
+          "ticks": 588000,
+          "value": 0.0
+        },
+        {
+          "ticks": 589500,
+          "value": 1.0
+        },
+        {
+          "ticks": 598500,
+          "value": 1.0
+        },
+        {
+          "ticks": 600000,
+          "value": 0.0
+        }
+      ]
+    }
+  }
+}
