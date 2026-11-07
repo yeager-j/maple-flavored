@@ -135,7 +135,9 @@ public class AlloyCombatGameTests {
 		});
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
+	// A target goal only looks for a target at random intervals, so the hostile Illagers are waited for. The hidden one has
+	// had TARGETING_TICKS to find the player by then.
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
 	public void attackingAnIllagerTurnsItAndThoseThatSeeItHostile(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		ServerPlayer player = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
@@ -148,12 +150,14 @@ public class AlloyCombatGameTests {
 
 		hit.hurtServer(level, level.damageSources().playerAttack(player), 1.0F);
 
-		helper.runAfterDelay(TARGETING_TICKS, () -> {
-			assertTargets(helper, hit, player);
-			assertTargets(helper, witness, player);
-			helper.assertTrue(hidden.getTarget() == null, "the hidden Vindicator has no target");
-			helper.succeed();
-		});
+		helper.startSequence()
+			.thenIdle(TARGETING_TICKS)
+			.thenWaitUntil(() -> {
+				assertTargets(helper, hit, player);
+				assertTargets(helper, witness, player);
+			})
+			.thenExecute(() -> helper.assertTrue(hidden.getTarget() == null, "the hidden Vindicator has no target"))
+			.thenSucceed();
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:orichalcum_illager_anger", maxTicks = 200)

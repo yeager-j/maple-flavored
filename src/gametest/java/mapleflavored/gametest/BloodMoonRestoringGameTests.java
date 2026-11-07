@@ -56,8 +56,9 @@ import net.minecraft.world.phys.Vec3;
  *
  * <p>Each Restoring test builds its spot on a small walled floor far from the test area, in a chunk it keeps loaded, so
  * no other test's mock players come within {@link Restoring#PLAYER_CLEARANCE} of it. A spot is made the way generation
- * makes one: by adding its mob while its structure builds. A newly loaded chunk's entities take a while to load, and
- * spots only fill once they have, so tests wait for that before checking that a spot stays pending, and wait for a fill
+ * makes one: by adding its mob while its structure builds. Building a site waits until its chunk ticks entities and has
+ * loaded its saved ones, so every mob a test places there is tracked from the start. Spots only fill once a chunk's
+ * entities have loaded, so tests still wait for that before checking that a spot stays pending, and wait for a fill
  * rather than counting ticks.
  *
  * <p>Blood Moons rise through {@link BloodMoons#RISEN}, which makes every empty spot pending, including other tests'.
@@ -586,7 +587,10 @@ public class BloodMoonRestoringGameTests {
 		static Site build(GameTestHelper helper, int index, Block floorBlock) {
 			Site site = new Site(helper.getLevel(), new BlockPos(SITE_X + index * SITES_APART, FLOOR_Y, SITE_Z));
 
+			// Until the chunk ticks entities, the mobs a test places would sit untracked: the cow that should block a spot
+			// would go unseen, and a converted Piglin would leave without emptying its spot.
 			site.keepLoaded();
+			ForcedChunks.awaitEntityTicking(helper, site.level, List.of(ChunkPos.containing(site.floor)), FLOOR_Y);
 
 			for (BlockPos pos : BlockPos.betweenClosed(site.floor.offset(-3, 0, -3), site.floor.offset(3, 3, 3))) {
 				boolean wall = Math.abs(pos.getX() - site.floor.getX()) == 3 || Math.abs(pos.getZ() - site.floor.getZ()) == 3;

@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.gametest.mixin.GameTestHelperAccessor;
 import mapleflavored.subspaces.Subspaces;
@@ -82,10 +80,6 @@ final class SubspaceArena {
 
 	// Mob.finalizeSpawn's modifier that scales a mob's follow range by up to 11.5% either way.
 	private static final Identifier RANDOM_SPAWN_BONUS = Identifier.withDefaultNamespace("random_spawn_bonus");
-
-	// Wall-clock limits on waiting for forced chunks, which load in real time rather than ticks.
-	private static final long CHUNK_LOAD_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(30);
-	private static final long PARK_NANOS = TimeUnit.MICROSECONDS.toNanos(100);
 
 	private static final BlockPos RELATIVE_CENTRE = new BlockPos(1, HEIGHT, 1);
 	private static final Set<UUID> TICKED_PLAYERS = ConcurrentHashMap.newKeySet();
@@ -425,28 +419,7 @@ final class SubspaceArena {
 			}
 		}
 
-		awaitEntityTicking(chunks);
-	}
-
-	// Forcing a chunk only adds a ticket: worker threads generate it, and it starts ticking entities some ticks later. The
-	// test server ticks as fast as it can, so how many ticks that takes depends on the machine. Until then a Warden or
-	// target there doesn't tick, and no sensor or Subspace can find it. Running the chunk system here instead, before the
-	// test places anything, starts every test with its chunks ticking, however slow the machine.
-	private void awaitEntityTicking(List<ChunkPos> chunks) {
-		long deadline = System.nanoTime() + CHUNK_LOAD_TIMEOUT_NANOS;
-
-		while (!chunks.stream().allMatch(this::ticksEntities)) {
-			if (System.nanoTime() > deadline) helper.fail("the arena's chunks didn't start ticking entities in time");
-
-			// Polled directly, since the server's own wait skips chunk tasks once a tick runs past its time.
-			if (!level.getChunkSource().pollTask()) LockSupport.parkNanos(PARK_NANOS);
-		}
-
-		chunks.forEach(chunk -> level.waitForEntities(chunk, 0));
-	}
-
-	private boolean ticksEntities(ChunkPos chunk) {
-		return level.isPositionEntityTicking(chunk.getMiddleBlockPosition(centreBlock.getY()));
+		ForcedChunks.awaitEntityTicking(helper, level, chunks, centreBlock.getY());
 	}
 
 	private void cleanUpWhenDone() {

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import mapleflavored.gametest.mixin.ExperienceOrbAccessor;
 import mapleflavored.items.MapleItems;
 import mapleflavored.reinforcement.Reinforcement;
 import mapleflavored.trades.BookTrade;
@@ -243,10 +244,12 @@ public class TradeGameTests {
 		trading.menu().clicked(2, 0, ContainerInput.QUICK_MOVE, player);
 
 		int emeralds = player.getInventory().countItem(Items.EMERALD);
+		// An orb may stand for several of its value. The 200 points per find come as orbs of 149, 37, 7 and 7, and awarding
+		// the second 7 merges it into the first one time in 40.
 		int orbXp = helper.getLevel()
 			.getEntitiesOfClass(ExperienceOrb.class, new AABB(villager.blockPosition()).inflate(4))
 			.stream()
-			.mapToInt(ExperienceOrb::getValue)
+			.mapToInt(orb -> orb.getValue() * ((ExperienceOrbAccessor) orb).maple$count())
 			.sum();
 		// Vanilla's own trade orb is 3 to 6 points, plus 5 as this trade levels the Novice up.
 		int vanillaOrbXp = orbXp - 4 * BookTrade.PLAYER_XP_PER_FIND;

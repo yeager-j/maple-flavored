@@ -41,6 +41,8 @@ public class BloodMoonGameTests {
 	private static final int TICKS_PER_DAY = 24_000;
 	private static final int FIRST_BLOOD_MOON_DAY = 24;
 	private static final int DAYS_BETWEEN_BLOOD_MOONS = 32;
+	// A thousand ticks before sunset, when a Blood Moon would start to rise.
+	private static final int EVE = 11_000;
 	// Two hundred ticks after sunset, once the Blood Moon has begun to rise.
 	private static final int EARLY_NIGHT = 12_200;
 	private static final int MIDNIGHT = 18_000;
@@ -48,7 +50,10 @@ public class BloodMoonGameTests {
 	private static final String MESSAGE = "chat.maple_flavored.blood_moon_rises";
 	private static final String ADVANCEMENT = "maple_flavored:adventure/blood_moon";
 
-	@GameTest(environment = "maple_flavored_gametest:blood_moon_eve", maxTicks = 100)
+	// Its environment starts the clock at day 0, far from any Blood Moon, and the test sets the eve itself once its
+	// players are in. The clock runs while a test waits for its structure to load, which can take long enough to pass the
+	// eve, and a Blood Moon that rose before the players joined wouldn't rise again for them.
+	@GameTest(environment = "maple_flavored_gametest:blood_moon_first", maxTicks = 100)
 	public void aBloodMoonRisesOnTheFourthFullMoonWithOneMessageInEveryDimension(GameTestHelper helper) {
 		List<Component> overworldChat = new ArrayList<>();
 		List<Component> netherChat = new ArrayList<>();
@@ -57,6 +62,7 @@ public class BloodMoonGameTests {
 		List<Float> earlyDensity = new ArrayList<>();
 
 		moveToNether(helper, netherPlayer);
+		setTime(helper, bloodMoonDay(0), EVE);
 
 		helper.startSequence()
 			.thenExecuteAfter(SETTLE_TICKS, () -> {
