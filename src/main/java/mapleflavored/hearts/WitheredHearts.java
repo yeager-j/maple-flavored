@@ -20,13 +20,14 @@ import net.minecraft.world.level.Level;
  * Withered Hearts: hearts the Wither effect makes unusable, one every 5 seconds down to 1 usable heart, or every 10
  * seconds in a full Electrum set. The interval follows the armor worn each tick, so a swap changes it at once.
  *
- * <p>All return at once when the player has no Wither effect and is outside the Nether and every Wither's Subspace.
- * Death clears them, as neither
- * attachment is copied to the respawned player; logging out keeps them and the timer's progress.
+ * <p>While the player has no Wither effect and is outside the Nether and every Wither's Subspace, one returns every 10
+ * seconds whatever armor they wear. That timer resets whenever recovery stops, so it never carries over between visits.
+ * Death clears them, as no attachment is copied to the respawned player; logging out keeps them and both timers' progress.
  */
 final class WitheredHearts {
 	private static final int WITHERING_INTERVAL_TICKS = 5 * 20;
 	private static final int ELECTRUM_WITHERING_INTERVAL_TICKS = 10 * 20;
+	private static final int RECOVERY_INTERVAL_TICKS = 10 * 20;
 	private static final int FEWEST_USABLE_HEARTS = 1;
 
 	private static final AttachmentType<Integer> WITHERED_HEARTS = AttachmentRegistry.create(
@@ -39,6 +40,11 @@ final class WitheredHearts {
 
 	private static final AttachmentType<Integer> WITHERING_TICKS = AttachmentRegistry.create(
 		MapleFlavored.id("withering_ticks"),
+		builder -> builder.persistent(Codec.INT)
+	);
+
+	private static final AttachmentType<Integer> RECOVERY_TICKS = AttachmentRegistry.create(
+		MapleFlavored.id("recovery_ticks"),
 		builder -> builder.persistent(Codec.INT)
 	);
 
@@ -66,6 +72,7 @@ final class WitheredHearts {
 		if (!player.isAlive()) return;
 
 		if (player.hasEffect(MobEffects.WITHER)) {
+			player.removeAttached(RECOVERY_TICKS);
 			advanceWithering(player);
 
 			return;
@@ -73,7 +80,14 @@ final class WitheredHearts {
 
 		player.removeAttached(WITHERING_TICKS);
 
-		if (canRecover(player)) recover(player);
+		if (!canRecover(player)) {
+			player.removeAttached(RECOVERY_TICKS);
+
+			return;
+		}
+
+		clearHiddenHearts(player);
+		advanceRecovery(player);
 	}
 
 	private static void advanceWithering(ServerPlayer player) {
@@ -97,19 +111,47 @@ final class WitheredHearts {
 		return AlloySets.wearsFullSet(player, Alloy.ELECTRUM) ? ELECTRUM_WITHERING_INTERVAL_TICKS : WITHERING_INTERVAL_TICKS;
 	}
 
-	// Checks the stored count, not the clamped one, so hearts hidden by low Max Hearts can't come back withered later.
+	// Checks the stored count, not the clamped one, so recovery still runs to clear hearts hidden by low Max Hearts.
 	private static boolean canRecover(ServerPlayer player) {
 		return player.hasAttached(WITHERED_HEARTS)
 			&& player.level().dimension() != Level.NETHER
 			&& !WitherSubspaces.contains(player.level(), player.position());
 	}
 
-	private static void recover(ServerPlayer player) {
-		boolean anyReturned = count(player) > 0;
+	// Drops stored hearts the Max Hearts clamp hides, so a later Max Hearts rise can't bring them back withered.
+	private static void clearHiddenHearts(ServerPlayer player) {
+		int visible = count(player);
 
-		player.removeAttached(WITHERED_HEARTS);
+		// Withered Hearts sync to the client, so an unchanged count isn't written back every tick.
+		if (player.getAttachedOrElse(WITHERED_HEARTS, 0) > visible) setWitheredHearts(player, visible);
+	}
+
+	private static void advanceRecovery(ServerPlayer player) {
+		if (!player.hasAttached(WITHERED_HEARTS)) {
+			player.removeAttached(RECOVERY_TICKS);
+
+			return;
+		}
+
+		int ticks = player.getAttachedOrElse(RECOVERY_TICKS, 0) + 1;
+
+		if (ticks < RECOVERY_INTERVAL_TICKS) {
+			player.setAttached(RECOVERY_TICKS, ticks);
+
+			return;
+		}
+
+		player.removeAttached(RECOVERY_TICKS);
+		setWitheredHearts(player, count(player) - 1);
 		Hearts.applyMaxHealth(player);
+		MapleTriggers.WITHERED_HEART_RECOVERED.trigger(player);
+	}
 
-		if (anyReturned) MapleTriggers.WITHERED_HEART_RECOVERED.trigger(player);
+	private static void setWitheredHearts(ServerPlayer player, int withered) {
+		if (withered > 0) {
+			player.setAttached(WITHERED_HEARTS, withered);
+		} else {
+			player.removeAttached(WITHERED_HEARTS);
+		}
 	}
 }
