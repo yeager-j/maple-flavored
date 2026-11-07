@@ -49,8 +49,35 @@ public final class StrongholdRoutes {
 		return fewestDoorways(level, touching, start.get(), end.get());
 	}
 
+	/**
+	 * How many rooms apart each of the Stronghold's {@code rooms} is from {@code from}, by walls that touch, as planned and
+	 * before any block is placed: 0 for {@code from} itself, 1 for the rooms beside it. A room no chain of touching walls
+	 * reaches is left out. Rooms that touch without a doorway between them count as beside each other.
+	 */
+	public static Map<StructurePiece, Integer> roomsApart(List<StructurePiece> rooms, StructurePiece from) {
+		Map<StructurePiece, List<Touching>> touching = touchingRooms(rooms);
+		Map<StructurePiece, Integer> apart = new HashMap<>(Map.of(from, 0));
+		Queue<StructurePiece> frontier = new ArrayDeque<>(List.of(from));
+
+		while (!frontier.isEmpty()) {
+			StructurePiece room = frontier.poll();
+
+			for (Touching next : touching.getOrDefault(room, List.of())) {
+				if (apart.containsKey(next.room())) continue;
+
+				apart.put(next.room(), apart.get(room) + 1);
+				frontier.add(next.room());
+			}
+		}
+
+		return apart;
+	}
+
 	private static Map<StructurePiece, List<Touching>> touchingRooms(StructureStart stronghold) {
-		List<StructurePiece> rooms = stronghold.getPieces().stream().filter(StrongholdLayout::isStrongholdPiece).toList();
+		return touchingRooms(stronghold.getPieces().stream().filter(StrongholdLayout::isStrongholdPiece).toList());
+	}
+
+	private static Map<StructurePiece, List<Touching>> touchingRooms(List<StructurePiece> rooms) {
 		Map<StructurePiece, List<Touching>> touching = new HashMap<>();
 
 		for (StructurePiece room : rooms) {

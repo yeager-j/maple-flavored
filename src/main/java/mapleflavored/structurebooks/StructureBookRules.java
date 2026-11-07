@@ -64,7 +64,7 @@ public final class StructureBookRules {
 		List.of(Enchantments.UNBREAKING),
 		StructureBookSpots::stronghold,
 		StructureBookRule.Placement.OPEN,
-		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.EVOKERS, StrongholdIllagers.keeperKeys(pieces))
+		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.EVOKERS, StrongholdIllagers.keeperKeys(pieces, random))
 	);
 	private static final StructureBookRule BURIED_TREASURE = new StructureBookRule(
 		List.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION),

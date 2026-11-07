@@ -19,6 +19,7 @@ import mapleflavored.strongholds.StrongholdLayout;
 import mapleflavored.strongholds.StrongholdRoutes;
 import mapleflavored.structurebooks.BookLocks;
 import mapleflavored.structurebooks.MobKeepers;
+import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -85,6 +86,13 @@ public class StrongholdGameTests {
 	// Resistance V takes all damage.
 	private static final int FULL_RESISTANCE = 4;
 	private static final int LIBRARY_ROW = 100;
+	private static final int KEEPER_PLANS = 8;
+	private static final int KEEPER_PLANS_ROW = 10;
+	private static final Set<StructurePieceType> BIG_ROOMS = Set.of(
+		StructurePieceType.STRONGHOLD_LIBRARY,
+		StructurePieceType.STRONGHOLD_ROOM_CROSSING,
+		StructurePieceType.STRONGHOLD_PRISON_HALL
+	);
 	private static final int PRISON_ROW = 200;
 	private static final List<Direction> FACINGS = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
 	// Where a tall library's upper walkway puts a guard's feet, and where the back of a short library starts.
@@ -139,7 +147,7 @@ public class StrongholdGameTests {
 		List<AbstractIllager> guards = illagersIn(level, start);
 		StructurePiece portalRoom = onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM);
 		StructurePiece staircase = onlyPiece(start, StructurePieceType.STRONGHOLD_START);
-		long libraries = start.getPieces().stream().filter(piece -> piece.getType() == StructurePieceType.STRONGHOLD_LIBRARY).count();
+		List<BlockPos> keeperRooms = ((StructureBookPiece) start.getPieces().getLast()).keepers();
 
 		helper.assertTrue(guards.size() >= 3, "the Stronghold has at least its portal room's guards, " + guards.size());
 
@@ -157,11 +165,20 @@ public class StrongholdGameTests {
 		}
 
 		List<AbstractIllager> inPortalRoom = guards.stream().filter(guard -> portalRoom.getBoundingBox().isInside(guard.blockPosition())).toList();
-		long evokers = guards.stream().filter(guard -> guard.getType() == EntityTypes.EVOKER).count();
 
 		helper.assertValueEqual(countOf(inPortalRoom, EntityTypes.EVOKER), 1L, "Evokers in the portal room");
 		helper.assertValueEqual(countOf(inPortalRoom, EntityTypes.VINDICATOR), 2L, "Vindicators in the portal room");
-		helper.assertTrue(evokers <= 1 + libraries, evokers + " Evokers, at most one in the portal room and in each of " + libraries + " libraries");
+		helper.assertTrue(keeperRooms.size() <= 3, "at most three keeper rooms, " + keeperRooms.size());
+
+		for (StructurePiece room : start.getPieces()) {
+			BlockPos origin = new BlockPos(room.getBoundingBox().minX(), room.getBoundingBox().minY(), room.getBoundingBox().minZ());
+			long evokersInRoom = guards.stream()
+				.filter(guard -> guard.getType() == EntityTypes.EVOKER)
+				.filter(guard -> room.getBoundingBox().isInside(guard.blockPosition()))
+				.count();
+
+			helper.assertValueEqual(evokersInRoom, keeperRooms.contains(origin) ? 1L : 0L, "Evokers in the " + room.getType() + " at " + origin);
+		}
 		helper.succeed();
 	}
 
@@ -189,21 +206,24 @@ public class StrongholdGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
-	public void aLibrarysEvokerKeepsToItsWalkwayOrToTheBackOfAShortLibrary(GameTestHelper helper) {
+	public void aKeeperLibrarysEvokerKeepsToItsWalkwayOrToTheBackOfAShortLibrary(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 
 		for (int room = 0; room < LONE_ROOMS; room++) {
 			boolean tall = room % 2 == 0;
-			Direction facing = FACINGS.get(room / 2 % FACINGS.size());
+			boolean keeperRoom = room % 4 < 2;
+			Direction facing = FACINGS.get(room / 4 % FACINGS.size());
 			BlockPos foot = new BlockPos(LONE_ROOMS_X + room * LONE_ROOMS_APART, LONE_ROOMS_Y, LONE_ROOMS_Z + LIBRARY_ROW);
 			BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -4, -1, 0, 14, tall ? 11 : 6, 15, facing);
 			StructurePiece library = new StrongholdPieces.Library(0, RandomSource.create(room), box, facing);
-			List<AbstractIllager> guards = buildAlone(level, library);
-			String which = (tall ? "the tall library" : "the short library") + " facing " + facing + " at " + foot;
+			List<AbstractIllager> guards = keeperRoom ? buildAloneAsKeeperRoom(level, library) : buildAlone(level, library);
+			String which = (keeperRoom ? "the keeper " : "the ") + (tall ? "tall library" : "short library") + " facing " + facing + " at " + foot;
 			List<AbstractIllager> evokers = guards.stream().filter(guard -> guard.getType() == EntityTypes.EVOKER).toList();
 
-			helper.assertValueEqual(evokers.size(), 1, "Evokers in " + which);
+			helper.assertValueEqual(evokers.size(), keeperRoom ? 1 : 0, "Evokers in " + which);
 			helper.assertValueEqual(countOf(guards, EntityTypes.VINDICATOR), 1L, "Vindicators in " + which);
+
+			if (!keeperRoom) continue;
 
 			BlockPos evoker = evokers.getFirst().blockPosition();
 
@@ -342,15 +362,13 @@ public class StrongholdGameTests {
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		List<BlockPos> keys = BookLocks.lockAt(level, book).map(BookLocks.Lock::keys).orElse(List.of());
 		List<Mob> keepers = MobKeepers.liveKeepers(level, book);
-		long rooms = start.getPieces().stream()
-			.filter(piece -> piece.getType() == StructurePieceType.STRONGHOLD_PORTAL_ROOM || piece.getType() == StructurePieceType.STRONGHOLD_LIBRARY)
-			.count();
+		long bigRooms = start.getPieces().stream().filter(piece -> BIG_ROOMS.contains(piece.getType())).count();
 		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		player.setPos(Vec3.atBottomCenterOf(book.below()));
 
 		helper.assertValueEqual(BookLocks.lockAt(level, book).map(BookLocks.Lock::kind), Optional.of(BookLocks.Kind.EVOKERS), "the lock's kind");
-		helper.assertValueEqual((long) keys.size(), rooms, "keys, one for the portal room and one for each library");
+		helper.assertValueEqual((long) keys.size(), 1 + Math.min(2, bigRooms), "keys, one for the portal room and two for far big rooms");
 		helper.assertValueEqual(keepers.size(), keys.size(), "keepers alive");
 		helper.assertTrue(keepers.stream().allMatch(keeper -> keeper.getType() == EntityTypes.EVOKER), "every keeper is an Evoker");
 		helper.assertValueEqual(
@@ -371,6 +389,41 @@ public class StrongholdGameTests {
 		}
 
 		helper.assertTrue(StructureBooks.take(player, book), "the book is taken once every Evoker is dead");
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void theFarKeepersAreTheBigRoomsFarthestFromThePortalRoomAndEachOther(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+
+		for (int row = 0; row < KEEPER_PLANS; row++) {
+			StructureStart start = Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(KEEPER_PLANS_ROW + row));
+			List<StructurePiece> rooms = start.getPieces().stream().filter(StrongholdLayout::isStrongholdPiece).toList();
+			List<StructurePiece> bigRooms = rooms.stream().filter(room -> BIG_ROOMS.contains(room.getType())).toList();
+			List<BlockPos> keys = ((StructureBookPiece) start.getPieces().getLast()).keepers();
+			StructurePiece portalRoom = onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM);
+			List<StructurePiece> keepers = keys.stream().map(key -> roomWithOrigin(rooms, key)).toList();
+			String which = "the Stronghold at " + start.getChunkPos();
+
+			helper.assertTrue(keepers.getFirst() == portalRoom, "the first keeper room of " + which + " is the portal room");
+			helper.assertValueEqual(keepers.size(), 1 + Math.min(2, bigRooms.size()), "keeper rooms in " + which);
+
+			for (int keeper = 1; keeper < keepers.size(); keeper++) {
+				List<Map<StructurePiece, Integer>> fromEarlier = keepers.subList(0, keeper).stream()
+					.map(earlier -> StrongholdRoutes.roomsApart(rooms, earlier))
+					.toList();
+				List<StructurePiece> chosenBefore = keepers.subList(0, keeper);
+				int farthest = bigRooms.stream()
+					.filter(room -> !chosenBefore.contains(room))
+					.mapToInt(room -> nearestOf(fromEarlier, room))
+					.max()
+					.orElseThrow();
+
+				helper.assertTrue(BIG_ROOMS.contains(keepers.get(keeper).getType()), "keeper room " + keeper + " of " + which + " is a big room");
+				helper.assertValueEqual(nearestOf(fromEarlier, keepers.get(keeper)), farthest, "rooms from keeper room " + keeper + " of " + which + " to the nearest keeper before it");
+			}
+		}
+
 		helper.succeed();
 	}
 
@@ -438,6 +491,18 @@ public class StrongholdGameTests {
 			.thenSucceed();
 	}
 
+	// The fewest rooms from the room to any of the rooms the distances are from.
+	private static int nearestOf(List<Map<StructurePiece, Integer>> roomsApart, StructurePiece room) {
+		return roomsApart.stream().mapToInt(apart -> apart.getOrDefault(room, Integer.MAX_VALUE)).min().orElseThrow();
+	}
+
+	private static StructurePiece roomWithOrigin(List<StructurePiece> rooms, BlockPos origin) {
+		return rooms.stream()
+			.filter(room -> room.getBoundingBox().minX() == origin.getX() && room.getBoundingBox().minY() == origin.getY() && room.getBoundingBox().minZ() == origin.getZ())
+			.findFirst()
+			.orElseThrow(() -> new IllegalStateException("no room at " + origin));
+	}
+
 	private static void killKeepers(ServerLevel level, BlockPos book) {
 		MobKeepers.liveKeepers(level, book).forEach(keeper -> keeper.kill(level));
 	}
@@ -503,9 +568,22 @@ public class StrongholdGameTests {
 
 	// Builds a Stronghold of just the piece, and returns the Illagers it placed.
 	private static List<AbstractIllager> buildAlone(ServerLevel level, StructurePiece piece) {
+		return buildAlone(level, List.of(piece));
+	}
+
+	// Builds a Stronghold of just the room, as one of its keeper rooms, with a book floating above it.
+	private static List<AbstractIllager> buildAloneAsKeeperRoom(ServerLevel level, StructurePiece room) {
+		BoundingBox box = room.getBoundingBox();
+		BlockPos origin = new BlockPos(box.minX(), box.minY(), box.minZ());
+		BlockPos aboveTheRoom = new BlockPos(box.getCenter().getX(), box.maxY() + 3, box.getCenter().getZ());
+
+		return buildAlone(level, List.of(room, StructureBookPiece.floating(aboveTheRoom, Enchantments.UNBREAKING, 0, room, List.of(origin))));
+	}
+
+	private static List<AbstractIllager> buildAlone(ServerLevel level, List<StructurePiece> pieces) {
 		Structure stronghold = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(BuiltinStructures.STRONGHOLD).value();
-		BoundingBox box = piece.getBoundingBox();
-		StructureStart start = new StructureStart(stronghold, ChunkPos.containing(box.getCenter()), 0, new PiecesContainer(List.of(piece)));
+		BoundingBox box = pieces.getFirst().getBoundingBox();
+		StructureStart start = new StructureStart(stronghold, ChunkPos.containing(box.getCenter()), 0, new PiecesContainer(pieces));
 
 		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
 
