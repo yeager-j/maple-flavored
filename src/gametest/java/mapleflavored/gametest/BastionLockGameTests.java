@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import mapleflavored.structurebooks.BookLocks;
-import mapleflavored.structurebooks.BruteKeepers;
+import mapleflavored.structurebooks.MobKeepers;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -27,6 +27,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.piglin.PiglinBrute;
 import net.minecraft.world.item.Items;
@@ -92,11 +93,11 @@ public class BastionLockGameTests {
 		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, 30));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		List<BlockPos> keys = BookLocks.remainingKeys(level, book);
-		List<PiglinBrute> keepers = BruteKeepers.liveKeepers(level, book);
+		List<Mob> keepers = MobKeepers.liveKeepers(level, book);
 
 		helper.assertValueEqual(keys.size(), KEEPERS, "the book's keepers");
 		helper.assertValueEqual(
-			keepers.stream().map(keeper -> BruteKeepers.keyOf(keeper).orElseThrow()).collect(java.util.stream.Collectors.toSet()),
+			keepers.stream().map(keeper -> MobKeepers.keyOf(keeper).orElseThrow()).collect(java.util.stream.Collectors.toSet()),
 			Set.copyOf(keys),
 			"the keys of the Brutes tagged as keepers"
 		);
@@ -110,7 +111,7 @@ public class BastionLockGameTests {
 		helper.assertTrue(level.getBlockState(book).is(StructureBooks.BLOCK), "the book is still there");
 		helper.assertValueEqual(takes(book), 0, "takes");
 
-		for (PiglinBrute keeper : keepers) {
+		for (Mob keeper : keepers) {
 			MobEffectInstance glow = keeper.getEffect(MobEffects.GLOWING);
 
 			helper.assertTrue(glow != null && glow.getDuration() == KEEPER_GLOW_TICKS, "the keeper at " + keeper.blockPosition() + " glows for 60 ticks");
@@ -129,11 +130,11 @@ public class BastionLockGameTests {
 		ServerLevel nether = level.getServer().getLevel(Level.NETHER);
 		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, 31));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
-		List<PiglinBrute> keepers = BruteKeepers.liveKeepers(level, book);
+		List<Mob> keepers = MobKeepers.liveKeepers(level, book);
 		PiglinBrute nonKeeper = BastionBookGameTests.piglinsIn(level, start).stream()
 			.filter(PiglinBrute.class::isInstance)
 			.map(PiglinBrute.class::cast)
-			.filter(brute -> BruteKeepers.keyOf(brute).isEmpty())
+			.filter(brute -> MobKeepers.keyOf(brute).isEmpty())
 			.findFirst()
 			.orElseThrow(() -> new IllegalStateException("the treasure room has a Brute that isn't a keeper"));
 
@@ -179,7 +180,7 @@ public class BastionLockGameTests {
 
 		BastionBookGameTests.placeRegistered(level, reloaded);
 
-		List<PiglinBrute> keepers = BruteKeepers.liveKeepers(level, book.spot());
+		List<Mob> keepers = MobKeepers.liveKeepers(level, book.spot());
 
 		helper.assertValueEqual(keepers.size(), KEEPERS, "keepers tagged as the reloaded Bastion is built");
 
@@ -236,7 +237,7 @@ public class BastionLockGameTests {
 		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.HOUSING_UNITS, 33));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 
-		helper.assertValueEqual(BruteKeepers.liveKeepers(level, book), List.of(), "keepers alive in Peaceful");
+		helper.assertValueEqual(MobKeepers.liveKeepers(level, book), List.of(), "keepers alive in Peaceful");
 
 		helper.succeedWhen(() -> {
 			helper.assertTrue(!BookLocks.isLocked(level, book), "the book is unlocked in Peaceful");

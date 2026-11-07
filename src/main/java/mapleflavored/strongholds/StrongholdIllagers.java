@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.function.Function;
 import mapleflavored.bloodmoons.Restorable;
 import mapleflavored.mixin.StructurePieceInvoker;
+import mapleflavored.structurebooks.MobKeepers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -29,7 +30,8 @@ import net.minecraft.world.phys.Vec3;
  * The Illagers that guard a Stronghold: Vindicators, Pillagers and Evokers, a fixed garrison per piece, placed as each
  * piece is built. Each stands where a Blood Moon can Restore it, on the Stronghold's Restore blocks with a clear 1×2×1
  * space, inside its piece's walls, so never in a doorway. A library's Evoker keeps to its upper walkway, or to the back
- * of a library without one, and a prison hall's guard to the hall, outside the cells.
+ * of a library without one, and a prison hall's guard to the hall, outside the cells. Every Evoker is a keeper of the
+ * Stronghold's book, keyed by the origin of the piece that placed it.
  *
  * <p>A piece's garrison and where each guard stands are drawn from the world seed and the piece's box alone, so the
  * piece places the same guards whichever of its chunks is built first. Each guard's first choice of column is floor the
@@ -42,6 +44,8 @@ public final class StrongholdIllagers {
 	private static final int GARRISON_SALT = 0x5711A6;
 
 	private static final float CORRIDOR_CHANCE = 0.25F;
+	// The pieces that place an Evoker.
+	private static final Set<StructurePieceType> KEEPER_PIECES = Set.of(StructurePieceType.STRONGHOLD_PORTAL_ROOM, StructurePieceType.STRONGHOLD_LIBRARY);
 	// Vanilla's test for a library with an upper walkway.
 	private static final int SHORT_LIBRARY_HEIGHT = 6;
 
@@ -84,8 +88,26 @@ public final class StrongholdIllagers {
 	}
 
 	/**
-	 * Places the guards of a Stronghold piece that stand in the chunk being built. Call after the piece is built in each
-	 * chunk; it does nothing for any other piece, including the Stronghold's starting staircase.
+	 * The keys of the Evokers that keep the Stronghold's book: the origins of the pieces that place one, the portal room
+	 * and each library.
+	 */
+	public static List<BlockPos> keeperKeys(List<StructurePiece> pieces) {
+		return pieces.stream().flatMap(piece -> keeperKey(piece).stream()).toList();
+	}
+
+	/** The key of the Evoker the piece places, if it's a piece that places one. */
+	public static Optional<BlockPos> keeperKey(StructurePiece piece) {
+		if (!KEEPER_PIECES.contains(piece.getType())) return Optional.empty();
+
+		BoundingBox box = piece.getBoundingBox();
+
+		return Optional.of(new BlockPos(box.minX(), box.minY(), box.minZ()));
+	}
+
+	/**
+	 * Places the guards of a Stronghold piece that stand in the chunk being built, tagging a keeper Evoker. Call inside
+	 * {@code MobKeepers.build}, after the piece is built in each chunk; it does nothing for any other piece, including the
+	 * Stronghold's starting staircase. A keeper Evoker with no room has its key unlocked.
 	 *
 	 * @param chunkBox the part of the world the chunk build may change
 	 */
@@ -97,14 +119,20 @@ public final class StrongholdIllagers {
 
 			int lowestFeet = ((StructurePieceInvoker) piece).worldY(guard.lowestFeet());
 
-			guard.columns().stream()
+			Optional<BlockPos> spot = guard.columns().stream()
 				.flatMap(column -> standingSpot(level, piece.getBoundingBox(), column, lowestFeet).stream())
-				.filter(spot -> !taken.contains(spot))
-				.findFirst()
-				.ifPresent(spot -> {
-					taken.add(spot);
-					spawn(level, guard.type(), spot);
-				});
+				.filter(open -> !taken.contains(open))
+				.findFirst();
+			boolean keeper = guard.type() == EntityTypes.EVOKER;
+
+			if (spot.isEmpty()) {
+				if (keeper) MobKeepers.forgiveIfPlacing();
+
+				continue;
+			}
+
+			taken.add(spot.get());
+			spawn(level, guard.type(), spot.get(), keeper);
 		}
 	}
 
@@ -226,10 +254,16 @@ public final class StrongholdIllagers {
 	}
 
 	// Set up as a Woodland Mansion sets up its Illagers.
-	private static void spawn(WorldGenLevel level, EntityType<? extends Mob> type, BlockPos feet) {
+	private static void spawn(WorldGenLevel level, EntityType<? extends Mob> type, BlockPos feet, boolean keeper) {
 		Mob mob = type.create(level.getLevel(), EntitySpawnReason.STRUCTURE);
 
-		if (mob == null) return;
+		if (mob == null) {
+			if (keeper) MobKeepers.forgiveIfPlacing();
+
+			return;
+		}
+
+		if (keeper) MobKeepers.tagIfPlacing(mob);
 
 		mob.setPersistenceRequired();
 		mob.snapTo(Vec3.atBottomCenterOf(feet), 0.0F, 0.0F);

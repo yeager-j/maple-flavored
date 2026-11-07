@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import mapleflavored.mixin.ListPoolElementAccessor;
 import mapleflavored.mixin.SinglePoolElementAccessor;
 import mapleflavored.mixin.StructurePieceInvoker;
+import mapleflavored.strongholds.StrongholdIllagers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -300,11 +301,16 @@ final class StructureBookSpots {
 		return List.copyOf(brutes.subList(0, Math.min(BASTION_KEEPERS, brutes.size())));
 	}
 
-	/** The key of the keeper Brute the piece places, if it places one of the {@code keepers} its book was planned with. */
+	/**
+	 * The key of the keeper the piece places, a Bastion's Brute or a Stronghold's Evoker, if it places one of the
+	 * {@code keepers} its book was planned with.
+	 */
 	static Optional<BlockPos> keeperKey(StructurePiece piece, List<BlockPos> keepers) {
-		if (!(piece instanceof PoolElementStructurePiece pool) || !placesTemplate(pool, BASTION_BRUTES::contains)) return Optional.empty();
+		Optional<BlockPos> key = piece instanceof PoolElementStructurePiece pool && placesTemplate(pool, BASTION_BRUTES::contains)
+			? Optional.of(pool.getPosition())
+			: StrongholdIllagers.keeperKey(piece);
 
-		return Optional.of(pool.getPosition()).filter(keepers::contains);
+		return key.filter(keepers::contains);
 	}
 
 	private static Optional<BookSpot> aboveChest(

@@ -16,6 +16,8 @@ import mapleflavored.bloodmoons.Restoring;
 import mapleflavored.mixin.StructurePieceInvoker;
 import mapleflavored.strongholds.StrongholdLayout;
 import mapleflavored.strongholds.StrongholdRoutes;
+import mapleflavored.structurebooks.BookLocks;
+import mapleflavored.structurebooks.MobKeepers;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -287,6 +289,7 @@ public class StrongholdGameTests {
 
 		// So the hunters can't end their hunt by killing the player mid-chase.
 		player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, MobEffectInstance.INFINITE_DURATION, FULL_RESISTANCE));
+		killKeepers(level, book);
 		helper.assertTrue(StructureBooks.take(player, book), "the book is taken");
 		player.setPos(Vec3.atBottomCenterOf(byTheDoor));
 
@@ -336,14 +339,57 @@ public class StrongholdGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
+	public void theBookIsLockedUntilEveryEvokerIsDead(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(7)));
+		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
+		List<BlockPos> keys = BookLocks.lockAt(level, book).map(BookLocks.Lock::keys).orElse(List.of());
+		List<Mob> keepers = MobKeepers.liveKeepers(level, book);
+		long rooms = start.getPieces().stream()
+			.filter(piece -> piece.getType() == StructurePieceType.STRONGHOLD_PORTAL_ROOM || piece.getType() == StructurePieceType.STRONGHOLD_LIBRARY)
+			.count();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
+
+		player.setPos(Vec3.atBottomCenterOf(book.below()));
+
+		helper.assertValueEqual(BookLocks.lockAt(level, book).map(BookLocks.Lock::kind), Optional.of(BookLocks.Kind.EVOKERS), "the lock's kind");
+		helper.assertValueEqual((long) keys.size(), rooms, "keys, one for the portal room and one for each library");
+		helper.assertValueEqual(keepers.size(), keys.size(), "keepers alive");
+		helper.assertTrue(keepers.stream().allMatch(keeper -> keeper.getType() == EntityTypes.EVOKER), "every keeper is an Evoker");
+		helper.assertValueEqual(
+			keepers.stream().map(keeper -> MobKeepers.keyOf(keeper).orElseThrow()).collect(Collectors.toSet()),
+			Set.copyOf(keys),
+			"the keys of the Evokers tagged as keepers"
+		);
+		helper.assertValueEqual(
+			countOf(illagersIn(level, start), EntityTypes.EVOKER),
+			(long) keepers.size(),
+			"Evokers in the Stronghold, every one a keeper"
+		);
+
+		for (Mob keeper : keepers) {
+			helper.assertFalse(StructureBooks.take(player, book), "the book is taken with " + BookLocks.remainingKeys(level, book).size() + " Evokers alive");
+			helper.assertTrue(keeper.hasEffect(MobEffects.GLOWING), "a refused take makes the Evoker at " + keeper.blockPosition() + " glow");
+			keeper.kill(level);
+		}
+
+		helper.assertTrue(StructureBooks.take(player, book), "the book is taken once every Evoker is dead");
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void takingTheBookTurnsEveryIllagerInTheStrongholdOnAnOrichalcumWearer(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(2)));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		StructurePiece portalRoom = onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM);
 		ServerPlayer player = MockPlayers.survivalPlayer(helper);
-		List<AbstractIllager> guards = illagersIn(level, start);
 
+		killKeepers(level, book);
+
+		List<AbstractIllager> guards = illagersIn(level, start).stream().filter(AbstractIllager::isAlive).toList();
+
+		helper.assertFalse(guards.isEmpty(), "Illagers are left once the Evokers are dead");
 		player.setItemSlot(EquipmentSlot.FEET, new ItemStack(AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS)));
 		player.setPos(Vec3.atBottomCenterOf(book.below()));
 
@@ -393,6 +439,10 @@ public class StrongholdGameTests {
 				level.setChunkForced(chunk.x(), chunk.z(), false);
 			})
 			.thenSucceed();
+	}
+
+	private static void killKeepers(ServerLevel level, BlockPos book) {
+		MobKeepers.liveKeepers(level, book).forEach(keeper -> keeper.kill(level));
 	}
 
 	// How many doorways the hunter must cross to reach the spot: none in the same room.
