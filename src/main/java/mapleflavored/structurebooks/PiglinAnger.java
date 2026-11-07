@@ -3,6 +3,7 @@ package mapleflavored.structurebooks;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 import mapleflavored.MapleFlavored;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -12,6 +13,7 @@ import net.minecraft.core.UUIDUtil;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -54,22 +56,36 @@ public final class PiglinAnger {
 
 	/**
 	 * The player the Piglin is hunting, if it is and they're here to attack, for its target choice to put first. Keeps the
-	 * Piglin's longer follow range only while that's so. The hunt itself lasts until it runs out or the Piglin's anger
-	 * stops naming its quarry, as when the quarry dies, so a quarry who steps through a portal is hunted again on their
-	 * return. Call wherever the Piglin picks or checks its attack target.
+	 * Piglin's longer follow range only while that's so. The hunt itself lasts until it runs out, the Piglin's anger stops
+	 * naming its quarry, or its quarry dies, wherever they die and whether or not the Piglin was loaded then, so a quarry
+	 * who steps through a portal is hunted again on their return. Call wherever the Piglin picks or checks its attack
+	 * target.
 	 */
 	public static Optional<LivingEntity> updateHunt(ServerLevel level, AbstractPiglin piglin) {
-		Optional<Hunt> hunt = Optional.ofNullable(piglin.getAttached(HUNT)).filter(active -> active.isOn(level, piglin));
+		Brain<?> brain = piglin.getBrain();
+		Hunt hunt = piglin.getAttached(HUNT);
+		ServerPlayer quarry = hunt == null ? null : level.getServer().getPlayerList().getPlayer(hunt.quarry());
+		OptionalInt quarryDeaths = quarry == null ? OptionalInt.empty() : OptionalInt.of(deaths(quarry));
+		HuntStatus status = hunt == null
+			? HuntStatus.OVER
+			: hunt.statusAt(level.getGameTime(), brain.getMemory(MemoryModuleType.ANGRY_AT), quarryDeaths);
 
-		if (hunt.isEmpty()) piglin.removeAttached(HUNT);
+		if (status != HuntStatus.ON) piglin.removeAttached(HUNT);
 
-		Optional<LivingEntity> quarry = hunt
-			.flatMap(active -> BehaviorUtils.getLivingEntityFromUUIDMemory(piglin, MemoryModuleType.ANGRY_AT))
-			.filter(piglin::canAttack);
+		// As a Piglin forgets a dead target, here even when it never saw the death.
+		if (status == HuntStatus.QUARRY_DIED) brain.eraseMemory(MemoryModuleType.ANGRY_AT);
 
-		keepHuntRange(piglin, quarry.isPresent());
+		Optional<LivingEntity> target = status == HuntStatus.ON
+			? BehaviorUtils.getLivingEntityFromUUIDMemory(piglin, MemoryModuleType.ANGRY_AT).filter(piglin::canAttack)
+			: Optional.empty();
 
-		return quarry;
+		keepHuntRange(piglin, target.isPresent());
+
+		return target;
+	}
+
+	private static int deaths(ServerPlayer player) {
+		return player.getStats().getValue(Stats.CUSTOM.get(Stats.DEATHS));
 	}
 
 	private static void keepHuntRange(AbstractPiglin piglin, boolean hunting) {
@@ -105,7 +121,7 @@ public final class PiglinAnger {
 
 		if (level.getGameRules().get(GameRules.UNIVERSAL_ANGER)) brain.setMemoryWithExpiry(MemoryModuleType.UNIVERSAL_ANGER, true, HUNT_TICKS);
 
-		piglin.setAttached(HUNT, new Hunt(player.getUUID(), level.getGameTime() + HUNT_TICKS));
+		piglin.setAttached(HUNT, new Hunt(player.getUUID(), level.getGameTime() + HUNT_TICKS, Optional.of(deaths(player))));
 		keepHuntRange(piglin, true);
 	}
 
@@ -114,17 +130,40 @@ public final class PiglinAnger {
 	 *
 	 * @param quarry the player hunted; a later, vanilla anger at someone else is never a hunt
 	 * @param until the game time the hunt ends
+	 * @param quarryDeaths how many times the quarry had died when the hunt began, or empty for a hunt saved before this
+	 *     was recorded; a death since ends it
 	 */
-	private record Hunt(UUID quarry, long until) {
+	private record Hunt(UUID quarry, long until, Optional<Integer> quarryDeaths) {
 		static final Codec<Hunt> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 			UUIDUtil.CODEC.fieldOf("quarry").forGetter(Hunt::quarry),
-			Codec.LONG.fieldOf("until").forGetter(Hunt::until)
+			Codec.LONG.fieldOf("until").forGetter(Hunt::until),
+			Codec.INT.optionalFieldOf("quarry_deaths").forGetter(Hunt::quarryDeaths)
 		).apply(instance, Hunt::new));
 
-		boolean isOn(ServerLevel level, AbstractPiglin piglin) {
-			Optional<UUID> angryAt = piglin.getBrain().getMemory(MemoryModuleType.ANGRY_AT);
+		/**
+		 * Whether the hunt is still on at game time {@code now}.
+		 *
+		 * @param angryAt who the Piglin's anger names now
+		 * @param quarryDeathsNow how many times the quarry has died by now, or empty when they're offline
+		 */
+		HuntStatus statusAt(long now, Optional<UUID> angryAt, OptionalInt quarryDeathsNow) {
+			// Anger that has moved to someone else is vanilla's now, and outlives the quarry's death.
+			if (!angryAt.equals(Optional.of(quarry))) return HuntStatus.OVER;
 
-			return level.getGameTime() < until && angryAt.equals(Optional.of(quarry));
+			boolean diedSince = quarryDeaths.isPresent()
+				&& quarryDeathsNow.isPresent()
+				&& quarryDeathsNow.getAsInt() != quarryDeaths.get();
+
+			if (diedSince) return HuntStatus.QUARRY_DIED;
+
+			return now < until ? HuntStatus.ON : HuntStatus.OVER;
 		}
+	}
+
+	private enum HuntStatus {
+		ON,
+		/** Ran out, the Piglin's anger moved on, or there was none. */
+		OVER,
+		QUARRY_DIED
 	}
 }
