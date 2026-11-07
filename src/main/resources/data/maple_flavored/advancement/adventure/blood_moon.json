@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:adventure/root",
+  "criteria": {
+    "blood_moon_risen": {
+      "trigger": "maple_flavored:blood_moon_risen"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.adventure.blood_moon.description"
+    },
+    "icon": {
+      "id": "minecraft:red_dye"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.adventure.blood_moon.title"
+    }
+  },
+  "requirements": [
+    [
+      "blood_moon_risen"
+    ]
+  ]
+}

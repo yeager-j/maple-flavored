@@ -9,6 +9,7 @@
 		"EquipmentLayerRendererMixin",
 		"HudMixin",
 		"LightCoordsUtilMixin",
+		"SkyRendererMixin",
 		"SmithingScreenMixin"
 	],
 	"injectors": {

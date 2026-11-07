@@ -46,7 +46,7 @@ A structure is Restored when its chunks next load after a Blood Moon, topped up 
 
 ### The night
 
-A Blood Moon falls on every 4th full moon, every 32 in-game days, on a fixed schedule. It's a restock, not a siege: red moon and sky, one chat message in every dimension, sleeping allowed and no extra spawns. Other effects of a Blood Moon can be proposed in the grilling ticket they belong to.
+A Blood Moon falls on every 4th full moon, every 32 in-game days, on a fixed schedule. It's a restock, not a siege: red moon and sky, crimson spores drifting in the Overworld air so players indoors or underground can tell, one chat message in every dimension, sleeping allowed and no extra spawns. Other effects of a Blood Moon can be proposed in the grilling ticket they belong to.
 
 ### Farms and supply
 
