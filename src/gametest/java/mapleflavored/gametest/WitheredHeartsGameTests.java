@@ -20,13 +20,14 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Withered Hearts: withering under the Wither effect, the timer, the 1 usable heart minimum, recovery in each
- * dimension, death and relog.
+ * Withered Hearts: withering under the Wither effect, the timer, the 1 usable heart minimum, gradual recovery in each
+ * dimension and its timer, death and relog.
  *
  * <p>Mock players aren't ticked by a connection, so their effects never run out and tests end Wither by removing it.
  */
 public class WitheredHeartsGameTests {
 	private static final int WITHERING_INTERVAL = 100;
+	private static final int RECOVERY_INTERVAL = 200;
 	// Waits stay clear of the exact interval, where the order of the test's tick and the withering tick decides.
 	private static final int MARGIN = 10;
 	private static final String RECOVERY_ADVANCEMENT = "maple_flavored:nether/recover_withered_heart";
@@ -76,17 +77,17 @@ public class WitheredHeartsGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(maxTicks = 200)
+	@GameTest(maxTicks = 400)
 	public void witheredHeartsReturnInTheOverworldOnceTheEffectEnds(GameTestHelper helper) {
 		assertRecoversWhereTheEffectEnds(helper);
 	}
 
-	@GameTest(dimension = "minecraft:the_end", maxTicks = 200)
+	@GameTest(dimension = "minecraft:the_end", maxTicks = 400)
 	public void witheredHeartsReturnInTheEndOnceTheEffectEnds(GameTestHelper helper) {
 		assertRecoversWhereTheEffectEnds(helper);
 	}
 
-	@GameTest(dimension = "minecraft:the_nether", maxTicks = 200)
+	@GameTest(dimension = "minecraft:the_nether", maxTicks = 400)
 	public void witheredHeartsStayInTheNetherAndReturnOnLeaving(GameTestHelper helper) {
 		ServerPlayer player = playerWithMaxHearts(helper, 10);
 
@@ -99,11 +100,97 @@ public class WitheredHeartsGameTests {
 				helper.assertFalse(isDone(helper, player, RECOVERY_ADVANCEMENT), "no Withered Heart is back yet");
 				moveTo(helper, player, Level.OVERWORLD);
 			})
-			.thenExecuteAfter(MARGIN, () -> {
+			.thenExecuteAfter(RECOVERY_INTERVAL + MARGIN, () -> {
 				assertWitheredHearts(helper, player, 0);
 				helper.assertTrue(isDone(helper, player, RECOVERY_ADVANCEMENT), "getting a Withered Heart back is granted");
 			})
 			.thenSucceed();
+	}
+
+	@GameTest(maxTicks = 700)
+	public void witheredHeartsReturnOneEveryTenSeconds(GameTestHelper helper) {
+		ServerPlayer player = playerWithMaxHearts(helper, 10);
+
+		wither(player);
+
+		helper.startSequence()
+			.thenExecuteAfter(2 * WITHERING_INTERVAL + MARGIN, () -> {
+				assertWitheredHearts(helper, player, 2);
+
+				// Vanilla cuts health to max health in the player's own tick, which a mock player never runs.
+				player.setHealth(player.getMaxHealth());
+				player.removeEffect(MobEffects.WITHER);
+			})
+			.thenExecuteAfter(RECOVERY_INTERVAL - MARGIN, () -> {
+				assertWitheredHearts(helper, player, 2);
+				helper.assertFalse(isDone(helper, player, RECOVERY_ADVANCEMENT), "no Withered Heart is back yet");
+			})
+			.thenExecuteAfter(2 * MARGIN, () -> {
+				assertWitheredHearts(helper, player, 1);
+				helper.assertValueEqual(player.getHealth(), 16.0F, "health, as a returned heart comes back empty");
+				helper.assertTrue(isDone(helper, player, RECOVERY_ADVANCEMENT), "getting a Withered Heart back is granted");
+			})
+			.thenExecuteAfter(RECOVERY_INTERVAL, () -> assertWitheredHearts(helper, player, 0))
+			.thenSucceed();
+	}
+
+	@GameTest(maxTicks = 500)
+	public void theRecoveryTimerResetsWhenWitherReturns(GameTestHelper helper) {
+		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		int partway = RECOVERY_INTERVAL / 2 + MARGIN;
+
+		wither(player);
+
+		helper.startSequence()
+			.thenExecuteAfter(WITHERING_INTERVAL + MARGIN, () -> player.removeEffect(MobEffects.WITHER))
+			.thenExecuteAfter(partway, () -> wither(player))
+			.thenExecuteAfter(MARGIN, () -> player.removeEffect(MobEffects.WITHER))
+			// Recovery has run longer than one interval in all, but not since Wither returned.
+			.thenExecuteAfter(partway, () -> assertWitheredHearts(helper, player, 1))
+			.thenExecuteAfter(RECOVERY_INTERVAL / 2, () -> assertWitheredHearts(helper, player, 0))
+			.thenSucceed();
+	}
+
+	@GameTest(dimension = "minecraft:the_nether", maxTicks = 500)
+	public void theRecoveryTimerResetsOnEnteringTheNether(GameTestHelper helper) {
+		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		int partway = RECOVERY_INTERVAL / 2 + MARGIN;
+
+		wither(player);
+
+		helper.startSequence()
+			.thenExecuteAfter(WITHERING_INTERVAL + MARGIN, () -> {
+				player.removeEffect(MobEffects.WITHER);
+				moveTo(helper, player, Level.OVERWORLD);
+			})
+			.thenExecuteAfter(partway, () -> moveTo(helper, player, Level.NETHER))
+			.thenExecuteAfter(MARGIN, () -> moveTo(helper, player, Level.OVERWORLD))
+			// Recovery has run longer than one interval in all, but not since the last visit.
+			.thenExecuteAfter(partway, () -> assertWitheredHearts(helper, player, 1))
+			.thenExecuteAfter(RECOVERY_INTERVAL / 2, () -> assertWitheredHearts(helper, player, 0))
+			.thenSucceed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void recoveryTimerProgressSurvivesRelog(GameTestHelper helper) {
+		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		int intoRecovery = RECOVERY_INTERVAL / 2;
+
+		wither(player);
+
+		helper.startSequence()
+			.thenExecuteAfter(WITHERING_INTERVAL + MARGIN, () -> player.removeEffect(MobEffects.WITHER))
+			.thenExecuteAfter(intoRecovery, () -> {
+				ServerPlayer relogged = relog(helper, player);
+
+				assertWitheredHearts(helper, relogged, 1);
+
+				// A timer that restarted on relog would need a full interval for the heart to return.
+				helper.runAfterDelay(intoRecovery + MARGIN, () -> {
+					assertWitheredHearts(helper, relogged, 0);
+					helper.succeed();
+				});
+			});
 	}
 
 	@GameTest(dimension = "minecraft:the_nether", maxTicks = 200)
@@ -130,15 +217,15 @@ public class WitheredHeartsGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(dimension = "minecraft:the_nether", maxTicks = 200)
-	public void deathClearsWitheredHearts(GameTestHelper helper) {
+	@GameTest(dimension = "minecraft:the_nether", maxTicks = 300)
+	public void deathClearsEveryWitheredHeartAtOnce(GameTestHelper helper) {
 		ServerPlayer player = playerWithMaxHearts(helper, 12);
 
 		wither(player);
 
 		helper.startSequence()
-			.thenExecuteAfter(WITHERING_INTERVAL + MARGIN, () -> {
-				assertWitheredHearts(helper, player, 1);
+			.thenExecuteAfter(2 * WITHERING_INTERVAL + MARGIN, () -> {
+				assertWitheredHearts(helper, player, 2);
 
 				// Checked before any tick, so recovery outside the Nether can't be what cleared them.
 				ServerPlayer respawned = dieAndRespawn(helper, player);
@@ -184,7 +271,7 @@ public class WitheredHeartsGameTests {
 				player.setHealth(player.getMaxHealth());
 				player.removeEffect(MobEffects.WITHER);
 			})
-			.thenExecuteAfter(MARGIN, () -> {
+			.thenExecuteAfter(RECOVERY_INTERVAL + MARGIN, () -> {
 				assertWitheredHearts(helper, player, 0);
 				helper.assertValueEqual(player.getHealth(), 18.0F, "health, as returned hearts come back empty");
 				helper.assertTrue(isDone(helper, player, RECOVERY_ADVANCEMENT), "getting a Withered Heart back is granted");

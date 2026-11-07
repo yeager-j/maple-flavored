@@ -4,18 +4,18 @@
 
 **Blocked by:** 08 (Withered Hearts)
 
-**Status:** ready-for-agent
+**Status:** done
 
 Spec: the Maple Flavored spec in this folder. This changes its Withered Hearts rule ("All return at once"), and user story 28.
 
-- [ ] While the player has no Wither effect and is outside the Nether, one Withered Heart returns every 10 seconds until none are left
-- [ ] The recovery timer starts once both conditions hold, and resets whenever either stops holding (Wither applied again, or entering the Nether), so recovery never carries over between visits
-- [ ] Recovery timer progress is saved through logout, like the withering timer
-- [ ] A returned heart comes back empty, as now, and health is not refilled
-- [ ] "Second Wind" (Get a Withered Heart back) is granted when the first heart returns
-- [ ] Death still clears every Withered Heart at once
-- [ ] The spec's Withered Hearts rule and user story 28 say hearts return one every 10 seconds
-- [ ] GameTests cover: no heart back before 10 seconds, one at 10, the next at 20; the reset on re-applied Wither and on entering the Nether; logout keeping progress; death still clearing all
+- [x] While the player has no Wither effect and is outside the Nether, one Withered Heart returns every 10 seconds until none are left
+- [x] The recovery timer starts once both conditions hold, and resets whenever either stops holding (Wither applied again, or entering the Nether), so recovery never carries over between visits
+- [x] Recovery timer progress is saved through logout, like the withering timer
+- [x] A returned heart comes back empty, as now, and health is not refilled
+- [x] "Second Wind" (Get a Withered Heart back) is granted when the first heart returns
+- [x] Death still clears every Withered Heart at once
+- [x] The spec's Withered Hearts rule and user story 28 say hearts return one every 10 seconds
+- [x] GameTests cover: no heart back before 10 seconds, one at 10, the next at 20; the reset on re-applied Wither and on entering the Nether; logout keeping progress; death still clearing all
 
 ## Notes
 

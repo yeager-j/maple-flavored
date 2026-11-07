@@ -45,6 +45,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public class WitherGameTests {
 	private static final int WITHERING_INTERVAL = 100;
+	private static final int RECOVERY_INTERVAL = 200;
 	// Waits stay clear of the exact interval, where the order of the test's tick and the withering tick decides.
 	private static final int MARGIN = 10;
 	private static final String RECOVERY_ADVANCEMENT = "maple_flavored:nether/recover_withered_heart";
@@ -53,7 +54,7 @@ public class WitherGameTests {
 	private static final ResourceKey<Enchantment> BLIGHT = ResourceKey.create(Registries.ENCHANTMENT, MapleFlavored.id("blight"));
 	private static final double EPSILON = 1.0E-6;
 
-	@GameTest(environment = "maple_flavored_gametest:wither_recovery", maxTicks = 300)
+	@GameTest(environment = "maple_flavored_gametest:wither_recovery", maxTicks = 600)
 	public void witheredHeartsReturnOnlyOutsideAWithersSubspaceUntilTheWitherDies(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -84,7 +85,7 @@ public class WitherGameTests {
 				wither.snapTo(wandered.x, wandered.y, wandered.z);
 				savedWither[0] = SubspaceArena.unload(helper, wither);
 			})
-			.thenExecuteAfter(2 * MARGIN, () -> {
+			.thenExecuteAfter(RECOVERY_INTERVAL + MARGIN, () -> {
 				helper.assertValueEqual(Hearts.witheredHearts(inside), 1, "Withered Hearts 100 blocks out, with the Wither unloaded");
 				helper.assertFalse(isDone(helper, inside, RECOVERY_ADVANCEMENT), "a Withered Heart came back inside");
 				helper.assertFalse(inside.hasEffect(MobEffects.DARKNESS), "the Wither's Subspace gives Darkness");
@@ -100,7 +101,7 @@ public class WitherGameTests {
 				helper.assertValueEqual(afterReload.getFirst().centre(), arena.centre(), "the reloaded Subspace's centre");
 				reloaded.kill(level);
 			})
-			.thenExecuteAfter(MARGIN, () -> {
+			.thenExecuteAfter(RECOVERY_INTERVAL + MARGIN, () -> {
 				helper.assertValueEqual(Hearts.witheredHearts(inside), 0, "Withered Hearts once the Wither dies");
 				helper.assertTrue(isDone(helper, inside, RECOVERY_ADVANCEMENT), "getting a Withered Heart back is granted");
 			})
