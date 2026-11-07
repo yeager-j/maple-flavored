@@ -58,6 +58,7 @@
 		"ServerLevelMixin",
 		"ServerPlayerMixin",
 		"SinglePoolElementAccessor",
+		"SinglePoolElementMixin",
 		"SmithingMenuMixin",
 		"SmithingTransformRecipeMixin",
 		"SniffingMixin",

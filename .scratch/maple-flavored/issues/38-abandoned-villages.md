@@ -8,10 +8,10 @@
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] Village spacing 80, separation 50
-- [ ] Villages spawn zombie villagers and no iron golems; hay bales and brewing stands are removed; crops, beds, bells and workstations stay
-- [ ] Village chests lose diamonds, obsidian and iron gear
-- [ ] The igloo basement villager is a zombie villager
-- [ ] Credit Matcha Flavoured for spacing
-- [ ] GameTests place a village and an igloo and check their mobs and blocks; worldgen data check for spacing
+- [x] Village spacing 80, separation 50
+- [x] Villages spawn zombie villagers and no iron golems; hay bales and brewing stands are removed; crops, beds, bells and workstations stay
+- [x] Village chests lose diamonds, obsidian and iron gear
+- [x] The igloo basement villager is a zombie villager
+- [x] Credit Matcha Flavoured for spacing
+- [x] GameTests place a village and an igloo and check their mobs and blocks; worldgen data check for spacing
 - [ ] Hand check: village rarity in a fresh world
