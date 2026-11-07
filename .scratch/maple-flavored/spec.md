@@ -180,7 +180,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 131. As a player, I want every armor piece, including the turtle helmet and the Armored Elytra, to accept Reinforcement once, so that every set can use it.
 132. As a player, I want plain Elytra, carved pumpkins, heads and mob armor to refuse Reinforcement, so that it stays an armor upgrade.
 133. As a player, I want Reinforcement to carry through smithing upgrades and between Alloys, stack with trims and Adamant, and work on enchanted armor, so that it is never wasted.
-134. As a player, I want a "Reinforced" tooltip line and a chainmail overlay drawn like a trim, so that I can see which pieces are Reinforced.
+134. As a player, I want a "Reinforced" tooltip line and chainmail drawn beneath my worn armor, showing through its gaps, so that I can see which pieces are Reinforced.
 135. As a player, I want to buy the Reinforcement template from a Master Armorer for 32 emeralds, so that Reinforcement is an early reward for earning villagers.
 136. As a player, I want to copy the template with 7 diamonds and a block of iron, so that I don't need a trade for every piece.
 137. As a player, I want chainmail to stay uncraftable, so that its mob drops, chests and Armorer trades keep a use.
@@ -434,7 +434,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 
 **Early tiers.** Stone tool recipes are removed, including the stone spear. A wooden pickaxe mines copper ore, deepslate copper ore and raw copper blocks through vanilla's tool tags. Everything else at stone tier needs copper or better. Trades, chest loot and the Bonus Chest give copper tools in place of stone tools. Gold tools, weapons and armor get the extra Enchantment Slot. Golden horse armor is unaffected.
 
-**Reinforcement.** A registered Reinforcement template item and smithing recipe type. Template plus armor piece plus any chainmail piece gives the Reinforced piece, marked by an item component that adds +1 armor toughness. Once per piece. It accepts every armor piece including the turtle helmet and Armored Elytra, and refuses plain Elytra, carved pumpkins, heads and mob armor. The component carries through every smithing upgrade. It works on enchanted armor. The client shows a "Reinforced" tooltip line and a chainmail overlay drawn as a trim-like layer that combines with trims. The template copies with 7 diamonds and a block of iron into 2. A Master Armorer sells it for 32 emeralds. It is in no loot.
+**Reinforcement.** A registered Reinforcement template item and smithing recipe type. Template plus armor piece plus any chainmail piece gives the Reinforced piece, marked by an item component that adds +1 armor toughness. Once per piece. It accepts every armor piece including the turtle helmet and Armored Elytra, and refuses plain Elytra, carved pumpkins, heads and mob armor. The component carries through every smithing upgrade. It works on enchanted armor. The client shows a "Reinforced" tooltip line and draws chainmail beneath the worn armor's own layers, so it shows only through the armor's gaps. The template copies with 7 diamonds and a block of iron into 2. A Master Armorer sells it for 32 emeralds. It is in no loot.
 
 **Villages and villagers.** Worldgen and entity changes. Village structure set uses spacing 80 and separation 50. Every village spawns zombie villagers and no iron golems. Hay bales (piles and barn hay) and every brewing stand are removed from village pieces. The igloo basement villager is a zombie villager. Natural zombie villagers and conversion stay vanilla.
 
@@ -487,7 +487,7 @@ There is one automated test seam: Fabric's server GameTest framework. Tests run 
 
 The client decides some things, and a headless server can't see them. These are checked by hand in a development client, not automated:
 
-- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced overlay and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, the Wither Subspace's dim light, and the Blood Moon sky.
+- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced chainmail and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, the Wither Subspace's dim light, and the Blood Moon sky.
 - Player movement and input: Zephyr's double jump and Clutch, Grounded ending a glide, the Armored Elytra's glide and Firework Rocket penalties, Riptide being blocked, and Shakudo's movement speed.
 - Sync: that the client shows the server's Max Hearts, Withered Hearts, Remnants, Subspaces and Blood Moon.
 
