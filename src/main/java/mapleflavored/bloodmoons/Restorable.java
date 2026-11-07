@@ -45,6 +45,13 @@ public enum Restorable {
 		Set.of(EntityTypes.VINDICATOR, EntityTypes.EVOKER),
 		"woodland_mansion",
 		Footing.STANDING
+	),
+	/** Vindicators, Pillagers and Evokers, standing on the stone bricks family, infested or not, or a library's oak planks. */
+	STRONGHOLD(
+		BuiltinStructures.STRONGHOLD,
+		Set.of(EntityTypes.VINDICATOR, EntityTypes.PILLAGER, EntityTypes.EVOKER),
+		"stronghold",
+		Footing.STANDING
 	);
 
 	static final Codec<Restorable> CODEC = Codec.STRING.xmap(Restorable::valueOf, Restorable::name);

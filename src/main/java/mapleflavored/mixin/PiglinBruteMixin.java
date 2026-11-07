@@ -1,6 +1,6 @@
 package mapleflavored.mixin;
 
-import mapleflavored.structurebooks.BruteKeepers;
+import mapleflavored.structurebooks.MobKeepers;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.SpawnGroupData;
@@ -23,6 +23,6 @@ public abstract class PiglinBruteMixin {
 		@Nullable SpawnGroupData groupData,
 		CallbackInfoReturnable<SpawnGroupData> callback
 	) {
-		if (spawnReason == EntitySpawnReason.STRUCTURE) BruteKeepers.tagIfPlacing((PiglinBrute) (Object) this);
+		if (spawnReason == EntitySpawnReason.STRUCTURE) MobKeepers.tagIfPlacing((PiglinBrute) (Object) this);
 	}
 }

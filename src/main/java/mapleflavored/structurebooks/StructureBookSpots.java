@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import mapleflavored.mixin.ListPoolElementAccessor;
 import mapleflavored.mixin.SinglePoolElementAccessor;
 import mapleflavored.mixin.StructurePieceInvoker;
+import mapleflavored.strongholds.StrongholdIllagers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -29,6 +30,7 @@ import net.minecraft.world.level.levelgen.structure.structures.BuriedTreasurePie
 import net.minecraft.world.level.levelgen.structure.structures.DesertPyramidPiece;
 import net.minecraft.world.level.levelgen.structure.structures.JungleTemplePiece;
 import net.minecraft.world.level.levelgen.structure.structures.NetherFortressPieces;
+import net.minecraft.world.level.levelgen.structure.structures.StrongholdPieces;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
@@ -40,7 +42,7 @@ import net.minecraft.world.level.storage.loot.LootTable;
  * find it. Buried Treasure and Trail Ruins have no open room, so theirs is in the treasure chest and in one of the ruin's
  * gravel blocks. The Nether Fortress's book is also locked by the Blaze spawners found here, and each Bastion layout's
  * book floats above that layout's own chest. The Woodland Mansion's is in its fake End portal room, which
- * {@link MansionPortalRoom} makes sure every mansion has. Local coordinates come from vanilla's code-built pieces and
+ * {@link MansionPortalRoom} makes sure every mansion has, and the Stronghold's floats over its End portal. Local coordinates come from vanilla's code-built pieces and
  * templates.
  */
 final class StructureBookSpots {
@@ -105,6 +107,9 @@ final class StructureBookSpots {
 
 	// In the middle of the fake End portal's green wool ring, where the portal itself would be, at the height of the ring.
 	private static final BlockPos MANSION_FAKE_PORTAL = new BlockPos(3, 3, 7);
+
+	// Over the middle of the End portal, a block above its frame, where every player's journey through the Stronghold ends.
+	private static final BlockPos STRONGHOLD_PORTAL = new BlockPos(5, 4, 10);
 
 	private StructureBookSpots() {
 	}
@@ -229,6 +234,11 @@ final class StructureBookSpots {
 		return templatePiece(pieces, planning.templates(), MansionPortalRoom.TEMPLATE).map(room -> inTemplate(room, MANSION_FAKE_PORTAL));
 	}
 
+	/** Over the End portal in the Stronghold's portal room, which vanilla always plans. */
+	static Optional<BookSpot> stronghold(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		return firstOfType(pieces, StrongholdPieces.PortalRoom.class).map(room -> inCodeBuiltPiece(room, STRONGHOLD_PORTAL));
+	}
+
 	/** Where each of the fortress's spawner rooms will place its Blaze spawner. */
 	static List<BlockPos> fortressBlazeSpawners(List<StructurePiece> pieces) {
 		return pieces.stream()
@@ -291,11 +301,16 @@ final class StructureBookSpots {
 		return List.copyOf(brutes.subList(0, Math.min(BASTION_KEEPERS, brutes.size())));
 	}
 
-	/** The key of the keeper Brute the piece places, if it places one of the {@code keepers} its book was planned with. */
+	/**
+	 * The key of the keeper the piece places, a Bastion's Brute or a Stronghold's Evoker, if it places one of the
+	 * {@code keepers} its book was planned with.
+	 */
 	static Optional<BlockPos> keeperKey(StructurePiece piece, List<BlockPos> keepers) {
-		if (!(piece instanceof PoolElementStructurePiece pool) || !placesTemplate(pool, BASTION_BRUTES::contains)) return Optional.empty();
+		Optional<BlockPos> key = piece instanceof PoolElementStructurePiece pool && placesTemplate(pool, BASTION_BRUTES::contains)
+			? Optional.of(pool.getPosition())
+			: StrongholdIllagers.keeperKey(piece);
 
-		return Optional.of(pool.getPosition()).filter(keepers::contains);
+		return key.filter(keepers::contains);
 	}
 
 	private static Optional<BookSpot> aboveChest(

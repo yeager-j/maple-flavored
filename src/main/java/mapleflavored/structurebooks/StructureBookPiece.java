@@ -63,8 +63,8 @@ public class StructureBookPiece extends StructurePiece {
 	 * A book at {@code spot} that gives {@code enchantment} at level I, following the piece at {@code anchorIndex} in
 	 * the structure's pieces.
 	 *
-	 * @param keepers the origins of the pieces that place the keepers locking the book, Brutes or shriekers, if keepers
-	 * lock it
+	 * @param keepers the origins of the pieces that place the keepers locking the book, Brutes, shriekers or Evokers, if
+	 * keepers lock it
 	 */
 	StructureBookPiece(
 		BlockPos spot,
@@ -80,6 +80,22 @@ public class StructureBookPiece extends StructurePiece {
 		this.offset = spot.subtract(originOf(anchor));
 		this.placement = placement;
 		this.keepers = List.copyOf(keepers);
+	}
+
+	/**
+	 * A floating book at {@code spot}, as most structures' books are, following the piece at {@code anchorIndex} in the
+	 * structure's pieces.
+	 *
+	 * @param keepers the origins of the pieces that place the keepers locking the book, if keepers lock it
+	 */
+	public static StructureBookPiece floating(
+		BlockPos spot,
+		ResourceKey<Enchantment> enchantment,
+		int anchorIndex,
+		StructurePiece anchor,
+		List<BlockPos> keepers
+	) {
+		return new StructureBookPiece(spot, enchantment, anchorIndex, anchor, StructureBookRule.Placement.OPEN, keepers);
 	}
 
 	/** Loads a saved book piece. A book saved without an anchor stays at its saved spot. */

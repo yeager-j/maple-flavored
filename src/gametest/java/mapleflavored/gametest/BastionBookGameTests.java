@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 import mapleflavored.mixin.SinglePoolElementAccessor;
 import mapleflavored.structurebooks.BookLocks;
-import mapleflavored.structurebooks.BruteKeepers;
+import mapleflavored.structurebooks.MobKeepers;
 import mapleflavored.structurebooks.StructureBookBlockEntity;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
@@ -403,7 +403,7 @@ public class BastionBookGameTests {
 		StructureStart start = placeRegistered(level, planned);
 		BlockPos book = onlyBook(helper, start);
 
-		BruteKeepers.liveKeepers(level, book).forEach(keeper -> keeper.kill(level));
+		MobKeepers.liveKeepers(level, book).forEach(keeper -> keeper.kill(level));
 		helper.assertTrue(!BookLocks.isLocked(level, book), "the book is unlocked once its keepers are dead");
 
 		return start;

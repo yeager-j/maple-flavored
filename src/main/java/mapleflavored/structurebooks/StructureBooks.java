@@ -24,7 +24,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.monster.piglin.PiglinBrute;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -116,7 +116,7 @@ public final class StructureBooks {
 		TakenBooks.register();
 		PiglinAnger.register();
 		IllagerAlert.register();
-		BruteKeepers.register();
+		MobKeepers.register();
 		AncientCityGrounding.register();
 		ShriekerKeepers.register();
 		CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> KeepersCommand.register(dispatcher));
@@ -129,7 +129,7 @@ public final class StructureBooks {
 	 * @param pieces the structure's pieces, its book last if it has one
 	 */
 	public static void buildPiece(StructurePiece piece, List<StructurePiece> pieces, WorldGenLevel level, Runnable buildPiece) {
-		BruteKeepers.build(piece, pieces, level.getLevel().dimension(), buildPiece);
+		MobKeepers.build(piece, pieces, level.getLevel().dimension(), buildPiece);
 		ShriekerKeepers.placeIfKeeper(piece, pieces, level);
 	}
 
@@ -178,6 +178,7 @@ public final class StructureBooks {
 		String message = switch (lock.kind()) {
 			case SPAWNERS -> "block.maple_flavored.structure_book.locked";
 			case BRUTES -> "block.maple_flavored.structure_book.locked_by_keepers";
+			case EVOKERS -> "block.maple_flavored.structure_book.locked_by_evokers";
 			case SHRIEKERS -> "block.maple_flavored.structure_book.locked_by_shriekers";
 		};
 
@@ -185,20 +186,20 @@ public final class StructureBooks {
 
 		switch (lock.kind()) {
 			case SPAWNERS, SHRIEKERS -> remaining.forEach(key -> showTrails(level, book, key));
-			case BRUTES -> pointOutKeepers(level, book, remaining);
+			case BRUTES, EVOKERS -> pointOutKeepers(level, book, remaining);
 		}
 	}
 
 	// Each remaining keeper here glows and gets trails; one that isn't loaded gets trails to where it spawned.
 	private static void pointOutKeepers(ServerLevel level, BlockPos book, List<BlockPos> remaining) {
-		Map<BlockPos, PiglinBrute> liveByKey = new HashMap<>();
+		Map<BlockPos, Mob> liveByKey = new HashMap<>();
 
-		for (PiglinBrute keeper : BruteKeepers.liveKeepers(level, book)) {
-			BruteKeepers.keyOf(keeper).filter(remaining::contains).ifPresent(key -> liveByKey.put(key, keeper));
+		for (Mob keeper : MobKeepers.liveKeepers(level, book)) {
+			MobKeepers.keyOf(keeper).filter(remaining::contains).ifPresent(key -> liveByKey.put(key, keeper));
 		}
 
 		for (BlockPos key : remaining) {
-			PiglinBrute keeper = liveByKey.get(key);
+			Mob keeper = liveByKey.get(key);
 
 			if (keeper == null) {
 				showTrails(level, book, key);

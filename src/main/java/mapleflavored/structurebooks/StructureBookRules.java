@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import mapleflavored.strongholds.StrongholdIllagers;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -59,6 +60,12 @@ public final class StructureBookRules {
 		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.SHRIEKERS, ShriekerKeepers.choose(book, ShriekerKeepers.origins(pieces), random))
 	);
 	private static final StructureBookRule WOODLAND_MANSION = ordinary(List.of(Enchantments.FORTUNE), StructureBookSpots::woodlandMansion);
+	private static final StructureBookRule STRONGHOLD = new StructureBookRule(
+		List.of(Enchantments.UNBREAKING),
+		StructureBookSpots::stronghold,
+		StructureBookRule.Placement.OPEN,
+		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.EVOKERS, StrongholdIllagers.keeperKeys(pieces, random))
+	);
 	private static final StructureBookRule BURIED_TREASURE = new StructureBookRule(
 		List.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION),
 		StructureBookSpots::buriedTreasure,
@@ -191,6 +198,7 @@ public final class StructureBookRules {
 		rules.put(BuiltinStructures.BURIED_TREASURE, BURIED_TREASURE);
 		rules.put(BuiltinStructures.TRAIL_RUINS, TRAIL_RUINS);
 		rules.put(BuiltinStructures.WOODLAND_MANSION, WOODLAND_MANSION);
+		rules.put(BuiltinStructures.STRONGHOLD, STRONGHOLD);
 		ABANDONED_CAMPS.forEach(camp -> rules.put(camp, ABANDONED_CAMP));
 
 		return Map.copyOf(rules);

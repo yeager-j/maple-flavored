@@ -57,6 +57,7 @@
 	"block.maple_flavored.structure_book.locked": "Locked until every Blaze spawner here is Cleared (%s of %s)",
 	"block.maple_flavored.structure_book.locked_by_keepers": "Locked until every keeper Brute here is dead (%s of %s)",
 	"block.maple_flavored.structure_book.locked_by_shriekers": "Locked until every keeper shrieker here is broken (%s of %s)",
+	"block.maple_flavored.structure_book.locked_by_evokers": "Locked until every Evoker here is dead (%s of %s)",
 	"chat.maple_flavored.blood_moon_rises": "A Blood Moon is rising",
 	"chat.maple_flavored.heart_floor_lowered": "[Milestone] Your Heart Floor is now %s",
 	"commands.maple_flavored.keepers.book": "The Ancient City book at %s has %s of %s keepers broken",

@@ -15,6 +15,7 @@ import mapleflavored.spawners.Spawners;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -28,14 +29,15 @@ import net.minecraft.world.level.saveddata.SavedDataType;
 /**
  * Every locked structure book in a level: the keys that lock it and which of them are done. A book can be taken once
  * all of its keys are done; a book with no lock here was never locked. The Nether Fortress's book is locked by the Blaze
- * spawners its fortress generated with, each done once Cleared; a Bastion's by its keeper Brutes, each done once it's
- * gone for good; and an Ancient City's by its keeper shriekers, each done once broken.
+ * spawners its fortress generated with, each done once Cleared; a Bastion's by its keeper Brutes and a Stronghold's by
+ * its Evokers, each done once it's gone for good; and an Ancient City's by its keeper shriekers, each done once broken.
+ * A keeper its structure couldn't place is done from the start.
  *
  * <p>A lock is planned with its structure and recorded here before any read, whether or not the book's chunk has been
  * built. A done key stays done: a Cleared spawner still counts once it's broken.
  *
- * <p>A level that's Peaceful opens its Brute locks for good. Peaceful has no Brutes: it never spawns a keeper, and drops
- * a saved one as its chunk loads, both without a death to count.
+ * <p>A level that's Peaceful opens its Brute and Evoker locks for good. Peaceful has neither: it never spawns a keeper,
+ * and drops a saved one as its chunk loads, both without a death to count.
  */
 public final class BookLocks extends SavedData {
 	private static final Codec<BookLocks> CODEC = Lock.CODEC.listOf().xmap(BookLocks::new, BookLocks::locks);
@@ -48,6 +50,9 @@ public final class BookLocks extends SavedData {
 	// thread records them, which it does each tick, before every save and before any lock is read or changed. The save
 	// matters at shutdown: the server finishes its worldgen after its last tick, and saves those chunks.
 	private static final Queue<Planned> PLANNED = new ConcurrentLinkedQueue<>();
+	// Keepers a structure couldn't place as it was built, on worldgen threads. Their keys are done once recorded, after
+	// the locks planned before them.
+	private static final Queue<Forgiven> FORGIVEN = new ConcurrentLinkedQueue<>();
 
 	private final Map<BlockPos, Lock> locksByBook = new HashMap<>();
 	// The books locked by blocks, Blaze spawners and keeper shriekers, by each key's position.
@@ -63,9 +68,12 @@ public final class BookLocks extends SavedData {
 	/** Records planned locks and counts Cleared spawners toward the spawner locks. Call once from mod init. */
 	static void register() {
 		// A world opened after another in the same game must never receive the first world's locks.
-		ServerLifecycleEvents.SERVER_STARTING.register(server -> PLANNED.clear());
+		ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+			PLANNED.clear();
+			FORGIVEN.clear();
+		});
 		ServerTickEvents.END_SERVER_TICK.register(BookLocks::recordPlanned);
-		ServerTickEvents.END_SERVER_TICK.register(BookLocks::openBruteLocksWhilePeaceful);
+		ServerTickEvents.END_SERVER_TICK.register(BookLocks::openMobLocksWhilePeaceful);
 		ServerLifecycleEvents.BEFORE_SAVE.register((server, flush, force) -> recordPlanned(server));
 		Spawners.CLEARED.register(BookLocks::countCleared);
 	}
@@ -81,7 +89,7 @@ public final class BookLocks extends SavedData {
 	}
 
 	/**
-	 * Marks a keeper Brute's key done: the Brute is gone for good. Updates the book's clients once that unlocks a loaded
+	 * Marks a keeper mob's key done: the keeper is gone for good. Updates the book's clients once that unlocks a loaded
 	 * book.
 	 *
 	 * @param level the book's level
@@ -90,9 +98,14 @@ public final class BookLocks extends SavedData {
 		BookLocks locks = of(level);
 		Lock lock = locks.locksByBook.get(book);
 
-		if (lock == null || lock.kind() != Kind.BRUTES || !lock.keys().contains(key) || lock.done().contains(key)) return;
+		if (lock == null || !lock.kind().isMob() || !lock.keys().contains(key) || lock.done().contains(key)) return;
 
 		locks.markDone(level, lock, key);
+	}
+
+	/** Marks the key of a keeper mob its structure couldn't place done. Safe to call from any thread. */
+	static void forgiveKeeper(GlobalPos book, BlockPos key) {
+		FORGIVEN.add(new Forgiven(book, key.immutable()));
 	}
 
 	/**
@@ -150,19 +163,25 @@ public final class BookLocks extends SavedData {
 			locks.put(new Lock(planned.book(), planned.keys().kind(), planned.keys().positions(), Set.of()));
 			locks.setDirty();
 		}
+
+		for (Forgiven forgiven = FORGIVEN.poll(); forgiven != null; forgiven = FORGIVEN.poll()) {
+			ServerLevel level = server.getLevel(forgiven.book().dimension());
+
+			if (level != null) markKeeperGone(level, forgiven.book().pos(), forgiven.key());
+		}
 	}
 
-	private static void openBruteLocksWhilePeaceful(MinecraftServer server) {
+	private static void openMobLocksWhilePeaceful(MinecraftServer server) {
 		for (ServerLevel level : server.getAllLevels()) {
 			BookLocks locks = level.getDataStorage().get(TYPE);
 
 			if (locks == null || level.getDifficulty() != Difficulty.PEACEFUL) continue;
 
-			List<Lock> lockedByBrutes = locks.locksByBook.values().stream()
-				.filter(lock -> lock.kind() == Kind.BRUTES && lock.isLocked())
+			List<Lock> lockedByMobs = locks.locksByBook.values().stream()
+				.filter(lock -> lock.kind().isMob() && lock.isLocked())
 				.toList();
 
-			for (Lock lock : lockedByBrutes) {
+			for (Lock lock : lockedByMobs) {
 				lock.remainingKeys().forEach(key -> locks.markDone(level, locks.locksByBook.get(lock.book()), key));
 			}
 		}
@@ -214,13 +233,20 @@ public final class BookLocks extends SavedData {
 		 * Keeper sculk shriekers, keyed by the origin of the sculk patch each stands at, each done once broken. A keeper
 		 * stands at its origin, or on the patch's catalyst just above it.
 		 */
-		SHRIEKERS;
+		SHRIEKERS,
+		/** A Stronghold's Evokers, keyed by the origin of the piece that placed each, each done once it's gone for good. */
+		EVOKERS;
 
 		static final Codec<Kind> CODEC = Codec.STRING.xmap(Kind::valueOf, Kind::name);
 
 		/** Whether each key is a block at the key's position, found again by that position when it changes. */
 		boolean isBlock() {
-			return this != BRUTES;
+			return !isMob();
+		}
+
+		/** Whether each key is a keeper mob, which counts itself once it's gone for good. */
+		boolean isMob() {
+			return this == BRUTES || this == EVOKERS;
 		}
 
 		/**
@@ -288,5 +314,8 @@ public final class BookLocks extends SavedData {
 	}
 
 	private record Planned(ResourceKey<Level> dimension, BlockPos book, Keys keys) {
+	}
+
+	private record Forgiven(GlobalPos book, BlockPos key) {
 	}
 }
