@@ -1,8 +1,10 @@
 package mapleflavored.gametest;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyGear;
 import mapleflavored.alloys.GearKind;
@@ -12,6 +14,8 @@ import mapleflavored.bloodmoons.RestoreSpot;
 import mapleflavored.bloodmoons.RestoreSpots;
 import mapleflavored.bloodmoons.Restoring;
 import mapleflavored.mixin.StructurePieceInvoker;
+import mapleflavored.strongholds.StrongholdLayout;
+import mapleflavored.strongholds.StrongholdRoutes;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -24,6 +28,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -45,6 +51,7 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.minecraft.world.level.levelgen.structure.structures.StrongholdPieces;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -65,6 +72,13 @@ public class StrongholdGameTests {
 	// trough's three columns, where nothing can stand.
 	private static final int LAVA_CORNER_FOOT_X = 2;
 	private static final int LAVA_CORNER_FOOT_Z = 12;
+	private static final int CHASE_TICKS = 600;
+	private static final int FAR_HUNTER_DOORWAYS = 4;
+	// Long enough for every hunter's route goal to have checked its way once.
+	private static final int HEADING_CHECK_TICKS = 60;
+	private static final int CLOSED_IN_DOORWAYS = 2;
+	// Resistance V takes all damage.
+	private static final int FULL_RESISTANCE = 4;
 	private static final int LIBRARY_ROW = 100;
 	private static final int PRISON_ROW = 200;
 	private static final List<Direction> FACINGS = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
@@ -234,6 +248,94 @@ public class StrongholdGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
+	public void everyRoomHasARouteToThePortalRoomOneDoorwayAtATime(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(5)));
+		BlockPos portalRoom = onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM).getBoundingBox().getCenter();
+		List<StructurePiece> rooms = start.getPieces().stream()
+			.filter(StrongholdLayout::isStrongholdPiece)
+			.filter(piece -> piece.getType() != StructurePieceType.STRONGHOLD_PORTAL_ROOM)
+			.toList();
+
+		for (StructurePiece room : rooms) {
+			BlockPos from = room.getBoundingBox().getCenter();
+			List<BlockPos> route = StrongholdRoutes.route(level, from, portalRoom);
+			String which = "the route from the " + room.getType() + " at " + from;
+
+			helper.assertFalse(route.isEmpty(), which + " exists");
+			helper.assertTrue(onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM).getBoundingBox().isInside(route.getLast()), which + " ends in the portal room");
+
+			for (int step = 0; step < route.size() - 1; step++) {
+				int left = StrongholdRoutes.route(level, route.get(step), portalRoom).size();
+
+				helper.assertValueEqual(left, route.size() - step - 1, "doorways left after step " + step + " of " + which);
+			}
+		}
+
+		helper.assertTrue(StrongholdRoutes.route(level, portalRoom, portalRoom).isEmpty(), "a route within one room is empty");
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = CHASE_TICKS + 200)
+	public void huntersAcrossTheStrongholdCloseInRoomByRoom(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(6)));
+		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
+		StructurePieceInvoker portalRoom = (StructurePieceInvoker) onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM);
+		BlockPos byTheDoor = new BlockPos(portalRoom.worldX(5, 2), portalRoom.worldY(1), portalRoom.worldZ(5, 2));
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
+
+		// So the hunters can't end their hunt by killing the player mid-chase.
+		player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, MobEffectInstance.INFINITE_DURATION, FULL_RESISTANCE));
+		helper.assertTrue(StructureBooks.take(player, book), "the book is taken");
+		player.setPos(Vec3.atBottomCenterOf(byTheDoor));
+
+		Map<AbstractIllager, Integer> farHunters = illagersIn(level, start).stream()
+			.filter(guard -> guard.getType() != EntityTypes.EVOKER)
+			.collect(Collectors.toMap(guard -> guard, guard -> doorwaysBetween(level, guard, byTheDoor)))
+			.entrySet().stream()
+			.filter(entry -> entry.getValue() >= FAR_HUNTER_DOORWAYS)
+			.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+		helper.assertTrue(farHunters.size() >= 2, "the Stronghold has hunters " + FAR_HUNTER_DOORWAYS + " or more doorways away, " + farHunters.size());
+
+		// Vanilla's movement goals pace themselves by game time, so the hunters must tick with the world.
+		Structures.chunks(start).forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), true));
+
+		helper.startSequence()
+			.thenIdle(HEADING_CHECK_TICKS)
+			.thenExecute(() -> {
+				// Vanilla would walk each one with no path at the player; routing walks it at the next doorway on its way. The
+				// check is a snapshot, which catches some just through a doorway and choosing the next.
+				List<AbstractIllager> stillFar = farHunters.keySet().stream()
+					.filter(AbstractIllager::isAlive)
+					.filter(hunter -> doorwaysBetween(level, hunter, byTheDoor) >= CLOSED_IN_DOORWAYS)
+					.toList();
+				Map<AbstractIllager, Boolean> heading = stillFar.stream()
+					.collect(Collectors.toMap(hunter -> hunter, hunter -> headsForNextDoorway(level, hunter, byTheDoor)));
+				// Asked after reading where each walks, as asking for a path sets it.
+				List<AbstractIllager> withoutAPath = stillFar.stream().filter(hunter -> !hasPathTo(hunter, player)).toList();
+				long headingForADoorway = withoutAPath.stream().filter(heading::get).count();
+
+				helper.assertTrue(
+					headingForADoorway * 3 >= withoutAPath.size(),
+					headingForADoorway + " of " + withoutAPath.size() + " far hunters with no path head for the next doorway on their way"
+				);
+			})
+			.thenIdle(CHASE_TICKS - HEADING_CHECK_TICKS)
+			.thenExecute(() -> {
+				long closedIn = farHunters.entrySet().stream()
+					.filter(entry -> entry.getKey().isAlive())
+					.filter(entry -> doorwaysBetween(level, entry.getKey(), byTheDoor) <= entry.getValue() - CLOSED_IN_DOORWAYS)
+					.count();
+
+				Structures.chunks(start).forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), false));
+				helper.assertTrue(closedIn * 4 >= farHunters.size() * 3, closedIn + " of " + farHunters.size() + " far hunters came " + CLOSED_IN_DOORWAYS + " doorways closer");
+			})
+			.thenSucceed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void takingTheBookTurnsEveryIllagerInTheStrongholdOnAnOrichalcumWearer(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(2)));
@@ -291,6 +393,25 @@ public class StrongholdGameTests {
 				level.setChunkForced(chunk.x(), chunk.z(), false);
 			})
 			.thenSucceed();
+	}
+
+	// How many doorways the hunter must cross to reach the spot: none in the same room.
+	private static int doorwaysBetween(ServerLevel level, AbstractIllager hunter, BlockPos spot) {
+		return StrongholdRoutes.route(level, hunter.blockPosition(), spot).size();
+	}
+
+	// Whether the hunter is walking to the doorway into the next room on its way to the spot.
+	private static boolean headsForNextDoorway(ServerLevel level, AbstractIllager hunter, BlockPos spot) {
+		List<BlockPos> route = StrongholdRoutes.route(level, hunter.blockPosition(), spot);
+		BlockPos walkingTo = hunter.getNavigation().getTargetPos();
+
+		return !route.isEmpty() && walkingTo != null && walkingTo.distManhattan(route.getFirst()) <= 1;
+	}
+
+	private static boolean hasPathTo(AbstractIllager hunter, ServerPlayer player) {
+		Path path = hunter.getNavigation().createPath(player, 0);
+
+		return path != null && path.canReach();
 	}
 
 	// Builds a Stronghold of just the piece, and returns the Illagers it placed.

@@ -63,6 +63,11 @@ public final class IllagerAlert {
 		return new HuntGoal(illager);
 	}
 
+	/** Whether the Illager is hunting the player who took its structure's book. */
+	public static boolean isHunting(AbstractIllager illager) {
+		return illager.hasAttached(HUNT);
+	}
+
 	private static void alert(ServerPlayer player, ServerLevel level, BlockPos book) {
 		StructureStart start = level.structureManager().getStructureWithPieceAt(book, structure -> ALERTED_STRUCTURES.stream().anyMatch(structure::is));
 
