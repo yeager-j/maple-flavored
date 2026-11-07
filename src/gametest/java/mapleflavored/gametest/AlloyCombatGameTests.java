@@ -206,19 +206,19 @@ public class AlloyCombatGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void anEvokersVexesLeaveOrichalcumWearersAlone(GameTestHelper helper) {
-		wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
+		ServerPlayer player = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
 
 		Vex vex = vexOf(helper, helper.spawnWithNoFreeWill(EntityTypes.EVOKER, HIDDEN_POS));
 
 		helper.runAfterDelay(TARGETING_TICKS, () -> {
-			helper.assertTrue(vex.getTarget() == null, "the Vex has no target");
+			assertLeavesAlone(helper, vex, player);
 			helper.succeed();
 		});
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void aVexStaysNeutralAfterItsEvokerIsGone(GameTestHelper helper) {
-		wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
+		ServerPlayer player = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
 
 		Evoker evoker = helper.spawnWithNoFreeWill(EntityTypes.EVOKER, HIDDEN_POS);
 		Vex vex = vexOf(helper, evoker);
@@ -226,7 +226,7 @@ public class AlloyCombatGameTests {
 		evoker.discard();
 
 		helper.runAfterDelay(TARGETING_TICKS, () -> {
-			helper.assertTrue(vex.getTarget() == null, "the Vex has no target");
+			assertLeavesAlone(helper, vex, player);
 			helper.succeed();
 		});
 	}
@@ -240,6 +240,12 @@ public class AlloyCombatGameTests {
 		IllagerNeutrality.anger(helper.getLevel(), evoker, player);
 
 		helper.succeedWhen(() -> helper.assertTrue(vex.getTarget() == player, "the Vex targets the player, not " + vex.getTarget()));
+	}
+
+	// Only this test's player: a Vex's 16-block follow range reaches the players of the tests beside it in the batch, 13
+	// blocks over, and it may rightly target one of them that wears no Orichalcum.
+	private static void assertLeavesAlone(GameTestHelper helper, Vex vex, ServerPlayer player) {
+		helper.assertFalse(vex.getTarget() == player, "the Vex targets the Orichalcum wearer");
 	}
 
 	private static Vex vexOf(GameTestHelper helper, Evoker evoker) {

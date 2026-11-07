@@ -10,6 +10,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
@@ -321,8 +322,18 @@ public class CommonMobGameTests {
 		return mob;
 	}
 
-	// Floods a glass box around the zombie and starts its drowning, so the next tick begins its conversion.
+	// Floods a glass box around the zombie and starts its drowning, so the next tick begins its conversion. A natural husk
+	// rides in on a Camel Husk one time in ten, which would hold its eyes above the water, so the zombie is taken off any
+	// mount first.
 	private static Zombie drowning(GameTestHelper helper, Zombie zombie) {
+		Entity mount = zombie.getVehicle();
+
+		if (mount != null) {
+			zombie.stopRiding();
+			mount.getSelfAndPassengers().toList().forEach(Entity::discard);
+			zombie.snapTo(Vec3.atBottomCenterOf(helper.absolutePos(MOB_POS)));
+		}
+
 		for (BlockPos pos : BlockPos.betweenClosed(0, 1, 0, 4, 5, 4)) {
 			boolean wall = pos.getX() == 0 || pos.getX() == 4 || pos.getY() == 1 || pos.getY() == 5 || pos.getZ() == 0 || pos.getZ() == 4;
 
