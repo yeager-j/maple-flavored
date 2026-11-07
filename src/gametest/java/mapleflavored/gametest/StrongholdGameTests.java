@@ -11,6 +11,7 @@ import mapleflavored.bloodmoons.Restorable;
 import mapleflavored.bloodmoons.RestoreSpot;
 import mapleflavored.bloodmoons.RestoreSpots;
 import mapleflavored.bloodmoons.Restoring;
+import mapleflavored.mixin.StructurePieceInvoker;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -22,6 +23,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -33,6 +35,8 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.Structure;
@@ -61,7 +65,13 @@ public class StrongholdGameTests {
 	// trough's three columns, where nothing can stand.
 	private static final int LAVA_CORNER_FOOT_X = 2;
 	private static final int LAVA_CORNER_FOOT_Z = 12;
-	private static final TagKey<Block> STONE_BRICKS_FAMILY = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("maple_flavored", "stronghold_restore_blocks"));
+	private static final int LIBRARY_ROW = 100;
+	private static final int PRISON_ROW = 200;
+	private static final List<Direction> FACINGS = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
+	// Where a tall library's upper walkway puts a guard's feet, and where the back of a short library starts.
+	private static final int LIBRARY_WALKWAY_FEET = 6;
+	private static final int LIBRARY_BACK_Z = 10;
+	private static final TagKey<Block> RESTORE_BLOCKS = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("maple_flavored", "stronghold_restore_blocks"));
 	private static final Set<EntityType<?>> GUARDS = Set.of(EntityTypes.VINDICATOR, EntityTypes.PILLAGER, EntityTypes.EVOKER);
 	// Pieces whose doorways and windows never reach their bottom corners.
 	private static final Set<StructurePieceType> SOLID_CORNERED = Set.of(
@@ -94,7 +104,7 @@ public class StrongholdGameTests {
 
 			for (BlockPos corner : List.of(new BlockPos(box.minX(), box.maxY(), box.minZ()), new BlockPos(box.maxX(), box.maxY(), box.maxZ()))) {
 				helper.assertTrue(
-					level.getBlockState(corner).is(STONE_BRICKS_FAMILY),
+					level.getBlockState(corner).is(RESTORE_BLOCKS),
 					"the top corner " + corner + " of the " + piece.getType() + " is built: " + level.getBlockState(corner)
 				);
 			}
@@ -122,7 +132,7 @@ public class StrongholdGameTests {
 			helper.assertTrue(guard.isPersistenceRequired(), which + " is persistent");
 			helper.assertFalse(guard instanceof Pillager pillager && pillager.isPatrolLeader(), which + " is a Captain");
 			helper.assertTrue(spot.map(RestoreSpot::structure).equals(Optional.of(Restorable.STRONGHOLD)), which + " holds a Stronghold spot");
-			helper.assertTrue(Restorable.STRONGHOLD.holds(level, guard.position()), which + " stands on the stone bricks family");
+			helper.assertTrue(Restorable.STRONGHOLD.holds(level, guard.position()), which + " stands on the Stronghold's Restore blocks");
 			helper.assertTrue(level.getBlockState(guard.blockPosition()).isAir() && level.getBlockState(guard.blockPosition().above()).isAir(), which + " has room");
 			helper.assertFalse(staircase.getBoundingBox().isInside(guard.blockPosition()), which + " is on the starting staircase");
 		}
@@ -154,6 +164,70 @@ public class StrongholdGameTests {
 
 			helper.assertValueEqual(countOf(guards, EntityTypes.EVOKER), 1L, "Evokers in the portal room at " + foot);
 			helper.assertValueEqual(countOf(guards, EntityTypes.VINDICATOR), 2L, "Vindicators in the portal room at " + foot);
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
+	public void aLibrarysEvokerKeepsToItsWalkwayOrToTheBackOfAShortLibrary(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+
+		for (int room = 0; room < LONE_ROOMS; room++) {
+			boolean tall = room % 2 == 0;
+			Direction facing = FACINGS.get(room / 2 % FACINGS.size());
+			BlockPos foot = new BlockPos(LONE_ROOMS_X + room * LONE_ROOMS_APART, LONE_ROOMS_Y, LONE_ROOMS_Z + LIBRARY_ROW);
+			BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -4, -1, 0, 14, tall ? 11 : 6, 15, facing);
+			StructurePiece library = new StrongholdPieces.Library(0, RandomSource.create(room), box, facing);
+			List<AbstractIllager> guards = buildAlone(level, library);
+			String which = (tall ? "the tall library" : "the short library") + " facing " + facing + " at " + foot;
+			List<AbstractIllager> evokers = guards.stream().filter(guard -> guard.getType() == EntityTypes.EVOKER).toList();
+
+			helper.assertValueEqual(evokers.size(), 1, "Evokers in " + which);
+			helper.assertValueEqual(countOf(guards, EntityTypes.VINDICATOR), 1L, "Vindicators in " + which);
+
+			BlockPos evoker = evokers.getFirst().blockPosition();
+
+			if (tall) {
+				helper.assertValueEqual(evoker.getY(), box.minY() + LIBRARY_WALKWAY_FEET, "the height of the Evoker's feet in " + which);
+			} else {
+				helper.assertValueEqual(evoker.getY(), box.minY() + 1, "the height of the Evoker's feet in " + which);
+				helper.assertTrue(inLocalColumns(library, evoker, 1, 12, LIBRARY_BACK_Z, 13), "the Evoker at " + evoker + " is at the back of " + which);
+			}
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
+	public void aPrisonHallsGuardStandsOutsideTheCellsAndTheCellsHaveNoDoors(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+
+		for (int room = 0; room < LONE_ROOMS; room++) {
+			Direction facing = FACINGS.get(room % FACINGS.size());
+			BlockPos foot = new BlockPos(LONE_ROOMS_X + room * LONE_ROOMS_APART, LONE_ROOMS_Y, LONE_ROOMS_Z + PRISON_ROW);
+			BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -1, -1, 0, 9, 5, 11, facing);
+			StructurePiece prison = new StrongholdPieces.PrisonHall(0, RandomSource.create(room), box, facing);
+			List<AbstractIllager> guards = buildAlone(level, prison);
+			String which = "the prison hall facing " + facing + " at " + foot;
+
+			helper.assertValueEqual(guards.size(), 1, "guards in " + which);
+			helper.assertTrue(inLocalColumns(prison, guards.getFirst().blockPosition(), 1, 3, 1, 9), "the guard in " + which + " is in the hall");
+			helper.assertTrue(doorwayBlocks(level, box).isEmpty(), "doors and buttons in " + which + ": " + doorwayBlocks(level, box));
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
+	public void aStrongholdHasNoDoors(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, farChunk(4));
+
+		for (StructurePiece piece : start.getPieces()) {
+			List<BlockPos> doorways = doorwayBlocks(level, piece.getBoundingBox());
+
+			helper.assertTrue(doorways.isEmpty(), "doors and buttons in the " + piece.getType() + ": " + doorways);
 		}
 
 		helper.succeed();
@@ -217,6 +291,37 @@ public class StrongholdGameTests {
 				level.setChunkForced(chunk.x(), chunk.z(), false);
 			})
 			.thenSucceed();
+	}
+
+	// Builds a Stronghold of just the piece, and returns the Illagers it placed.
+	private static List<AbstractIllager> buildAlone(ServerLevel level, StructurePiece piece) {
+		Structure stronghold = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(BuiltinStructures.STRONGHOLD).value();
+		BoundingBox box = piece.getBoundingBox();
+		StructureStart start = new StructureStart(stronghold, ChunkPos.containing(box.getCenter()), 0, new PiecesContainer(List.of(piece)));
+
+		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
+
+		return level.getEntitiesOfClass(AbstractIllager.class, AABB.of(box));
+	}
+
+	// Whether the position is in one of the piece's own columns from (minX, minZ) to (maxX, maxZ).
+	private static boolean inLocalColumns(StructurePiece piece, BlockPos pos, int minX, int maxX, int minZ, int maxZ) {
+		StructurePieceInvoker local = (StructurePieceInvoker) piece;
+
+		for (int x = minX; x <= maxX; x++) {
+			for (int z = minZ; z <= maxZ; z++) {
+				if (local.worldX(x, z) == pos.getX() && local.worldZ(x, z) == pos.getZ()) return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static List<BlockPos> doorwayBlocks(ServerLevel level, BoundingBox box) {
+		return BlockPos.betweenClosedStream(box)
+			.filter(pos -> level.getBlockState(pos).getBlock() instanceof DoorBlock || level.getBlockState(pos).getBlock() instanceof ButtonBlock)
+			.map(BlockPos::immutable)
+			.toList();
 	}
 
 	private static ChunkPos farChunk(int row) {

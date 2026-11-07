@@ -46,7 +46,7 @@ public enum Restorable {
 		"woodland_mansion",
 		Footing.STANDING
 	),
-	/** Vindicators, Pillagers and Evokers, standing on the stone bricks family, infested or not. */
+	/** Vindicators, Pillagers and Evokers, standing on the stone bricks family, infested or not, or a library's oak planks. */
 	STRONGHOLD(
 		BuiltinStructures.STRONGHOLD,
 		Set.of(EntityTypes.VINDICATOR, EntityTypes.PILLAGER, EntityTypes.EVOKER),
