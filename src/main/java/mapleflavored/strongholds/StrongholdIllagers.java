@@ -44,8 +44,6 @@ public final class StrongholdIllagers {
 	private static final int GARRISON_SALT = 0x5711A6;
 
 	private static final float CORRIDOR_CHANCE = 0.25F;
-	// The pieces that place an Evoker.
-	private static final Set<StructurePieceType> KEEPER_PIECES = Set.of(StructurePieceType.STRONGHOLD_PORTAL_ROOM, StructurePieceType.STRONGHOLD_LIBRARY);
 	// Vanilla's test for a library with an upper walkway.
 	private static final int SHORT_LIBRARY_HEIGHT = 6;
 
@@ -97,7 +95,10 @@ public final class StrongholdIllagers {
 
 	/** The key of the Evoker the piece places, if it's a piece that places one. */
 	public static Optional<BlockPos> keeperKey(StructurePiece piece) {
-		if (!KEEPER_PIECES.contains(piece.getType())) return Optional.empty();
+		Function<StructurePiece, Garrison> garrisonOf = GARRISONS.get(piece.getType());
+		boolean placesEvoker = garrisonOf != null && garrisonOf.apply(piece).posts().stream().anyMatch(post -> post.guard() == Guard.EVOKER);
+
+		if (!placesEvoker) return Optional.empty();
 
 		BoundingBox box = piece.getBoundingBox();
 

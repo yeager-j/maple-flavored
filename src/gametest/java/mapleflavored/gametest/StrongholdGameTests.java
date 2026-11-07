@@ -1,5 +1,6 @@
 package mapleflavored.gametest;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,6 +76,8 @@ public class StrongholdGameTests {
 	private static final int LAVA_CORNER_FOOT_X = 2;
 	private static final int LAVA_CORNER_FOOT_Z = 12;
 	private static final int CHASE_TICKS = 600;
+	// The doorways to the player from a hunter with no route there.
+	private static final int LOST = Integer.MAX_VALUE;
 	private static final int FAR_HUNTER_DOORWAYS = 4;
 	// Long enough for every hunter's route goal to have checked its way once.
 	private static final int HEADING_CHECK_TICKS = 60;
@@ -308,28 +311,22 @@ public class StrongholdGameTests {
 		helper.startSequence()
 			.thenIdle(HEADING_CHECK_TICKS)
 			.thenExecute(() -> {
-				// Vanilla would walk each one with no path at the player; routing walks it at the next doorway on its way. The
-				// check is a snapshot, which catches some just through a doorway and choosing the next.
-				List<AbstractIllager> stillFar = farHunters.keySet().stream()
-					.filter(AbstractIllager::isAlive)
-					.filter(hunter -> doorwaysBetween(level, hunter, byTheDoor) >= CLOSED_IN_DOORWAYS)
-					.toList();
-				Map<AbstractIllager, Boolean> heading = stillFar.stream()
-					.collect(Collectors.toMap(hunter -> hunter, hunter -> headsForNextDoorway(level, hunter, byTheDoor)));
-				// Asked after reading where each walks, as asking for a path sets it.
-				List<AbstractIllager> withoutAPath = stillFar.stream().filter(hunter -> !hasPathTo(hunter, player)).toList();
-				long headingForADoorway = withoutAPath.stream().filter(heading::get).count();
-
-				helper.assertTrue(
-					headingForADoorway * 3 >= withoutAPath.size(),
-					headingForADoorway + " of " + withoutAPath.size() + " far hunters with no path head for the next doorway on their way"
-				);
+				assertHeadForDoorways(helper, level, player, stillFar(level, farHunters.keySet(), byTheDoor), byTheDoor);
 			})
-			.thenIdle(CHASE_TICKS - HEADING_CHECK_TICKS)
+			// Several route checks later, on the way through the same rooms.
+			.thenIdle(HEADING_CHECK_TICKS)
+			.thenExecute(() -> {
+				assertHeadForDoorways(helper, level, player, stillFar(level, farHunters.keySet(), byTheDoor), byTheDoor);
+			})
+			.thenIdle(CHASE_TICKS - 2 * HEADING_CHECK_TICKS)
 			.thenExecute(() -> {
 				long closedIn = farHunters.entrySet().stream()
 					.filter(entry -> entry.getKey().isAlive())
-					.filter(entry -> doorwaysBetween(level, entry.getKey(), byTheDoor) <= entry.getValue() - CLOSED_IN_DOORWAYS)
+					.filter(entry -> {
+						int left = doorwaysBetween(level, entry.getKey(), byTheDoor);
+
+						return left != LOST && left <= entry.getValue() - CLOSED_IN_DOORWAYS;
+					})
 					.count();
 
 				Structures.chunks(start).forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), false));
@@ -445,9 +442,18 @@ public class StrongholdGameTests {
 		MobKeepers.liveKeepers(level, book).forEach(keeper -> keeper.kill(level));
 	}
 
-	// How many doorways the hunter must cross to reach the spot: none in the same room.
+	// How many doorways the hunter must cross to reach the spot: none in the same room, and LOST with no route there.
 	private static int doorwaysBetween(ServerLevel level, AbstractIllager hunter, BlockPos spot) {
-		return StrongholdRoutes.route(level, hunter.blockPosition(), spot).size();
+		List<BlockPos> route = StrongholdRoutes.route(level, hunter.blockPosition(), spot);
+
+		if (!route.isEmpty()) return route.size();
+
+		StructureStart stronghold = level.structureManager().getStructureWithPieceAt(spot, structure -> structure.is(BuiltinStructures.STRONGHOLD));
+		boolean sameRoom = stronghold.getPieces().stream()
+			.filter(StrongholdLayout::isStrongholdPiece)
+			.anyMatch(room -> room.getBoundingBox().isInside(spot) && room.getBoundingBox().isInside(hunter.blockPosition()));
+
+		return sameRoom ? 0 : LOST;
 	}
 
 	// Whether the hunter is walking to the doorway into the next room on its way to the spot.
@@ -458,10 +464,41 @@ public class StrongholdGameTests {
 		return !route.isEmpty() && walkingTo != null && walkingTo.distManhattan(route.getFirst()) <= 1;
 	}
 
-	private static boolean hasPathTo(AbstractIllager hunter, ServerPlayer player) {
+	// The living hunters still at least CLOSED_IN_DOORWAYS doorways from the spot, or with no route there.
+	private static List<AbstractIllager> stillFar(ServerLevel level, Collection<AbstractIllager> hunters, BlockPos spot) {
+		return hunters.stream()
+			.filter(AbstractIllager::isAlive)
+			.filter(hunter -> doorwaysBetween(level, hunter, spot) >= CLOSED_IN_DOORWAYS)
+			.toList();
+	}
+
+	// Searches for a full path to the player, which leaves the hunter's navigation aimed at them.
+	private static boolean searchFullPathTo(AbstractIllager hunter, ServerPlayer player) {
 		Path path = hunter.getNavigation().createPath(player, 0);
 
 		return path != null && path.canReach();
+	}
+
+	// Vanilla would walk each hunter with no path at the player; routing walks it at the next doorway on its way. The
+	// check is a snapshot, which catches some just through a doorway and choosing the next.
+	private static void assertHeadForDoorways(
+		GameTestHelper helper,
+		ServerLevel level,
+		ServerPlayer player,
+		List<AbstractIllager> stillFar,
+		BlockPos spot
+	) {
+		Map<AbstractIllager, Boolean> heading = stillFar.stream()
+			.collect(Collectors.toMap(hunter -> hunter, hunter -> headsForNextDoorway(level, hunter, spot)));
+		// Searched after reading where each walks, as searching aims it.
+		List<AbstractIllager> withoutAPath = stillFar.stream().filter(hunter -> !searchFullPathTo(hunter, player)).toList();
+		long headingForADoorway = withoutAPath.stream().filter(heading::get).count();
+
+		helper.assertFalse(withoutAPath.isEmpty(), "far hunters with no path to check");
+		helper.assertTrue(
+			headingForADoorway * 3 >= withoutAPath.size(),
+			headingForADoorway + " of " + withoutAPath.size() + " far hunters with no path head for the next doorway on their way"
+		);
 	}
 
 	// Builds a Stronghold of just the piece, and returns the Illagers it placed.

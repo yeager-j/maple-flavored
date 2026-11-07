@@ -63,8 +63,9 @@ public final class StrongholdRouteGoal extends Goal {
 
 		if (next.isEmpty()) return false;
 
-		if (!next.equals(waypoint)) walkTo(next.get());
-
+		// Always, even to the same doorway: looking for a path to the quarry left the navigation aimed at the quarry, and
+		// the next look would take the path to the doorway for one to the quarry.
+		walkTo(next.get());
 		waypoint = next;
 
 		return true;
