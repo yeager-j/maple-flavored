@@ -11,7 +11,7 @@ Spec: the Maple Flavored spec in this folder.
 - [x] Reinforcement template item; smithing template + armor piece + any chainmail piece gives +1 armor toughness, once per piece
 - [x] Every armor piece accepts it, including the turtle helmet and Armored Elytra; plain Elytra, carved pumpkins, heads and mob armor don't
 - [x] Carries through smithing upgrades and between Alloys; works on enchanted armor; stacks with trims and Adamant
-- [x] Tooltip line "Reinforced" and a trim-like chainmail overlay
+- [x] Tooltip line "Reinforced" and chainmail drawn beneath the worn armor, showing through its gaps
 - [x] 7 diamonds + template + block of iron makes 2 templates; no loot source
 - [x] Advancement: Reinforce an armor piece (Story, under Zombie Doctor)
 - [x] Add the Reinforcement template to the glossary

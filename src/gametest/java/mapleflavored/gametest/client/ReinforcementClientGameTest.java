@@ -3,9 +3,10 @@ package mapleflavored.gametest.client;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
+import net.minecraft.client.CameraType;
 
 /**
- * Screenshots of worn Reinforced armor, for checking the chainmail overlay by eye: plain and Reinforced iron, a
+ * Screenshots of worn Reinforced armor, for checking by eye the chainmail beneath it: plain and Reinforced iron, a
  * Reinforced trimmed diamond set, and a Reinforced Armored Elytra, on armor stands front and back. Run with
  * {@code gradlew runClientGameTest}; the shots land in {@code build/run/clientGameTest/screenshots/}.
  */
@@ -28,16 +29,17 @@ public class ReinforcementClientGameTest implements FabricClientGameTest {
 			for (int stand = 0; stand < SETS.length; stand++) {
 				double x = (stand - 1.5) * 1.5;
 
-				summonStand(world, x, 5.0, 180, SETS[stand]);
-				summonStand(world, x, 8.0, 0, SETS[stand]);
+				summonStand(world, x, 3.5, 180, SETS[stand]);
+				summonStand(world, x, 6.0, 0, SETS[stand]);
 			}
 
 			String[] elytra = set("diamond", REINFORCED);
 
 			elytra[1] = "{id:\"maple_flavored:adamant_armored_elytra\",components:{" + REINFORCED + "}}";
-			summonStand(world, 2.25, 5.0, 180, elytra);
-			summonStand(world, 2.25, 8.0, 0, elytra);
+			summonStand(world, 2.25, 3.5, 180, elytra);
+			summonStand(world, 2.25, 6.0, 0, elytra);
 
+			context.runOnClient(client -> client.options.setCameraType(CameraType.FIRST_PERSON));
 			context.waitTicks(40);
 			world.getConnection().waitForChunksRender();
 			context.takeScreenshot("reinforcement_stands");
