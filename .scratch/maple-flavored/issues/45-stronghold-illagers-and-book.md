@@ -8,7 +8,9 @@
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] Strongholds generate with Illagers as the design task decided, tagged with their spots
-- [ ] The Stronghold gets its Unbreaking book; taking it turns every Illager in it hostile, ignoring Orichalcum
-- [ ] Blood Moons Restore Stronghold Illagers where the stone bricks family is beneath
-- [ ] GameTests place a Stronghold, take the book and Restore it
+- [x] Strongholds generate with Illagers as the design task decided, tagged with their spots
+- [x] The Stronghold gets its Unbreaking book; taking it turns every Illager in it hostile, ignoring Orichalcum
+- [x] Blood Moons Restore Stronghold Illagers where the stone bricks family is beneath
+- [x] GameTests place a Stronghold, take the book and Restore it
+- [x] Strongholds generate whole, like Trial Chambers: pieces build over caves and rock encapsulates them (Jackson)
+- [ ] Hand check: in a new world, follow Eyes of Ender to a Stronghold, see it whole through caves, fight to the portal room and take the book

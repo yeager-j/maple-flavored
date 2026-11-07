@@ -6,6 +6,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import java.util.Optional;
 import mapleflavored.bloodmoons.Restorable;
 import mapleflavored.bloodmoons.Restoring;
+import mapleflavored.strongholds.StrongholdIllagers;
 import mapleflavored.structurebooks.StructureBooks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -20,8 +21,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * Builds each piece with the keepers it places, as the chunk it's in is built, so they unlock their book; and builds
- * each chunk of a Restorable structure so the mobs it places get Restore spots.
+ * Builds each piece with the keepers it places, as the chunk it's in is built, so they unlock their book, and with a
+ * Stronghold piece's Illagers; and builds each chunk of a Restorable structure so the mobs it places get Restore spots.
  */
 @Mixin(StructureStart.class)
 public abstract class StructureStartMixin {
@@ -47,7 +48,7 @@ public abstract class StructureStartMixin {
 			target = "Lnet/minecraft/world/level/levelgen/structure/StructurePiece;postProcess(Lnet/minecraft/world/level/WorldGenLevel;Lnet/minecraft/world/level/StructureManager;Lnet/minecraft/world/level/chunk/ChunkGenerator;Lnet/minecraft/util/RandomSource;Lnet/minecraft/world/level/levelgen/structure/BoundingBox;Lnet/minecraft/world/level/ChunkPos;Lnet/minecraft/core/BlockPos;)V"
 		)
 	)
-	private void buildWithKeepers(
+	private void buildWithKeepersAndGuards(
 		StructurePiece piece,
 		WorldGenLevel level,
 		StructureManager structureManager,
@@ -66,5 +67,6 @@ public abstract class StructureStartMixin {
 			level,
 			() -> postProcess.call(piece, level, structureManager, generator, random, chunkBB, chunkPos, referencePos)
 		);
+		StrongholdIllagers.placeGuards(piece, level, chunkBB);
 	}
 }

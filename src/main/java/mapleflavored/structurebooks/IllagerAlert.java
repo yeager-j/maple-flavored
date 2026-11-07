@@ -31,16 +31,16 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.AABB;
 
 /**
- * The Woodland Mansion's wake event: taking its book sets every Illager in the mansion hunting the player, however far
- * away they are and whatever the player wears.
+ * The Woodland Mansion's and Stronghold's wake event: taking the book sets every Illager in the structure hunting the
+ * player, however far away they are and whatever the player wears.
  *
- * <p>A hunting Illager targets the player ahead of anything else and paths across the whole mansion to reach them, and
+ * <p>A hunting Illager targets the player ahead of anything else and paths across the whole structure to reach them, and
  * Orichalcum doesn't make it neutral, until the hunt runs out or the player dies. It matches the Bastion's
  * {@link PiglinAnger}.
  */
 public final class IllagerAlert {
 	// The structures whose Illagers a taken book alerts.
-	private static final Set<ResourceKey<Structure>> ALERTED_STRUCTURES = Set.of(BuiltinStructures.WOODLAND_MANSION);
+	private static final Set<ResourceKey<Structure>> ALERTED_STRUCTURES = Set.of(BuiltinStructures.WOODLAND_MANSION, BuiltinStructures.STRONGHOLD);
 
 	// As long as a Bastion's hunt, long enough to get out of the mansion with all of it still after you.
 	private static final long HUNT_TICKS = 10L * 60L * 20L;
