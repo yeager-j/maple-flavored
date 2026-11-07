@@ -39,7 +39,9 @@ import net.minecraft.world.level.storage.loot.LootTable;
  * Where structures' books go: each in the structure's most important spot, where a player exploring it properly will
  * find it. Buried Treasure and Trail Ruins have no open room, so theirs is in the treasure chest and in one of the ruin's
  * gravel blocks. The Nether Fortress's book is also locked by the Blaze spawners found here, and each Bastion layout's
- * book floats above that layout's own chest. Local coordinates come from vanilla's code-built pieces and templates.
+ * book floats above that layout's own chest. The Woodland Mansion's is in its fake End portal room, which
+ * {@link MansionPortalRoom} makes sure every mansion has. Local coordinates come from vanilla's code-built pieces and
+ * templates.
  */
 final class StructureBookSpots {
 	// In the shaft of the hidden treasure room, one block above the TNT pressure plate.
@@ -100,6 +102,9 @@ final class StructureBookSpots {
 	// At head height above the centre block of the altar in front of the portal, on the axis the city's entrance lines up
 	// with. Centre 2's altar is a sunken pit, whose floor a Warden can still stand on under the book.
 	private static final BlockPos ANCIENT_CITY_ALTAR = new BlockPos(7, 11, 20);
+
+	// In the middle of the fake End portal's green wool ring, where the portal itself would be, at the height of the ring.
+	private static final BlockPos MANSION_FAKE_PORTAL = new BlockPos(3, 3, 7);
 
 	private StructureBookSpots() {
 	}
@@ -217,6 +222,11 @@ final class StructureBookSpots {
 		if (startTemplate(pieces).filter(ANCIENT_CITY_CENTRES::contains).isEmpty()) return Optional.empty();
 
 		return Optional.of(inPoolElement((PoolElementStructurePiece) pieces.getFirst(), ANCIENT_CITY_ALTAR));
+	}
+
+	/** In the fake End portal of the mansion's portal room. */
+	static Optional<BookSpot> woodlandMansion(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
+		return templatePiece(pieces, planning.templates(), MansionPortalRoom.TEMPLATE).map(room -> inTemplate(room, MANSION_FAKE_PORTAL));
 	}
 
 	/** Where each of the fortress's spawner rooms will place its Blaze spawner. */

@@ -47,6 +47,9 @@ public class AlloyCombatGameTests {
 	private static final BlockPos HIDDEN_POS = new BlockPos(6, 1, 6);
 	// Long enough for an Illager's target goals to run several times.
 	private static final int TARGETING_TICKS = 40;
+	private static final long LONG_ANGER_TICKS = 150L;
+	// Past the orichalcum_illager_anger environment's 60 ticks of anger, short of LONG_ANGER_TICKS.
+	private static final int PAST_THE_RULES_ANGER = 100;
 
 	@GameTest
 	public void steelArmorTakesTenPercentPerPieceOffExplosionsAndSonicBooms(GameTestHelper helper) {
@@ -166,6 +169,22 @@ public class AlloyCombatGameTests {
 			.thenWaitUntil(() -> assertTargets(helper, vindicator, player))
 			.thenWaitUntil(() -> helper.assertTrue(vindicator.getTarget() == null, "the Vindicator still targets the player"))
 			.thenSucceed();
+	}
+
+	// The environment's anger lasts 60 ticks, so a hit that cut the alert's anger to it would end it before the check.
+	@GameTest(environment = "maple_flavored_gametest:orichalcum_illager_anger", maxTicks = 200)
+	public void anAttackNeverCutsALongerAngerShort(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer player = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
+		Vindicator vindicator = helper.spawnWithNoFreeWill(EntityTypes.VINDICATOR, ILLAGER_POS);
+
+		IllagerNeutrality.anger(level, vindicator, player, LONG_ANGER_TICKS);
+		vindicator.hurtServer(level, level.damageSources().playerAttack(player), 1.0F);
+
+		helper.runAfterDelay(PAST_THE_RULES_ANGER, () -> {
+			helper.assertTrue(vindicator.canAttack(player), "the Vindicator is still angry at the player");
+			helper.succeed();
+		});
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)

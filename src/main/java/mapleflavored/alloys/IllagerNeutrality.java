@@ -21,8 +21,8 @@ import net.minecraft.world.entity.player.Player;
 /**
  * Orichalcum armor's Illager neutrality: an Illager, and an Evoker's Vexes, won't attack a player wearing any Orichalcum
  * piece, as a Piglin won't attack one wearing gold. It still attacks them in a raid, and while it's angry at them: for
- * {@link MapleGameRules#ORICHALCUM_ILLAGER_ANGER_TIME} after they attack it or an Illager it can see nearby, or after a
- * book alert ({@link #anger}).
+ * {@link MapleGameRules#ORICHALCUM_ILLAGER_ANGER_TIME} after they attack it or an Illager it can see nearby, and while a
+ * structure book's alert has it hunting them.
  */
 public final class IllagerNeutrality {
 	// Vanilla's reach for a hurt Piglin's call to the Piglins around it.
@@ -86,16 +86,32 @@ public final class IllagerNeutrality {
 	}
 
 	/**
-	 * Makes the Illager hostile to the player, Orichalcum or not, for {@link MapleGameRules#ORICHALCUM_ILLAGER_ANGER_TIME},
-	 * renewing any anger it already has at them. For a structure book's alert.
+	 * Makes the Illager hostile to the player, Orichalcum or not, for {@link MapleGameRules#ORICHALCUM_ILLAGER_ANGER_TIME}.
+	 * Renews any shorter anger it already has at them.
 	 */
 	public static void anger(ServerLevel level, AbstractIllager illager, ServerPlayer player) {
+		anger(level, illager, player, level.getGameRules().get(MapleGameRules.ORICHALCUM_ILLAGER_ANGER_TIME));
+	}
+
+	/**
+	 * Makes the Illager hostile to the player, Orichalcum or not, for {@code ticks}. Renews any shorter anger it already
+	 * has at them, and never cuts a longer one short.
+	 */
+	public static void anger(ServerLevel level, AbstractIllager illager, ServerPlayer player, long ticks) {
 		long now = level.getGameTime();
-		long until = now + level.getGameRules().get(MapleGameRules.ORICHALCUM_ILLAGER_ANGER_TIME);
 		Map<UUID, Long> anger = new HashMap<>(illager.getAttachedOrElse(ANGER, Map.of()));
 
 		anger.values().removeIf(end -> end <= now);
-		anger.put(player.getUUID(), until);
+		anger.merge(player.getUUID(), now + ticks, Math::max);
+		illager.setAttached(ANGER, anger);
+	}
+
+	/** Ends the Illager's anger at the player, if it has any. */
+	public static void calm(AbstractIllager illager, Player player) {
+		Map<UUID, Long> anger = new HashMap<>(illager.getAttachedOrElse(ANGER, Map.of()));
+
+		if (anger.remove(player.getUUID()) == null) return;
+
 		illager.setAttached(ANGER, anger);
 	}
 
