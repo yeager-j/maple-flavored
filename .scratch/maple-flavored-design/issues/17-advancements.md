@@ -15,6 +15,7 @@ Advancements guide players through Maple Flavored inside vanilla's own tabs. Eac
 
 - Vanilla's five tabs stay. Each new advancement sits in the tab and branch where its step happens, rather than in a separate guide tab as Matcha does.
 - Each system gets one advancement for the first step a player might otherwise miss, plus at most one goal or challenge for mastering it. There are no new collect-everything lists, and vanilla's stay as they are.
+- **Exception: the Enchanted Books tab.** One new tab lists every enchantment the Library counts, each earned by getting its book, with a description that says where the book is found. It's laid out by source so it unrolls as a player explores. Shelf Life becomes its root and Well Read (Full Library) its capstone goal; Enchanter goes back under Diamonds!. Book advancements show a toast but don't announce in chat. The spec holds the details. (Jackson's change on 2026-11-07: "where do I find X" is the one question the mod creates that the game never answers.)
 - Descriptions teach the mechanic in plain words, without lore. Exact titles and descriptions are written at build time. Titles may be vanilla-style puns, except **But why?** and **Breaking the Rules**, which are fixed.
 - No new advancement is hidden except **But why?**.
 - Rewards:
