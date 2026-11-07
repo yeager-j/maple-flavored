@@ -20,6 +20,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
@@ -225,6 +226,41 @@ public class BastionBookGameTests {
 		tick(hunter);
 		helper.assertValueEqual(attackTarget(hunter), Optional.empty(), "the target once the hunter's anger ends");
 		helper.assertValueEqual(hunter.getAttributeValue(Attributes.FOLLOW_RANGE), baseFollowRange, "the follow range once the hunt ends");
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void aDeathTheHuntersNeverSawEndsTheHunt(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, 9));
+		BlockPos book = onlyBook(helper, start);
+		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+
+		player.setPos(Vec3.atBottomCenterOf(book.west()));
+		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.GOLDEN_HELMET));
+		helper.assertTrue(StructureBooks.take(player, book), "the book is taken");
+
+		List<AbstractPiglin> adults = piglinsIn(level, start).stream().filter(AbstractPiglin::isAdult).toList();
+
+		helper.assertTrue(adults.size() >= 2, "the Bastion has two adult Piglins");
+
+		AbstractPiglin hunter = adults.getFirst();
+		AbstractPiglin retargeted = adults.get(1);
+		ServerPlayer bystander = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+
+		tick(hunter);
+		helper.assertValueEqual(attackTarget(hunter), Optional.of(player), "the hunter's target once the book is taken");
+
+		// As if the player died in another dimension, or while the Bastion was unloaded, and came back. Meanwhile another
+		// Piglin's anger has moved to someone else, which their death leaves alone.
+		retargeted.getBrain().setMemoryWithExpiry(MemoryModuleType.ANGRY_AT, bystander.getUUID(), VANILLA_ANGER_TICKS);
+		player.awardStat(Stats.DEATHS);
+		tick(hunter);
+		tick(retargeted);
+		helper.assertValueEqual(angryAt(hunter), Optional.empty(), "the hunter is angry at, after its quarry died");
+		helper.assertValueEqual(attackTarget(hunter), Optional.empty(), "the hunter's target after its quarry died");
+		helper.assertFalse(hunter.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(HUNT_RANGE), "the hunter keeps the hunting range");
+		helper.assertValueEqual(angryAt(retargeted), Optional.of(bystander.getUUID()), "the retargeted Piglin is angry at");
 		helper.succeed();
 	}
 
