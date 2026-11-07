@@ -49,7 +49,8 @@
 			"mapleflavored.gametest.AlloySetGameTests",
 			"mapleflavored.gametest.ArmoredElytraGameTests",
 			"mapleflavored.gametest.ReinforcementGameTests",
-			"mapleflavored.gametest.AbandonedVillageGameTests"
+			"mapleflavored.gametest.AbandonedVillageGameTests",
+			"mapleflavored.gametest.BrewingGameTests"
 		],
 		"fabric-client-gametest": [
 			"mapleflavored.gametest.client.PortalTrimClientGameTest",
