@@ -58,9 +58,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Every village is an Abandoned Village: rarer, with zombie villagers and no iron golems, no hay bales or brewing
- * stands, and chests without diamonds, obsidian or iron gear. Crops, beds, bells and workstations stay. The igloo
- * basement's villager is a zombie villager too.
+ * Every village is an Abandoned Village: vanilla's zombie village, rarer, with zombie villagers and no iron golems, no
+ * hay bales or brewing stands, and chests without diamonds, obsidian or iron gear. Crops, beds, bells and workstations
+ * stay. The igloo basement's villager is a zombie villager too.
  */
 public class AbandonedVillageGameTests {
 	// Clear of every other test's far-away chunks.
@@ -81,6 +81,7 @@ public class AbandonedVillageGameTests {
 		new ChestOdds(BuiltInLootTables.VILLAGE_WEAPONSMITH, 5.5 * 64 / 107 + 1.0 / 3),
 		new ChestOdds(BuiltInLootTables.VILLAGE_ARMORER, 3.0 * 7 / 8)
 	);
+	private static final List<String> BIOMES = List.of("plains", "desert", "savanna", "snowy", "taiga");
 	private static final List<ResourceKey<Structure>> VILLAGES = List.of(
 		BuiltinStructures.VILLAGE_PLAINS,
 		BuiltinStructures.VILLAGE_DESERT,
@@ -118,18 +119,20 @@ public class AbandonedVillageGameTests {
 	}
 
 	@GameTest
-	public void villagesHaveNoGolemPoolOrHayPiles(GameTestHelper helper) {
+	public void villagesStartFromZombieTownCentresAndPlaceZombieVillagers(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureTemplatePool golems = level.registryAccess()
-			.lookupOrThrow(Registries.TEMPLATE_POOL)
-			.getOrThrow(ResourceKey.create(Registries.TEMPLATE_POOL, Identifier.withDefaultNamespace("village/common/iron_golem")))
-			.value();
+
+		// Plains zombie villages reach the plains villager pool through the houses they share with living villages.
+		for (String biome : BIOMES) {
+			assertOnlyZombieTemplates(helper, "village/" + biome + "/town_centers");
+			assertOnlyZombieTemplates(helper, "village/" + biome + "/villagers");
+		}
+
 		Feature hayPile = level.registryAccess()
 			.lookupOrThrow(Registries.FEATURE)
 			.getOrThrow(ResourceKey.create(Registries.FEATURE, Identifier.withDefaultNamespace("pile_hay")))
 			.value();
 
-		helper.assertValueEqual(golems.size(), 0, "templates in the village iron golem pool");
 		helper.assertTrue(hayPile instanceof NoOpFeature, "the village hay pile feature places nothing, but is " + hayPile);
 		helper.succeed();
 	}
@@ -141,23 +144,23 @@ public class AbandonedVillageGameTests {
 
 		for (int i = 0; i < VILLAGES.size(); i++) {
 			ResourceKey<Structure> key = VILLAGES.get(i);
-			// Vanilla's own zombie villages have neither villagers nor golems, so only a living one shows the change.
-			ChunkPos chunk = firstChunkWhere(level, key, new ChunkPos(FAR_CHUNK + i * CHUNKS_APART, FAR_CHUNK), start -> !isZombieVillage(start))
-				.orElseThrow(() -> new IllegalStateException("no living " + key.identifier() + " in " + PLANNING_TRIES + " plans"));
+			ChunkPos chunk = new ChunkPos(FAR_CHUNK + i * CHUNKS_APART, FAR_CHUNK);
 			StructureStart village = Structures.place(level, key, chunk);
 			AABB box = AABB.of(village.getBoundingBox());
 			List<BlockState> blocks = blocksIn(level, village);
 			String name = key.identifier() + " at " + chunk;
 
+			helper.assertTrue(isZombieVillage(village), name + " starts from a zombie town centre");
 			helper.assertTrue(!level.getEntitiesOfClass(ZombieVillager.class, box).isEmpty(), name + " has zombie villagers");
 			helper.assertValueEqual(level.getEntitiesOfClass(Villager.class, box).size(), 0, "villagers in " + name);
 			helper.assertValueEqual(level.getEntitiesOfClass(IronGolem.class, box).size(), 0, "iron golems in " + name);
-			helper.assertTrue(blocks.stream().anyMatch(state -> state.is(Blocks.BELL)), name + " has a bell");
 			helper.assertTrue(blocks.stream().noneMatch(state -> state.is(Blocks.HAY_BLOCK)), name + " has no hay bales");
 			helper.assertTrue(blocks.stream().noneMatch(state -> state.is(Blocks.BREWING_STAND)), name + " has no brewing stands");
 			allBlocks.addAll(blocks);
 		}
 
+		// Checked across the villages: vanilla's zombie taiga_meeting_point_2 has no bell, and not every village has a farm.
+		helper.assertTrue(allBlocks.stream().anyMatch(state -> state.is(Blocks.BELL)), "the villages have bells");
 		helper.assertTrue(allBlocks.stream().anyMatch(state -> state.is(BlockTags.BEDS)), "the villages have beds");
 		helper.assertTrue(allBlocks.stream().anyMatch(state -> state.is(BlockTags.CROPS)), "the villages have crops");
 		helper.assertTrue(allBlocks.stream().anyMatch(AbandonedVillageGameTests::isWorkstation), "the villages have workstations");
@@ -251,12 +254,27 @@ public class AbandonedVillageGameTests {
 		helper.assertValueEqual(placed, kept ? inTemplate : 0L, block + " placed from " + template);
 	}
 
-	private static boolean isZombieVillage(StructureStart start) {
-		StructurePiece townCentre = start.getPieces().getFirst();
+	private static void assertOnlyZombieTemplates(GameTestHelper helper, String poolPath) {
+		StructureTemplatePool pool = helper.getLevel().registryAccess()
+			.lookupOrThrow(Registries.TEMPLATE_POOL)
+			.getOrThrow(ResourceKey.create(Registries.TEMPLATE_POOL, Identifier.withDefaultNamespace(poolPath)))
+			.value();
+		List<Optional<Identifier>> templates = pool.getTemplates().stream().map(entry -> templateOf(entry.getFirst())).toList();
 
-		return townCentre instanceof PoolElementStructurePiece piece
-			&& piece.getElement() instanceof SinglePoolElement element
-			&& ((SinglePoolElementAccessor) element).template().left().filter(id -> id.getPath().contains("/zombie/")).isPresent();
+		helper.assertTrue(!templates.isEmpty(), poolPath + " has templates");
+		helper.assertTrue(templates.stream().allMatch(AbandonedVillageGameTests::isZombieTemplate), poolPath + " holds only zombie templates: " + templates);
+	}
+
+	private static boolean isZombieVillage(StructureStart start) {
+		return start.getPieces().getFirst() instanceof PoolElementStructurePiece townCentre && isZombieTemplate(templateOf(townCentre.getElement()));
+	}
+
+	private static Optional<Identifier> templateOf(StructurePoolElement element) {
+		return element instanceof SinglePoolElement single ? ((SinglePoolElementAccessor) single).template().left() : Optional.empty();
+	}
+
+	private static boolean isZombieTemplate(Optional<Identifier> template) {
+		return template.filter(id -> id.getPath().contains("/zombie/")).isPresent();
 	}
 
 	private static boolean isWorkstation(BlockState state) {

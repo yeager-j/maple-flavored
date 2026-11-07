@@ -13,9 +13,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProc
 import net.minecraft.world.level.levelgen.structure.templatesystem.rule.blockentity.Clear;
 
 /**
- * Every village is an Abandoned Village, so finding one doesn't skip progression. Its pieces are placed without hay
- * bales and brewing stands. The rest of the rules are data: the village structure set's spacing, the empty iron golem
- * pool, the zombie villager pools, the empty hay pile feature and the picked-over village chest tables.
+ * Every village is an Abandoned Village, vanilla's zombie village, so finding one doesn't skip progression. Its pieces
+ * are placed without hay bales and brewing stands. The rest of the rules are data: the village structure set's spacing,
+ * the town centre pools that hold only zombie town centres, the zombie villager pools, the empty hay pile feature and
+ * the picked-over village chest tables.
  */
 public final class AbandonedVillages {
 	private static final String VILLAGE_TEMPLATES = "village/";

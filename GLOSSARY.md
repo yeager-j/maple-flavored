@@ -71,7 +71,7 @@ _Avoid_: Chainmail template, reinforcement upgrade
 A periodic red full moon that brings back mobs that structures don't otherwise replace.
 
 **Abandoned Village**:
-The only kind of village: populated by zombie villagers, with no iron golems, so every villager is earned by curing.
+The only kind of village: vanilla's zombie village, decayed, populated by zombie villagers and with no iron golems, so every villager is earned by curing.
 _Avoid_: Ruined village, zombie village
 
 **Cleared**:
