@@ -3,6 +3,7 @@
 	"package": "mapleflavored.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
+		"AbstractIllagerMixin",
 		"AnvilMenuMixin",
 		"ApplyBonusCountMixin",
 		"BaseContainerBlockEntityInvoker",
@@ -83,6 +84,7 @@
 		"WardenSpawnTrackerAccessor",
 		"WitherBossMixin",
 		"WitherSkeletonMixin",
+		"WoodlandMansionPiecesMixin",
 		"WorldGenRegionMixin",
 		"ZombieVillagerMixin"
 	],

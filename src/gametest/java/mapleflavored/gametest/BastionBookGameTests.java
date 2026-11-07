@@ -418,7 +418,7 @@ public class BastionBookGameTests {
 		return books.getFirst();
 	}
 
-	private static ResourceKey<Enchantment> enchantmentAt(ServerLevel level, BlockPos pos) {
+	static ResourceKey<Enchantment> enchantmentAt(ServerLevel level, BlockPos pos) {
 		if (!(level.getBlockEntity(pos) instanceof StructureBookBlockEntity book)) throw new IllegalStateException("no book at " + pos);
 
 		return book.enchantment().flatMap(Holder::unwrapKey).orElseThrow();

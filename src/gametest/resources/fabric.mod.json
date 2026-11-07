@@ -35,6 +35,7 @@
 			"mapleflavored.gametest.FortressBookGameTests",
 			"mapleflavored.gametest.BastionBookGameTests",
 			"mapleflavored.gametest.BastionLockGameTests",
+			"mapleflavored.gametest.MansionBookGameTests",
 			"mapleflavored.gametest.SubspaceGameTests",
 			"mapleflavored.gametest.SubspaceSculkGameTests",
 			"mapleflavored.gametest.BossRewardGameTests",
