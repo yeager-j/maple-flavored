@@ -55,6 +55,7 @@
 		"PlayerAdvancementsMixin",
 		"PlayerMixin",
 		"PowderSnowBlockMixin",
+		"RaidMixin",
 		"RaiderMixin",
 		"ResourceManagerRegistryLoadTaskMixin",
 		"SculkBlockMixin",
