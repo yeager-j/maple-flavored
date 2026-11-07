@@ -28,6 +28,7 @@
 		"GrindstoneInputSlotMixin",
 		"GrindstoneMenuMixin",
 		"GrindstoneResultSlotMixin",
+		"ItemStackMixin",
 		"LevelChunkMixin",
 		"ListPoolElementAccessor",
 		"LivingEntityMixin",

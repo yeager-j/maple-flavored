@@ -1,6 +1,9 @@
 package mapleflavored.client.mixin;
 
+import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.ref.LocalIntRef;
 import com.mojang.blaze3d.vertex.PoseStack;
+import mapleflavored.client.reinforcement.ReinforcedOverlay;
 import mapleflavored.client.alloys.PortalTrim;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -20,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Draws no trim on wings, and (PROTOTYPE) draws {@link PortalTrim}'s starfield over the worn layers, after vanilla's
+ * Draws no trim on wings, a Reinforced piece's chainmail between its layers and its trim, and (PROTOTYPE) draws {@link PortalTrim}'s starfield over the worn layers, after vanilla's
  * layers, trim and glint.
  */
 @Mixin(EquipmentLayerRenderer.class)
@@ -36,6 +39,37 @@ public abstract class EquipmentLayerRendererMixin {
 	)
 	private ArmorTrim noTrimOnWings(ArmorTrim trim, EquipmentClientInfo.LayerType layerType) {
 		return layerType == EquipmentClientInfo.LayerType.WINGS ? null : trim;
+	}
+
+	// Hooked where vanilla checks for a trim, after the layers are submitted, and takes the next order so the trim
+	// still draws over the chainmail. The earlier read of hasTrim, for the glint, comes before nextOrder exists.
+	@ModifyVariable(
+		method = "renderLayers(Lnet/minecraft/client/resources/model/EquipmentClientInfo$LayerType;Lnet/minecraft/resources/ResourceKey;Lnet/minecraft/client/model/Model;Ljava/lang/Object;Lnet/minecraft/world/item/ItemStack;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;ILnet/minecraft/resources/Identifier;II)V",
+		at = @At(value = "LOAD", ordinal = 1),
+		name = "hasTrim"
+	)
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private boolean submitReinforcedChainmail(
+		boolean hasTrim,
+		@Local(argsOnly = true) EquipmentClientInfo.LayerType layerType,
+		@Local(argsOnly = true) Model model,
+		@Local(argsOnly = true) Object state,
+		@Local(argsOnly = true) ItemStack stack,
+		@Local(argsOnly = true) PoseStack poseStack,
+		@Local(argsOnly = true) SubmitNodeCollector collector,
+		@Local(argsOnly = true, ordinal = 0) int light,
+		@Local(argsOnly = true, ordinal = 1) int outlineColor,
+		@Local(name = "nextOrder") LocalIntRef nextOrder
+	) {
+		RenderType renderType = ReinforcedOverlay.renderType(stack, layerType);
+
+		if (renderType != null) {
+			collector.order(nextOrder.get())
+				.submitModel(model, state, poseStack, renderType, light, OverlayTexture.NO_OVERLAY, -1, null, outlineColor);
+			nextOrder.set(nextOrder.get() + 1);
+		}
+
+		return hasTrim;
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})

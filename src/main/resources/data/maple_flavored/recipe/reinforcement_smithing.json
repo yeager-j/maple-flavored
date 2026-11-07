@@ -1,0 +1,6 @@
+{
+  "type": "maple_flavored:smithing_reinforcement",
+  "addition": "#maple_flavored:chainmail_armor",
+  "base": "#maple_flavored:reinforceable",
+  "template": "maple_flavored:reinforcement_smithing_template"
+}

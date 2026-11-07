@@ -1,0 +1,27 @@
+{
+  "parent": "minecraft:story/cure_zombie_villager",
+  "criteria": {
+    "reinforced_armor": {
+      "conditions": {
+        "recipes": "maple_flavored:reinforcement_smithing"
+      },
+      "trigger": "minecraft:recipe_crafted"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.story.reinforce_armor.description"
+    },
+    "icon": {
+      "id": "minecraft:chainmail_chestplate"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.story.reinforce_armor.title"
+    }
+  },
+  "requirements": [
+    [
+      "reinforced_armor"
+    ]
+  ]
+}

@@ -11,6 +11,7 @@ import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import mapleflavored.loot.LootEnchantments;
 import mapleflavored.loot.LootSubstitutions;
+import mapleflavored.reinforcement.Reinforcement;
 import mapleflavored.remnants.Remnants;
 import mapleflavored.spawners.Spawners;
 import mapleflavored.structurebooks.StructureBooks;
@@ -38,6 +39,7 @@ public class MapleFlavored implements ModInitializer {
 		Hearts.register();
 		MapleItems.register();
 		Alloys.register();
+		Reinforcement.register();
 		Remnants.register();
 		LootSubstitutions.register();
 		LootEnchantments.register();

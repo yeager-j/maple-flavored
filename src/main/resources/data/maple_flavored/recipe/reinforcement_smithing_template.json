@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:diamond",
+    "I": "minecraft:iron_block",
+    "S": "maple_flavored:reinforcement_smithing_template"
+  },
+  "pattern": [
+    "#S#",
+    "#I#",
+    "###"
+  ],
+  "result": {
+    "count": 2,
+    "id": "maple_flavored:reinforcement_smithing_template"
+  }
+}
