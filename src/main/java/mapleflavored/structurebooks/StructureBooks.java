@@ -107,14 +107,15 @@ public final class StructureBooks {
 	}
 
 	/**
-	 * Registers the block, block entity, structure piece, book locks, wake events, the Ancient City's Grounding and
-	 * keepers, and {@code /keepers}. Call once from mod init.
+	 * Registers the block, block entity, structure piece, book locks, the Bastion's and Woodland Mansion's wake events, the
+	 * Ancient City's Grounding and keepers, and {@code /keepers}. Call once from mod init.
 	 */
 	public static void register() {
 		// The block, block entity and piece register in the static fields above; this call makes sure they run.
 		BookLocks.register();
 		TakenBooks.register();
 		PiglinAnger.register();
+		IllagerAlert.register();
 		BruteKeepers.register();
 		AncientCityGrounding.register();
 		ShriekerKeepers.register();
