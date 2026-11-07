@@ -2,6 +2,8 @@ package mapleflavored.bloodmoons;
 
 import mapleflavored.MapleFlavored;
 import mapleflavored.advancements.MapleTriggers;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Registry;
@@ -21,7 +23,7 @@ import net.minecraft.world.timeline.Timeline;
 /**
  * The Blood Moons module: on every 4th full moon the Overworld's night is a Blood Moon. Its schedule is the
  * {@code maple_flavored:blood_moon} timeline, which animates {@link #STRENGTH} on the Overworld clock; this module
- * announces each Blood Moon as it rises.
+ * announces each Blood Moon as it rises, and {@link Restoring} brings structures' mobs back after it.
  */
 public final class BloodMoons {
 	/**
@@ -39,14 +41,25 @@ public final class BloodMoons {
 			.build()
 	);
 
+	/** Fires once for each Blood Moon, as it rises, after it's announced. */
+	public static final Event<Risen> RISEN = EventFactory.createArrayBacked(Risen.class, listeners -> server -> {
+		for (Risen listener : listeners) {
+			listener.onRisen(server);
+		}
+	});
+
 	private static final ResourceKey<Timeline> TIMELINE = ResourceKey.create(Registries.TIMELINE, MapleFlavored.id("blood_moon"));
 
 	private BloodMoons() {
 	}
 
-	/** Registers the hook that announces each Blood Moon as it rises. Call once from mod init. */
+	/**
+	 * Registers the hooks that announce each Blood Moon as it rises and Restore structures after it. Call once from mod
+	 * init.
+	 */
 	public static void register() {
 		ServerTickEvents.END_SERVER_TICK.register(BloodMoons::announceRising);
+		Restoring.register();
 	}
 
 	/** How fully a Blood Moon is up in the level now, from 0 to 1. Works on both the server and the client. */
@@ -81,5 +94,13 @@ public final class BloodMoons {
 		for (ServerPlayer player : server.overworld().players()) {
 			MapleTriggers.BLOOD_MOON_RISEN.trigger(player);
 		}
+
+		RISEN.invoker().onRisen(server);
+	}
+
+	/** Listens for each Blood Moon rising. */
+	@FunctionalInterface
+	public interface Risen {
+		void onRisen(MinecraftServer server);
 	}
 }
