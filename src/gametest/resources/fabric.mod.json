@@ -50,7 +50,8 @@
 			"mapleflavored.gametest.ArmoredElytraGameTests",
 			"mapleflavored.gametest.ReinforcementGameTests",
 			"mapleflavored.gametest.AbandonedVillageGameTests",
-			"mapleflavored.gametest.BrewingGameTests"
+			"mapleflavored.gametest.BrewingGameTests",
+			"mapleflavored.gametest.TradeGameTests"
 		],
 		"fabric-client-gametest": [
 			"mapleflavored.gametest.client.PortalTrimClientGameTest",

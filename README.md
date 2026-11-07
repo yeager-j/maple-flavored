@@ -1,3 +1,5 @@
+![Maple Flavored logo](maple_flavored.png)
+
 # Maple Flavored
 
 A Fabric mod for Minecraft 26.3: a slow-paced progression overhaul inspired by Matcha Flavoured and Raspberry Flavoured. See [CREDITS.md](CREDITS.md).
