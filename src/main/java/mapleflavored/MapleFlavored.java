@@ -3,6 +3,7 @@ package mapleflavored;
 import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.alloys.Alloys;
 import mapleflavored.bosses.BossKillCredit;
+import mapleflavored.brewing.Brewing;
 import mapleflavored.echoshard.ShriekerPulses;
 import mapleflavored.enchanting.Enchanting;
 import mapleflavored.gamerules.MapleGameRules;
@@ -46,6 +47,7 @@ public class MapleFlavored implements ModInitializer {
 		Grounded.register();
 		Zephyr.register();
 		Enchanting.register();
+		Brewing.register();
 		StructureBooks.register();
 		Spawners.register();
 		Subspaces.register();
