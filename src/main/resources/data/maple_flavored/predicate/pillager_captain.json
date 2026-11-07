@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:any_of",
+  "terms": [
+    {
+      "type": "minecraft:entity_properties",
+      "entity": "this",
+      "predicate": {
+        "minecraft:type_specific/raider": {
+          "has_raid": false,
+          "is_captain": true
+        }
+      }
+    },
+    {
+      "type": "minecraft:entity_properties",
+      "entity": "this",
+      "predicate": {
+        "minecraft:type_specific/raider": {
+          "has_raid": true,
+          "is_captain": true
+        }
+      }
+    }
+  ]
+}

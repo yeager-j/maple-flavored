@@ -14,6 +14,7 @@ import mapleflavored.items.MapleItems;
 import mapleflavored.loot.LootEnchantments;
 import mapleflavored.loot.LootSubstitutions;
 import mapleflavored.loot.StructureChestRolls;
+import mapleflavored.mobs.RaidWaves;
 import mapleflavored.reinforcement.Reinforcement;
 import mapleflavored.remnants.Remnants;
 import mapleflavored.spawners.Spawners;
@@ -58,6 +59,7 @@ public class MapleFlavored implements ModInitializer {
 		BossKillCredit.register();
 		ShriekerPulses.register();
 		BloodMoons.register();
+		RaidWaves.register();
 
 		LOGGER.info("Maple Flavored initialized");
 	}
