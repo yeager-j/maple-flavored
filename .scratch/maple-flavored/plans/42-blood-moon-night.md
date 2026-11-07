@@ -21,7 +21,8 @@ Every 4th full moon (every 32 in-game days) the Overworld night is a Blood Moon:
    - Missed nights (time jumped past the whole night) simply never rise; nothing stacks.
 4. **Advancement.** `MapleTriggers.BLOOD_MOON_RISEN` (`PlayerTrigger`, `maple_flavored:blood_moon_risen`). `data/maple_flavored/advancement/adventure/blood_moon.json`, parent `minecraft:adventure/root`, task frame, no reward, title "Once in a Blood Moon", description "Be in the Overworld when a Blood Moon rises", icon red dye. Lang entries.
 5. **Client: red sky and moon.** `client/bloodmoons/BloodMoonSky`: positional layers added in the existing `ClientLevelMixin.addEnvironmentAttributeLayers` hook, like `SculkSky`: lerp SKY_COLOR, FOG_COLOR, CLOUD_COLOR, SUNRISE_SUNSET_COLOR toward dark reds by the level's `STRENGTH`. Moon: `SkyRendererMixin` — `extractRenderState` TAIL stores the strength for the frame in a `@Unique` field; `@ModifyArg` on the `Vector4f` passed to `DynamicGpuData.writeTransform` inside `renderMoon` multiplies its RGB toward red. Colours are hand-check values.
-6. **Sleeping / spawns.** Nothing changes; no code touches beds or spawning.
+6. **Spores (added on review with Jackson).** A `minecraft:visual/ambient_particles` track on the same timeline appends crimson spores to the Overworld's air from the rise to sunrise, so players indoors or underground can tell. List keyframes can't blend, so the density is a constant-eased staircase every 600 ticks on a sine arch: about 0.004 at moonrise, 0.03 at midnight (a Crimson Forest is 0.025), back to none at sunrise.
+7. **Sleeping / spawns.** Nothing changes; no code touches beds or spawning.
 
 ## Tests (GameTests, `BloodMoonGameTests`)
 

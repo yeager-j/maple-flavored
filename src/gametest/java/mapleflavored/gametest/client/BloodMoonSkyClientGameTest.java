@@ -5,7 +5,8 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 
 /**
- * Screenshots of a Blood Moon's sky and moon next to an ordinary full moon's, for the hand check. Run with
+ * Screenshots of a Blood Moon's sky and moon next to an ordinary full moon's, and of its spores in a cave, for the hand
+ * check. Run with
  * {@code gradlew runClientGameTest}; the shots land in {@code build/run/clientGameTest/screenshots/}.
  */
 public class BloodMoonSkyClientGameTest implements FabricClientGameTest {
@@ -24,6 +25,15 @@ public class BloodMoonSkyClientGameTest implements FabricClientGameTest {
 			shoot(context, world, BLOOD_MOON_MIDNIGHT, "-85", "blood_moon_overhead");
 			shoot(context, world, BLOOD_MOON_MIDNIGHT, "0", "blood_moon_horizon");
 			shoot(context, world, BLOOD_MOON_DUSK, "-10", "blood_moon_dusk");
+
+			// A plain, lit room deep underground, where only the spores show the Blood Moon.
+			world.getServer().runCommand("fill -10 -44 -10 10 -34 10 smooth_quartz");
+			world.getServer().runCommand("fill -9 -43 -9 9 -35 9 air");
+			world.getServer().runCommand("fill -9 -38 -9 9 -38 9 light[level=15] replace air");
+			world.getServer().runCommand("time set " + BLOOD_MOON_MIDNIGHT);
+			world.getServer().runCommand("tp @a 0 -43 0 -90 0");
+			context.waitTicks(200);
+			context.takeScreenshot("blood_moon_underground");
 		}
 	}
 

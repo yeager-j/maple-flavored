@@ -9,7 +9,7 @@
 Spec: the Maple Flavored spec in this folder.
 
 - [x] Fixed schedule on every 4th full moon
-- [x] One chat message in every dimension; red moon and sky on the client; sleeping allowed; no extra spawns
+- [x] One chat message in every dimension; red moon and sky on the client; crimson spores in the Overworld air; sleeping allowed; no extra spawns
 - [x] Advancement: Be in the Overworld when a Blood Moon rises (Adventure)
 - [x] GameTests set the day count and check the message and advancement
-- [ ] Hand check: red sky and moon (`/time set maple_flavored:blood_moon`; `gradlew runClientGameTest` also screenshots it)
+- [ ] Hand check: red sky and moon, and spores underground (`/time set maple_flavored:blood_moon`; `gradlew runClientGameTest` also screenshots it)

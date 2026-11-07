@@ -264,7 +264,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 197. As a player, I want no mob to be Restored within 32 blocks of an online player, so that a Blood Moon never ambushes me.
 198. As a player, I want missed Blood Moons not to stack and far chunks not to load for them, so that the server stays light.
 199. As a player living in a Bastion, I want my intact Bastion base to still get visitors, so that living there stays lively.
-200. As a player, I want a red moon and sky and one chat message in every dimension, so that I know a Blood Moon has risen.
+200. As a player, I want a red moon and sky, red spores drifting in the Overworld air and one chat message in every dimension, so that I know a Blood Moon has risen, even indoors or underground.
 201. As a player, I want to sleep through a Blood Moon and face no extra spawns, so that it is a restock, not a siege.
 
 ### Brewing
@@ -465,7 +465,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - At generation, Restorable structures record each mob spot and the mob it rolled: Bastion Piglins, Piglin Brutes and Hoglins; Ocean Monument Elder Guardians; End City Shulkers; Woodland Mansion Vindicators and Evokers; Stronghold Illagers.
 - Each original mob is tagged with its spot. A spot becomes empty only when its mob is gone for good: killed, converted (such as a Piglin turning into a Zombified Piglin) or despawned. A mob that wanders off or sits in an unloaded chunk still holds its spot. Restored mobs keep the original's persistence.
 - A spot that was empty when a Blood Moon rose fills the first time its chunk is loaded while the spot is clear, no online player is within 32 blocks, and the required block holds (Bastion: blackstone family or basalt beneath; Elder Guardian: in water with prismarine family beneath; Shulker: attached to purpur family or end stone bricks; Mansion: birch planks, cobblestone or smooth stone slab beneath; Stronghold: stone bricks family beneath, meaning stone bricks, cracked, mossy and chiseled stone bricks, their slabs and stairs, and the infested variants of all four). Until then the spot stays pending: it retries each time its chunk loads, and every few seconds while its chunk stays loaded, until it fills. A pending spot doesn't expire at dawn; it stays pending until filled. A mob that dies after a Blood Moon leaves a spot that waits for the next Blood Moon. Each spot holds at most one mob, so pending spots never overfill. Missed Blood Moons don't stack. No chunks load for the event.
-- The night: a red moon and sky on the client, one chat message in every dimension, sleeping allowed, no extra spawns.
+- The night: a red moon and sky on the client, crimson spores drifting around Overworld players wherever they are, from a sprinkle at moonrise to denser than a Crimson Forest at midnight and back to none by sunrise, one chat message in every dimension, sleeping allowed, no extra spawns.
 
 **Potions and brewing.** Potions, splash potions, lingering potions and water bottles stack to 16. Splash and lingering throws by players share a 1-second cooldown. Dispensers are not affected. Brewing stand slots still hold one bottle each. A fermented spider eye turns Strength into Weakness (1:30), Long Strength into Long Weakness (4:00) and Strength II into Weakness, and does nothing to a water bottle.
 
@@ -498,7 +498,7 @@ There is one automated test seam: Fabric's server GameTest framework. Tests run 
 
 The client decides some things, and a headless server can't see them. These are checked by hand in a development client, not automated:
 
-- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced chainmail and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, the Wither Subspace's dim light, and the Blood Moon sky.
+- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced chainmail and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, the Wither Subspace's dim light, and the Blood Moon sky and spores.
 - Player movement and input: Zephyr's double jump and Clutch, Grounded ending a glide, the Armored Elytra's glide and Firework Rocket penalties, Riptide being blocked, and Shakudo's movement speed.
 - Sync: that the client shows the server's Max Hearts, Withered Hearts, Remnants, Subspaces and Blood Moon.
 
