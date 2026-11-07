@@ -1,3 +1,5 @@
+![Maple Flavored logo](../maple_flavored.png)
+
 # Maple Flavored
 
 ## Summary
