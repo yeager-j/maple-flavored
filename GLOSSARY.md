@@ -61,6 +61,10 @@ _Avoid_: Repair item, repair material
 Said of an armor piece given +1 armor toughness by smithing it with chainmail and a Reinforcement template.
 _Avoid_: Plated, chained
 
+**Reinforcement template**:
+The smithing template that Reinforces an armor piece with a chainmail piece. Master Armorers sell it, and 7 diamonds and a block of iron copy one into 2. It is in no loot.
+_Avoid_: Chainmail template, reinforcement upgrade
+
 ### World
 
 **Blood Moon**:

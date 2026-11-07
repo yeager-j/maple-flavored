@@ -47,11 +47,13 @@
 			"mapleflavored.gametest.AlloyCombatGameTests",
 			"mapleflavored.gametest.OrichalcumDropsGameTests",
 			"mapleflavored.gametest.AlloySetGameTests",
-			"mapleflavored.gametest.ArmoredElytraGameTests"
+			"mapleflavored.gametest.ArmoredElytraGameTests",
+			"mapleflavored.gametest.ReinforcementGameTests"
 		],
 		"fabric-client-gametest": [
 			"mapleflavored.gametest.client.PortalTrimClientGameTest",
-			"mapleflavored.gametest.client.ArmoredElytraClientGameTest"
+			"mapleflavored.gametest.client.ArmoredElytraClientGameTest",
+			"mapleflavored.gametest.client.ReinforcementClientGameTest"
 		]
 	},
 	"mixins": [
