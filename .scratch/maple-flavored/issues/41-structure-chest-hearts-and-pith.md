@@ -8,5 +8,5 @@
 
 Spec: the Maple Flavored spec in this folder.
 
-- [ ] The chest table in the spec, including End City (Crystal Heart 15%, Pith 50% for 1 or 2) and ominous vaults (Pith 10%)
-- [ ] GameTests roll each table with a fixed seed and check rates within a tolerance
+- [x] The chest table in the spec, including End City (Crystal Heart 15%, Pith 50% for 1 or 2) and ominous vaults (Pith 10%)
+- [x] GameTests roll each table with a fixed seed and check rates within a tolerance
