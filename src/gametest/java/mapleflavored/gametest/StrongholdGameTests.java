@@ -177,7 +177,18 @@ public class StrongholdGameTests {
 				.filter(guard -> room.getBoundingBox().isInside(guard.blockPosition()))
 				.count();
 
-			helper.assertValueEqual(evokersInRoom, keeperRooms.contains(origin) ? 1L : 0L, "Evokers in the " + room.getType() + " at " + origin);
+			boolean keeperRoom = keeperRooms.contains(origin);
+			boolean library = room.getType() == StructurePieceType.STRONGHOLD_LIBRARY;
+
+			helper.assertValueEqual(evokersInRoom, keeperRoom || library ? 1L : 0L, "Evokers in the " + room.getType() + " at " + origin);
+		}
+
+		for (AbstractIllager evoker : guards.stream().filter(guard -> guard.getType() == EntityTypes.EVOKER).toList()) {
+			boolean inKeeperRoom = start.getPieces().stream()
+				.filter(room -> room.getBoundingBox().isInside(evoker.blockPosition()))
+				.anyMatch(room -> keeperRooms.contains(new BlockPos(room.getBoundingBox().minX(), room.getBoundingBox().minY(), room.getBoundingBox().minZ())));
+
+			helper.assertValueEqual(MobKeepers.keyOf(evoker).isPresent(), inKeeperRoom, "the Evoker at " + evoker.blockPosition() + " is a keeper");
 		}
 		helper.succeed();
 	}
@@ -206,7 +217,7 @@ public class StrongholdGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
-	public void aKeeperLibrarysEvokerKeepsToItsWalkwayOrToTheBackOfAShortLibrary(GameTestHelper helper) {
+	public void aLibrarysEvokerKeepsToItsWalkwayOrToTheBackOfAShortLibrary(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 
 		for (int room = 0; room < LONE_ROOMS; room++) {
@@ -220,10 +231,8 @@ public class StrongholdGameTests {
 			String which = (keeperRoom ? "the keeper " : "the ") + (tall ? "tall library" : "short library") + " facing " + facing + " at " + foot;
 			List<AbstractIllager> evokers = guards.stream().filter(guard -> guard.getType() == EntityTypes.EVOKER).toList();
 
-			helper.assertValueEqual(evokers.size(), keeperRoom ? 1 : 0, "Evokers in " + which);
+			helper.assertValueEqual(evokers.size(), 1, "Evokers in " + which);
 			helper.assertValueEqual(countOf(guards, EntityTypes.VINDICATOR), 1L, "Vindicators in " + which);
-
-			if (!keeperRoom) continue;
 
 			BlockPos evoker = evokers.getFirst().blockPosition();
 
@@ -375,11 +384,6 @@ public class StrongholdGameTests {
 			keepers.stream().map(keeper -> MobKeepers.keyOf(keeper).orElseThrow()).collect(Collectors.toSet()),
 			Set.copyOf(keys),
 			"the keys of the Evokers tagged as keepers"
-		);
-		helper.assertValueEqual(
-			countOf(illagersIn(level, start), EntityTypes.EVOKER),
-			(long) keepers.size(),
-			"Evokers in the Stronghold, every one a keeper"
 		);
 
 		for (Mob keeper : keepers) {
@@ -571,7 +575,8 @@ public class StrongholdGameTests {
 		return buildAlone(level, List.of(piece));
 	}
 
-	// Builds a Stronghold of just the room, as one of its keeper rooms, with a book floating above it.
+	// Builds a Stronghold of just the room, as one of its keeper rooms, with a book floating above it. Only a keeper
+	// room's Evoker is a keeper, which this checks doesn't change where a library's stands.
 	private static List<AbstractIllager> buildAloneAsKeeperRoom(ServerLevel level, StructurePiece room) {
 		BoundingBox box = room.getBoundingBox();
 		BlockPos origin = new BlockPos(box.minX(), box.minY(), box.minZ());

@@ -35,10 +35,10 @@ import net.minecraft.world.phys.Vec3;
  * space, inside its piece's walls, so never in a doorway. A library's Evoker keeps to its upper walkway, or to the back
  * of a library without one, and a prison hall's guard to the hall, outside the cells.
  *
- * <p>Evokers keep the Stronghold's book, each keyed by the origin of the room that placed it. One stands in the portal
- * room, and one in each of two big rooms, libraries, room crossings or prison halls, chosen when the Stronghold is planned
- * to draw the player out to its edges: each is the big room the most rooms away from the portal room and the keeper rooms
- * already chosen. No other room places an Evoker.
+ * <p>The Evokers of three keeper rooms keep the Stronghold's book, each keyed by the origin of its room: the portal room,
+ * and two big rooms, libraries, room crossings or prison halls, chosen when the Stronghold is planned to draw the player
+ * out to its edges. Each is the big room the most rooms away from the portal room and the keeper rooms already chosen.
+ * Every library has an Evoker, a keeper or not; a room crossing or prison hall has one only as a keeper room.
  *
  * <p>A piece's garrison and where each guard stands are drawn from the world seed and the piece's box alone, so the
  * piece places the same guards whichever of its chunks is built first. Each guard's first choice of column is floor the
@@ -90,12 +90,14 @@ public final class StrongholdIllagers {
 		Map.entry(StructurePieceType.STRONGHOLD_STRAIGHT_STAIRS_DOWN, CORRIDOR)
 	);
 
-	// The big rooms that can be keeper rooms, and where in each a keeper Evoker stands.
+	// The big rooms that can be keeper rooms, and where in each its Evoker stands.
 	private static final Map<StructurePieceType, Function<StructurePiece, Area>> KEEPER_EVOKER_AREAS = Map.of(
 		StructurePieceType.STRONGHOLD_LIBRARY, StrongholdIllagers::libraryEvokerArea,
 		StructurePieceType.STRONGHOLD_ROOM_CROSSING, room -> ANYWHERE,
 		StructurePieceType.STRONGHOLD_PRISON_HALL, room -> PRISON_HALL
 	);
+	// The big rooms with an Evoker whether they're keeper rooms or not.
+	private static final Set<StructurePieceType> ALWAYS_EVOKER = Set.of(StructurePieceType.STRONGHOLD_LIBRARY);
 	private static final int FAR_KEEPERS = 2;
 
 	private StrongholdIllagers() {
@@ -140,7 +142,7 @@ public final class StrongholdIllagers {
 	}
 
 	/**
-	 * Places the guards of a Stronghold piece that stand in the chunk being built, tagging a keeper Evoker. Call inside
+	 * Places the guards of a Stronghold piece that stand in the chunk being built, tagging a keeper room's Evoker. Call inside
 	 * {@code MobKeepers.build}, after the piece is built in each chunk; it does nothing for any other piece, including the
 	 * Stronghold's starting staircase. A keeper Evoker with no room has its key unlocked.
 	 *
@@ -162,7 +164,7 @@ public final class StrongholdIllagers {
 				.flatMap(column -> standingSpot(level, piece.getBoundingBox(), column, lowestFeet).stream())
 				.filter(open -> !taken.contains(open))
 				.findFirst();
-			boolean keeper = guard.type() == EntityTypes.EVOKER;
+			boolean keeper = keeperRoom && guard.type() == EntityTypes.EVOKER;
 
 			if (spot.isEmpty()) {
 				if (keeper) MobKeepers.forgiveIfPlacing();
@@ -178,15 +180,16 @@ public final class StrongholdIllagers {
 	/**
 	 * The guards the piece places, each with the columns it may stand in, best first. None for a piece without a garrison.
 	 *
-	 * @param keeperRoom whether it's one of the Stronghold's far keeper rooms, which adds an Evoker first
+	 * @param keeperRoom whether it's one of the Stronghold's keeper rooms, which gives a big room its Evoker
 	 */
 	static List<PlannedGuard> plan(StructurePiece piece, boolean keeperRoom, long seed) {
 		Garrison base = GARRISONS.get(piece.getType());
 
 		if (base == null) return List.of();
 
-		Function<StructurePiece, Area> keeperArea = KEEPER_EVOKER_AREAS.get(piece.getType());
-		Garrison garrison = keeperRoom && keeperArea != null ? base.withFirst(new Post(Guard.EVOKER, keeperArea.apply(piece))) : base;
+		Function<StructurePiece, Area> evokerArea = KEEPER_EVOKER_AREAS.get(piece.getType());
+		boolean addsEvoker = evokerArea != null && (keeperRoom || ALWAYS_EVOKER.contains(piece.getType()));
+		Garrison garrison = addsEvoker ? base.withFirst(new Post(Guard.EVOKER, evokerArea.apply(piece))) : base;
 		BoundingBox box = piece.getBoundingBox();
 		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
 
