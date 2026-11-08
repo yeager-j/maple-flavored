@@ -31,12 +31,16 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Common mobs take the spec's table whenever they first enter the world, by difficulty, and take their new type's row
- * when they convert. Creepers
- * never spawn naturally at Y 63 or above in the Overworld, while spawners are unaffected.
+ * Common mobs take the spec's table whenever they first enter the world, by difficulty and height, and take their new
+ * type's row when they convert. In the Overworld, mobs that spawn below Y 63 keep vanilla health, except cave spiders
+ * and silverfish. Creepers never spawn naturally at Y 63 or above in the Overworld, while spawners are unaffected.
+ *
+ * <p>Tests run near Y 4, so a mob checked against the surface column spawns at Y 63 above its test and then moves down
+ * into it, where it must keep its stats.
  */
 public class CommonMobGameTests {
 	private static final BlockPos MOB_POS = new BlockPos(2, 2, 2);
+	private static final int LOWEST_SURFACE_Y = 63;
 	private static final boolean ADULT = false;
 	private static final boolean BABY = true;
 	private static final List<EntityType<? extends Zombie>> BABY_ZOMBIES = List.of(
@@ -152,8 +156,8 @@ public class CommonMobGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
-	public void aBabyZombieThatDrownsBecomesAFrailBabyDrowned(GameTestHelper helper) {
-		Zombie zombie = drowning(helper, spawn(helper, EntityTypes.ZOMBIE, BABY));
+	public void aSurfaceBabyZombieThatDrownsUndergroundBecomesABabyDrownedWithVanillaHealth(GameTestHelper helper) {
+		Zombie zombie = drowning(helper, spawnOnSurface(helper, EntityTypes.ZOMBIE, BABY));
 
 		helper.startSequence()
 			.thenWaitUntil(() -> helper.assertTrue(zombie.isUnderWaterConverting(), "the zombie is converting"))
@@ -163,24 +167,25 @@ public class CommonMobGameTests {
 				Mob drowned = helper.findOneEntity(EntityTypes.DROWNED);
 
 				helper.assertTrue(drowned.isBaby(), "the drowned is a baby");
-				assertStats(helper, drowned, Map.of(Attributes.MAX_HEALTH, 4.0));
+				assertVanillaHealth(helper, drowned);
 			})
 			.thenSucceed();
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
-	public void anAdultHuskThatDrownsBecomesAFastFrailZombie(GameTestHelper helper) {
-		Zombie husk = drowning(helper, spawn(helper, EntityTypes.HUSK, ADULT));
+	public void anAdultHuskThatDrownsUndergroundBecomesAFastZombieWithVanillaHealth(GameTestHelper helper) {
+		Zombie husk = drowning(helper, spawnOnSurface(helper, EntityTypes.HUSK, ADULT));
 
 		helper.startSequence()
 			.thenWaitUntil(() -> helper.assertTrue(husk.isUnderWaterConverting(), "the husk is converting"))
 			.thenExecute(() -> husk.setConversionTime(0))
 			.thenWaitUntil(() -> helper.assertEntityPresent(EntityTypes.ZOMBIE))
-			.thenExecute(() -> assertStats(
-				helper,
-				helper.findOneEntity(EntityTypes.ZOMBIE),
-				Map.of(Attributes.MAX_HEALTH, 10.0, Attributes.MOVEMENT_SPEED, 0.34, Attributes.STEP_HEIGHT, 1.0)
-			))
+			.thenExecute(() -> {
+				Mob zombie = helper.findOneEntity(EntityTypes.ZOMBIE);
+
+				assertStats(helper, zombie, Map.of(Attributes.MOVEMENT_SPEED, 0.34, Attributes.STEP_HEIGHT, 1.0));
+				assertVanillaHealth(helper, zombie);
+			})
 			.thenSucceed();
 	}
 
@@ -194,9 +199,9 @@ public class CommonMobGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
-	public void aBabyFromASpawnEggUsedOnAZombieIsFrail(GameTestHelper helper) {
+	public void aBabyFromASpawnEggUsedOnASurfaceZombieIsFrail(GameTestHelper helper) {
 		ServerPlayer player = MockPlayers.survivalPlayer(helper);
-		Zombie parent = spawn(helper, EntityTypes.ZOMBIE, ADULT);
+		Zombie parent = spawnAt(helper.getLevel(), helper.absolutePos(MOB_POS).atY(LOWEST_SURFACE_Y), EntityTypes.ZOMBIE, ADULT);
 
 		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.ZOMBIE_SPAWN_EGG));
 		parent.interact(player, InteractionHand.MAIN_HAND, parent.position());
@@ -205,6 +210,84 @@ public class CommonMobGameTests {
 
 		helper.assertValueEqual(babies.size(), 1, "babies from the spawn egg");
 		assertStats(helper, babies.getFirst(), Map.of(Attributes.MAX_HEALTH, 4.0));
+		// They're above the test, out of reach of its cleanup.
+		babies.forEach(Entity::discard);
+		parent.discard();
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void normalMobsBelowY63KeepVanillaHealthButTakeTheirOtherStats(GameTestHelper helper) {
+		Mob zombie = spawnBelowSurface(helper, EntityTypes.ZOMBIE, ADULT);
+
+		assertStats(helper, zombie, Map.of(Attributes.MOVEMENT_SPEED, 0.34, Attributes.STEP_HEIGHT, 1.0));
+		assertVanillaHealth(helper, zombie);
+
+		for (EntityType<? extends Zombie> type : BABY_ZOMBIES) {
+			assertVanillaHealth(helper, spawnBelowSurface(helper, type, BABY));
+		}
+
+		for (EntityType<? extends Mob> type : SKELETONS) {
+			assertVanillaHealth(helper, spawnBelowSurface(helper, type, ADULT));
+		}
+
+		assertVanillaHealth(helper, spawnBelowSurface(helper, EntityTypes.CREEPER, ADULT));
+
+		Mob husk = spawnBelowSurface(helper, EntityTypes.HUSK, ADULT);
+
+		assertStats(
+			helper,
+			husk,
+			Map.of(
+				Attributes.MOVEMENT_SPEED, 0.25,
+				Attributes.ATTACK_DAMAGE, 6.0,
+				Attributes.ARMOR, 12.0,
+				Attributes.FOLLOW_RANGE, 50.0,
+				Attributes.KNOCKBACK_RESISTANCE, 0.9
+			)
+		);
+		assertVanillaHealth(helper, husk);
+		assertStats(
+			helper,
+			spawnBelowSurface(helper, EntityTypes.SPIDER, ADULT),
+			Map.of(Attributes.JUMP_STRENGTH, 0.85, Attributes.FALL_DAMAGE_MULTIPLIER, 0.0)
+		);
+		assertStats(
+			helper,
+			spawnBelowSurface(helper, EntityTypes.CAVE_SPIDER, ADULT),
+			Map.of(Attributes.MAX_HEALTH, 4.0, Attributes.MOVEMENT_SPEED, 0.40)
+		);
+		assertStats(helper, spawnBelowSurface(helper, EntityTypes.SILVERFISH, ADULT), Map.of(Attributes.MAX_HEALTH, 2.0));
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:hard")
+	public void hardZombiesBelowY63KeepVanillaHealthButHitAndJumpHarder(GameTestHelper helper) {
+		Mob zombie = spawnBelowSurface(helper, EntityTypes.ZOMBIE, ADULT);
+
+		assertStats(
+			helper,
+			zombie,
+			Map.of(
+				Attributes.MOVEMENT_SPEED, 0.38,
+				Attributes.STEP_HEIGHT, 1.0,
+				Attributes.ATTACK_DAMAGE, 5.0,
+				Attributes.JUMP_STRENGTH, 0.6
+			)
+		);
+		assertVanillaHealth(helper, zombie);
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void netherSkeletonsAreFrailAtAnyHeight(GameTestHelper helper) {
+		ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+		BlockPos pos = helper.absolutePos(MOB_POS);
+		Mob skeleton = spawnAt(nether, pos, EntityTypes.SKELETON, ADULT);
+
+		helper.assertTrue(pos.getY() < LOWEST_SURFACE_Y, "the Nether skeleton spawns below Y 63");
+		assertStats(helper, skeleton, Map.of(Attributes.MAX_HEALTH, 10.0));
+		skeleton.discard();
 		helper.succeed();
 	}
 
@@ -255,7 +338,7 @@ public class CommonMobGameTests {
 	// Babies get only their health; the adult rows' other stats must not leak onto them.
 	private static void assertBabyZombieHealth(GameTestHelper helper, double health) {
 		for (EntityType<? extends Zombie> type : BABY_ZOMBIES) {
-			Mob baby = spawn(helper, type, BABY);
+			Mob baby = spawnOnSurface(helper, type, BABY);
 			AttributeSupplier defaults = DefaultAttributes.getSupplier(type);
 
 			helper.assertTrue(baby.isBaby(), type.toShortString() + " spawned as a baby");
@@ -280,7 +363,7 @@ public class CommonMobGameTests {
 	}
 
 	private static void assertVanilla(GameTestHelper helper, EntityType<? extends Mob> type, boolean baby, List<Holder<Attribute>> attributes) {
-		Mob mob = spawn(helper, type, baby);
+		Mob mob = spawnOnSurface(helper, type, baby);
 		AttributeSupplier defaults = DefaultAttributes.getSupplier(type);
 
 		for (Holder<Attribute> attribute : attributes) {
@@ -288,8 +371,17 @@ public class CommonMobGameTests {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	private static void assertVanillaHealth(GameTestHelper helper, Mob mob) {
+		EntityType<? extends Mob> type = (EntityType<? extends Mob>) mob.getType();
+		double vanilla = DefaultAttributes.getSupplier(type).getBaseValue(Attributes.MAX_HEALTH);
+
+		helper.assertValueEqual(mob.getAttributeBaseValue(Attributes.MAX_HEALTH), vanilla, describe(mob, Attributes.MAX_HEALTH));
+		helper.assertValueEqual(mob.getHealth(), mob.getMaxHealth(), describe(mob, Attributes.MAX_HEALTH) + " (spawned at full health)");
+	}
+
 	private static void assertStats(GameTestHelper helper, EntityType<? extends Mob> type, boolean baby, Map<Holder<Attribute>, Double> expected) {
-		assertStats(helper, spawn(helper, type, baby), expected);
+		assertStats(helper, spawnOnSurface(helper, type, baby), expected);
 	}
 
 	private static void assertStats(GameTestHelper helper, Mob mob, Map<Holder<Attribute>, Double> expected) {
@@ -306,10 +398,26 @@ public class CommonMobGameTests {
 		return age + mob.getType().toShortString() + " " + attribute.getRegisteredName();
 	}
 
-	// Spawned as natural spawning does. A zombie's group data decides whether it's a baby, as vanilla's own spawns do.
-	private static <T extends Mob> T spawn(GameTestHelper helper, EntityType<T> type, boolean baby) {
-		ServerLevel level = helper.getLevel();
+	private static <T extends Mob> T spawnOnSurface(GameTestHelper helper, EntityType<T> type, boolean baby) {
+		return spawnAtHeightThenMoveIn(helper, type, baby, LOWEST_SURFACE_Y);
+	}
+
+	private static <T extends Mob> T spawnBelowSurface(GameTestHelper helper, EntityType<T> type, boolean baby) {
+		return spawnAtHeightThenMoveIn(helper, type, baby, LOWEST_SURFACE_Y - 1);
+	}
+
+	// Moved into the test so its cleanup removes the mob.
+	private static <T extends Mob> T spawnAtHeightThenMoveIn(GameTestHelper helper, EntityType<T> type, boolean baby, int y) {
 		BlockPos pos = helper.absolutePos(MOB_POS);
+		T mob = spawnAt(helper.getLevel(), pos.atY(y), type, baby);
+
+		mob.snapTo(Vec3.atBottomCenterOf(pos));
+
+		return mob;
+	}
+
+	// Spawned as natural spawning does. A zombie's group data decides whether it's a baby, as vanilla's own spawns do.
+	private static <T extends Mob> T spawnAt(ServerLevel level, BlockPos pos, EntityType<T> type, boolean baby) {
 		T mob = type.create(level, EntitySpawnReason.NATURAL);
 		SpawnGroupData groupData = mob instanceof Zombie ? new Zombie.ZombieGroupData(baby, false) : null;
 

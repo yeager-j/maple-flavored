@@ -1,5 +1,6 @@
 package mapleflavored.mobs;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,18 +12,23 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.Level;
 
 /**
  * Common mobs are faster and more fragile: each listed type gets attribute base values by difficulty when it spawns,
- * converts or generates with a structure. Unlisted mobs, adult zombie villagers and Peaceful stay vanilla.
+ * converts or generates with a structure. Unlisted mobs, adult zombie villagers and Peaceful stay vanilla. In the
+ * Overworld, a mob that spawns below Y 63 keeps vanilla health unless its row's health applies at any height, so caving
+ * stays harder than the surface.
  */
 public final class CommonMobs {
 	private static final Map<Holder<Attribute>, Double> VANILLA = Map.of();
+	private static final int LOWEST_SURFACE_Y = 63;
 
 	private static final List<Row> TABLE = List.of(
 		new Row(
 			Set.of(EntityTypes.ZOMBIE),
 			Age.ADULT,
+			HealthReach.SURFACE,
 			VANILLA,
 			Map.of(Attributes.MAX_HEALTH, 10.0, Attributes.MOVEMENT_SPEED, 0.34, Attributes.STEP_HEIGHT, 1.0),
 			Map.of(
@@ -36,6 +42,7 @@ public final class CommonMobs {
 		new Row(
 			Set.of(EntityTypes.ZOMBIE, EntityTypes.HUSK, EntityTypes.DROWNED, EntityTypes.ZOMBIE_VILLAGER),
 			Age.BABY,
+			HealthReach.SURFACE,
 			Map.of(Attributes.MAX_HEALTH, 4.0),
 			Map.of(Attributes.MAX_HEALTH, 4.0),
 			Map.of(Attributes.MAX_HEALTH, 7.0)
@@ -43,6 +50,7 @@ public final class CommonMobs {
 		new Row(
 			Set.of(EntityTypes.SKELETON, EntityTypes.STRAY, EntityTypes.BOGGED, EntityTypes.PARCHED),
 			Age.ANY,
+			HealthReach.SURFACE,
 			Map.of(Attributes.MAX_HEALTH, 10.0),
 			Map.of(Attributes.MAX_HEALTH, 10.0),
 			Map.of(Attributes.MAX_HEALTH, 12.0)
@@ -50,6 +58,7 @@ public final class CommonMobs {
 		new Row(
 			Set.of(EntityTypes.CREEPER),
 			Age.ANY,
+			HealthReach.SURFACE,
 			Map.of(Attributes.MAX_HEALTH, 14.0),
 			Map.of(Attributes.MAX_HEALTH, 16.0),
 			Map.of(Attributes.MAX_HEALTH, 18.0)
@@ -57,6 +66,7 @@ public final class CommonMobs {
 		new Row(
 			Set.of(EntityTypes.CAVE_SPIDER),
 			Age.ANY,
+			HealthReach.ANY_HEIGHT,
 			Map.of(Attributes.MAX_HEALTH, 2.0, Attributes.MOVEMENT_SPEED, 0.35),
 			Map.of(Attributes.MAX_HEALTH, 4.0, Attributes.MOVEMENT_SPEED, 0.40),
 			Map.of(Attributes.MAX_HEALTH, 6.0, Attributes.MOVEMENT_SPEED, 0.42)
@@ -64,6 +74,7 @@ public final class CommonMobs {
 		new Row(
 			Set.of(EntityTypes.SILVERFISH),
 			Age.ANY,
+			HealthReach.ANY_HEIGHT,
 			Map.of(Attributes.MAX_HEALTH, 2.0),
 			Map.of(Attributes.MAX_HEALTH, 2.0),
 			Map.of(Attributes.MAX_HEALTH, 4.0)
@@ -71,6 +82,7 @@ public final class CommonMobs {
 		new Row(
 			Set.of(EntityTypes.SPIDER),
 			Age.ANY,
+			HealthReach.SURFACE,
 			VANILLA,
 			Map.of(Attributes.JUMP_STRENGTH, 0.85, Attributes.FALL_DAMAGE_MULTIPLIER, 0.0),
 			Map.of(Attributes.JUMP_STRENGTH, 0.85, Attributes.FALL_DAMAGE_MULTIPLIER, 0.0)
@@ -78,6 +90,7 @@ public final class CommonMobs {
 		new Row(
 			Set.of(EntityTypes.HUSK),
 			Age.ADULT,
+			HealthReach.SURFACE,
 			VANILLA,
 			Map.of(
 				Attributes.MAX_HEALTH, 30.0,
@@ -103,7 +116,8 @@ public final class CommonMobs {
 
 	/**
 	 * Gives {@code entity} and every mob riding it their spawn stats. Call as a new entity enters the world, once its
-	 * type and age are final. Repeating it changes nothing.
+	 * type, age and spawn position are final. Repeating it at the same height changes nothing; calling it after the mob
+	 * has moved may pick different health.
 	 */
 	public static void applySpawnStats(Entity entity) {
 		entity.getSelfAndPassengers()
@@ -112,9 +126,11 @@ public final class CommonMobs {
 			.forEach(CommonMobs::applyRow);
 	}
 
-	// Sets the mob's base values to its row for the level's current difficulty, with full health if the row sets max health.
+	// Sets the mob's base values to its row for the level's current difficulty and its height, with full health if the
+	// row sets max health there.
 	private static void applyRow(Mob mob) {
-		Map<Holder<Attribute>, Double> stats = statsFor(mob.getType(), mob.isBaby(), mob.level().getDifficulty());
+		boolean underground = mob.level().dimension() == Level.OVERWORLD && mob.getBlockY() < LOWEST_SURFACE_Y;
+		Map<Holder<Attribute>, Double> stats = statsFor(mob.getType(), mob.isBaby(), mob.level().getDifficulty(), underground);
 
 		stats.forEach((attribute, value) -> mob.getAttribute(attribute).setBaseValue(value));
 
@@ -123,11 +139,11 @@ public final class CommonMobs {
 		}
 	}
 
-	private static Map<Holder<Attribute>, Double> statsFor(EntityType<?> type, boolean baby, Difficulty difficulty) {
+	private static Map<Holder<Attribute>, Double> statsFor(EntityType<?> type, boolean baby, Difficulty difficulty, boolean underground) {
 		return TABLE.stream()
 			.filter(row -> row.matches(type, baby))
 			.findFirst()
-			.map(row -> row.statsOn(difficulty))
+			.map(row -> row.statsFor(difficulty, underground))
 			.orElse(VANILLA);
 	}
 
@@ -145,9 +161,16 @@ public final class CommonMobs {
 		}
 	}
 
+	// Where a row's max health applies. Its other stats apply at any height.
+	private enum HealthReach {
+		SURFACE,
+		ANY_HEIGHT
+	}
+
 	private record Row(
 		Set<EntityType<?>> types,
 		Age age,
+		HealthReach healthReach,
 		Map<Holder<Attribute>, Double> easy,
 		Map<Holder<Attribute>, Double> normal,
 		Map<Holder<Attribute>, Double> hard
@@ -156,7 +179,19 @@ public final class CommonMobs {
 			return types.contains(type) && age.includes(baby);
 		}
 
-		Map<Holder<Attribute>, Double> statsOn(Difficulty difficulty) {
+		Map<Holder<Attribute>, Double> statsFor(Difficulty difficulty, boolean underground) {
+			Map<Holder<Attribute>, Double> stats = statsOn(difficulty);
+
+			if (!underground || healthReach == HealthReach.ANY_HEIGHT) return stats;
+
+			Map<Holder<Attribute>, Double> withoutHealth = new HashMap<>(stats);
+
+			withoutHealth.remove(Attributes.MAX_HEALTH);
+
+			return withoutHealth;
+		}
+
+		private Map<Holder<Attribute>, Double> statsOn(Difficulty difficulty) {
 			return switch (difficulty) {
 				case PEACEFUL -> VANILLA;
 				case EASY -> easy;
