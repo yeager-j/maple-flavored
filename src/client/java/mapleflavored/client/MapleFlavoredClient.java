@@ -3,6 +3,9 @@ package mapleflavored.client;
 import mapleflavored.alloys.Alloys;
 import mapleflavored.client.alloys.AlloyFurnaceScreen;
 import mapleflavored.client.alloys.PortalTrim;
+import mapleflavored.client.deepvariants.DeepCreeperRenderer;
+import mapleflavored.client.deepvariants.DeepSkeletonRenderer;
+import mapleflavored.client.deepvariants.DeepSpiderRenderer;
 import mapleflavored.client.deepvariants.DeepZombieRenderer;
 import mapleflavored.client.enchanting.AppleTooltip;
 import mapleflavored.client.enchanting.EnchantingTableScreen;
@@ -34,5 +37,8 @@ public class MapleFlavoredClient implements ClientModInitializer {
 		WitherSubspaceLight.register();
 		PortalTrim.register();
 		DeepZombieRenderer.register();
+		DeepSkeletonRenderer.register();
+		DeepCreeperRenderer.register();
+		DeepSpiderRenderer.register();
 	}
 }

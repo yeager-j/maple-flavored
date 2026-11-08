@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
 		"EntityAccessor",
+		"CreeperTestAccessor",
 		"ExperienceOrbAccessor",
 		"GameTestHelperAccessor",
 		"GameTestServerMixin",

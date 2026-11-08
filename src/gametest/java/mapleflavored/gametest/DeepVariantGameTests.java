@@ -7,6 +7,23 @@ import mapleflavored.deepvariants.DeepVariants;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.gametest.mixin.LivingEntityAccessor;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import mapleflavored.gametest.mixin.CreeperTestAccessor;
+import mapleflavored.mixin.AbstractArrowAccessor;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.spider.Spider;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.storage.TagValueOutput;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -71,18 +88,35 @@ public class DeepVariantGameTests {
 	private static final int MAX_REINFORCEMENT_HITS = 40;
 	private static final Identifier REINFORCEMENT_CALLEE_CHARGE = Identifier.withDefaultNamespace("reinforcement_callee_charge");
 	private static final int ROOM_HEIGHT = 4;
-	private static final int WANTED_ZOMBIES = 12;
+	private static final int WANTED_PER_KIND = 4;
+	private static final List<EntityType<? extends Mob>> BASES = List.of(EntityTypes.ZOMBIE, EntityTypes.SKELETON, EntityTypes.CREEPER, EntityTypes.SPIDER);
+	private static final List<EntityType<? extends Mob>> DEEP_TYPES = List.of(
+		DeepVariants.DEEP_ZOMBIE,
+		DeepVariants.DEEP_SKELETON,
+		DeepVariants.DEEP_CREEPER,
+		DeepVariants.DEEP_SPIDER
+	);
 	private static final int MAX_SPAWN_ATTEMPTS = 5_000;
 	private static final int AGE_ROLLS = 4_000;
 	private static final double VANILLA_BABY_ODDS = 0.05;
 	private static final double BABY_ODDS_TOLERANCE = 0.02;
 	private static final int SHIELD_COOLDOWN_TICKS = 100;
-	private static final float SMITE_ONE_BONUS = 2.5F;
-	private static final int ZOMBIE_XP = 5;
+	private static final float LEVEL_ONE_DAMAGE_BONUS = 2.5F;
+	private static final int MONSTER_XP = 5;
+	private static final int XP_ROLLS = 50;
+	private static final int BLINDNESS_TICKS = 60;
+	private static final int MAX_JOCKEY_ATTEMPTS = 3_000;
+	private static final BlockPos ARROW_TARGET_POS = new BlockPos(2, 2, 6);
+	private static final float ARROW_POWER = 1.0F;
+	// The spread of the triangle in AbstractArrow.setBaseDamageFromMob, plus rounding room.
+	private static final double ARROW_DAMAGE_SPREAD = 0.57425 + 1.0E-6;
+	private static final BlockPos CREEPER_CRATER = new BlockPos(55_032, 10, -53_992);
+	private static final BlockPos DEEP_CREEPER_CRATER = new BlockPos(55_288, 10, -53_992);
+	private static final int CRATER_HALF_WIDTH = 6;
 	private static final int LOOT_ROLLS = 200;
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
-	public void naturalAdultZombiesBelowY0AreDeepZombiesButBabiesStayZombies(GameTestHelper helper) {
+	public void naturalSpawnsBelowY0AreDeepVariantsButBabyZombiesStayZombies(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 
 		prepareRoom(helper, level, DEEP_ROOM);
@@ -90,16 +124,16 @@ public class DeepVariantGameTests {
 		helper.startSequence()
 			.thenWaitUntil(() -> helper.assertTrue(isPitchDark(level, DEEP_ROOM), "the room below Y 0 is dark"))
 			.thenExecute(() -> {
-				List<Zombie> zombies = spawnZombiesNaturally(level, DEEP_ROOM);
-				long deepZombies = zombies.stream().filter(zombie -> zombie.getType() == DeepVariants.DEEP_ZOMBIE).count();
+				List<Mob> mobs = spawnMonstersNaturally(helper, level, DEEP_ROOM);
 
-				helper.assertTrue(zombies.size() >= WANTED_ZOMBIES, "natural spawning made " + zombies.size() + " zombies");
-				helper.assertTrue(deepZombies > 0, "natural spawning made a Deep Zombie below Y 0");
+				for (EntityType<? extends Mob> base : BASES) {
+					helper.assertTrue(mobs.stream().anyMatch(mob -> DeepVariants.baseOf(mob.getType()).orElse(null) == base), "natural spawning made a Deep " + base.toShortString() + " below Y 0");
+				}
 
-				for (Zombie zombie : zombies) {
-					boolean deep = zombie.getType() == DeepVariants.DEEP_ZOMBIE;
+				for (Mob mob : mobs) {
+					boolean deep = DeepVariants.baseOf(mob.getType()).isPresent();
 
-					helper.assertTrue(deep != zombie.isBaby(), "a natural " + describe(zombie) + " spawned below Y 0");
+					helper.assertTrue(deep != mob.isBaby(), "a natural " + describe(mob) + " spawned below Y 0");
 				}
 			})
 			.thenExecute(() -> unforceRoom(level, DEEP_ROOM))
@@ -107,7 +141,7 @@ public class DeepVariantGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
-	public void naturalZombiesAtOrAboveY0StayZombies(GameTestHelper helper) {
+	public void naturalSpawnsAtOrAboveY0StayVanilla(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 
 		prepareRoom(helper, level, SHALLOW_ROOM);
@@ -115,13 +149,12 @@ public class DeepVariantGameTests {
 		helper.startSequence()
 			.thenWaitUntil(() -> helper.assertTrue(isPitchDark(level, SHALLOW_ROOM), "the room above Y 0 is dark"))
 			.thenExecute(() -> {
-				List<Zombie> zombies = spawnZombiesNaturally(level, SHALLOW_ROOM);
+				List<Mob> mobs = spawnMonstersNaturally(helper, level, SHALLOW_ROOM);
 
-				helper.assertTrue(zombies.size() >= WANTED_ZOMBIES, "natural spawning made " + zombies.size() + " zombies");
-				helper.assertTrue(zombies.stream().anyMatch(zombie -> !zombie.isBaby()), "an adult zombie spawned above Y 0");
+				helper.assertTrue(mobs.stream().anyMatch(mob -> mob.getType() == EntityTypes.ZOMBIE && !mob.isBaby()), "an adult zombie spawned above Y 0");
 
-				for (Zombie zombie : zombies) {
-					helper.assertTrue(zombie.getType() != DeepVariants.DEEP_ZOMBIE, "a natural Deep Zombie spawned above Y 0");
+				for (Mob mob : mobs) {
+					helper.assertTrue(DeepVariants.baseOf(mob.getType()).isEmpty(), "a natural " + describe(mob) + " spawned above Y 0");
 				}
 			})
 			.thenExecute(() -> unforceRoom(level, SHALLOW_ROOM))
@@ -129,7 +162,7 @@ public class DeepVariantGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
-	public void naturalSpawningSwapsOnlyAdultZombiesBelowY0InTheOverworld(GameTestHelper helper) {
+	public void naturalSpawningSwapsOnlyAdultBaseMobsBelowY0InTheOverworld(GameTestHelper helper) {
 		ServerLevel overworld = helper.getLevel();
 		ServerLevel nether = overworld.getServer().getLevel(Level.NETHER);
 		BlockPos belowZero = new BlockPos(0, -1, 0);
@@ -140,7 +173,18 @@ public class DeepVariantGameTests {
 		assertNaturalSpawn(helper, DeepVariants.naturalSpawn(EntityTypes.ZOMBIE, overworld, belowZero, baby), EntityTypes.ZOMBIE, baby, "a baby at Y -1");
 		assertNaturalSpawn(helper, DeepVariants.naturalSpawn(EntityTypes.ZOMBIE, overworld, BlockPos.ZERO, adult), EntityTypes.ZOMBIE, adult, "an adult at Y 0");
 		assertNaturalSpawn(helper, DeepVariants.naturalSpawn(EntityTypes.ZOMBIE, nether, belowZero, adult), EntityTypes.ZOMBIE, adult, "an adult in the Nether");
-		assertNaturalSpawn(helper, DeepVariants.naturalSpawn(EntityTypes.SKELETON, overworld, belowZero, null), EntityTypes.SKELETON, null, "a skeleton at Y -1");
+
+		for (EntityType<? extends Mob> base : List.of(EntityTypes.SKELETON, EntityTypes.CREEPER, EntityTypes.SPIDER)) {
+			EntityType<?> deep = deepOf(base);
+			Spider.SpiderEffectsGroupData groupData = new Spider.SpiderEffectsGroupData();
+
+			assertNaturalSpawn(helper, DeepVariants.naturalSpawn(base, overworld, belowZero, groupData), deep, groupData, "a " + base.toShortString() + " at Y -1");
+			assertNaturalSpawn(helper, DeepVariants.naturalSpawn(base, overworld, belowZero, null), deep, null, "a new " + base.toShortString() + " group at Y -1");
+			assertNaturalSpawn(helper, DeepVariants.naturalSpawn(base, overworld, BlockPos.ZERO, null), base, null, "a " + base.toShortString() + " at Y 0");
+			assertNaturalSpawn(helper, DeepVariants.naturalSpawn(base, nether, belowZero, null), base, null, "a " + base.toShortString() + " in the Nether");
+		}
+
+		assertNaturalSpawn(helper, DeepVariants.naturalSpawn(EntityTypes.CAVE_SPIDER, overworld, belowZero, null), EntityTypes.CAVE_SPIDER, null, "a cave spider at Y -1");
 
 		int babies = 0;
 
@@ -211,7 +255,7 @@ public class DeepVariantGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:deep_variant_rules")
+	@GameTest(environment = "maple_flavored_gametest:deep_zombie_rule_change")
 	public void theDeepVariantRulesSetHealthAndDamageForLaterSpawnsOnly(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Zombie first = spawnDeepZombie(helper);
@@ -258,45 +302,218 @@ public class DeepVariantGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
-	public void aDeepZombieIsInEveryZombieTagAndSmiteHitsItHarder(GameTestHelper helper) {
-		ServerLevel level = helper.getLevel();
-		Mob deepZombie = helper.spawnWithNoFreeWill(DeepVariants.DEEP_ZOMBIE, MOB_POS);
-		ItemStack smiteSword = new ItemStack(Items.IRON_SWORD);
-		DamageSource hit = level.damageSources().generic();
+	public void eachDeepVariantIsInEveryTagItsBaseMobIsIn(GameTestHelper helper) {
+		Registry<EntityType<?>> types = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENTITY_TYPE);
 
-		level.registryAccess()
-			.lookupOrThrow(Registries.ENTITY_TYPE)
-			.getTags()
-			.filter(tag -> tag.contains(EntityTypes.ZOMBIE.builtInRegistryHolder()))
-			.forEach(tag -> helper.assertTrue(tag.contains(DeepVariants.DEEP_ZOMBIE.builtInRegistryHolder()), "the Deep Zombie is in " + tag.key().location()));
+		for (EntityType<? extends Mob> deep : DEEP_TYPES) {
+			EntityType<?> base = DeepVariants.baseOf(deep).orElseThrow();
 
-		smiteSword.enchant(level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SMITE), 1);
+			types.getTags()
+				.filter(tag -> tag.contains(base.builtInRegistryHolder()))
+				.forEach(tag -> helper.assertTrue(tag.contains(deep.builtInRegistryHolder()), deep.toShortString() + " is in " + tag.key().location()));
+		}
 
-		float bonus = EnchantmentHelper.modifyDamage(level, smiteSword, deepZombie, hit, 0.0F);
-
-		helper.assertValueEqual(bonus, SMITE_ONE_BONUS, "Smite I's bonus against a Deep Zombie");
 		helper.succeed();
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
-	public void aDeepZombieDropsAZombiesLootAndTwiceItsXp(GameTestHelper helper) {
+	public void smiteHitsDeepZombiesAndSkeletonsAndBaneOfArthropodsHitsDeepSpiders(GameTestHelper helper) {
+		assertEnchantmentBonus(helper, Enchantments.SMITE, DeepVariants.DEEP_ZOMBIE);
+		assertEnchantmentBonus(helper, Enchantments.SMITE, DeepVariants.DEEP_SKELETON);
+		assertEnchantmentBonus(helper, Enchantments.BANE_OF_ARTHROPODS, DeepVariants.DEEP_SPIDER);
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void eachDeepVariantDropsItsBaseMobsLootAndTwiceItsXp(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
-		Mob deepZombie = helper.spawnWithNoFreeWill(DeepVariants.DEEP_ZOMBIE, MOB_POS);
-		Mob zombie = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, MOB_POS.east());
-		LootParams params = killedBy(level, deepZombie, killer);
-		LootTable deepTable = level.getServer().reloadableRegistries().getLootTable(deepZombie.getLootTable().orElseThrow());
-		LootTable zombieTable = level.getServer().reloadableRegistries().getLootTable(zombie.getLootTable().orElseThrow());
 
-		for (long seed = 0; seed < LOOT_ROLLS; seed++) {
-			List<String> deepDrops = describe(deepTable.getRandomItems(params, RandomSource.create(seed)));
-			List<String> zombieDrops = describe(zombieTable.getRandomItems(params, RandomSource.create(seed)));
+		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
+			EntityType<? extends Mob> baseType = DeepVariants.baseOf(deepType).orElseThrow();
+			Mob deep = gearless(helper.spawnWithNoFreeWill(deepType, MOB_POS));
+			Mob base = gearless(helper.spawnWithNoFreeWill(baseType, MOB_POS.east()));
+			LootParams params = killedBy(level, deep, killer);
+			LootTable deepTable = level.getServer().reloadableRegistries().getLootTable(deep.getLootTable().orElseThrow());
+			LootTable baseTable = level.getServer().reloadableRegistries().getLootTable(base.getLootTable().orElseThrow());
 
-			helper.assertValueEqual(deepDrops, zombieDrops, "drops with seed " + seed);
+			for (long seed = 0; seed < LOOT_ROLLS; seed++) {
+				List<String> deepDrops = describe(deepTable.getRandomItems(params, RandomSource.create(seed)));
+				List<String> baseDrops = describe(baseTable.getRandomItems(params, RandomSource.create(seed)));
+
+				helper.assertValueEqual(deepDrops, baseDrops, deepType.toShortString() + " drops with seed " + seed);
+			}
+
+			helper.assertValueEqual(base.getExperienceReward(level, killer), MONSTER_XP, baseType.toShortString() + "'s XP");
+			helper.assertValueEqual(deep.getExperienceReward(level, killer), DeepVariants.XP_MULTIPLIER * MONSTER_XP, deepType.toShortString() + "'s XP");
+			deep.discard();
+			base.discard();
 		}
 
-		helper.assertValueEqual(zombie.getExperienceReward(level, killer), ZOMBIE_XP, "a zombie's XP");
-		helper.assertValueEqual(deepZombie.getExperienceReward(level, killer), DeepVariants.XP_MULTIPLIER * ZOMBIE_XP, "a Deep Zombie's XP");
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void aDeepSkeletonWithABowDropsTwiceASkeletonsXp(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		Mob archer = archer(helper, DeepVariants.DEEP_SKELETON, MOB_POS);
+
+		// A skeleton with a bow gives its 5 XP plus 1 to 3 for the bow.
+		for (int roll = 0; roll < XP_ROLLS; roll++) {
+			int xp = archer.getExperienceReward(level, killer);
+
+			helper.assertTrue(xp % DeepVariants.XP_MULTIPLIER == 0, "a Deep Skeleton's XP " + xp + " is doubled");
+			helper.assertTrue(xp >= 2 * (MONSTER_XP + 1) && xp <= 2 * (MONSTER_XP + 3), "a Deep Skeleton's XP " + xp + " is twice an armed skeleton's");
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void normalDeepSkeletonsAndSpidersTakeTheirHealthAndDamageFromTheRulesAndDeepCreepersKeepVanillaStats(GameTestHelper helper) {
+		assertStats(
+			helper,
+			spawnNaturally(helper, DeepVariants.DEEP_SKELETON),
+			Map.of(Attributes.MAX_HEALTH, 30.0, Attributes.ATTACK_DAMAGE, 4.0, Attributes.FOLLOW_RANGE, 32.0)
+		);
+		assertStats(
+			helper,
+			spawnNaturally(helper, DeepVariants.DEEP_SPIDER, MOB_POS.east(3)),
+			Map.of(Attributes.MAX_HEALTH, 24.0, Attributes.ATTACK_DAMAGE, 4.0, Attributes.JUMP_STRENGTH, 0.85, Attributes.FALL_DAMAGE_MULTIPLIER, 0.0)
+		);
+		assertStats(helper, spawnNaturally(helper, DeepVariants.DEEP_CREEPER), Map.of(Attributes.MAX_HEALTH, 20.0, Attributes.ATTACK_DAMAGE, 2.0));
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:deep_variant_rules")
+	public void theRulesScaleDeepSkeletonsAndSpidersButNotDeepCreepers(GameTestHelper helper) {
+		assertStats(helper, spawnNaturally(helper, DeepVariants.DEEP_SKELETON), Map.of(Attributes.MAX_HEALTH, 40.0, Attributes.ATTACK_DAMAGE, 6.0));
+		assertStats(helper, spawnNaturally(helper, DeepVariants.DEEP_SPIDER, MOB_POS.east(3)), Map.of(Attributes.MAX_HEALTH, 32.0, Attributes.ATTACK_DAMAGE, 6.0));
+		assertStats(helper, spawnNaturally(helper, DeepVariants.DEEP_CREEPER), Map.of(Attributes.MAX_HEALTH, 20.0, Attributes.ATTACK_DAMAGE, 2.0));
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void aNormalDeepSkeletonsArrowsDealDoubleDamage(GameTestHelper helper) {
+		assertArrowDamageMultiplier(helper, 2.0);
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:deep_variant_rules")
+	public void aDeepSkeletonsArrowDamageFollowsTheDamageRule(GameTestHelper helper) {
+		assertArrowDamageMultiplier(helper, 3.0);
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:deep_skeleton_rule_change")
+	public void aDeepSkeletonKeepsItsArrowDamageWhenTheRuleChangesOrItReloads(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Skeleton first = spawnNaturally(helper, DeepVariants.DEEP_SKELETON);
+
+		level.getGameRules().set(MapleGameRules.DEEP_VARIANT_DAMAGE_PERCENT, 200, level.getServer());
+
+		Skeleton second = spawnNaturally(helper, DeepVariants.DEEP_SKELETON, MOB_POS.east(3));
+
+		helper.assertValueEqual(DeepVariants.damageMultiplier(first), 3.0, "the first Deep Skeleton's multiplier after the change");
+		helper.assertValueEqual(DeepVariants.damageMultiplier(reloaded(helper, first)), 3.0, "the first Deep Skeleton's multiplier after reloading");
+		helper.assertValueEqual(DeepVariants.damageMultiplier(second), 2.0, "a later Deep Skeleton's multiplier");
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
+	public void aDeepSkeletonsArrowGivesAStraysSlowness(GameTestHelper helper) {
+		Skeleton deepArcher = archer(helper, DeepVariants.DEEP_SKELETON, new BlockPos(1, 2, 1));
+		AbstractSkeleton strayArcher = archer(helper, EntityTypes.STRAY, new BlockPos(5, 2, 1));
+		Mob deepTarget = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(1, 2, 5));
+		Mob strayTarget = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(5, 2, 5));
+
+		deepArcher.performRangedAttack(deepTarget, ARROW_POWER);
+		strayArcher.performRangedAttack(strayTarget, ARROW_POWER);
+
+		helper.succeedWhen(() -> {
+			MobEffectInstance slowness = deepTarget.getEffect(MobEffects.SLOWNESS);
+			MobEffectInstance straySlowness = strayTarget.getEffect(MobEffects.SLOWNESS);
+
+			helper.assertTrue(slowness != null, "the Deep Skeleton's arrow slows its target");
+			helper.assertTrue(straySlowness != null, "the stray's arrow slows its target");
+			helper.assertValueEqual(slowness.getAmplifier(), straySlowness.getAmplifier(), "the Slowness amplifier");
+			helper.assertTrue(Math.abs(slowness.getDuration() - straySlowness.getDuration()) <= 1, "the Slowness lasts as long as a stray's");
+		});
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
+	public void aDeepCreeperBlowsABiggerCraterThanACreeper(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		List<ChunkPos> chunks = List.of(ChunkPos.containing(CREEPER_CRATER), ChunkPos.containing(DEEP_CREEPER_CRATER));
+
+		forceChunks(helper, level, chunks, CREEPER_CRATER.getY());
+
+		helper.startSequence()
+			.thenExecute(() -> {
+				int creeperCrater = explodeCreeperAndMeasureCrater(level, EntityTypes.CREEPER, CREEPER_CRATER);
+				int deepCreeperCrater = explodeCreeperAndMeasureCrater(level, DeepVariants.DEEP_CREEPER, DEEP_CREEPER_CRATER);
+
+				helper.assertTrue(creeperCrater > 0, "the creeper blew a crater");
+				helper.assertTrue(deepCreeperCrater > creeperCrater, "the Deep Creeper's crater of " + deepCreeperCrater + " blocks is bigger than the creeper's " + creeperCrater);
+				unforceChunks(level, chunks);
+			})
+			.thenSucceed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void aDeepCreeperHasTntsExplosionPowerHoweverItIsMade(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Creeper spawned = helper.spawnWithNoFreeWill(DeepVariants.DEEP_CREEPER, MOB_POS);
+		Creeper creeper = helper.spawnWithNoFreeWill(EntityTypes.CREEPER, MOB_POS.east());
+		CompoundTag summonData = new CompoundTag();
+
+		summonData.putString("id", BuiltInRegistries.ENTITY_TYPE.getKey(DeepVariants.DEEP_CREEPER).toString());
+
+		Entity summoned = EntityType.loadEntityRecursive(
+			TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), summonData),
+			level,
+			EntitySpawnReason.COMMAND,
+			entity -> entity
+		);
+
+		helper.assertValueEqual(explosionPower(creeper), 3, "a creeper's explosion power");
+		helper.assertValueEqual(explosionPower(spawned), 4, "a spawned Deep Creeper's explosion power");
+		helper.assertValueEqual(explosionPower((Creeper) summoned), 4, "a Deep Creeper summoned without data");
+		helper.assertValueEqual(explosionPower((Creeper) reloaded(helper, spawned)), 4, "a reloaded Deep Creeper's explosion power");
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void aDeepSpidersBiteBlindsFor60Ticks(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer bitten = MockPlayers.survivalPlayer(helper);
+		ServerPlayer plainBitten = MockPlayers.survivalPlayer(helper);
+
+		bitten.snapTo(helper.absoluteVec(Vec3.atBottomCenterOf(new BlockPos(1, 2, 1))));
+		plainBitten.snapTo(helper.absoluteVec(Vec3.atBottomCenterOf(new BlockPos(5, 2, 1))));
+		helper.spawnWithNoFreeWill(DeepVariants.DEEP_SPIDER, new BlockPos(1, 2, 3)).doHurtTarget(level, bitten);
+		helper.spawnWithNoFreeWill(EntityTypes.SPIDER, new BlockPos(5, 2, 3)).doHurtTarget(level, plainBitten);
+
+		MobEffectInstance blindness = bitten.getEffect(MobEffects.BLINDNESS);
+
+		helper.assertTrue(blindness != null, "a Deep Spider's bite blinds");
+		helper.assertValueEqual(blindness.getDuration(), BLINDNESS_TICKS, "the Blindness duration");
+		helper.assertFalse(plainBitten.hasEffect(MobEffects.BLINDNESS), "a spider's bite blinds");
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void aDeepSpidersJockeyIsADeepSkeletonAndASpidersStaysASkeleton(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Spider deepJockey = finalizeUntilJockey(helper, DeepVariants.DEEP_SPIDER);
+		Spider plainJockey = finalizeUntilJockey(helper, EntityTypes.SPIDER);
+
+		helper.assertValueEqual(plainJockey.getFirstPassenger().getType(), EntityTypes.SKELETON, "a spider's jockey");
+		helper.assertValueEqual(deepJockey.getFirstPassenger().getType(), DeepVariants.DEEP_SKELETON, "a Deep Spider's jockey");
+
+		level.addFreshEntityWithPassengers(deepJockey);
+		assertStats(helper, (Mob) deepJockey.getFirstPassenger(), Map.of(Attributes.MAX_HEALTH, 30.0, Attributes.FOLLOW_RANGE, 32.0));
+		assertStats(helper, deepJockey, Map.of(Attributes.MAX_HEALTH, 24.0));
+		deepJockey.getSelfAndPassengers().toList().forEach(Entity::discard);
 		helper.succeed();
 	}
 
@@ -362,26 +579,40 @@ public class DeepVariantGameTests {
 		}
 	}
 
-	// Runs vanilla's natural spawning in the room until it has made enough zombies, clearing the room after each try.
-	private static List<Zombie> spawnZombiesNaturally(ServerLevel level, BlockPos centre) {
+	// Runs vanilla's natural spawning in the room until it has made enough of each base mob or its Deep variant, clearing
+	// the room after each try. Returns those mobs, jockey riders included.
+	private static List<Mob> spawnMonstersNaturally(GameTestHelper helper, ServerLevel level, BlockPos centre) {
 		AABB room = new AABB(centre).inflate(ROOM_HALF_WIDTH + 2);
-		List<Zombie> zombies = new ArrayList<>();
+		List<Mob> mobs = new ArrayList<>();
 
-		for (int attempt = 0; attempt < MAX_SPAWN_ATTEMPTS && zombies.size() < WANTED_ZOMBIES; attempt++) {
+		for (int attempt = 0; attempt < MAX_SPAWN_ATTEMPTS && !hasEnoughOfEach(mobs); attempt++) {
 			NaturalSpawner.spawnCategoryForPosition(MobCategory.MONSTER, level, centre);
 
 			List<Entity> spawned = level.getEntitiesOfClass(Entity.class, room, entity -> !(entity instanceof Player));
 
 			for (Entity entity : spawned) {
-				boolean zombie = entity.getType() == EntityTypes.ZOMBIE || entity.getType() == DeepVariants.DEEP_ZOMBIE;
-
-				if (zombie) zombies.add((Zombie) entity);
+				if (BASES.contains(baseKind(entity.getType()))) mobs.add((Mob) entity);
 
 				entity.discard();
 			}
 		}
 
-		return zombies;
+		helper.assertTrue(hasEnoughOfEach(mobs), "natural spawning made " + mobs.size() + " zombies, skeletons, creepers and spiders");
+
+		return mobs;
+	}
+
+	private static boolean hasEnoughOfEach(List<Mob> mobs) {
+		return BASES.stream().allMatch(base -> mobs.stream().filter(mob -> baseKind(mob.getType()) == base).count() >= WANTED_PER_KIND);
+	}
+
+	// The base mob a Deep variant stands in for, or the type itself.
+	private static EntityType<?> baseKind(EntityType<?> type) {
+		return DeepVariants.baseOf(type).<EntityType<?>>map(base -> base).orElse(type);
+	}
+
+	private static EntityType<? extends Mob> deepOf(EntityType<? extends Mob> base) {
+		return DEEP_TYPES.stream().filter(deep -> DeepVariants.baseOf(deep).orElse(null) == base).findFirst().orElseThrow();
 	}
 
 	// An open pocket on a stone floor with a zombie spawner in it that spawns within a second, and a survival player
@@ -455,10 +686,166 @@ public class DeepVariantGameTests {
 	}
 
 	private static void assertNaturalSpawn(
-		GameTestHelper helper, DeepVariants.NaturalSpawn spawn, EntityType<?> type, Zombie.ZombieGroupData groupData, String what
+		GameTestHelper helper, DeepVariants.NaturalSpawn spawn, EntityType<?> type, @Nullable SpawnGroupData groupData, String what
 	) {
 		helper.assertValueEqual(spawn.type(), type, "the type natural spawning makes for " + what);
 		helper.assertTrue(spawn.groupData() == groupData, "the group data is passed on for " + what);
+	}
+
+	// Finalizes new spiders of the type at the test's mob spot until one gets a jockey, which vanilla rolls 1 in 100.
+	private static Spider finalizeUntilJockey(GameTestHelper helper, EntityType<? extends Spider> type) {
+		ServerLevel level = helper.getLevel();
+		BlockPos pos = helper.absolutePos(MOB_POS);
+
+		for (int attempt = 0; attempt < MAX_JOCKEY_ATTEMPTS; attempt++) {
+			Spider spider = type.create(level, EntitySpawnReason.NATURAL);
+
+			spider.snapTo(Vec3.atBottomCenterOf(pos));
+			spider.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), EntitySpawnReason.NATURAL, null);
+
+			if (spider.isVehicle()) return spider;
+		}
+
+		throw helper.assertionException("no " + type.toShortString() + " spawned as a jockey");
+	}
+
+	// Fires an arrow from a Deep Skeleton and a skeleton and checks the Deep one's base damage is the multiplier times
+	// one in vanilla's range.
+	private static void assertArrowDamageMultiplier(GameTestHelper helper, double multiplier) {
+		ServerLevel level = helper.getLevel();
+		Skeleton deepArcher = archer(helper, DeepVariants.DEEP_SKELETON, MOB_POS);
+		Skeleton plainArcher = archer(helper, EntityTypes.SKELETON, MOB_POS.east(3));
+		Mob target = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, ARROW_TARGET_POS);
+		// AbstractArrow.setBaseDamageFromMob: power * 2 plus a triangle around 0.11 per difficulty level.
+		double mode = ARROW_POWER * 2 + level.getDifficulty().getId() * 0.11;
+		double deepDamage = firedArrowDamage(helper, deepArcher, target);
+		double plainDamage = firedArrowDamage(helper, plainArcher, target);
+
+		helper.assertTrue(Math.abs(plainDamage - mode) <= ARROW_DAMAGE_SPREAD, "a skeleton's arrow damage " + plainDamage + " is vanilla's");
+		helper.assertTrue(Math.abs(deepDamage / multiplier - mode) <= ARROW_DAMAGE_SPREAD, "a Deep Skeleton's arrow damage " + deepDamage + " is " + multiplier + " times vanilla's");
+		helper.succeed();
+	}
+
+	private static double firedArrowDamage(GameTestHelper helper, Skeleton archer, Mob target) {
+		AABB around = archer.getBoundingBox().inflate(2);
+
+		archer.performRangedAttack(target, ARROW_POWER);
+
+		List<Arrow> arrows = helper.getLevel().getEntitiesOfClass(Arrow.class, around, arrow -> arrow.getOwner() == archer);
+
+		helper.assertValueEqual(arrows.size(), 1, archer.getType().toShortString() + "'s arrows");
+
+		Arrow arrow = arrows.getFirst();
+		double damage = ((AbstractArrowAccessor) arrow).maple$getBaseDamage();
+
+		arrow.discard();
+
+		return damage;
+	}
+
+	// A skeleton of the type at the spot, as natural spawning makes it, holding a bow and standing still.
+	private static <T extends AbstractSkeleton> T archer(GameTestHelper helper, EntityType<T> type, BlockPos spot) {
+		T archer = spawnNaturally(helper, type, spot);
+
+		archer.setNoAi(true);
+		archer.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+
+		return archer;
+	}
+
+	// Explodes a creeper of the type in the middle of a dirt cube and counts the dirt blocks it destroyed.
+	private static int explodeCreeperAndMeasureCrater(ServerLevel level, EntityType<? extends Creeper> type, BlockPos centre) {
+		BlockPos from = centre.offset(-CRATER_HALF_WIDTH, -CRATER_HALF_WIDTH, -CRATER_HALF_WIDTH);
+		BlockPos to = centre.offset(CRATER_HALF_WIDTH, CRATER_HALF_WIDTH, CRATER_HALF_WIDTH);
+		BlockPos pocketTop = centre.above();
+
+		for (BlockPos pos : BlockPos.betweenClosed(from, to)) {
+			boolean pocket = pos.equals(centre) || pos.equals(pocketTop);
+
+			level.setBlock(pos, (pocket ? Blocks.AIR : Blocks.DIRT).defaultBlockState(), Block.UPDATE_CLIENTS);
+		}
+
+		Creeper creeper = type.create(level, EntitySpawnReason.COMMAND);
+
+		creeper.snapTo(Vec3.atBottomCenterOf(centre));
+		level.addFreshEntity(creeper);
+		((CreeperTestAccessor) creeper).maple$explode();
+
+		int notDirt = 0;
+
+		for (BlockPos pos : BlockPos.betweenClosed(from, to)) {
+			if (!level.getBlockState(pos).is(Blocks.DIRT)) notDirt++;
+		}
+
+		level.getEntitiesOfClass(Entity.class, new AABB(centre).inflate(CRATER_HALF_WIDTH + 2), entity -> !(entity instanceof Player))
+			.forEach(Entity::discard);
+
+		// The two pocket blocks were never dirt.
+		return notDirt - 2;
+	}
+
+	private static int explosionPower(Creeper creeper) {
+		return ((CreeperTestAccessor) creeper).maple$getExplosionRadius();
+	}
+
+	// Saves the mob as its chunk would on unloading and loads a copy, which isn't added to the level.
+	private static Mob reloaded(GameTestHelper helper, Mob mob) {
+		ServerLevel level = helper.getLevel();
+		TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+
+		mob.save(output);
+
+		Entity loaded = EntityType.loadEntityRecursive(
+			TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), output.buildResult()),
+			level,
+			EntitySpawnReason.LOAD,
+			entity -> entity
+		);
+
+		helper.assertTrue(loaded instanceof Mob, "the saved mob loads");
+
+		return (Mob) loaded;
+	}
+
+	private static void assertEnchantmentBonus(GameTestHelper helper, ResourceKey<Enchantment> enchantment, EntityType<? extends Mob> type) {
+		ServerLevel level = helper.getLevel();
+		Mob mob = helper.spawnWithNoFreeWill(type, MOB_POS);
+		ItemStack sword = new ItemStack(Items.IRON_SWORD);
+
+		sword.enchant(level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(enchantment), 1);
+
+		float bonus = EnchantmentHelper.modifyDamage(level, sword, mob, level.damageSources().generic(), 0.0F);
+
+		helper.assertValueEqual(bonus, LEVEL_ONE_DAMAGE_BONUS, enchantment.identifier().getPath() + " I's bonus against " + type.toShortString());
+		mob.discard();
+	}
+
+	// Without gear, whose per-item XP bonus is random.
+	private static Mob gearless(Mob mob) {
+		for (EquipmentSlot slot : EquipmentSlot.values()) {
+			mob.setItemSlot(slot, ItemStack.EMPTY);
+		}
+
+		return mob;
+	}
+
+	// Spawned as natural spawning does, with a new group, at the test's mob spot.
+	private static <T extends Mob> T spawnNaturally(GameTestHelper helper, EntityType<T> type) {
+		return spawnNaturally(helper, type, MOB_POS);
+	}
+
+	// Spawned as natural spawning does, with a new group, inside the test so its cleanup removes it.
+	private static <T extends Mob> T spawnNaturally(GameTestHelper helper, EntityType<T> type, BlockPos spot) {
+		ServerLevel level = helper.getLevel();
+		BlockPos pos = helper.absolutePos(spot);
+		T mob = type.create(level, EntitySpawnReason.NATURAL);
+
+		mob.snapTo(Vec3.atBottomCenterOf(pos));
+		mob.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), EntitySpawnReason.NATURAL, null);
+		mob.setPersistenceRequired();
+		level.addFreshEntityWithPassengers(mob);
+
+		return mob;
 	}
 
 	// Spawned as natural spawning does, as an adult, inside the test so its cleanup removes it.

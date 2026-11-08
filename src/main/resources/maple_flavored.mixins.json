@@ -3,6 +3,7 @@
 	"package": "mapleflavored.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
+		"AbstractArrowAccessor",
 		"AbstractIllagerMixin",
 		"AnvilMenuMixin",
 		"ApplyBonusCountMixin",
@@ -15,6 +16,7 @@
 		"BrushableBlockEntityAccessor",
 		"ChestBlockEntityMixin",
 		"ChiseledBookShelfBlockMixin",
+		"CreeperAccessor",
 		"DiggingMixin",
 		"EnchantedCountIncreaseFunctionMixin",
 		"EnchantingTableBlockMixin",
@@ -73,6 +75,7 @@
 		"SpawnerBlockEntityMixin",
 		"SpawnerBlockMixin",
 		"SpawnPlacementsMixin",
+		"SpiderMixin",
 		"StructureMixin",
 		"StructureStartMixin",
 		"StructurePieceInvoker",
