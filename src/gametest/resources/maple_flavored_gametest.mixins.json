@@ -6,7 +6,8 @@
 		"EntityAccessor",
 		"ExperienceOrbAccessor",
 		"GameTestHelperAccessor",
-		"GameTestServerMixin"
+		"GameTestServerMixin",
+		"LivingEntityAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

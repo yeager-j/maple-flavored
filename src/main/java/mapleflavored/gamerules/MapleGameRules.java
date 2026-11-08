@@ -10,8 +10,8 @@ import net.minecraft.world.level.gamerules.GameRuleCategory;
  * defaulting to on; playtest values for Warden and Wither Subspaces, which apply to Subspaces that open after a change,
  * except the Wither's leash and its Subspace's light level, which apply at once; how near a Warden a player must be to
  * survive it; how far a held Echo Shard hears shriekers; Shakudo's and Adamant's mining, which apply at once; how
- * long an Illager stays angry at an Orichalcum wearer who attacks it; and how long the Orichalcum set's save takes to
- * recharge.
+ * long an Illager stays angry at an Orichalcum wearer who attacks it; how long the Orichalcum set's save takes to
+ * recharge; and Deep variants' health and damage, which apply to Deep variants that spawn after a change.
  */
 public final class MapleGameRules {
 	/** When on, death costs no Max Hearts. Off by default. */
@@ -116,6 +116,24 @@ public final class MapleGameRules {
 		.range(1, 1_728_000)
 		.category(GameRuleCategory.PLAYER)
 		.buildAndRegister(MapleFlavored.id("orichalcum_save_recharge_time"));
+
+	/**
+	 * A Deep variant's health as a percentage of its base mob's vanilla health. Applies to Deep variants that spawn after
+	 * a change.
+	 */
+	public static final GameRule<Integer> DEEP_VARIANT_HEALTH_PERCENT = GameRuleBuilder.forInteger(150)
+		.range(1, 1000)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("deep_variant_health_percent"));
+
+	/**
+	 * A Deep variant's damage as a percentage of its base mob's vanilla damage. Applies to Deep variants that spawn after
+	 * a change.
+	 */
+	public static final GameRule<Integer> DEEP_VARIANT_DAMAGE_PERCENT = GameRuleBuilder.forInteger(200)
+		.range(0, 1000)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("deep_variant_damage_percent"));
 
 	private MapleGameRules() {
 	}

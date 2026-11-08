@@ -47,6 +47,7 @@
 		"MinecraftServerMixin",
 		"MobMixin",
 		"MonsterRoomFeatureMixin",
+		"NaturalSpawnerMixin",
 		"NetherFortressStructureMixin",
 		"PiecesContainerMixin",
 		"PiglinAiMixin",

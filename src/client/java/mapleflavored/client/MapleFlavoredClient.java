@@ -3,6 +3,7 @@ package mapleflavored.client;
 import mapleflavored.alloys.Alloys;
 import mapleflavored.client.alloys.AlloyFurnaceScreen;
 import mapleflavored.client.alloys.PortalTrim;
+import mapleflavored.client.deepvariants.DeepZombieRenderer;
 import mapleflavored.client.enchanting.AppleTooltip;
 import mapleflavored.client.enchanting.EnchantingTableScreen;
 import mapleflavored.client.hearts.DeathScreenMaxHearts;
@@ -32,5 +33,6 @@ public class MapleFlavoredClient implements ClientModInitializer {
 		SubspaceShellRenderer.register();
 		WitherSubspaceLight.register();
 		PortalTrim.register();
+		DeepZombieRenderer.register();
 	}
 }

@@ -97,6 +97,8 @@ Gold tools, weapons and armor gain an extra Enchantment Slot. Chainmail gains a 
 
 Zombies on Normal and Hard are fast and frail and step up a full block. Skeletons, creepers, baby zombies and several other mobs have less health, so fights are dangerous without being long. Husks become slow, armored brutes, and Wither Skeletons swing Netherite swords. Creepers spawn naturally only below Y 63 in the Overworld. Mobs drop their gear without its enchantments.
 
+Below Y 0, natural spawns of adult zombies become **Deep variants**: Deep Zombies have half again a zombie's health, hit twice as hard and disable a raised shield as an axe does. Each looks like deepslate, drops its base mob's loot and twice its XP. Spawners, spawn eggs and structures still make the ordinary mob, so farms are unaffected and a player in copper gear thinks twice about caving deep.
+
 Details: [Early equipment](../.scratch/maple-flavored-design/issues/07-early-game-tiers.md) and [Mob changes](../.scratch/maple-flavored-design/issues/05-mob-changes.md).
 
 ### Earning villagers and farms
