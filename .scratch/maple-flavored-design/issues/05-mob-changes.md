@@ -83,3 +83,5 @@ From Hearts and death:
 From [the boss subspaces manifesto](../../../docs/manifestos/boss-subspaces.md):
 
 - When a boss appears, it opens a Subspace that shuts down the cheapest way to avoid its fight. The Warden's applies Darkness and Grounded in a 100 block radius, with no barrier. Grounded weakens flight and greatly increases Ender Pearl gravity, keeping short teleports useful while making escape a journey through the area.
+
+From [Deep caves](21-deep-caves.md): this table's health changes now apply only to mobs that spawn at Y 63 or above. Below that, adult zombies, baby zombies and their kin, and skeletons and their kin have vanilla health, and creepers are fully vanilla. Every change that isn't health stays everywhere, and cave spiders and silverfish keep their numbers. Below Y 0, adult zombies, skeletons, creepers and spiders spawn as Deep variants.

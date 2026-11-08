@@ -56,3 +56,5 @@ Expected kills for each target, without Looting / with Looting III. A Woodland M
 ## Comments
 
 Resolves the "Illager book drops" design task in the Maple Flavored spec (ticket 03 in `.scratch/maple-flavored/issues/`). Vanilla counts came from the Minecraft Wiki; the Mansion counts are estimates.
+
+From [Deep caves](21-deep-caves.md): Knockback moved to the Bastion's hoglin stables, so Ravagers no longer drop it. What Raids give instead is left open on the design map.

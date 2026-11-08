@@ -79,3 +79,5 @@ From [Getting villagers and removing villages](08-villagers-and-villages.md):
 - Every enchanted golden apple in a loot table becomes a plain golden apple.
 
 From [Mob changes](05-mob-changes.md): the Warden switch is closed by the new summoning rules, so Ancient City rewards don't need to allow for it. Warden Territory uses the Ancient City's bounds.
+
+From [Deep caves](21-deep-caves.md): a new structure, the Deep Core, generates in large open caves below Y 0. Its book is Fortune, and it drops 1 to 3 Pith by level when its raid is won. A beaten Deep Core doesn't return with Blood Moons.
