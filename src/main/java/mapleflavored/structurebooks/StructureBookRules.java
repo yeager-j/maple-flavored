@@ -34,7 +34,7 @@ public final class StructureBookRules {
 		StructureBookRule.Placement.POCKET
 	);
 	private static final StructureBookRule DESERT_PYRAMID = ordinary(List.of(Enchantments.BLAST_PROTECTION), StructureBookSpots::desertPyramid);
-	private static final StructureBookRule JUNGLE_TEMPLE = ordinary(List.of(Enchantments.LOOTING), StructureBookSpots::jungleTemple);
+	private static final StructureBookRule JUNGLE_TEMPLE = ordinary(List.of(Enchantments.THORNS), StructureBookSpots::jungleTemple);
 	private static final StructureBookRule IGLOO = ordinary(List.of(Enchantments.FROST_WALKER), StructureBookSpots::igloo);
 	private static final StructureBookRule SHIPWRECK = ordinary(List.of(Enchantments.DEPTH_STRIDER), StructureBookSpots::shipwreck);
 	private static final StructureBookRule OCEAN_RUIN = ordinary(
@@ -59,7 +59,7 @@ public final class StructureBookRules {
 		StructureBookRule.Placement.OPEN,
 		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.SHRIEKERS, ShriekerKeepers.choose(book, ShriekerKeepers.origins(pieces), random))
 	);
-	private static final StructureBookRule WOODLAND_MANSION = ordinary(List.of(Enchantments.FORTUNE), StructureBookSpots::woodlandMansion);
+	private static final StructureBookRule WOODLAND_MANSION = ordinary(List.of(Enchantments.LOOTING), StructureBookSpots::woodlandMansion);
 	private static final StructureBookRule STRONGHOLD = new StructureBookRule(
 		List.of(Enchantments.UNBREAKING),
 		StructureBookSpots::stronghold,
@@ -210,7 +210,7 @@ public final class StructureBookRules {
 		layouts.put(bastionStart("treasure/big_air_full"), bastionLayout(Enchantments.FIRE_ASPECT, StructureBookSpots::bastionTreasureRoom));
 		layouts.put(bastionStart("bridge/starting_pieces/entrance_base"), bastionLayout(Enchantments.SOUL_SPEED, StructureBookSpots::bastionBridge));
 		layouts.put(bastionStart("units/air_base"), bastionLayout(Enchantments.FLAME, StructureBookSpots::bastionHousingUnits));
-		layouts.put(bastionStart("hoglin_stable/air_base"), bastionLayout(Enchantments.THORNS, StructureBookSpots::bastionHoglinStables));
+		layouts.put(bastionStart("hoglin_stable/air_base"), bastionLayout(Enchantments.KNOCKBACK, StructureBookSpots::bastionHoglinStables));
 
 		return Collections.unmodifiableMap(layouts);
 	}
