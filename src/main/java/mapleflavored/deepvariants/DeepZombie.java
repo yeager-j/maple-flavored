@@ -1,5 +1,6 @@
 package mapleflavored.deepvariants;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.level.Level;
@@ -15,7 +16,11 @@ public class DeepZombie extends Zombie {
 	/** Creates a Deep Zombie of {@code type}; used as the entity type's factory. */
 	public DeepZombie(EntityType<? extends DeepZombie> type, Level level) {
 		super(type, level);
-		this.xpReward *= DeepVariants.XP_MULTIPLIER;
+	}
+
+	@Override
+	protected int getBaseExperienceReward(ServerLevel level) {
+		return DeepVariants.XP_MULTIPLIER * super.getBaseExperienceReward(level);
 	}
 
 	@Override

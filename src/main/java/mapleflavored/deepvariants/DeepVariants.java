@@ -3,6 +3,9 @@ package mapleflavored.deepvariants;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import mapleflavored.MapleFlavored;
 import mapleflavored.gamerules.MapleGameRules;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
@@ -25,7 +28,10 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.spider.Spider;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -46,33 +52,57 @@ public final class DeepVariants {
 	public static final int XP_MULTIPLIER = 2;
 
 	private static final int DEEP_BELOW_Y = 0;
-	private static final ResourceKey<EntityType<?>> DEEP_ZOMBIE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, MapleFlavored.id("deep_zombie"));
-
 	/** The Deep Zombie: a zombie whose hits disable shields. */
-	public static final EntityType<DeepZombie> DEEP_ZOMBIE = Registry.register(
-		BuiltInRegistries.ENTITY_TYPE,
-		DEEP_ZOMBIE_KEY,
-		FabricEntityType.Builder.<DeepZombie>createMob(
-				DeepZombie::new,
-				MobCategory.MONSTER,
-				mob -> mob.spawnPlacement(SpawnPlacementTypes.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Monster::checkMonsterSpawnRules)
-					.defaultAttributes(Zombie::createAttributes)
-			)
-			.sized(0.6F, 1.95F)
-			.eyeHeight(1.74F)
-			.passengerAttachments(2.0125F)
-			.ridingOffset(-0.7F)
-			.clientTrackingRange(8)
-			.notInPeaceful()
-			.build(DEEP_ZOMBIE_KEY)
+	public static final EntityType<DeepZombie> DEEP_ZOMBIE = registerEntityType(
+		"deep_zombie",
+		DeepZombie::new,
+		Zombie::createAttributes,
+		builder -> builder.sized(0.6F, 1.95F).eyeHeight(1.74F).passengerAttachments(2.0125F).ridingOffset(-0.7F)
+	);
+
+	/** The Deep Skeleton: a skeleton with a longer follow range whose arrows carry Slowness. */
+	public static final EntityType<DeepSkeleton> DEEP_SKELETON = registerEntityType(
+		"deep_skeleton",
+		DeepSkeleton::new,
+		DeepSkeleton::createAttributes,
+		builder -> builder.sized(0.6F, 1.99F).eyeHeight(1.74F).ridingOffset(-0.7F)
+	);
+
+	/** The Deep Creeper: a creeper that explodes as hard as TNT. */
+	public static final EntityType<DeepCreeper> DEEP_CREEPER = registerEntityType(
+		"deep_creeper",
+		DeepCreeper::new,
+		Creeper::createAttributes,
+		builder -> builder.sized(0.6F, 1.7F)
+	);
+
+	/** The Deep Spider: a spider whose bites blind. */
+	public static final EntityType<DeepSpider> DEEP_SPIDER = registerEntityType(
+		"deep_spider",
+		DeepSpider::new,
+		Spider::createAttributes,
+		builder -> builder.sized(1.4F, 0.9F).eyeHeight(0.65F).passengerAttachments(0.765F)
 	);
 
 	/** The Deep Zombie's spawn egg. */
 	public static final Item DEEP_ZOMBIE_SPAWN_EGG = registerSpawnEgg("deep_zombie_spawn_egg", DEEP_ZOMBIE);
+	/** The Deep Skeleton's spawn egg. */
+	public static final Item DEEP_SKELETON_SPAWN_EGG = registerSpawnEgg("deep_skeleton_spawn_egg", DEEP_SKELETON);
+	/** The Deep Creeper's spawn egg. */
+	public static final Item DEEP_CREEPER_SPAWN_EGG = registerSpawnEgg("deep_creeper_spawn_egg", DEEP_CREEPER);
+	/** The Deep Spider's spawn egg. */
+	public static final Item DEEP_SPIDER_SPAWN_EGG = registerSpawnEgg("deep_spider_spawn_egg", DEEP_SPIDER);
 
 	// Each base mob and the Deep variant that takes its place.
-	private static final Map<EntityType<? extends Mob>, EntityType<? extends Mob>> DEEP_BY_BASE = Map.of(EntityTypes.ZOMBIE, DEEP_ZOMBIE);
+	private static final Map<EntityType<? extends Mob>, EntityType<? extends Mob>> DEEP_BY_BASE = Map.of(
+		EntityTypes.ZOMBIE, DEEP_ZOMBIE,
+		EntityTypes.SKELETON, DEEP_SKELETON,
+		EntityTypes.CREEPER, DEEP_CREEPER,
+		EntityTypes.SPIDER, DEEP_SPIDER
+	);
 	private static final Map<EntityType<? extends Mob>, EntityType<? extends Mob>> BASE_BY_DEEP = inverse(DEEP_BY_BASE);
+	// A Deep Creeper's threat is its fixed explosion power, so it keeps its base mob's health and damage.
+	private static final Set<EntityType<? extends Mob>> BASES_WITH_VANILLA_STATS = Set.of(EntityTypes.CREEPER);
 
 	private DeepVariants() {
 	}
@@ -80,7 +110,12 @@ public final class DeepVariants {
 	/** Adds the spawn eggs to the creative menu. Call once from mod init. */
 	public static void register() {
 		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.SPAWN_EGGS)
-			.register(output -> output.insertAfter(Items.ZOMBIE_SPAWN_EGG, DEEP_ZOMBIE_SPAWN_EGG));
+			.register(output -> {
+				output.insertAfter(Items.ZOMBIE_SPAWN_EGG, DEEP_ZOMBIE_SPAWN_EGG);
+				output.insertAfter(Items.SKELETON_SPAWN_EGG, DEEP_SKELETON_SPAWN_EGG);
+				output.insertAfter(Items.CREEPER_SPAWN_EGG, DEEP_CREEPER_SPAWN_EGG);
+				output.insertAfter(Items.SPIDER_SPAWN_EGG, DEEP_SPIDER_SPAWN_EGG);
+			});
 	}
 
 	/** The base mob a Deep variant stands in for, or empty if {@code type} isn't a Deep variant. */
@@ -107,9 +142,12 @@ public final class DeepVariants {
 
 	/**
 	 * A Deep variant's health and damage base values from the game rules, as percentages of {@code base}'s vanilla
-	 * values. Damage is left out for a base mob without an attack attribute.
+	 * values. Damage is left out for a base mob without an attack attribute, and both for the Deep Creeper, which keeps
+	 * its base mob's.
 	 */
 	public static Map<Holder<Attribute>, Double> spawnStats(EntityType<? extends Mob> base, GameRules rules) {
+		if (BASES_WITH_VANILLA_STATS.contains(base)) return Map.of();
+
 		AttributeSupplier vanilla = DefaultAttributes.getSupplier(base);
 		Map<Holder<Attribute>, Double> stats = new HashMap<>();
 
@@ -120,6 +158,25 @@ public final class DeepVariants {
 		}
 
 		return stats;
+	}
+
+	/**
+	 * How many times its base mob's vanilla damage {@code deep} deals, as set by the damage rule when it spawned. Scale
+	 * damage the attack attribute doesn't cover, such as arrows, by this. 1 for a mob that isn't a Deep variant.
+	 */
+	public static double damageMultiplier(Mob deep) {
+		Optional<EntityType<? extends Mob>> base = baseOf(deep.getType());
+
+		if (base.isEmpty()) return 1.0;
+
+		double vanillaDamage = DefaultAttributes.getSupplier(base.get()).getBaseValue(Attributes.ATTACK_DAMAGE);
+
+		return deep.getAttributeBaseValue(Attributes.ATTACK_DAMAGE) / vanillaDamage;
+	}
+
+	/** The skeleton type that rides {@code spider} when it spawns as a jockey: a Deep Skeleton for a Deep Spider. */
+	public static EntityType<? extends Skeleton> jockeyRider(Spider spider) {
+		return spider.getType() == DEEP_SPIDER ? DEEP_SKELETON : EntityTypes.SKELETON;
 	}
 
 	private static boolean isDeep(ServerLevel level, BlockPos pos) {
@@ -150,6 +207,24 @@ public final class DeepVariants {
 		map.forEach((key, value) -> inverse.put(value, key));
 
 		return Map.copyOf(inverse);
+	}
+
+	// Registers a monster with a Deep variant's shared traits: a monster's spawn rules, tracking range and no Peaceful.
+	private static <T extends Mob> EntityType<T> registerEntityType(
+		String name,
+		EntityType.EntityFactory<T> factory,
+		Supplier<AttributeSupplier.Builder> attributes,
+		UnaryOperator<EntityType.Builder<T>> sizing
+	) {
+		ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, MapleFlavored.id(name));
+		EntityType.Builder<T> builder = FabricEntityType.Builder.createMob(
+			factory,
+			MobCategory.MONSTER,
+			mob -> mob.spawnPlacement(SpawnPlacementTypes.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Monster::checkMonsterSpawnRules)
+				.defaultAttributes(attributes)
+		);
+
+		return Registry.register(BuiltInRegistries.ENTITY_TYPE, key, sizing.apply(builder).clientTrackingRange(8).notInPeaceful().build(key));
 	}
 
 	private static Item registerSpawnEgg(String name, EntityType<? extends Mob> type) {
