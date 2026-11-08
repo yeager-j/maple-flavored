@@ -5,6 +5,7 @@ import mapleflavored.alloys.Alloys;
 import mapleflavored.bloodmoons.BloodMoons;
 import mapleflavored.bosses.BossKillCredit;
 import mapleflavored.brewing.Brewing;
+import mapleflavored.deepvariants.DeepVariants;
 import mapleflavored.echoshard.ShriekerPulses;
 import mapleflavored.enchanting.Enchanting;
 import mapleflavored.gamerules.MapleGameRules;
@@ -60,6 +61,7 @@ public class MapleFlavored implements ModInitializer {
 		ShriekerPulses.register();
 		BloodMoons.register();
 		RaidWaves.register();
+		DeepVariants.register();
 
 		LOGGER.info("Maple Flavored initialized");
 	}

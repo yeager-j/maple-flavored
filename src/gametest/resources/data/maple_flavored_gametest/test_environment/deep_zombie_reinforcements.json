@@ -1,0 +1,13 @@
+{
+	"type": "minecraft:all_of",
+	"definitions": [
+		"maple_flavored_gametest:hard",
+		{
+			"type": "minecraft:game_rules",
+			"rules": {
+				"minecraft:spawn_mobs": true,
+				"minecraft:spawn_monsters": true
+			}
+		}
+	]
+}

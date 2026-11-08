@@ -57,7 +57,8 @@
 			"mapleflavored.gametest.BrewingGameTests",
 			"mapleflavored.gametest.TradeGameTests",
 			"mapleflavored.gametest.BloodMoonGameTests",
-			"mapleflavored.gametest.BloodMoonRestoringGameTests"
+			"mapleflavored.gametest.BloodMoonRestoringGameTests",
+			"mapleflavored.gametest.DeepVariantGameTests"
 		],
 		"fabric-client-gametest": [
 			"mapleflavored.gametest.client.BloodMoonSkyClientGameTest",

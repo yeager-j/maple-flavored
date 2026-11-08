@@ -38,5 +38,7 @@ Each reused asset is listed with its original path, its author, and whether it w
 - `assets/maple_flavored/textures/item/ancient_ember.png`: Minecraft's `assets/minecraft/textures/item/fire_charge.png` by Mojang Studios, recoloured by Jackson Yeager.
 - `assets/maple_flavored/textures/block/alloy_furnace_{front,front_on,side,top}.png` and `alloy_furnace_front_on.png.mcmeta`: Minecraft's `assets/minecraft/textures/block/blast_furnace_{front,front_on,side,top}.png` and its animation file by Mojang Studios, recoloured to blackstone and gold by Jackson Yeager.
 - `assets/maple_flavored/textures/gui/container/alloy_furnace.png`: Minecraft's `assets/minecraft/textures/gui/container/furnace.png` by Mojang Studios, with its input slot doubled and its flame and fuel slot moved by Jackson Yeager.
+- `assets/maple_flavored/textures/entity/deep_zombie.png` and `deep_zombie_baby.png`: Minecraft's `assets/minecraft/textures/entity/zombie/zombie.png` and `zombie_baby.png` by Mojang Studios, with the head and arms reworked as deepslate by Jackson Yeager.
+- `assets/maple_flavored/textures/item/deep_zombie_spawn_egg.png`: Minecraft's `assets/minecraft/textures/item/zombie_spawn_egg.png` by Mojang Studios, with its greens recoloured to the greys of Minecraft's `assets/minecraft/textures/block/deepslate.png`.
 
 Matcha's own credits name other authors for some assets (for example the 3D food models, fish models and music). Credit those authors rather than Klei.
