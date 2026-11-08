@@ -18,6 +18,7 @@ Spec: the Maple Flavored spec in this folder, user stories 193a, 193f and 193m, 
 - [ ] A second Deep Core in a cell when it sits more than 35 blocks above or below the first. None within 25 blocks of another in 3D, including across neighbouring cells
 - [ ] The Deep Dark ring and the Ancient City potential-site guard
 - [ ] Terrain adaptation `none`, step `top_layer_modification`. The piece checks the real floor when built and moves up to a few blocks to find it
+- [ ] The piece places Jackson's `deep_core` template, swapping its respawn anchor for the Deep Core block, and fills under its base on sloped floors
 - [ ] A registered Deep Core block and block entity: unbreakable, blast-proof, not pushable or replaceable, no light, and a `level` state from 1 to 5. The level comes from the depth bands in structure data
 - [ ] A loaded-core index, kept from block entity load and unload, answering which cores' zones contain a position without loading chunks
 - [ ] `/deepcores [count] [radius]` lists the nearest Deep Cores with clickable teleports and the cores per km² in that radius
@@ -35,4 +36,4 @@ Spec: the Maple Flavored spec in this folder, user stories 193a, 193f and 193m, 
 - A throwaway prototype of the finder, the marker structure and the `/cavecores` command was built in another session's scratchpad, at `C:\Users\jackson\AppData\Local\Temp\claude\01ca97b58b7d174e\42396275-d0d9-42bf-8c1c-ef6450d53406\scratchpad\proto`. It's in a temp folder and may be gone. Use it as a reference if it's still there, but don't copy it in as it is.
 - `/place structure` never records starts and never passes the cave check in a flat world, so tests need a way to build a core at a given position without the check.
 - The neighbour spacing check must stay deterministic and thread-safe, using only `context.random()` and no shared state. Cache per cell if a neighbour check would otherwise rescan.
-- The block's texture and the structure's decoration are ticket 58. Use a placeholder here.
+- Jackson's template is in `src/main/resources/data/maple_flavored/structure/deep_core.nbt`. It's 3 × 7 × 3, with an uncharged respawn anchor at its top centre (1, 5, 1) standing in for the Deep Core block. Place it as the structure's piece, through a `TemplateStructurePiece` or a one-piece jigsaw pool (research section 5), and replace the anchor with the Deep Core block as it's placed, for example with a structure processor. Its y 0 base goes on the cave floor. Where the floor slopes, fill deepslate down under the base until it reaches solid ground, a few blocks at most. The block's textures are still ticket 58, so use a placeholder for those.
