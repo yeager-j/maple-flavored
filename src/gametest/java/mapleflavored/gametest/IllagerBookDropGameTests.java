@@ -43,8 +43,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Illager book drops: on a player kill, Vindicators roll Sharpness and Sweeping Edge, Pillager Captains Power, Punch and
- * Infinity, Evokers one Protection and Ravagers Knockback, each its own roll. Each Looting level adds 20% of the base
- * chance, and Orichalcum's drop bonus adds nothing. Illagers a raid spawned for a wave drop no books; Ravagers always can.
+ * Infinity and Evokers one Protection, each its own roll. Each Looting level adds 20% of the base chance, and
+ * Orichalcum's drop bonus adds nothing. Illagers a raid spawned for a wave drop no books. Ravagers drop none either.
  *
  * <p>Each test rolls the mob's own loot table the way {@code LivingEntity.dropFromLootTable} does, many times from one
  * seeded random, so the rates are fixed.
@@ -65,8 +65,7 @@ public class IllagerBookDropGameTests {
 		new Book(Dropper.CAPTAIN, Enchantments.POWER, 0.20),
 		new Book(Dropper.CAPTAIN, Enchantments.PUNCH, 0.05),
 		new Book(Dropper.CAPTAIN, Enchantments.INFINITY, 0.05),
-		new Book(Dropper.EVOKER, Enchantments.PROTECTION, 0.15),
-		new Book(Dropper.RAVAGER, Enchantments.KNOCKBACK, 0.10)
+		new Book(Dropper.EVOKER, Enchantments.PROTECTION, 0.15)
 	);
 
 	@GameTest
@@ -166,10 +165,12 @@ public class IllagerBookDropGameTests {
 	}
 
 	@GameTest
-	public void ravagersARaidSpawnsForAWaveStillDropKnockback(GameTestHelper helper) {
-		Raider ravager = waveRaider(helper, raid(helper), EntityTypes.RAVAGER.create(helper.getLevel(), EntitySpawnReason.EVENT));
+	public void ravagersDropNoBooksInOrOutOfARaid(GameTestHelper helper) {
+		ServerPlayer player = player(helper, lootingSword(helper, new ItemStack(Items.IRON_SWORD), 3));
+		Raider waveRavager = waveRaider(helper, raid(helper), EntityTypes.RAVAGER.create(helper.getLevel(), EntitySpawnReason.EVENT));
 
-		Kills.of(helper, ravager, player(helper, ItemStack.EMPTY), KILLS).assertRate(Enchantments.KNOCKBACK, 0.10);
+		Kills.of(helper, helper.spawnWithNoFreeWill(EntityTypes.RAVAGER, MOB_POS), player, KILLS).assertNoBooks();
+		Kills.of(helper, waveRavager, player, KILLS).assertNoBooks();
 		helper.succeed();
 	}
 
@@ -272,15 +273,13 @@ public class IllagerBookDropGameTests {
 	private enum Dropper {
 		VINDICATOR,
 		CAPTAIN,
-		EVOKER,
-		RAVAGER;
+		EVOKER;
 
 		Mob spawn(GameTestHelper helper) {
 			return switch (this) {
 				case VINDICATOR -> helper.spawnWithNoFreeWill(EntityTypes.VINDICATOR, MOB_POS);
 				case CAPTAIN -> captain(helper);
 				case EVOKER -> helper.spawnWithNoFreeWill(EntityTypes.EVOKER, MOB_POS);
-				case RAVAGER -> helper.spawnWithNoFreeWill(EntityTypes.RAVAGER, MOB_POS);
 			};
 		}
 

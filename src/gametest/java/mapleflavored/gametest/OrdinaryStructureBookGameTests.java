@@ -165,13 +165,14 @@ public class OrdinaryStructureBookGameTests {
 	}
 
 	@GameTest(maxTicks = 400)
-	public void aJungleTempleBookFloatsAboveItsHiddenChest(GameTestHelper helper) {
+	public void aJungleTempleThornsBookFloatsAboveItsHiddenChest(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = Structures.place(level, BuiltinStructures.JUNGLE_TEMPLE, farChunk(40));
 		BlockPos book = onlyBook(helper, start, BuiltinStructures.JUNGLE_TEMPLE);
 
 		helper.assertTrue(start.getPieces().getFirst() instanceof JungleTemplePiece, "a jungle temple");
 		helper.assertTrue(level.getBlockState(book.below()).is(Blocks.CHEST), "the hidden chest is under the book");
+		helper.assertValueEqual(enchantmentAt(level, book), Enchantments.THORNS, "the book's enchantment");
 		helper.succeed();
 	}
 

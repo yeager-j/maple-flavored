@@ -4,16 +4,16 @@
 
 **Blocked by:** 19 (Ordinary structure books), 23 (Bastion books and Piglin anger), 44 (Mansion book and Illager alert), 46 (Illager book drops)
 
-**Status:** ready-for-agent
+**Status:** done
 
 Spec: the Maple Flavored spec in this folder, user stories 63, 64 and 74, the Structure books source list, and the Mobs module's drops bullet.
 
-- [ ] The Woodland Mansion's book is Looting, keeping its spot and Illager alert
-- [ ] The Jungle Temple's book is Thorns
-- [ ] The Bastion hoglin stables' book is Knockback
-- [ ] Ravagers drop no books, including outside raids
-- [ ] If the Enchanted Books tab (ticket 50) is built, its Looting, Thorns and Knockback descriptions follow, Ravager leaves the Illagers branch, and Fortune waits for ticket 57. Otherwise ticket 50 picks this up from the source table
-- [ ] GameTests: each structure places its new book, and Ravager kills over many seeded rolls drop no book
+- [x] The Woodland Mansion's book is Looting, keeping its spot and Illager alert
+- [x] The Jungle Temple's book is Thorns
+- [x] The Bastion hoglin stables' book is Knockback
+- [x] Ravagers drop no books, including outside raids
+- [x] If the Enchanted Books tab (ticket 50) is built, its Looting, Thorns and Knockback descriptions follow, Ravager leaves the Illagers branch, and Fortune waits for ticket 57. Otherwise ticket 50 picks this up from the source table (not built yet, so ticket 50 picks it up)
+- [x] GameTests: each structure places its new book, and Ravager kills over many seeded rolls drop no book
 
 ## Notes
 
