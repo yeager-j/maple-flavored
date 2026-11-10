@@ -3,6 +3,7 @@ package mapleflavored.reinforcement;
 import java.util.List;
 import java.util.function.BiConsumer;
 import mapleflavored.MapleFlavored;
+import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.item.v1.ItemComponentTooltipProviderRegistry;
 import net.minecraft.ChatFormatting;
@@ -14,7 +15,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -133,9 +133,7 @@ public final class Reinforcement {
 	}
 
 	private static Item registerTemplate() {
-		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, MapleFlavored.id("reinforcement_smithing_template"));
-		Item.Properties properties = new Item.Properties().rarity(Rarity.UNCOMMON).setId(key);
-		Item template = new SmithingTemplateItem(
+		return MapleItems.register("reinforcement_smithing_template", properties -> new SmithingTemplateItem(
 			Component.translatable("item.maple_flavored.smithing_template.reinforcement.applies_to").withStyle(ChatFormatting.BLUE),
 			Component.translatable("item.maple_flavored.smithing_template.reinforcement.ingredients").withStyle(ChatFormatting.BLUE),
 			Component.translatable("item.maple_flavored.smithing_template.reinforcement.base_slot_description"),
@@ -143,9 +141,7 @@ public final class Reinforcement {
 			ARMOR_SLOT_ICONS,
 			ARMOR_SLOT_ICONS,
 			properties
-		);
-
-		return Registry.register(BuiltInRegistries.ITEM, key, template);
+		), new Item.Properties().rarity(Rarity.UNCOMMON));
 	}
 
 }

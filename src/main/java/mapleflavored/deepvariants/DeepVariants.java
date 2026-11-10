@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import mapleflavored.MapleFlavored;
 import mapleflavored.gamerules.MapleGameRules;
+import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityType;
 import net.minecraft.core.BlockPos;
@@ -229,9 +230,7 @@ public final class DeepVariants {
 	}
 
 	private static Item registerSpawnEgg(String name, EntityType<? extends Mob> type) {
-		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, MapleFlavored.id(name));
-
-		return Registry.register(BuiltInRegistries.ITEM, key, new SpawnEggItem(new Item.Properties().spawnEgg(type).setId(key)));
+		return MapleItems.register(name, SpawnEggItem::new, new Item.Properties().spawnEgg(type));
 	}
 
 	/** The type natural spawning should create, and the group data to finalize it with. */

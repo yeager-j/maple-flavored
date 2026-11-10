@@ -1,4 +1,4 @@
-package mapleflavored.advancements;
+package mapleflavored.hearts;
 
 import java.util.List;
 import mapleflavored.MapleFlavored;
@@ -6,8 +6,8 @@ import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
-/** The seven Milestone advancements, each of which lowers its holder's Heart Floor. */
-public final class Milestones {
+/** The Milestone advancements, each of which lowers its holder's Heart Floor by one where Milestones count. */
+final class Milestones {
 	private static final List<Identifier> MILESTONES = List.of(
 		MapleFlavored.id("story/obtain_copper_ingot"),
 		Identifier.withDefaultNamespace("story/smelt_iron"),
@@ -22,7 +22,7 @@ public final class Milestones {
 	}
 
 	/** How many Milestones the player has completed, in any order. A Milestone missing from the loaded data never counts. */
-	public static int held(ServerPlayer player) {
+	static int held(ServerPlayer player) {
 		var loadedAdvancements = player.level().getServer().getAdvancements();
 		int held = 0;
 

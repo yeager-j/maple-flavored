@@ -17,11 +17,6 @@ public abstract class PlayerAdvancementsMixin {
 
 	@WrapMethod(method = "award")
 	private boolean announceHeartFloorDrop(AdvancementHolder holder, String criterion, Operation<Boolean> original) {
-		int heartFloorBefore = Hearts.heartFloor(player);
-		boolean awarded = original.call(holder, criterion);
-
-		Hearts.announceHeartFloorDrop(player, heartFloorBefore);
-
-		return awarded;
+		return Hearts.announcingHeartFloorDrop(player, () -> original.call(holder, criterion));
 	}
 }

@@ -1,7 +1,7 @@
-package mapleflavored.client.items;
+package mapleflavored.client.hearts;
 
-import mapleflavored.items.CrystalHeartUsedPayload;
-import mapleflavored.items.MapleItems;
+import mapleflavored.hearts.CrystalHeartUsedPayload;
+import mapleflavored.hearts.Hearts;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -23,6 +23,6 @@ public final class CrystalHeartActivation {
 	private static void play(Minecraft client, LocalPlayer player) {
 		client.particleEngine.createTrackingEmitter(player, ParticleTypes.TOTEM_OF_UNDYING, 30);
 		player.level().playLocalSound(player.getX(), player.getY(), player.getZ(), SoundEvents.TOTEM_USE, player.getSoundSource(), 1.0F, 1.0F, false);
-		player.displayItemActivation(new ItemStack(MapleItems.CRYSTAL_HEART));
+		player.displayItemActivation(new ItemStack(Hearts.CRYSTAL_HEART));
 	}
 }

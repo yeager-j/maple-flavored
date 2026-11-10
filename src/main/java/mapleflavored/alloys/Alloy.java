@@ -2,6 +2,7 @@ package mapleflavored.alloys;
 
 import com.mojang.serialization.Codec;
 import java.util.Objects;
+import mapleflavored.items.MapleItems;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -47,7 +48,7 @@ public enum Alloy implements StringRepresentable {
 
 	/** Registers this Alloy's ingot and block. Call once from {@link Alloys#register()}. */
 	void register() {
-		ingot = Alloys.registerItem(path + "_ingot", Item::new, new Item.Properties().fireResistant());
+		ingot = MapleItems.register(path + "_ingot", Item::new, new Item.Properties().fireResistant());
 		block = Alloys.registerBlock(
 			path + "_block",
 			Block::new,

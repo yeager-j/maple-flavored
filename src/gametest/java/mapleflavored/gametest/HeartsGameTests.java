@@ -152,6 +152,9 @@ public class HeartsGameTests {
 		runCommand(helper, player, "maxhearts add @s -50");
 		assertMaxHearts(helper, player, 1);
 
+		runCommand(helper, player, "maxhearts set @s 31");
+		assertMaxHearts(helper, player, 30);
+
 		runCommand(helper, player, "maxhearts set @s 0");
 		assertMaxHearts(helper, player, 1);
 		helper.succeed();

@@ -22,6 +22,8 @@ import net.minecraft.world.level.Level;
  * <p>While the player has no Wither effect and is outside the Nether and every Wither's Subspace, one returns every 10
  * seconds whatever armor they wear. That timer resets whenever recovery stops, so it never carries over between visits.
  * Death clears them, as no attachment is copied to the respawned player; logging out keeps them and both timers' progress.
+ *
+ * <p>Lowering Max Hearts drops, for good, the Withered Hearts it leaves no room for.
  */
 final class WitheredHearts {
 	private static final int WITHERING_INTERVAL_TICKS = 5 * 20;
@@ -58,12 +60,23 @@ final class WitheredHearts {
 		});
 	}
 
-	/** The player's Withered Hearts, never more than leaves them 1 usable heart. */
+	/** The player's Withered Hearts. A client knows them only for its own player, and reads 0 for anyone else. */
 	static int count(Player player) {
-		int stored = player.getAttachedOrElse(WITHERED_HEARTS, 0);
-		int mostWithered = Math.max(0, Hearts.maxHearts(player) - FEWEST_USABLE_HEARTS);
+		return player.getAttachedOrElse(WITHERED_HEARTS, 0);
+	}
 
-		return Math.min(stored, mostWithered);
+	/**
+	 * Drops the Withered Hearts that {@code maxHearts} leaves no room for. Call whenever Max Hearts are set, before max
+	 * health is applied.
+	 */
+	static void keepWithin(ServerPlayer player, int maxHearts) {
+		int mostWithered = mostWithered(maxHearts);
+
+		if (count(player) > mostWithered) setWitheredHearts(player, mostWithered);
+	}
+
+	private static int mostWithered(int maxHearts) {
+		return maxHearts - FEWEST_USABLE_HEARTS;
 	}
 
 	private static void tick(ServerPlayer player) {
@@ -84,7 +97,6 @@ final class WitheredHearts {
 			return;
 		}
 
-		clearHiddenHearts(player);
 		advanceRecovery(player);
 	}
 
@@ -99,8 +111,10 @@ final class WitheredHearts {
 
 		player.removeAttached(WITHERING_TICKS);
 
-		if (Hearts.usableHearts(player) > FEWEST_USABLE_HEARTS) {
-			player.setAttached(WITHERED_HEARTS, count(player) + 1);
+		int withered = count(player);
+
+		if (withered < mostWithered(Hearts.maxHearts(player))) {
+			setWitheredHearts(player, withered + 1);
 			Hearts.applyMaxHealth(player);
 		}
 	}
@@ -109,28 +123,13 @@ final class WitheredHearts {
 		return AlloySets.witheringInterval(player, WITHERING_INTERVAL_TICKS);
 	}
 
-	// Checks the stored count, not the clamped one, so recovery still runs to clear hearts hidden by low Max Hearts.
 	private static boolean canRecover(ServerPlayer player) {
 		return player.hasAttached(WITHERED_HEARTS)
 			&& player.level().dimension() != Level.NETHER
 			&& !WitherSubspaces.contains(player.level(), player.position());
 	}
 
-	// Drops stored hearts the Max Hearts clamp hides, so a later Max Hearts rise can't bring them back withered.
-	private static void clearHiddenHearts(ServerPlayer player) {
-		int visible = count(player);
-
-		// Withered Hearts sync to the client, so an unchanged count isn't written back every tick.
-		if (player.getAttachedOrElse(WITHERED_HEARTS, 0) > visible) setWitheredHearts(player, visible);
-	}
-
 	private static void advanceRecovery(ServerPlayer player) {
-		if (!player.hasAttached(WITHERED_HEARTS)) {
-			player.removeAttached(RECOVERY_TICKS);
-
-			return;
-		}
-
 		int ticks = player.getAttachedOrElse(RECOVERY_TICKS, 0) + 1;
 
 		if (ticks < RECOVERY_INTERVAL_TICKS) {
@@ -145,6 +144,7 @@ final class WitheredHearts {
 		MapleTriggers.WITHERED_HEART_RECOVERED.trigger(player);
 	}
 
+	// Stored only while there are some, so having the attachment means having Withered Hearts.
 	private static void setWitheredHearts(ServerPlayer player, int withered) {
 		if (withered > 0) {
 			player.setAttached(WITHERED_HEARTS, withered);

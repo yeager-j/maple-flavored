@@ -2,6 +2,7 @@ package mapleflavored.loot;
 
 import java.util.List;
 import java.util.Map;
+import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.minecraft.core.Holder;
@@ -47,17 +48,17 @@ public final class StructureChestRolls {
 
 	/** The extra rolls, by the vanilla table they join. */
 	private static final Map<ResourceKey<LootTable>, List<Roll>> ROLLS = Map.ofEntries(
-		Map.entry(BuiltInLootTables.ANCIENT_CITY, List.of(Roll.one(MapleItems.CRYSTAL_HEART, 0.09f), Roll.one(MapleItems.PITH, 0.18f))),
-		Map.entry(BuiltInLootTables.STRONGHOLD_CORRIDOR, List.of(Roll.one(MapleItems.CRYSTAL_HEART, 0.125f), Roll.one(MapleItems.PITH, 0.06f))),
+		Map.entry(BuiltInLootTables.ANCIENT_CITY, List.of(Roll.one(Hearts.CRYSTAL_HEART, 0.09f), Roll.one(MapleItems.PITH, 0.18f))),
+		Map.entry(BuiltInLootTables.STRONGHOLD_CORRIDOR, List.of(Roll.one(Hearts.CRYSTAL_HEART, 0.125f), Roll.one(MapleItems.PITH, 0.06f))),
 		Map.entry(BuiltInLootTables.BASTION_BRIDGE, List.of(Roll.one(MapleItems.PITH, 0.05f))),
-		Map.entry(BuiltInLootTables.WOODLAND_MANSION, List.of(Roll.one(MapleItems.CRYSTAL_HEART, 0.125f))),
+		Map.entry(BuiltInLootTables.WOODLAND_MANSION, List.of(Roll.one(Hearts.CRYSTAL_HEART, 0.125f))),
 		Map.entry(BuiltInLootTables.SIMPLE_DUNGEON, List.of(Roll.one(MapleItems.PITH, 0.05f))),
 		Map.entry(BuiltInLootTables.ABANDONED_MINESHAFT, List.of(Roll.one(MapleItems.PITH, 0.05f))),
 		// The vault rolls this table once per opening.
 		Map.entry(BuiltInLootTables.TRIAL_CHAMBERS_REWARD_OMINOUS, List.of(Roll.one(MapleItems.PITH, 0.10f))),
 		// End Cities make up for the enchanted gear their chests no longer give.
 		Map.entry(BuiltInLootTables.END_CITY_TREASURE, List.of(
-			Roll.one(MapleItems.CRYSTAL_HEART, 0.15f),
+			Roll.one(Hearts.CRYSTAL_HEART, 0.15f),
 			new Roll(MapleItems.PITH, 0.50f, 2)
 		))
 	);

@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P2 (Medium)
 
@@ -149,14 +149,32 @@ The mixin owns the hollow-heart pixel mask, the blit loop and a reconstruction o
 
 ## Checklist
 
-- [ ] 1. `ExperiencePoints` can add and clear points, Remnants write XP only through it, and a test collects a Remnant across the level 30 boundary and asserts level and progress.
-- [ ] 2. The Crystal Heart lives in `hearts`, and `items` imports no feature package.
-- [ ] 3. One registration helper exists, and `MapleItems` is either the item registry or named for what it holds.
-- [ ] 4. Lowering Max Hearts clamps Withered Hearts where it happens, and a test shows hidden hearts don't return in the Nether.
-- [ ] 5. One type or function owns the 1 to 30 range, and the Crystal Heart checks the cap once.
-- [ ] 6. One resolved value says what a death costs, including "no floor" for Hardcore.
-- [ ] 7. `Hearts` has one entry point that runs a change and announces a Heart Floor drop, and both mixins call it.
-- [ ] 8. The max health bonus is derived from the attribute's base value, and a client can tell "not synced" from 10.
-- [ ] 9. The Heart Floor range is derived from the Milestone list, and `Milestones` lives with `hearts`.
-- [ ] 10. A `client/hearts` class owns Withered Heart drawing, and `HudMixin` forwards to it.
-- [ ] 11. Hardcore, the difficulty switch and an `ExperiencePoints` round trip are tested.
+- [x] 1. `ExperiencePoints` can add and clear points, Remnants write XP only through it, and a test collects a Remnant across the level 30 boundary and asserts level and progress.
+- [x] 2. The Crystal Heart lives in `hearts`, and `items` imports no feature package.
+- [x] 3. One registration helper exists, and `MapleItems` is either the item registry or named for what it holds.
+- [x] 4. Lowering Max Hearts clamps Withered Hearts where it happens, and a test shows hidden hearts don't return in the Nether.
+- [x] 5. One type or function owns the 1 to 30 range, and the Crystal Heart checks the cap once.
+- [x] 6. One resolved value says what a death costs, including "no floor" for Hardcore.
+- [x] 7. `Hearts` has one entry point that runs a change and announces a Heart Floor drop, and both mixins call it.
+- [x] 8. The max health bonus is derived from the attribute's base value, and a client can tell "not synced" from 10.
+- [x] 9. The Heart Floor range is derived from the Milestone list, and `Milestones` lives with `hearts`.
+- [x] 10. A `client/hearts` class owns Withered Heart drawing, and `HudMixin` forwards to it.
+- [x] 11. Hardcore, the difficulty switch and an `ExperiencePoints` round trip are tested.
+
+## Comments
+
+Closed in one pull request. What each box means in the code:
+
+1. `ExperiencePoints` has `add`, `clear` and `copy`. A Remnant is collected with `add`, death takes XP with `clear`, and Keep XP carries it to the respawned player with `copy`. Collecting no longer raises the player's score, which vanilla's `giveExperiencePoints` did. `collectingARemnantLandsExactlyOnLevelThirty` asserts level and progress, and the Remnant tests read points from level and progress. The drift the finding inferred is real: a player holding 10 points who collected 1,385 ended at level 29, and that test fails when `collect` is put back on `giveExperiencePoints`.
+2. `CrystalHeartItem` and `CrystalHeartUsedPayload` are in `hearts`, the item is `Hearts.CRYSTAL_HEART`, and `CrystalHeartActivation` is in `client/hearts`. `items` imports only `MapleFlavored`.
+3. `MapleItems.register` is public and every item goes through it: the Alloy items, the spawn eggs, the Reinforcement template and the Crystal Heart. `MapleItems` keeps its name as that registry, and still holds Pith and the Diamond Shard, which no one feature owns.
+4. `Hearts.setMaxHearts` calls `WitheredHearts.keepWithin`, so the count is clamped at the one write that can break it. The read-side clamp, `clearHiddenHearts` and the second write path are gone. `witheredHeartsDroppedByLowerMaxHeartsNeverReturnInTheNether` covers the Nether and the Wither effect.
+5. `Hearts.setMaxHearts` clamps to 1 to 30 and returns the result, and the saved value is range-checked on load. `/maxhearts set` now takes any number and stops at the nearest end, as `add` already did. The Crystal Heart is refused before use starts, and on finishing asks once, through `addMaxHeart`, whose answer it now uses.
+6. `DeathCost.of(player)` resolves Hardcore, difficulty, Milestones and Keep Hearts once. It is empty in Hardcore, so `Hearts.heartFloor` returns an empty `OptionalInt` there.
+7. `Hearts.announcingHeartFloorDrop(player, change)` and `announcingHeartFloorDrops(server, change)` run the change and announce. Both mixins are one call.
+8. The max health modifier is usable hearts times 2 less the attribute's base value. A server stores Max Hearts for every player on join, so `Hearts.known(player)` is empty on a client exactly when that player's hearts were never sent. `maxHearts`, `witheredHearts` and `usableHearts` now take a `ServerPlayer`.
+9. `Milestones` is in `hearts`. The floor is 10 less the Milestones held, so the lowest floor comes from the list's length, with no second constant and no clamp.
+10. `client/hearts/WitheredHeartsHud` owns the hollow heart, and `HudMixin` forwards three calls to it.
+11. `hardcoreHasNoHeartFloorAndAnnouncesNone`, `deathInHardcoreCostsNoMaxHearts`, `chatAnnouncesTheHeartFloorADifficultySwitchLowers` and `ExperiencePointsGameTests`. `WitheredHeartsClientGameTest` checks what the client is sent and takes a shot of the health bar.
+
+Not done: no test reads the `MaxHeartsLostPayload` count. Mock players never register a channel, so the server sends them no payload.

@@ -14,11 +14,9 @@ import net.minecraft.server.level.ServerPlayer;
  * {@code /maxhearts}, an operator command for checking and changing Max Hearts, like vanilla's {@code /experience}.
  *
  * <p>{@code query <target>}, {@code set <targets> <amount>} and {@code add <targets> <amount>}, where a negative
- * amount removes hearts. Results stay between 1 and 30 Max Hearts.
+ * amount removes hearts. An amount that would leave the 1 to 30 range stops at its nearest end.
  */
 final class MaxHeartsCommand {
-	private static final int MIN_MAX_HEARTS = 1;
-
 	private MaxHeartsCommand() {
 	}
 
@@ -38,7 +36,7 @@ final class MaxHeartsCommand {
 						.then(
 							Commands.argument("targets", EntityArgument.players())
 								.then(
-									Commands.argument("amount", IntegerArgumentType.integer(MIN_MAX_HEARTS, Hearts.MAX_HEARTS_CAP))
+									Commands.argument("amount", IntegerArgumentType.integer())
 										.executes(c -> {
 											int amount = IntegerArgumentType.getInteger(c, "amount");
 
@@ -75,9 +73,8 @@ final class MaxHeartsCommand {
 	private static int change(CommandSourceStack source, Collection<ServerPlayer> targets, IntUnaryOperator newMaxHearts) {
 		for (ServerPlayer target : targets) {
 			int requested = newMaxHearts.applyAsInt(Hearts.maxHearts(target));
-			int maxHearts = Math.clamp(requested, MIN_MAX_HEARTS, Hearts.MAX_HEARTS_CAP);
+			int maxHearts = Hearts.setMaxHearts(target, requested);
 
-			Hearts.setMaxHearts(target, maxHearts);
 			source.sendSuccess(() -> Component.translatable("commands.maple_flavored.maxhearts.set", target.getDisplayName(), maxHearts), true);
 		}
 

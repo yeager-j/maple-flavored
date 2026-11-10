@@ -44,7 +44,7 @@ public final class Alloys {
 	public static final TagKey<Item> ALLOY_INGOTS = TagKey.create(Registries.ITEM, MapleFlavored.id("alloy_ingots"));
 
 	/** The Alloy Furnace's fuel, dropped by Piglin Brutes that a player kills. One makes one Alloy ingot. */
-	public static final Item ANCIENT_EMBER = registerItem(
+	public static final Item ANCIENT_EMBER = MapleItems.register(
 		"ancient_ember", Item::new, new Item.Properties().rarity(Rarity.UNCOMMON).fireResistant()
 	);
 
@@ -120,19 +120,13 @@ public final class Alloys {
 		);
 	}
 
-	static Item registerItem(String name, Function<Item.Properties, Item> factory, Item.Properties properties) {
-		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, MapleFlavored.id(name));
-
-		return Registry.register(BuiltInRegistries.ITEM, key, factory.apply(properties.setId(key)));
-	}
-
 	// Registers the block and its block item, as vanilla's Items.registerBlock does.
 	static Block registerBlock(
 		String name, Function<BlockBehaviour.Properties, Block> factory, BlockBehaviour.Properties properties, Item.Properties itemProperties
 	) {
 		ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, MapleFlavored.id(name));
 		Block block = Registry.register(BuiltInRegistries.BLOCK, key, factory.apply(properties.setId(key)));
-		BlockItem item = (BlockItem) registerItem(name, itemSettings -> new BlockItem(block, itemSettings), itemProperties.useBlockDescriptionPrefix());
+		BlockItem item = (BlockItem) MapleItems.register(name, itemSettings -> new BlockItem(block, itemSettings), itemProperties.useBlockDescriptionPrefix());
 
 		item.registerBlocks(Item.BY_BLOCK, item);
 

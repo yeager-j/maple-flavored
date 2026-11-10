@@ -7,6 +7,7 @@
 		"CreeperTestAccessor",
 		"ExperienceOrbAccessor",
 		"GameTestHelperAccessor",
+		"GameTestServerHardcoreMixin",
 		"GameTestServerMixin",
 		"LivingEntityAccessor"
 	],

@@ -1,4 +1,4 @@
-package mapleflavored.items;
+package mapleflavored.hearts;
 
 import mapleflavored.MapleFlavored;
 import net.minecraft.network.RegistryFriendlyByteBuf;

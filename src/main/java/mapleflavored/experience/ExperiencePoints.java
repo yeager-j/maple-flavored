@@ -3,7 +3,12 @@ package mapleflavored.experience;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
-/** A player's XP counted in points rather than levels, the unit every Maple Flavored XP cost uses. */
+/**
+ * A player's XP counted in points rather than levels, the unit every Maple Flavored XP cost and transfer uses.
+ *
+ * <p>Points are exact: a write lands on the level and progress those points make, with none of the rounding vanilla's
+ * level-by-level adding collects.
+ */
 public final class ExperiencePoints {
 	// Reaching level 21,864 takes more than Integer.MAX_VALUE points.
 	private static final int HIGHEST_LEVEL_IN_POINTS = 21_863;
@@ -35,6 +40,33 @@ public final class ExperiencePoints {
 		player.setExperienceLevels(level);
 		player.setExperiencePoints((int) (clampedPoints - pointsToReachLevel(level)));
 		player.totalExperience = clampedPoints;
+	}
+
+	/**
+	 * Gives the player exactly this many points on top of what they hold, up to {@link Integer#MAX_VALUE} in all.
+	 * Unlike vanilla's {@code giveExperiencePoints}, it leaves their score alone.
+	 *
+	 * @param points at least 0
+	 */
+	public static void add(ServerPlayer player, int points) {
+		long total = (long) total(player) + points;
+
+		set(player, (int) Math.min(total, Integer.MAX_VALUE));
+	}
+
+	/** Takes all the player's XP. */
+	public static void clear(ServerPlayer player) {
+		set(player, 0);
+	}
+
+	/**
+	 * Gives {@code to} the same XP as {@code from}, replacing what {@code to} held. The level and progress are carried
+	 * over as they are, so levels beyond what points can count survive.
+	 */
+	public static void copy(Player from, ServerPlayer to) {
+		to.setExperienceLevels(from.experienceLevel);
+		to.experienceProgress = from.experienceProgress;
+		to.totalExperience = total(from);
 	}
 
 	private static int levelFor(int points) {

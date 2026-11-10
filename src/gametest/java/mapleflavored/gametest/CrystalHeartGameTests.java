@@ -7,6 +7,7 @@ import static mapleflavored.gametest.MockPlayers.runCommand;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
@@ -52,7 +53,7 @@ public class CrystalHeartGameTests {
 	public void consumingACrystalHeartAddsOneMaxHeart(GameTestHelper helper) {
 		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 12);
 
-		hold(player, InteractionHand.MAIN_HAND, MapleItems.CRYSTAL_HEART);
+		hold(player, InteractionHand.MAIN_HAND, Hearts.CRYSTAL_HEART);
 
 		InteractionResult result = startUsing(player, InteractionHand.MAIN_HAND);
 
@@ -76,13 +77,13 @@ public class CrystalHeartGameTests {
 	public void aCrystalHeartIsRefusedAtThirtyMaxHearts(GameTestHelper helper) {
 		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 30);
 
-		hold(player, InteractionHand.MAIN_HAND, MapleItems.CRYSTAL_HEART);
+		hold(player, InteractionHand.MAIN_HAND, Hearts.CRYSTAL_HEART);
 
 		InteractionResult result = startUsing(player, InteractionHand.MAIN_HAND);
 
 		helper.assertFalse(result.consumesAction(), "using a Crystal Heart is refused");
 		helper.assertFalse(player.isUsingItem(), "the player is not using it");
-		helper.assertTrue(player.getMainHandItem().is(MapleItems.CRYSTAL_HEART), "the Crystal Heart is kept");
+		helper.assertTrue(player.getMainHandItem().is(Hearts.CRYSTAL_HEART), "the Crystal Heart is kept");
 		assertMaxHearts(helper, player, 30);
 		helper.assertFalse(isDone(helper, player, CONSUME_CRYSTAL_HEART), "a refused Crystal Heart doesn't count as consumed");
 		helper.succeed();
@@ -113,12 +114,12 @@ public class CrystalHeartGameTests {
 	public void aCrystalHeartIsRefusedWhenThirtyIsReachedDuringUse(GameTestHelper helper) {
 		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 29);
 
-		hold(player, InteractionHand.MAIN_HAND, MapleItems.CRYSTAL_HEART);
+		hold(player, InteractionHand.MAIN_HAND, Hearts.CRYSTAL_HEART);
 		startUsing(player, InteractionHand.MAIN_HAND);
 		runCommand(helper, player, "maxhearts set @s 30");
 		tickUse(player, CONSUME_TICKS);
 
-		helper.assertTrue(player.getMainHandItem().is(MapleItems.CRYSTAL_HEART), "the Crystal Heart is kept");
+		helper.assertTrue(player.getMainHandItem().is(Hearts.CRYSTAL_HEART), "the Crystal Heart is kept");
 		assertMaxHearts(helper, player, 30);
 		helper.succeed();
 	}
@@ -138,12 +139,12 @@ public class CrystalHeartGameTests {
 		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 12);
 
 		hold(player, InteractionHand.MAIN_HAND, Items.TOTEM_OF_UNDYING);
-		hold(player, InteractionHand.OFF_HAND, MapleItems.CRYSTAL_HEART);
+		hold(player, InteractionHand.OFF_HAND, Hearts.CRYSTAL_HEART);
 		hitLethally(helper, player);
 
 		helper.assertTrue(player.isAlive(), "the player is saved");
 		helper.assertTrue(player.getMainHandItem().isEmpty(), "the Totem is used up");
-		helper.assertTrue(player.getOffhandItem().is(MapleItems.CRYSTAL_HEART), "the Crystal Heart is kept");
+		helper.assertTrue(player.getOffhandItem().is(Hearts.CRYSTAL_HEART), "the Crystal Heart is kept");
 		helper.assertTrue(isDone(helper, player, POSTMORTAL), "a Totem save grants Postmortal");
 		helper.assertFalse(isDone(helper, player, SAVED_BY_CRYSTAL_HEART), "a Totem save isn't a Crystal Heart save");
 		helper.succeed();
@@ -153,7 +154,7 @@ public class CrystalHeartGameTests {
 	public void aCrystalHeartInTheMainHandIsUsedBeforeATotemInTheOffHand(GameTestHelper helper) {
 		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 12);
 
-		hold(player, InteractionHand.MAIN_HAND, MapleItems.CRYSTAL_HEART);
+		hold(player, InteractionHand.MAIN_HAND, Hearts.CRYSTAL_HEART);
 		hold(player, InteractionHand.OFF_HAND, Items.TOTEM_OF_UNDYING);
 		hitLethally(helper, player);
 
@@ -172,7 +173,7 @@ public class CrystalHeartGameTests {
 		List<ItemStack> heart = List.of(diamond, none, diamond, diamond, pith, diamond, none, diamond, none);
 		List<ItemStack> eight = List.of(diamond, diamond, diamond, diamond, pith, diamond, diamond, diamond, diamond);
 
-		assertCrafts(helper, CraftingInput.of(3, 3, heart), new ItemStack(MapleItems.CRYSTAL_HEART));
+		assertCrafts(helper, CraftingInput.of(3, 3, heart), new ItemStack(Hearts.CRYSTAL_HEART));
 		helper.assertTrue(craft(helper, CraftingInput.of(3, 3, eight)).isEmpty(), "eight diamonds around Pith craft nothing");
 		helper.succeed();
 	}
@@ -220,7 +221,7 @@ public class CrystalHeartGameTests {
 		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 12);
 
 		player.giveExperiencePoints(100);
-		hold(player, hand, MapleItems.CRYSTAL_HEART);
+		hold(player, hand, Hearts.CRYSTAL_HEART);
 		hitLethally(helper, player);
 
 		helper.assertTrue(player.isAlive(), "the player is saved");

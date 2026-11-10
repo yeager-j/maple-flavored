@@ -193,26 +193,32 @@ public class WitheredHeartsGameTests {
 			});
 	}
 
-	@GameTest(dimension = "minecraft:the_nether", maxTicks = 200)
-	public void witheredHeartsHiddenByLowMaxHeartsAreStillCleared(GameTestHelper helper) {
+	@GameTest(dimension = "minecraft:the_nether", maxTicks = 300)
+	public void witheredHeartsDroppedByLowerMaxHeartsNeverReturnInTheNether(GameTestHelper helper) {
 		ServerPlayer player = playerWithMaxHearts(helper, 10);
 
-		runCommand(helper, player, "maxhearts set @s 2");
+		runCommand(helper, player, "maxhearts set @s 3");
 		wither(player);
 
 		helper.startSequence()
-			.thenExecuteAfter(WITHERING_INTERVAL + MARGIN, () -> {
+			.thenExecuteAfter(2 * WITHERING_INTERVAL + MARGIN, () -> {
+				assertWitheredHearts(helper, player, 2);
+
+				// Still in the Nether and under the Wither effect, where no Withered Heart recovers.
+				runCommand(helper, player, "maxhearts set @s 2");
 				assertWitheredHearts(helper, player, 1);
+				runCommand(helper, player, "maxhearts set @s 3");
+				assertWitheredHearts(helper, player, 1);
+
+				player.removeEffect(MobEffects.WITHER);
 				runCommand(helper, player, "maxhearts set @s 1");
 				assertWitheredHearts(helper, player, 0);
-				player.removeEffect(MobEffects.WITHER);
-				moveTo(helper, player, Level.OVERWORLD);
+				runCommand(helper, player, "maxhearts set @s 3");
+				assertWitheredHearts(helper, player, 0);
 			})
 			.thenExecuteAfter(MARGIN, () -> {
-				moveTo(helper, player, Level.NETHER);
-				runCommand(helper, player, "maxhearts set @s 2");
 				assertWitheredHearts(helper, player, 0);
-				helper.assertFalse(isDone(helper, player, RECOVERY_ADVANCEMENT), "no Withered Heart came back");
+				helper.assertFalse(isDone(helper, player, RECOVERY_ADVANCEMENT), "no Withered Heart was recovered");
 			})
 			.thenSucceed();
 	}

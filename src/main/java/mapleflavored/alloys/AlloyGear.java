@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import mapleflavored.MapleFlavored;
+import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTabOutput;
 import net.fabricmc.fabric.api.item.v1.DefaultItemComponentEvents;
@@ -161,7 +162,7 @@ public final class AlloyGear {
 
 		if (kind.hasDurability()) properties.repairable(alloy.ingot());
 
-		return Alloys.registerItem(alloy.path() + "_" + kind.path(), Item::new, properties);
+		return MapleItems.register(alloy.path() + "_" + kind.path(), Item::new, properties);
 	}
 
 	// The chestplate, so the same armor, durability and enchantability, that glides as an Elytra does. It is worn
@@ -180,7 +181,7 @@ public final class AlloyGear {
 			.fireResistant()
 			.repairable(alloy.ingot());
 
-		return Alloys.registerItem(name, Item::new, properties);
+		return MapleItems.register(name, Item::new, properties);
 	}
 
 	// Vanilla's helpers build the base attributes and durability; the traits go on top of them.

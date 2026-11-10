@@ -13,7 +13,6 @@ import mapleflavored.alloys.GearKind;
 import mapleflavored.alloys.OrichalcumSave;
 import mapleflavored.gametest.mixin.EntityAccessor;
 import mapleflavored.hearts.Hearts;
-import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementType;
@@ -327,11 +326,11 @@ public class AlloySetGameTests {
 			ServerPlayer player = survivalPlayer(helper);
 
 			wearSet(player, Alloy.ORICHALCUM);
-			player.setItemInHand(hand, new ItemStack(MapleItems.CRYSTAL_HEART));
+			player.setItemInHand(hand, new ItemStack(Hearts.CRYSTAL_HEART));
 			hitLethally(helper, player);
 
 			helper.assertTrue(player.isAlive(), "the player is saved");
-			helper.assertTrue(player.getItemInHand(hand).is(MapleItems.CRYSTAL_HEART), "the Crystal Heart in the " + hand + " is kept");
+			helper.assertTrue(player.getItemInHand(hand).is(Hearts.CRYSTAL_HEART), "the Crystal Heart in the " + hand + " is kept");
 		}
 
 		helper.succeed();
