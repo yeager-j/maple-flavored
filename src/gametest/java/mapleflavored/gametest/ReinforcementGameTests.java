@@ -9,6 +9,7 @@ import mapleflavored.alloys.AlloyGear;
 import mapleflavored.alloys.GearKind;
 import mapleflavored.items.MapleItems;
 import mapleflavored.reinforcement.Reinforcement;
+import mapleflavored.reinforcement.ReinforcementRecipe;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementType;
@@ -31,6 +32,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -86,6 +89,31 @@ public class ReinforcementGameTests {
 			assemble(helper, new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE), new ItemStack(Items.IRON_HELMET), new ItemStack(Items.CHAINMAIL_HELMET)).isEmpty(),
 			"a Netherite upgrade template Reinforces"
 		);
+		helper.succeed();
+	}
+
+	// The recipe's data lists what it takes; a base listed there by mistake still can't spend a template for nothing.
+	@GameTest
+	public void aBaseThatIsNotWornAsArmorMakesNothingEvenWhenTheRecipeListsIt(GameTestHelper helper) {
+		ReinforcementRecipe recipe = new ReinforcementRecipe(
+			new Recipe.CommonInfo(false),
+			Ingredient.of(Reinforcement.TEMPLATE),
+			Ingredient.of(Items.WOLF_ARMOR, Items.DIAMOND_SWORD, Items.IRON_HELMET),
+			Ingredient.of(Items.CHAINMAIL_HELMET)
+		);
+
+		for (Item base : List.of(Items.WOLF_ARMOR, Items.DIAMOND_SWORD)) {
+			SmithingRecipeInput input = new SmithingRecipeInput(new ItemStack(Reinforcement.TEMPLATE), new ItemStack(base), new ItemStack(Items.CHAINMAIL_HELMET));
+
+			helper.assertTrue(recipe.matches(input, helper.getLevel()), base + " is listed by the recipe");
+			helper.assertTrue(recipe.assemble(input).isEmpty(), base + " is Reinforced");
+		}
+
+		SmithingRecipeInput helmet = new SmithingRecipeInput(
+			new ItemStack(Reinforcement.TEMPLATE), new ItemStack(Items.IRON_HELMET), new ItemStack(Items.CHAINMAIL_HELMET)
+		);
+
+		helper.assertTrue(Reinforcement.isReinforced(recipe.assemble(helmet)), "a helmet in the same recipe is Reinforced");
 		helper.succeed();
 	}
 

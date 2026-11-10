@@ -36,6 +36,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.item.trading.TradeSet;
@@ -182,6 +183,48 @@ public class TradeGameTests {
 	}
 
 	@GameTest
+	public void theBookTradeIsNamedByItsDataNotByWhatItTrades(GameTestHelper helper) {
+		ItemStack levelThreeBook = book(helper, Enchantments.EFFICIENCY, 3);
+		MerchantOffer unmarked = new MerchantOffer(new ItemCost(Items.ENCHANTED_BOOK), new ItemStack(Items.EMERALD, 4), 12, 10, 0.0F);
+		MerchantOffer markedDiamonds = new MerchantOffer(new ItemCost(Items.ENCHANTED_BOOK), payingPerFind(Items.DIAMOND, 1), 12, 10, 0.0F);
+
+		helper.assertFalse(BookTrade.isBookTrade(unmarked), "an unmarked trade of a book for emeralds is the book trade");
+		helper.assertValueEqual(BookTrade.multiplier(unmarked, levelThreeBook, ItemStack.EMPTY), 1, "an unmarked trade's multiplier");
+		helper.assertTrue(BookTrade.isBookTrade(markedDiamonds), "a marked trade that pays diamonds is the book trade");
+		helper.assertValueEqual(BookTrade.multiplier(markedDiamonds, ItemStack.EMPTY, levelThreeBook), 4, "a marked trade's multiplier");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void aBookTradeSavedBeforeItsMarkerExistedIsMarkedOnLoad(GameTestHelper helper) {
+		MerchantOffer savedBookTrade = new MerchantOffer(new ItemCost(Items.ENCHANTED_BOOK), new ItemStack(Items.EMERALD, 4), 12, 10, 0.0F);
+		MerchantOffer paperTrade = new MerchantOffer(new ItemCost(Items.PAPER, 24), new ItemStack(Items.EMERALD), 16, 2, 0.05F);
+		MerchantOffers saved = new MerchantOffers();
+
+		saved.add(savedBookTrade);
+		saved.add(paperTrade);
+		BookTrade.markSavedOffers(saved);
+
+		helper.assertTrue(BookTrade.isBookTrade(savedBookTrade), "a saved book trade is the book trade once loaded");
+		helper.assertFalse(BookTrade.isBookTrade(paperTrade), "a saved paper trade is the book trade once loaded");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void thePayoutNeverOutgrowsAStackWhateverTheListedPrice(GameTestHelper helper) {
+		ItemStack levelFiveBook = book(helper, Enchantments.SHARPNESS, 5);
+		MerchantOffer fiveEmeralds = new MerchantOffer(new ItemCost(Items.ENCHANTED_BOOK), payingPerFind(Items.EMERALD, 5), 12, 10, 0.0F);
+		// 16 finds at 5 emeralds would be 80; the 12 finds that fit a stack pay 60.
+		int multiplier = BookTrade.multiplier(fiveEmeralds, levelFiveBook, ItemStack.EMPTY);
+		ItemStack payout = BookTrade.payout(fiveEmeralds.assemble(), multiplier);
+
+		helper.assertValueEqual(multiplier, 12, "finds paid for a level V book at 5 emeralds each");
+		helper.assertValueEqual(payout.getCount(), 60, "emeralds paid");
+		helper.assertFalse(payout.has(BookTrade.PAYS_PER_FIND), "the emeralds paid carry the trade's marker");
+		helper.succeed();
+	}
+
+	@GameTest
 	public void librarianLevelsTwoToFourHaveNoBookTrade(GameTestHelper helper) {
 		for (int villagerLevel = 2; villagerLevel <= 4; villagerLevel++) {
 			for (int villager = 0; villager < VILLAGERS_PER_LEVEL; villager++) {
@@ -256,6 +299,7 @@ public class TradeGameTests {
 		int vanillaOrbXp = orbXp - 4 * BookTrade.PLAYER_XP_PER_FIND;
 
 		helper.assertValueEqual(emeralds, 16, "emeralds paid for a level III book");
+		helper.assertValueEqual(unmarkedEmeralds(player), 16, "emeralds paid that stack with any other emerald");
 		helper.assertTrue(trading.menu().getSlot(0).getItem().isEmpty(), "the book is taken");
 		helper.assertValueEqual(villager.getVillagerXp(), 40, "villager XP for a level III book");
 		helper.assertTrue(vanillaOrbXp >= 8 && vanillaOrbXp <= 11, "player XP beyond 200 points was " + vanillaOrbXp);
@@ -292,6 +336,16 @@ public class TradeGameTests {
 		helper.assertValueEqual(player.getInventory().countItem(Items.EMERALD), 64, "emeralds when the payout exactly fits");
 		helper.assertValueEqual(trading.villager().getVillagerXp(), 160, "villager XP for a level V book");
 		helper.succeed();
+	}
+
+	private static int unmarkedEmeralds(ServerPlayer player) {
+		int emeralds = 0;
+
+		for (ItemStack stack : player.getInventory()) {
+			if (stack.is(Items.EMERALD) && !stack.has(BookTrade.PAYS_PER_FIND)) emeralds += stack.getCount();
+		}
+
+		return emeralds;
 	}
 
 	private static void fillInventoryExceptLastSlot(ServerPlayer player) {
@@ -338,6 +392,14 @@ public class TradeGameTests {
 		villager.setTradingPlayer(player);
 
 		return new Trading(player, villager, new MerchantMenu(1, player.getInventory(), villager));
+	}
+
+	private static ItemStack payingPerFind(Item item, int count) {
+		ItemStack listed = new ItemStack(item, count);
+
+		listed.set(BookTrade.PAYS_PER_FIND, Unit.INSTANCE);
+
+		return listed;
 	}
 
 	private static ItemStack book(GameTestHelper helper, ResourceKey<Enchantment> key, int level) {

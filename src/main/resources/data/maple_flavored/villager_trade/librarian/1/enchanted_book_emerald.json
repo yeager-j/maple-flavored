@@ -1,5 +1,8 @@
 {
   "gives": {
+    "components": {
+      "maple_flavored:pays_per_find": {}
+    },
     "count": 4,
     "id": "minecraft:emerald"
   },
