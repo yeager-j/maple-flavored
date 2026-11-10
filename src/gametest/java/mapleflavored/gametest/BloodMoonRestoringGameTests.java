@@ -567,7 +567,8 @@ public class BloodMoonRestoringGameTests {
 	}
 
 	// Its own environment, since it changes the difficulty.
-	@GameTest(environment = "maple_flavored_gametest:restoring_peaceful", maxTicks = SITE_TICKS)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void peacefulRestoresNoMobItRefusesAndDropsTheOnesItLoads(GameTestHelper helper) {
 		Site bruteSite = Site.build(helper, 1, Blocks.POLISHED_BLACKSTONE_BRICKS);
 		Site vindicatorSite = Site.build(helper, 2, Blocks.COBBLESTONE);

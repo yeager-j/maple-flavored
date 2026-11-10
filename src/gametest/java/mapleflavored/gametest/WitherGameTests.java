@@ -54,7 +54,8 @@ public class WitherGameTests {
 	private static final ResourceKey<Enchantment> BLIGHT = ResourceKey.create(Registries.ENCHANTMENT, MapleFlavored.id("blight"));
 	private static final double EPSILON = 1.0E-6;
 
-	@GameTest(environment = "maple_flavored_gametest:wither_recovery", maxTicks = 600)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 600)
 	public void witheredHeartsReturnOnlyOutsideAWithersSubspaceUntilTheWitherDies(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -127,7 +128,8 @@ public class WitherGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:wither_passage", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void theWitherPassesThroughBedrockAndObsidianButNotStone(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		// Each joins before its Wither moves, so each sees only that Wither's move for Nice Try.
@@ -153,7 +155,8 @@ public class WitherGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:wither_suffocation", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void theWitherDoesntSuffocateInBedrock(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		WitherBoss wither = arena.stillWither(new Vec3(0.0, 5.0, 0.0));
@@ -169,7 +172,8 @@ public class WitherGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:wither_leash", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void theWitherNeverMovesFurtherThanFiftyBlocksFromItsSubspacesCentre(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		WitherBoss wither = arena.stillWither(new Vec3(0.0, 5.0, 0.0));
@@ -210,7 +214,8 @@ public class WitherGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:wither_drops", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void theWitherDropsABlightBookEveryKill(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -235,7 +240,8 @@ public class WitherGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:wither_kill", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void killingTheWitherCreditsEveryPlayerInsideItsSubspace(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);

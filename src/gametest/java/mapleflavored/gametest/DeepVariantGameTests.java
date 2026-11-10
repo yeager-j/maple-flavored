@@ -250,7 +250,8 @@ public class DeepVariantGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:deep_zombie_rule_change")
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:deep_variant_rules")
 	public void theDeepVariantRulesSetHealthAndDamageForLaterSpawnsOnly(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Zombie first = spawnDeepZombie(helper);
@@ -417,7 +418,8 @@ public class DeepVariantGameTests {
 		assertArrowDamageMultiplier(helper, 3.0);
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:deep_skeleton_rule_change")
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:deep_variant_rules")
 	public void aDeepSkeletonKeepsItsArrowDamageWhenTheRuleChangesOrItReloads(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Skeleton first = spawnNaturally(helper, DeepVariants.DEEP_SKELETON);

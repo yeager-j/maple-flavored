@@ -192,6 +192,18 @@ public class ZephyrGameTests {
 	}
 
 	@GameTest
+	public void theEnchantmentHasALevelForEachLevelOfBehaviour(GameTestHelper helper) {
+		int maxLevelInData = helper.getLevel().registryAccess()
+			.lookupOrThrow(Registries.ENCHANTMENT)
+			.getOrThrow(Zephyr.ENCHANTMENT)
+			.value()
+			.getMaxLevel();
+
+		helper.assertValueEqual(maxLevelInData, Zephyr.MAX_LEVEL, "the max_level in zephyr.json");
+		helper.succeed();
+	}
+
+	@GameTest
 	public void theLaunchSpeedIsFoundWithoutGravity(GameTestHelper helper) {
 		ServerPlayer player = survivalPlayerInZephyrBoots(helper, 3);
 

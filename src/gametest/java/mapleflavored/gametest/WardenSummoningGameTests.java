@@ -42,7 +42,8 @@ public class WardenSummoningGameTests {
 	// Vanilla's cooldown after a warning.
 	private static final int COOLDOWN_TICKS = 200;
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_territory", maxTicks = 20)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 20)
 	public void wardenTerritoryIsTheDeepDarkAndAncientCityBounds(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerLevel level = arena.level();
@@ -63,7 +64,8 @@ public class WardenSummoningGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_remote_outside", maxTicks = 200)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
 	public void aShriekCausedFromOutsideWardenTerritoryWarnsNobody(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerPlayer cause = arena.player(Vec3.ZERO, GameType.SURVIVAL);
@@ -82,7 +84,8 @@ public class WardenSummoningGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_remote_inside", maxTicks = 300)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 300)
 	public void aRemoteShriekSummonsNearTheCauseInWardenTerritory(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerPlayer cause = arena.player(Vec3.ZERO, GameType.SURVIVAL);
@@ -103,7 +106,8 @@ public class WardenSummoningGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_friend", maxTicks = 300)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 300)
 	public void aFriendsShriekSummonsNearThePlayerInWardenTerritory(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Vec3 friendOffset = new Vec3(10.0, 0.0, 0.0);
@@ -126,7 +130,8 @@ public class WardenSummoningGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_widening", maxTicks = 300)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 300)
 	public void withNoRoomNearbyTheSearchWidensTo50Blocks(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Vec3 standing = new Vec3(0.0, ABOVE_THE_ARENA, 0.0);
@@ -144,7 +149,8 @@ public class WardenSummoningGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_failing", maxTicks = 200)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
 	public void withNoRoomWithin50BlocksTheCooldownClears(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Vec3 standing = new Vec3(0.0, ABOVE_THE_ARENA * 2, 0.0);
@@ -170,7 +176,8 @@ public class WardenSummoningGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_cancelled", maxTicks = 200)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
 	public void withNobodyInWardenTerritoryTheSummonIsCancelled(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerPlayer cause = arena.player(Vec3.ZERO, GameType.SURVIVAL);
@@ -191,7 +198,8 @@ public class WardenSummoningGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_nearest", maxTicks = 300)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 300)
 	public void withTheCauseGoneTheWardenComesForTheNearestPlayerInWardenTerritory(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Vec3 causeOffset = new Vec3(2.0, 0.0, 0.0);
@@ -219,7 +227,8 @@ public class WardenSummoningGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_below_max", maxTicks = 200)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
 	public void aShriekBelowTheFourthWarningSummonsNothing(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerPlayer cause = arena.player(Vec3.ZERO, GameType.SURVIVAL);
@@ -237,7 +246,8 @@ public class WardenSummoningGameTests {
 
 	// Vanilla's radius, which Warden summoning copies: 16 blocks from the shrieker's middle, half a block above where a
 	// player beside it stands.
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_counted_radius", maxTicks = 20)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 20)
 	public void aShriekCountsForThePlayersWithin16BlocksOfTheShrieker(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Vec3 causeOffset = new Vec3(2.0, 0.0, 0.0);
@@ -262,7 +272,8 @@ public class WardenSummoningGameTests {
 
 	// Vanilla's box, which Warden summoning copies: 48 blocks wide around the shrieker's middle, so it reaches 24 blocks
 	// across. A Warden's hitbox reaches 0.45 blocks from where it stands.
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_nearby_warden", maxTicks = 20)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 20)
 	public void aWardenWithin24BlocksOfTheShriekerKeepsItFromWarning(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Vec3 causeOffset = new Vec3(2.0, 0.0, 0.0);
@@ -283,7 +294,8 @@ public class WardenSummoningGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_search_alone", maxTicks = 20)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 20)
 	public void theSearchAloneIgnoresWarningLevelsAndNearbyWardens(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerPlayer player = arena.player(Vec3.ZERO, GameType.SURVIVAL);
@@ -305,7 +317,8 @@ public class WardenSummoningGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:warden_summoning_saved", maxTicks = 300)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 300)
 	public void aShrieksPlayersOutlastTheShriekerBeingSavedAndLoaded(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerLevel level = arena.level();

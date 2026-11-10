@@ -113,7 +113,8 @@ final class SubspaceArena {
 
 	/**
 	 * An arena for a test running alone in its batch, cleared of the players, mobs and Subspaces earlier batches left
-	 * behind, with its chunks kept loaded along a runway on its x axis.
+	 * behind, with its chunks kept loaded along a runway on its x axis. Fails a test that shares its batch, which
+	 * {@link RunsAlone} prevents.
 	 */
 	static SubspaceArena cleared(GameTestHelper helper) {
 		SubspaceArena arena = clearedWithoutRunway(helper);
@@ -128,6 +129,8 @@ final class SubspaceArena {
 	 * let other chunks unload.
 	 */
 	static SubspaceArena clearedWithoutRunway(GameTestHelper helper) {
+		TestBatches.assertRunsAlone(helper, "a cleared arena logs out every player and discards the mobs around it");
+
 		SubspaceArena arena = new SubspaceArena(helper);
 		PlayerList playerList = helper.getLevel().getServer().getPlayerList();
 
