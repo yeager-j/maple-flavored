@@ -1,4 +1,4 @@
-package mapleflavored.mixin;
+package mapleflavored.access;
 
 import com.mojang.datafixers.util.Either;
 import net.minecraft.resources.Identifier;

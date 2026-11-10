@@ -1,4 +1,4 @@
-package mapleflavored.mixin;
+package mapleflavored.access;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;

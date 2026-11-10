@@ -1,4 +1,4 @@
-package mapleflavored.mixin;
+package mapleflavored.access;
 
 import java.util.List;
 import net.minecraft.world.level.levelgen.structure.pools.ListPoolElement;

@@ -1,4 +1,4 @@
-package mapleflavored.mixin;
+package mapleflavored.access;
 
 import net.minecraft.world.entity.monster.warden.WardenSpawnTracker;
 import org.spongepowered.asm.mixin.Mixin;

@@ -1,4 +1,4 @@
-package mapleflavored.mixin;
+package mapleflavored.access;
 
 import net.minecraft.world.level.levelgen.structure.structures.MineshaftPieces;
 import org.spongepowered.asm.mixin.Mixin;

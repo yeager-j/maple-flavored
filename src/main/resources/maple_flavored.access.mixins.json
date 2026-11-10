@@ -1,0 +1,21 @@
+{
+	"required": true,
+	"package": "mapleflavored.access",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"AbstractArrowAccessor",
+		"BaseSpawnerAccessor",
+		"BrushableBlockEntityAccessor",
+		"CreeperAccessor",
+		"EnderDragonAccessor",
+		"EnderDragonFightAccessor",
+		"FeaturePoolElementAccessor",
+		"ListPoolElementAccessor",
+		"LootItemAccessor",
+		"MineShaftCorridorAccessor",
+		"ServerLevelEntityManagerAccessor",
+		"SinglePoolElementAccessor",
+		"StructurePieceInvoker",
+		"WardenSpawnTrackerAccessor"
+	]
+}

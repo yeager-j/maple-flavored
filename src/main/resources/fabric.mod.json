@@ -14,6 +14,7 @@
 	},
 	"mixins": [
 		"maple_flavored.mixins.json",
+		"maple_flavored.access.mixins.json",
 		{
 			"config": "maple_flavored.client.mixins.json",
 			"environment": "client"

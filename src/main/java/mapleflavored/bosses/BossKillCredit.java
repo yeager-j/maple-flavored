@@ -1,10 +1,10 @@
 package mapleflavored.bosses;
 
 import java.util.function.Predicate;
+import mapleflavored.access.EnderDragonAccessor;
+import mapleflavored.access.EnderDragonFightAccessor;
 import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.gamerules.MapleGameRules;
-import mapleflavored.mixin.EnderDragonAccessor;
-import mapleflavored.mixin.EnderDragonFightAccessor;
 import mapleflavored.subspaces.Subspace;
 import mapleflavored.subspaces.Subspaces;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;

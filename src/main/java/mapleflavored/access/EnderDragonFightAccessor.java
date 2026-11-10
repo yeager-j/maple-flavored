@@ -1,4 +1,4 @@
-package mapleflavored.mixin;
+package mapleflavored.access;
 
 import java.util.function.Predicate;
 import net.minecraft.world.entity.Entity;

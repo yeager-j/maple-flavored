@@ -1,4 +1,4 @@
-package mapleflavored.mixin;
+package mapleflavored.access;
 
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;

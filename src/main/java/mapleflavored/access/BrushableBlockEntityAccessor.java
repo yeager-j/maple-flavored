@@ -1,4 +1,4 @@
-package mapleflavored.mixin;
+package mapleflavored.access;
 
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ItemStack;

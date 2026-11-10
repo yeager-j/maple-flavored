@@ -2,7 +2,7 @@ package mapleflavored.gametest;
 
 import java.util.List;
 import java.util.Optional;
-import mapleflavored.mixin.WardenSpawnTrackerAccessor;
+import mapleflavored.access.WardenSpawnTrackerAccessor;
 import mapleflavored.subspaces.Subspaces;
 import mapleflavored.wardensummoning.WardenSummoning;
 import mapleflavored.wardensummoning.WardenTerritory;

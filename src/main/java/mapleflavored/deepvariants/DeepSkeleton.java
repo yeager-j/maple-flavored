@@ -1,6 +1,6 @@
 package mapleflavored.deepvariants;
 
-import mapleflavored.mixin.AbstractArrowAccessor;
+import mapleflavored.access.AbstractArrowAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;

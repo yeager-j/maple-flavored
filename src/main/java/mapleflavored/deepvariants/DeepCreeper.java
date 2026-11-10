@@ -1,6 +1,6 @@
 package mapleflavored.deepvariants;
 
-import mapleflavored.mixin.CreeperAccessor;
+import mapleflavored.access.CreeperAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Creeper;

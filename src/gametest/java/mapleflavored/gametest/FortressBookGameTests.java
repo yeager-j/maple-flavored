@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import mapleflavored.mixin.StructurePieceInvoker;
+import mapleflavored.access.StructurePieceInvoker;
 import mapleflavored.structurebooks.BookLocks;
 import mapleflavored.structurebooks.StructureBookBlockEntity;
 import mapleflavored.structurebooks.StructureBookPiece;
