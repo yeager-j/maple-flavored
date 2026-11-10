@@ -204,3 +204,17 @@ Reversal (2026-11-10):
 - Diamond scarcity replaces them: an ore drops a piece, and 4 craft 1 diamond, as Netherite scrap does. It slows every route to diamonds, branch mining included. It's ticket 61 in the build tracker.
 - The book moves are undone, since Fortune leaving the Woodland Mansion was their only cause. Fortune is back in Woodland Mansions, Looting in Jungle Temples, Thorns in the Bastion's hoglin stables and Knockback on Ravagers. "What Raids give in place of Knockback" is no longer open.
 - Jackson's Deep Core template, `src/main/resources/data/maple_flavored/structure/deep_core.nbt`, was deleted with ticket 61. It is in git history if Deep Cores come back.
+
+Look and Pith drop (2026-11-10):
+
+- Deep variants keep no link to sculk or soul. Teal eyes pointed at Warden Territory, where no Deep variant spawns, and sat on the same hue as Drowned, sculk, soul fire and diamond.
+- Jackson's idea: Pith is the source of a Deep variant's strength. Every other Pith holder is already the strong form of something weaker: a Piglin Brute, an Elder Guardian, an Evoker, the Wither.
+- The look: a deepslate body, pale eyes in Pith's colours that glow in the dark, and Pith shown where each one's advantage is. That is the Deep Zombie's knuckles, the Deep Skeleton's ribs, the Deep Creeper's core and the Deep Spider's fangs.
+- A Deep variant drops 1 Pith at 1% when a player kills it, with no Looting bonus. The chance is a playtest game rule.
+- A dark-room farm below Y 0 is slow without a perimeter, since unlit caves share the mob cap. A deep dungeon's spawner would have been the cheap route once ticket 59 is built, at an estimated 3 to 5 Pith an hour.
+- So a Deep variant a spawner made never rolls for Pith. The spawner's own Pith comes from breaking it.
+
+Left open:
+
+- What Pith is. Proposed and not yet settled: vitality that has hardened, the part of a creature that makes it more than its kind. `GLOSSARY.md` still gives only its uses.
+- An un-Cleared spawner glows hot orange, not Pith white, so "powered by Pith" would have two looks.

@@ -8,6 +8,8 @@ import mapleflavored.deepvariants.DeepVariants;
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.gametest.mixin.CreeperTestAccessor;
 import mapleflavored.gametest.mixin.LivingEntityAccessor;
+import mapleflavored.items.MapleItems;
+import mapleflavored.spawners.Spawners;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -68,12 +70,14 @@ import org.jspecify.annotations.Nullable;
  * Below Y 0 in the Overworld, natural spawning makes Deep Zombies where it would make adult zombies, while babies,
  * spawners and higher spawns stay zombies. A Deep Zombie takes its health and damage from the Deep variant game rules
  * as it spawns, keeps the adult zombie row's other stats, disables a blocking player's shield as an axe does, counts as
- * a zombie for every tag, and drops a zombie's loot and twice its XP.
+ * a zombie for every tag, and drops a zombie's loot and twice its XP. Every Deep variant no spawner made also rolls
+ * for 1 Pith when a player kills it, at the chance its game rule sets.
  *
  * <p>Natural spawning runs vanilla's own spawner in sealed dark rooms built far from the other tests.
  */
 public class DeepVariantGameTests {
 	private static final BlockPos MOB_POS = new BlockPos(2, 2, 2);
+	private static final BlockPos SPAWNER_POS = new BlockPos(4, 2, 4);
 	// The heights of the rooms built at the tests' sites, below and above Y 0.
 	private static final int DEEP_Y = -30;
 	private static final int SHALLOW_Y = 10;
@@ -100,6 +104,10 @@ public class DeepVariantGameTests {
 	private static final int SHIELD_COOLDOWN_TICKS = 100;
 	private static final float LEVEL_ONE_DAMAGE_BONUS = 2.5F;
 	private static final int MONSTER_XP = 5;
+	private static final double DEFAULT_PITH_DROP_RATE = 0.01;
+	// Enough rolls that 1 in 100 can't be mistaken for 1 in 200 or 1 in 50.
+	private static final int PITH_RATE_ROLLS = 10_000;
+	private static final double PITH_RATE_TOLERANCE = 0.004;
 	private static final int LOWEST_SURFACE_Y = 63;
 	private static final int XP_ROLLS = 50;
 	private static final int BLINDNESS_TICKS = 60;
@@ -334,16 +342,100 @@ public class DeepVariantGameTests {
 			LootTable baseTable = level.getServer().reloadableRegistries().getLootTable(base.getLootTable().orElseThrow());
 
 			for (long seed = 0; seed < LOOT_ROLLS; seed++) {
-				List<String> deepDrops = describe(deepTable.getRandomItems(params, RandomSource.create(seed)));
+				List<String> deepDrops = describe(withoutPith(deepTable.getRandomItems(params, RandomSource.create(seed))));
 				List<String> baseDrops = describe(baseTable.getRandomItems(params, RandomSource.create(seed)));
 
-				helper.assertValueEqual(deepDrops, baseDrops, deepType.toShortString() + " drops with seed " + seed);
+				helper.assertValueEqual(deepDrops, baseDrops, deepType.toShortString() + " drops besides Pith with seed " + seed);
 			}
 
 			helper.assertValueEqual(base.getExperienceReward(level, killer), MONSTER_XP, baseType.toShortString() + "'s XP");
 			helper.assertValueEqual(deep.getExperienceReward(level, killer), 2 * MONSTER_XP, deepType.toShortString() + "'s XP");
 			deep.discard();
 			base.discard();
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:deep_variant_pith_always")
+	public void eachDeepVariantDropsOnePithWhenAPlayerKillsItAndTheRuleAllowsIt(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+
+		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
+			Mob deep = gearless(helper.spawnWithNoFreeWill(deepType, MOB_POS));
+
+			for (long seed = 0; seed < LOOT_ROLLS; seed++) {
+				helper.assertValueEqual(pithDropped(level, deep, killedBy(level, deep, killer), seed), 1, deepType.toShortString() + "'s Pith from a player kill with seed " + seed);
+				helper.assertValueEqual(pithDropped(level, deep, killedByNoOne(level, deep), seed), 0, deepType.toShortString() + "'s Pith from another death with seed " + seed);
+			}
+
+			deep.discard();
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:deep_variant_pith_always")
+	public void aDeepVariantASpawnerMadeDropsNoPith(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		SpawnerBlockEntity spawner = SpawnerGameTests.placeSpawner(helper, SPAWNER_POS, new CompoundTag());
+
+		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
+			Mob deep = gearless(helper.spawnWithNoFreeWill(deepType, MOB_POS));
+
+			Spawners.markSpawned(level, spawner.getBlockPos(), spawner.getSpawner(), deep);
+
+			for (long seed = 0; seed < LOOT_ROLLS; seed++) {
+				helper.assertValueEqual(pithDropped(level, deep, killedBy(level, deep, killer), seed), 0, "a spawner's " + deepType.toShortString() + "'s Pith with seed " + seed);
+			}
+
+			deep.discard();
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:deep_variant_pith_never")
+	public void noDeepVariantDropsPithWhenTheRuleIsZero(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+
+		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
+			Mob deep = gearless(helper.spawnWithNoFreeWill(deepType, MOB_POS));
+
+			for (long seed = 0; seed < LOOT_ROLLS; seed++) {
+				helper.assertValueEqual(pithDropped(level, deep, killedBy(level, deep, killer), seed), 0, deepType.toShortString() + "'s Pith with seed " + seed);
+			}
+
+			deep.discard();
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void eachDeepVariantAPlayerKillsDropsPithAboutOneTimeInAHundredByDefault(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+
+		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
+			Mob deep = gearless(helper.spawnWithNoFreeWill(deepType, MOB_POS));
+			LootParams params = killedBy(level, deep, killer);
+			int drops = 0;
+
+			for (long seed = 0; seed < PITH_RATE_ROLLS; seed++) {
+				drops += pithDropped(level, deep, params, seed);
+			}
+
+			double rate = (double) drops / PITH_RATE_ROLLS;
+
+			helper.assertTrue(
+				Math.abs(rate - DEFAULT_PITH_DROP_RATE) <= PITH_RATE_TOLERANCE,
+				deepType.toShortString() + "'s Pith drop rate " + rate + " is within " + PITH_RATE_TOLERANCE + " of " + DEFAULT_PITH_DROP_RATE
+			);
+			deep.discard();
 		}
 
 		helper.succeed();
@@ -883,6 +975,29 @@ public class DeepVariantGameTests {
 			.withParameter(LootContextParams.LAST_DAMAGE_PLAYER, killer)
 			.withParameter(LootContextParams.ATTACKING_ENTITY, killer)
 			.create(LootContextParamSets.ENTITY);
+	}
+
+	// A death with no player behind it, such as a fall.
+	private static LootParams killedByNoOne(ServerLevel level, Mob mob) {
+		return new LootParams.Builder(level)
+			.withParameter(LootContextParams.THIS_ENTITY, mob)
+			.withParameter(LootContextParams.ORIGIN, mob.position())
+			.withParameter(LootContextParams.DAMAGE_SOURCE, level.damageSources().fall())
+			.create(LootContextParamSets.ENTITY);
+	}
+
+	// How much Pith one roll of the mob's loot table gives.
+	private static int pithDropped(ServerLevel level, Mob mob, LootParams params, long seed) {
+		LootTable table = level.getServer().reloadableRegistries().getLootTable(mob.getLootTable().orElseThrow());
+
+		return table.getRandomItems(params, RandomSource.create(seed)).stream()
+			.filter(stack -> stack.is(MapleItems.PITH))
+			.mapToInt(ItemStack::getCount)
+			.sum();
+	}
+
+	private static List<ItemStack> withoutPith(List<ItemStack> stacks) {
+		return stacks.stream().filter(stack -> !stack.is(MapleItems.PITH)).toList();
 	}
 
 	private static List<String> describe(List<ItemStack> stacks) {

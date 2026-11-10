@@ -50,7 +50,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 21. As a player, I want a Crystal Heart for my first Elder Guardian kill, my first Wither kill and Free the End, so that each boss rewards my health once.
 22. As a player, I want a Crystal Heart for surviving a Warden until it digs back down or dies, so that sneaking past it is a real win.
 23. As a member of a group, I want every nearby player to get boss credit, so that we can fight bosses together.
-24. As a player, I want Pith from broken spawners, Elder Guardians, Evokers and Piglin Brutes, so that dangerous fights feed both health and Netherite.
+24. As a player, I want Pith from broken spawners, Elder Guardians, Evokers and Piglin Brutes, and rarely from a Deep variant I kill, so that dangerous fights feed both health and Netherite.
 25. As a player, I want a Nether Star to craft into 9 Pith, so that a Wither kill feeds my progress.
 26. As a farm builder, I want Evoker and Wither farms to give Pith, so that my farms are rewarded while diamonds still limit Crystal Hearts.
 27. As a player under the Wither effect, I want one heart to become a Withered Heart every 5 seconds, down to 1 usable heart, so that the Wither effect is a real threat.
@@ -233,7 +233,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 165d. As a player, I want Deep Skeletons to shoot Slowness arrows from beyond my torchlight, so that retreating is costly.
 165e. As a player, I want Deep Creepers to explode as hard as TNT and Deep Spiders' bites to blind me, so that each Deep variant has its own threat.
 165f. As a farm builder, I want every spawner but a deep dungeon's to keep spawning ordinary mobs at any depth, so that spawner farms work as before.
-165g. As a player, I want Deep variants to drop their base mob's loot and double XP, so that fighting them pays in Enchantment Slots.
+165g. As a player, I want Deep variants to drop their base mob's loot and double XP, and 1 Pith about once in every 100 I kill that no spawner made, so that fighting them pays in Enchantment Slots and caving deep now and then pays in Pith.
 165h. As a caver, I want a dungeon below Y 0 to hold a Deep variant spawner, so that deep dungeons are as dangerous as the caves around them.
 165i. As a player, I want zombies and other mobs that drop rotten flesh to drop Tattered Leather instead, 4 of which craft into 1 leather, so that fighting gives me leather for armor and books.
 
@@ -437,7 +437,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Creepers never spawn naturally at Y 63 or above in the Overworld. Spawners are not affected.
 - Mobs remember which gear they spawned with. That gear keeps vanilla's drop chance and drops with enchantments removed. Picked-up gear drops exactly as it was.
 - Wither Skeletons spawn holding a Netherite sword in place of the stone one, with a base attack of 3 instead of 4, so they hit for 10 on Normal instead of 8. The sword they spawn with never drops.
-- Drops, in loot data: Pith from Elder Guardians (2, always), Evokers (1 at 25%) and Piglin Brutes (1 at 10%); Ancient Embers from Piglin Brutes (25% plus 5% per Looting level, killed by a player, a separate roll). Book drops, each its own roll, only when killed by a player: Vindicator Sharpness 10% and Sweeping Edge 2.5%; Pillager Captain Power 20%, Punch 5% and Infinity 5%; Evoker Protection 15%, one roll; Ravager Knockback 10%. Each Looting level adds 20% of the base chance, and the Orichalcum bonus doesn't apply. Plain Pillagers drop no books. Illagers spawned by a raid wave drop no books; every other Illager does, including Blood Moon Restores and Illagers that later join a raid. Every Ravager can drop Knockback. The Ender Dragon drops a level I Zephyr book every kill.
+- Drops, in loot data: Pith from Elder Guardians (2, always), Evokers (1 at 25%), Piglin Brutes (1 at 10%) and Deep variants (1 at 1%, only when killed by a player and not made by a spawner; see Deep variants); Ancient Embers from Piglin Brutes (25% plus 5% per Looting level, killed by a player, a separate roll). Book drops, each its own roll, only when killed by a player: Vindicator Sharpness 10% and Sweeping Edge 2.5%; Pillager Captain Power 20%, Punch 5% and Infinity 5%; Evoker Protection 15%, one roll; Ravager Knockback 10%. Each Looting level adds 20% of the base chance, and the Orichalcum bonus doesn't apply. Plain Pillagers drop no books. Illagers spawned by a raid wave drop no books; every other Illager does, including Blood Moon Restores and Illagers that later join a raid. Every Ravager can drop Knockback. The Ender Dragon drops a level I Zephyr book every kill.
 
 **Deep variants.** Four registered entity types, each built on its base mob's class with its own texture: Deep Zombie, Deep Skeleton, Deep Creeper and Deep Spider. Each is in every entity tag its base mob is in, so Smite, Bane of Arthropods, cats, wolves and other vanilla rules treat it as its base mob.
 - In the Overworld, when natural spawning picks an adult zombie, skeleton, creeper or spider at a spot below Y 0, the Deep variant spawns instead. A zombie that rolls baby stays a baby zombie. Spawners, spawn eggs, commands, structures, conversions and Blood Moon Restores are unaffected, except that a dungeon below Y 0 holds a Deep variant spawner (see Loot and worldgen data). A Deep Zombie's reinforcements are Deep Zombies, and a spider jockey that spawns below Y 0 is a Deep Skeleton riding a Deep Spider.
@@ -452,7 +452,10 @@ Each module below hides its rules behind a small interface. Other modules call t
 
 - The Mobs table's rows for adult zombies and spiders apply to Deep Zombies and Deep Spiders, except their health and the Hard zombie's damage, so a Deep Zombie gets zombie speed, step-up and Hard's jump.
 - Each drops its base mob's loot table and twice its vanilla XP.
-- The health and damage multipliers are playtest game rules in `MapleGameRules`.
+- When a player kills one, it also rolls for 1 Pith at 1%, with no Looting bonus. Any other death drops none. Loot tables can't read a game rule, so the roll is the `maple_flavored:deep_variant_pith_roll` loot condition.
+- A Deep variant a spawner block made never rolls for Pith, nor does its rider, so a deep dungeon farm gives none: the spawner's own Pith comes from breaking it. The loot table checks the mark that Clearing already puts on a spawner's mobs, through the `maple_flavored:spawned_by_spawner` loot condition. Spawn eggs, commands and a Deep Zombie's reinforcements still roll.
+- Each looks like deepslate, with pale eyes in Pith's colours that glow in the dark as a spider's do, and shows Pith where its advantage is: the Deep Zombie's knuckles, the Deep Skeleton's ribs, the Deep Creeper's core and the Deep Spider's fangs.
+- The health and damage multipliers and the Pith drop chance are playtest game rules in `MapleGameRules`.
 
 **Materials and Alloys.** Registered items and blocks: Ancient Ember; five Alloy ingots (Steel from iron, Electrum from gold, Shakudo from copper, Adamant from diamond, Orichalcum from emerald); five Alloy blocks (9 ingots each way, in the beacon base blocks tag); an Alloy version of every item that has a Netherite version in 26.3; and an Armored Elytra for each Alloy.
 - The Netherite Ingot recipe becomes 4 Netherite Scrap and 4 Pith.
@@ -527,9 +530,10 @@ Three more hold Wither playtest values:
 One more holds an Echo Shard playtest value:
 - **Echo Shard shrieker range** (default 15): how many blocks away a held Echo Shard hears sculk shriekers.
 
-Two more hold Deep variant playtest values. They apply to Deep variants that spawn after they change:
+Three more hold Deep variant playtest values. The first two apply to Deep variants that spawn after they change, and the third applies at once:
 - **Deep variant health percent** (default 150): a Deep variant's health as a percentage of its base mob's vanilla health. Deep Creepers ignore it.
 - **Deep variant damage percent** (default 200): a Deep variant's damage, arrows included, as a percentage of its base mob's vanilla damage.
+- **Deep variant Pith drop percent** (default 1): the chance, as a percentage, that a Deep variant no spawner made drops 1 Pith when a player kills it. 0 turns the drop off.
 
 ## Testing Decisions
 
@@ -539,7 +543,7 @@ There is one automated test seam: Fabric's server GameTest framework. Tests run 
 
 The client decides some things, and a headless server can't see them. These are checked by hand in a development client, not automated:
 
-- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced chainmail and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, the Wither Subspace's dim light, the Blood Moon sky and spores, and the Deep variants' textures.
+- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced chainmail and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, the Wither Subspace's dim light, the Blood Moon sky and spores, and the Deep variants' textures and glowing eyes.
 - Player movement and input: Zephyr's double jump and Clutch, Grounded ending a glide, the Armored Elytra's glide and Firework Rocket penalties, Riptide being blocked, and Shakudo's movement speed.
 - Sync: that the client shows the server's Max Hearts, Withered Hearts, Remnants, Subspaces and Blood Moon.
 

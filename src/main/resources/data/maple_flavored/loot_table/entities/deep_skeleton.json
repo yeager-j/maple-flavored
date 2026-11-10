@@ -9,6 +9,15 @@
 					"value": "minecraft:entities/skeleton"
 				}
 			]
+		},
+		{
+			"rolls": 1,
+			"entries": [
+				{
+					"type": "minecraft:loot_table",
+					"value": "maple_flavored:entities/deep_variant_pith"
+				}
+			]
 		}
 	]
 }
