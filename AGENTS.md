@@ -2,7 +2,7 @@
 
 A Fabric mod for Minecraft 26.3, inspired by Matcha Flavoured and Raspberry Flavoured. Reused assets must be listed in `CREDITS.md`, and the mod must stay under CC BY-NC-SA 4.0.
 
-There's no system-wide Java. Set `JAVA_HOME` to the JDK named in `gradle.properties` before running `gradlew`.
+There's no system-wide Java. Set `JAVA_HOME` to a JDK of the `java_version` in `gradle.properties` before running `gradlew`. On Jackson's machine the JDKs are under `~/.jdks/`.
 
 ## Design
 

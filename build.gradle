@@ -50,25 +50,112 @@ dependencies {
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
+// gradle.properties is the one place each version is stated; the mod metadata takes them from here.
+def modMetadataVersions = [
+	version: project.version,
+	java_version: project.java_version,
+	minecraft_version: project.minecraft_version,
+	loader_version: project.loader_version,
+	fabric_api_version: project.fabric_api_version
+]
+
 tasks.matching { it.name in ["processResources", "processGametestResources"] }.configureEach {
-	def version = project.version
-	inputs.property "version", version
+	inputs.properties modMetadataVersions
 
 	filesMatching("fabric.mod.json") {
-		expand "version": version
+		expand modMetadataVersions
 	}
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
-}
-
-java {
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	it.options.release = project.java_version as int
 }
 
 jar {
 	from("LICENSE")
 	from("CREDITS.md")
+}
+
+/**
+ * Fails when a registration list or a dependency rule has drifted from the source. A mixin or GameTest class missing
+ * from its list is silently inert, so nothing else would notice.
+ */
+abstract class CheckWiring extends DefaultTask {
+	@InputDirectory
+	@PathSensitive(PathSensitivity.RELATIVE)
+	abstract DirectoryProperty getSources()
+
+	@TaskAction
+	void check() {
+		File src = sources.get().asFile
+		List<String> problems = []
+
+		problems += listDrift("maple_flavored.mixins.json", mixinsListed(new File(src, "main/resources/maple_flavored.mixins.json")), classesIn(new File(src, "main/java/mapleflavored/mixin")))
+		problems += listDrift("maple_flavored.access.mixins.json", mixinsListed(new File(src, "main/resources/maple_flavored.access.mixins.json")), classesIn(new File(src, "main/java/mapleflavored/access")))
+		problems += listDrift("maple_flavored.client.mixins.json", mixinsListed(new File(src, "client/resources/maple_flavored.client.mixins.json")), classesIn(new File(src, "client/java/mapleflavored/client/mixin")))
+		problems += listDrift("maple_flavored_gametest.mixins.json", mixinsListed(new File(src, "gametest/resources/maple_flavored_gametest.mixins.json")), classesIn(new File(src, "gametest/java/mapleflavored/gametest/mixin")))
+
+		File gameTests = new File(src, "gametest/java")
+		Map entrypoints = new groovy.json.JsonSlurper().parse(new File(src, "gametest/resources/fabric.mod.json")).entrypoints
+
+		problems += listDrift("the fabric-gametest entrypoints", entrypoints["fabric-gametest"] as Set, classesContaining(gameTests, "@GameTest"))
+		problems += listDrift("the fabric-client-gametest entrypoints", entrypoints["fabric-client-gametest"] as Set, classesContaining(gameTests, "implements FabricClientGameTest"))
+
+		problems += filesContaining(src, ~/import mapleflavored\.(client\.)?mixin\./, { !it.contains("/mixin/") })
+			.collect { "$it imports a mixin package; only accessors in mapleflavored.access may be imported" }
+		problems += filesContaining(new File(src, "main/java/mapleflavored/access"), ~/import mapleflavored\./, { true })
+			.collect { "$it imports the mod; mapleflavored.access must stay a leaf package" }
+		problems += filesContaining(gameTests, ~/\.makeMock(ServerPlayerInLevel|Player)\(/, { !it.endsWith("/MockPlayers.java") })
+			.collect { "$it creates vanilla's mock player, which always reports Creative; use MockPlayers" }
+
+		if (!problems.isEmpty()) throw new GradleException("The wiring is out of step with the source:\n  " + problems.join("\n  "))
+	}
+
+	private static List<String> listDrift(String list, Set<String> listed, Set<String> inSource) {
+		return (inSource - listed).collect { "$it is missing from $list, so it never runs" } + (listed - inSource).collect { "$list names $it, which doesn't exist" }
+	}
+
+	private static Set<String> mixinsListed(File config) {
+		Map json = new groovy.json.JsonSlurper().parse(config)
+
+		return ((json.mixins ?: []) + (json.client ?: []) + (json.server ?: [])) as Set
+	}
+
+	private static Set<String> classesIn(File directory) {
+		return directory.listFiles().findAll { it.name.endsWith(".java") && it.name != "package-info.java" }.collect { it.name - ".java" } as Set
+	}
+
+	private static Set<String> classesContaining(File sourceRoot, String marker) {
+		Set<String> classes = []
+
+		sourceRoot.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+			if (file.name.endsWith(".java") && file.text.contains(marker)) {
+				classes << (sourceRoot.toPath().relativize(file.toPath()).toString().replace(File.separator, ".") - ".java")
+			}
+		}
+
+		return classes
+	}
+
+	private List<String> filesContaining(File directory, java.util.regex.Pattern pattern, Closure<Boolean> inScope) {
+		List<String> files = []
+
+		directory.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+			String path = sources.get().asFile.toPath().relativize(file.toPath()).toString().replace(File.separator, "/")
+
+			if (file.name.endsWith(".java") && inScope(path) && file.text =~ pattern) files << path
+		}
+
+		return files.sort()
+	}
+}
+
+tasks.register("checkWiring", CheckWiring) {
+	group = "verification"
+	description = "Checks the mixin and GameTest lists against the source, and the package dependency rules."
+	sources = layout.projectDirectory.dir("src")
+}
+
+tasks.named("check") {
+	dependsOn "checkWiring"
 }

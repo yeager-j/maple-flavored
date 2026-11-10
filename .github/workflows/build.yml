@@ -12,16 +12,29 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Read the Java version from gradle.properties
+        id: java
+        run: echo "version=$(grep '^java_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 25
+          java-version: ${{ steps.java.outputs.version }}
 
       - uses: gradle/actions/setup-gradle@v6
 
-      # gradle.properties pins org.gradle.java.home to a local Windows JDK, so point Gradle at the runner's JDK instead.
+      # Also runs checkWiring, which fails when a mixin or GameTest class is missing from its list.
       - name: Build and run GameTests
-        run: ./gradlew build -Dorg.gradle.java.home="$JAVA_HOME"
+        run: ./gradlew build
+
+      # The files under src/main/generated are committed, so they must be exactly what the generators write today.
+      # Generating from nothing also shows a committed file that no generator writes any more.
+      - name: Check the committed datagen output is current
+        run: |
+          rm -rf src/main/generated
+          ./gradlew runDatagen
+          git add --all src/main/generated
+          git diff --cached --stat --exit-code -- src/main/generated
 
       - name: Upload GameTest report
         if: always()
