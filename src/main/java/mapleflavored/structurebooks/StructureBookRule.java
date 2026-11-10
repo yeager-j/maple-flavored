@@ -11,10 +11,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 /**
  * How one structure gets its book: the enchantments it can hold, one chosen with equal weight, where the book goes
- * among its planned pieces, how it's placed there when built, and what of the structure locks it. A spot
- * rule that finds no spot leaves the structure without a book.
+ * among its planned pieces and how it's placed there, and what of the structure locks it. A spot rule that finds no
+ * spot leaves the structure without a book.
  */
-record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Placement placement, LockRule lock) {
+record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, LockRule lock) {
 	StructureBookRule {
 		if (enchantments.isEmpty()) throw new IllegalArgumentException("a structure book rule needs an enchantment");
 
@@ -22,8 +22,8 @@ record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule s
 	}
 
 	/** A rule whose book is never locked. */
-	StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot, Placement placement) {
-		this(enchantments, spot, placement, LockRule.NONE);
+	StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule spot) {
+		this(enchantments, spot, LockRule.NONE);
 	}
 
 	/** One of the enchantments, with equal weight. */
@@ -60,17 +60,5 @@ record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule s
 	 * @param random seeded per structure, so the same world seed picks the same spot
 	 */
 	record Planning(TerrainPreview terrain, StructureTemplateManager templates, RandomSource random) {
-	}
-
-	/** How the book is put at its spot as the chunk is built. */
-	enum Placement {
-		/** A floating book in an open pocket carved around it, sealing any liquid touching it. */
-		POCKET,
-		/** A floating book that takes the spot as it is: it replaces what's there and is waterlogged in water. */
-		OPEN,
-		/** A book item in the container at the spot, left there by the container's loot when it's rolled. */
-		IN_CHEST,
-		/** Suspicious gravel at the spot that gives the book when brushed. */
-		IN_SUSPICIOUS_GRAVEL
 	}
 }

@@ -13,8 +13,8 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 /**
  * An Ancient City keeps players inside its bounds Grounded while its book is in place, so nobody can glide in, take it
- * and glide out. Once the book is taken, the city Grounds nobody. A city without a book never Grounds anyone. Creative
- * and spectator players are left alone, as a Warden's Subspace leaves them.
+ * and glide out. Once the book is gone, however it went, the city Grounds nobody. A city without a book never Grounds
+ * anyone. Creative and spectator players are left alone, as a Warden's Subspace leaves them.
  */
 final class AncientCityGrounding {
 	private AncientCityGrounding() {
@@ -41,8 +41,7 @@ final class AncientCityGrounding {
 		return city.isValid() && hasBookInPlace(level, city.getPieces());
 	}
 
-	// A planned book is saved as the city's last piece.
 	private static boolean hasBookInPlace(ServerLevel level, List<StructurePiece> pieces) {
-		return !pieces.isEmpty() && pieces.getLast() instanceof StructureBookPiece book && !TakenBooks.isTaken(level, book.spot());
+		return StructureBookPiece.among(pieces).filter(book -> !GoneBooks.isGone(level, book.spot())).isPresent();
 	}
 }

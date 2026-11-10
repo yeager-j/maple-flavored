@@ -10,11 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 import mapleflavored.grounded.Grounded;
 import mapleflavored.structurebooks.BookLocks;
+import mapleflavored.structurebooks.GoneBooks;
 import mapleflavored.structurebooks.ShriekerKeepers;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
-import mapleflavored.structurebooks.TakenBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.core.BlockPos;
@@ -22,6 +22,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -101,7 +102,7 @@ public class AncientCityBookGameTests {
 
 		for (int i = 0; i < PLANS; i++) {
 			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, TestSites.of(helper).chunk(i));
-			List<StructureBookPiece> books = BastionBookGameTests.bookPieces(start);
+			List<StructureBookPiece> books = Books.pieces(start);
 
 			helper.assertValueEqual(books.size(), 1, "books planned in the city at " + start.getChunkPos());
 			helper.assertValueEqual(books.getFirst().enchantment(), Enchantments.SWIFT_SNEAK, "the book planned at " + start.getChunkPos());
@@ -217,7 +218,7 @@ public class AncientCityBookGameTests {
 
 		for (int i = 0; i < PLANS; i++) {
 			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, TestSites.of(helper).chunk(i));
-			StructureBookPiece book = BastionBookGameTests.bookPieces(start).getFirst();
+			StructureBookPiece book = Books.piece(start);
 			List<BlockPos> keepers = book.keepers();
 			List<BlockPos> origins = ShriekerKeepers.origins(start.getPieces());
 			String where = "the city at " + start.getChunkPos();
@@ -248,7 +249,7 @@ public class AncientCityBookGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = planWithKeepers(level, TestSites.of(helper), 2);
 		List<StructurePiece> pieces = start.getPieces();
-		StructureBookPiece book = BastionBookGameTests.bookPieces(start).getFirst();
+		StructureBookPiece book = Books.piece(start);
 		BlockPos withCatalyst = book.keepers().get(0);
 		BlockPos without = book.keepers().get(1);
 
@@ -272,7 +273,7 @@ public class AncientCityBookGameTests {
 	public void aBuiltKeeperPatchHasItsKeeper(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = planWithKeepers(level, TestSites.of(helper), 1);
-		BlockPos keeper = BastionBookGameTests.bookPieces(start).getFirst().keepers().getFirst();
+		BlockPos keeper = Books.piece(start).keepers().getFirst();
 
 		clearAround(level, keeper);
 		Structures.build(level, start, new ChunkPos(SectionPos.blockToSectionCoord(keeper.getX()), SectionPos.blockToSectionCoord(keeper.getZ())));
@@ -287,7 +288,7 @@ public class AncientCityBookGameTests {
 	public void breakingKeepersUnlocksTheBookWhileItsChunkIsUnloaded(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = planWithKeepers(level, TestSites.of(helper), MAX_KEEPERS);
-		BlockPos book = BastionBookGameTests.bookPieces(start).getFirst().spot();
+		BlockPos book = Books.piece(start).spot();
 		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
 		BlockPos onCatalyst = keepers.get(1);
 		BlockPos underPlayersShrieker = keepers.get(2);
@@ -327,7 +328,7 @@ public class AncientCityBookGameTests {
 	public void checkingALockCountsTheKeepersMissingFromLoadedChunksOnly(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = planWithKeepers(level, TestSites.of(helper), MAX_KEEPERS);
-		BlockPos book = BastionBookGameTests.bookPieces(start).getFirst().spot();
+		BlockPos book = Books.piece(start).spot();
 		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
 		BlockPos standing = keepers.get(0);
 		BlockPos missing = keepers.get(1);
@@ -379,7 +380,7 @@ public class AncientCityBookGameTests {
 	public void keepersListsTheNearestCitysKeepersAndWhetherEachStands(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = planWithKeepers(level, TestSites.of(helper), MAX_KEEPERS);
-		BlockPos book = BastionBookGameTests.bookPieces(start).getFirst().spot();
+		BlockPos book = Books.piece(start).spot();
 		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
 		List<Component> output = new ArrayList<>();
 
@@ -433,9 +434,9 @@ public class AncientCityBookGameTests {
 					placeKeeper(level, keeper);
 					level.destroyBlock(keeper, false);
 				});
+				helper.assertFalse(GoneBooks.isGone(level, book), "The book in place counts as gone");
 				helper.assertTrue(StructureBooks.take(nearBook, book), "The unlocked book wasn't taken");
-				reloadTakenBooks(level);
-				helper.assertTrue(TakenBooks.isTaken(level, book), "The taken book was forgotten on a reload");
+				helper.assertTrue(GoneBooks.isGone(level, book), "The taken book doesn't count as gone");
 				arena.track(stillWarden(level, nearBook.position()));
 			})
 			.thenExecuteAfter(GROUNDED_WEARS_OFF, () -> {
@@ -443,6 +444,87 @@ public class AncientCityBookGameTests {
 				helper.assertFalse(Grounded.isGrounded(farFromBook), "A player outside every Subspace is still Grounded once the book is taken");
 			})
 			.thenSucceed();
+	}
+
+	// A creative player breaks the book without taking it, as a command replacing it would.
+	@GameTest(environment = "maple_flavored_gametest:ancient_city_grounding_broken", maxTicks = 400)
+	public void theCityStopsGroundingOnceItsBookIsGoneHoweverItWent(GameTestHelper helper) {
+		SubspaceArena arena = SubspaceArena.cleared(helper);
+		ServerLevel level = helper.getLevel();
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), 1);
+		BlockPos book = buildCentre(level, start);
+		ServerPlayer player = standingAt(helper, arena, book.east(2), GameType.SURVIVAL);
+
+		Structures.register(level, start);
+
+		helper.startSequence()
+			.thenExecuteAfter(GROUNDING_TICKS, () -> {
+				helper.assertTrue(Grounded.isGrounded(player), "A survival player by the book isn't Grounded");
+				level.setBlock(book, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+			})
+			.thenExecuteAfter(GROUNDED_WEARS_OFF, () -> {
+				helper.assertFalse(TAKEN.contains(book), "The broken book counts as taken");
+				helper.assertFalse(Grounded.isGrounded(player), "A player is still Grounded once the book is broken");
+			})
+			.thenSucceed();
+	}
+
+	// The book's chunk is loaded and fully generated, but the city's centre was never built there.
+	@GameTest(environment = "maple_flavored_gametest:ancient_city_grounding_unplaced", maxTicks = 200)
+	public void aCityWhoseBookWasNeverPlacedGroundsNobody(GameTestHelper helper) {
+		SubspaceArena arena = SubspaceArena.cleared(helper);
+		ServerLevel level = helper.getLevel();
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), 1);
+		BlockPos book = Books.piece(start).spot();
+
+		level.getChunk(book.getX() >> 4, book.getZ() >> 4);
+
+		ServerPlayer player = standingAt(helper, arena, book.east(2), GameType.SURVIVAL);
+
+		Structures.register(level, start);
+
+		helper.startSequence()
+			.thenExecuteAfter(GROUNDING_TICKS, () -> helper.assertFalse(Grounded.isGrounded(player), "A city whose book was never placed Grounded a player"))
+			.thenSucceed();
+	}
+
+	// Nobody is in a city to ask about the book, as when a creative player breaks it and leaves.
+	@GameTest
+	public void aBookIsRememberedGoneTheMomentItsBlockGoes(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos book = helper.absolutePos(new BlockPos(1, 2, 1));
+		DynamicOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+		Tag bookTag = BlockPos.CODEC.encodeStart(ops, book).getOrThrow();
+
+		level.setBlock(book, StructureBooks.BLOCK.defaultBlockState(), Block.UPDATE_ALL);
+		level.setBlock(book, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+
+		Tag saved = GoneBooks.TYPE.codec().encodeStart(ops, level.getDataStorage().computeIfAbsent(GoneBooks.TYPE)).getOrThrow();
+
+		helper.assertTrue(((ListTag) saved).contains(bookTag), "The removed book wasn't remembered gone");
+		helper.succeed();
+	}
+
+	// Planned and never built, so the book's chunk isn't loaded and only what was remembered can answer.
+	@GameTest(maxTicks = 400)
+	public void aBookInAnUnloadedChunkIsGoneOnlyIfItWasLastSeenGone(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos book = Books.piece(planWithKeepers(level, TestSites.of(helper), 1)).spot();
+		DynamicOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+		GoneBooks before = level.getDataStorage().computeIfAbsent(GoneBooks.TYPE);
+		Tag saved = GoneBooks.TYPE.codec().encodeStart(ops, before).getOrThrow();
+		ListTag withBook = ((ListTag) saved).copy();
+
+		withBook.add(BlockPos.CODEC.encodeStart(ops, book).getOrThrow());
+
+		helper.assertFalse(isChunkLoaded(level, book), "The book's chunk is loaded");
+		helper.assertFalse(GoneBooks.isGone(level, book), "A book never seen counts as gone");
+
+		level.getDataStorage().set(GoneBooks.TYPE, GoneBooks.TYPE.codec().parse(ops, withBook).getOrThrow());
+
+		helper.assertTrue(GoneBooks.isGone(level, book), "A book last seen gone was forgotten once saved and loaded");
+		helper.assertFalse(isChunkLoaded(level, book), "Asking loaded the book's chunk");
+		helper.succeed();
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:ancient_city_grounding_bookless", maxTicks = 200)
@@ -494,7 +576,7 @@ public class AncientCityBookGameTests {
 		for (int i = 0; i < SCAN_ATTEMPTS; i++) {
 			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, sites.chunk(i));
 
-			if (BastionBookGameTests.bookPieces(start).getFirst().keepers().size() >= keepers) return start;
+			if (Books.piece(start).keepers().size() >= keepers) return start;
 		}
 
 		throw new IllegalStateException("no city with " + keepers + " keepers in " + SCAN_ATTEMPTS + " plans");
@@ -512,7 +594,7 @@ public class AncientCityBookGameTests {
 		BlockPos.betweenClosedStream(centre).forEach(pos -> level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS));
 		chunks.forEach(chunk -> Structures.build(level, start, chunk));
 
-		return BastionBookGameTests.bookPieces(start).getFirst().spot();
+		return Books.piece(start).spot();
 	}
 
 	// Opens the space a sculk patch origin has in a generated city, where the terrain was carved away.
@@ -601,13 +683,6 @@ public class AncientCityBookGameTests {
 
 	private static List<Object> args(Component message) {
 		return List.of(((TranslatableContents) message.getContents()).getArgs());
-	}
-
-	private static void reloadTakenBooks(ServerLevel level) {
-		DynamicOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-		Tag saved = TakenBooks.TYPE.codec().encodeStart(ops, level.getDataStorage().computeIfAbsent(TakenBooks.TYPE)).getOrThrow();
-
-		level.getDataStorage().set(TakenBooks.TYPE, TakenBooks.TYPE.codec().parse(ops, saved).getOrThrow());
 	}
 
 	private static boolean holdsSwiftSneakBook(GameTestHelper helper, ServerPlayer player) {

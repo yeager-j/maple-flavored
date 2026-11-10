@@ -67,7 +67,7 @@ public class BastionLockGameTests {
 
 		for (int i = 0; i < PLANS; i++) {
 			StructureStart start = Structures.plan(level, BuiltinStructures.BASTION_REMNANT, TestSites.of(helper).chunk(i));
-			StructureBookPiece book = BastionBookGameTests.bookPieces(start).getFirst();
+			StructureBookPiece book = Books.piece(start);
 			List<BlockPos> brutes = start.getPieces().stream()
 				.filter(piece -> BastionBookGameTests.templateOf(piece).filter(BRUTE_TEMPLATES::contains).isPresent())
 				.map(piece -> ((PoolElementStructurePiece) piece).getPosition())
@@ -88,7 +88,7 @@ public class BastionLockGameTests {
 	public void aPlacedBastionsKeepersLockItsBookAndARefusedTakePointsThemOut(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, TestSites.of(helper)));
-		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		List<BlockPos> keys = BookLocks.remainingKeys(level, book);
 		List<Mob> keepers = MobKeepers.liveKeepers(level, book);
 
@@ -126,7 +126,7 @@ public class BastionLockGameTests {
 		ServerLevel level = helper.getLevel();
 		ServerLevel nether = level.getServer().getLevel(Level.NETHER);
 		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, TestSites.of(helper)));
-		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		List<Mob> keepers = MobKeepers.liveKeepers(level, book);
 		PiglinBrute nonKeeper = BastionBookGameTests.piglinsIn(level, start).stream()
 			.filter(PiglinBrute.class::isInstance)
@@ -173,9 +173,9 @@ public class BastionLockGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, TestSites.of(helper));
 		StructureStart reloaded = Structures.saveAndLoad(level, planned);
-		StructureBookPiece book = BastionBookGameTests.bookPieces(planned).getFirst();
+		StructureBookPiece book = Books.piece(planned);
 
-		helper.assertValueEqual(BastionBookGameTests.bookPieces(reloaded).getFirst().keepers(), book.keepers(), "the keepers the reloaded book piece saves");
+		helper.assertValueEqual(Books.piece(reloaded).keepers(), book.keepers(), "the keepers the reloaded book piece saves");
 
 		BastionBookGameTests.placeRegistered(level, reloaded);
 
@@ -204,7 +204,7 @@ public class BastionLockGameTests {
 	public void checkingALockNeverCountsAKeeperThatIsntThere(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, TestSites.of(helper));
-		BlockPos book = BastionBookGameTests.bookPieces(planned).getFirst().spot();
+		BlockPos book = Books.piece(planned).spot();
 		List<BlockPos> keys = BookLocks.remainingKeys(level, book);
 
 		helper.assertValueEqual(keys.size(), KEEPERS, "the book's keepers");
@@ -252,7 +252,7 @@ public class BastionLockGameTests {
 	public void peacefulOpensABastionsLock(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.HOUSING_UNITS, TestSites.of(helper)));
-		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 
 		helper.assertValueEqual(MobKeepers.liveKeepers(level, book), List.of(), "keepers alive in Peaceful");
 

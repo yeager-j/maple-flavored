@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import mapleflavored.mixin.BaseContainerBlockEntityInvoker;
-import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -40,7 +39,6 @@ import net.minecraft.world.phys.AABB;
 public class BuriedStructureBookGameTests {
 	private static final int CHOICE_PLANS = 200;
 	// A seeded count must land within this many binomial standard deviations of the expected count.
-	private static final double RATE_TOLERANCE = 4.0;
 	// The GameTest world is flat, with its surface near the bottom, under which a Trail Ruin would be planned.
 	private static final int TRAIL_RUIN_LIFT_ABOVE_SURFACE = 10;
 	private static final int BRUSH_STROKES = 10;
@@ -99,14 +97,14 @@ public class BuriedStructureBookGameTests {
 		for (int i = 0; i < CHOICE_PLANS; i++) {
 			StructureStart start = Structures.plan(level, BuiltinStructures.BURIED_TREASURE, TestSites.of(helper).chunk(i));
 
-			counts.merge(bookPiece(start).enchantment(), 1, Integer::sum);
+			counts.merge(Books.piece(start).enchantment(), 1, Integer::sum);
 		}
 
 		helper.assertTrue(
 			StructureBookRules.enchantmentsFor(BuiltinStructures.BURIED_TREASURE).containsAll(counts.keySet()),
 			"chose only from its list: " + counts
 		);
-		assertCount(helper, "Aqua Affinity", counts.getOrDefault(Enchantments.AQUA_AFFINITY, 0), CHOICE_PLANS, 0.5);
+		Books.assertCount(helper, "Aqua Affinity", counts.getOrDefault(Enchantments.AQUA_AFFINITY, 0), CHOICE_PLANS, 0.5);
 		helper.succeed();
 	}
 
@@ -128,7 +126,7 @@ public class BuriedStructureBookGameTests {
 
 		helper.assertTrue(level.getBlockState(pos).is(Blocks.SUSPICIOUS_GRAVEL), "the book is in suspicious gravel");
 		helper.assertTrue(tower.getBoundingBox().isInside(pos), "the gravel is in the ruin's tower");
-		helper.assertValueEqual(pos, bookPiece(start).spot(), "the gravel is at the book's planned spot");
+		helper.assertValueEqual(pos, Books.piece(start).spot(), "the gravel is at the book's planned spot");
 		assertOneBook(helper, List.of(gravel.getItem()), List.of(Enchantments.SILK_TOUCH), "the gravel");
 		helper.assertTrue(Structures.books(level, start).isEmpty(), "Trail Ruins have no floating book");
 
@@ -157,7 +155,7 @@ public class BuriedStructureBookGameTests {
 		List<BrushableBlockEntity> withBooks = brushables(level, loaded).stream().filter(gravel -> gravel.getItem().is(Items.ENCHANTED_BOOK)).toList();
 
 		helper.assertValueEqual(withBooks.size(), 1, "suspicious blocks holding a book after a reload");
-		helper.assertValueEqual(withBooks.getFirst().getBlockPos(), bookPiece(loaded).spot(), "the gravel is at the book's planned spot");
+		helper.assertValueEqual(withBooks.getFirst().getBlockPos(), Books.piece(loaded).spot(), "the gravel is at the book's planned spot");
 		helper.succeed();
 	}
 
@@ -278,18 +276,4 @@ public class BuriedStructureBookGameTests {
 		helper.assertValueEqual(enchantments.getLevel(only.get()), 1, "the book's level in " + where);
 	}
 
-	private static StructureBookPiece bookPiece(StructureStart start) {
-		return start.getPieces().stream()
-			.filter(StructureBookPiece.class::isInstance)
-			.map(StructureBookPiece.class::cast)
-			.findFirst()
-			.orElseThrow(() -> new IllegalStateException("no book planned"));
-	}
-
-	private static void assertCount(GameTestHelper helper, String what, int count, int trials, double expected) {
-		double mean = trials * expected;
-		double band = RATE_TOLERANCE * Math.sqrt(trials * expected * (1.0 - expected));
-
-		helper.assertTrue(Math.abs(count - mean) <= band, what + ": " + count + " of " + trials + ", expected about " + Math.round(mean));
-	}
 }

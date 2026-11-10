@@ -20,6 +20,7 @@ import mapleflavored.mobs.RaidWaves;
 import mapleflavored.reinforcement.Reinforcement;
 import mapleflavored.remnants.Remnants;
 import mapleflavored.spawners.Spawners;
+import mapleflavored.strongholds.StrongholdIllagers;
 import mapleflavored.structurebooks.StructureBooks;
 import mapleflavored.subspaces.Subspaces;
 import mapleflavored.wardensummoning.WardenSummoning;
@@ -56,6 +57,7 @@ public class MapleFlavored implements ModInitializer {
 		Enchanting.register();
 		Brewing.register();
 		StructureBooks.register();
+		StrongholdIllagers.register();
 		Spawners.register();
 		Subspaces.register();
 		WardenSummoning.register();

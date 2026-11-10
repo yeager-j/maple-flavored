@@ -6,11 +6,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
-import mapleflavored.strongholds.StrongholdIllagers;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
@@ -27,10 +29,12 @@ public final class StructureBookRules {
 	// Seeds the book's choices apart from the structure's own randomness, so adding a book changes no layout.
 	private static final int BOOK_SALT = 0x5B00C;
 
+	// The Stronghold's keeper rooms are chosen by the module that garrisons it, which says how at mod init.
+	private static volatile KeeperRooms strongholdKeeperRooms = (pieces, random) -> List.of();
+
 	private static final StructureBookRule MINESHAFT = new StructureBookRule(
 		List.of(Enchantments.EFFICIENCY),
-		(pieces, planning) -> MineshaftBookSpots.choose(pieces, planning.terrain(), planning.random()),
-		StructureBookRule.Placement.POCKET
+		(pieces, planning) -> MineshaftBookSpots.choose(pieces, planning.terrain(), planning.random())
 	);
 	private static final StructureBookRule DESERT_PYRAMID = ordinary(List.of(Enchantments.BLAST_PROTECTION), StructureBookSpots::desertPyramid);
 	private static final StructureBookRule JUNGLE_TEMPLE = ordinary(List.of(Enchantments.LOOTING), StructureBookSpots::jungleTemple);
@@ -48,36 +52,25 @@ public final class StructureBookRules {
 	private static final StructureBookRule NETHER_FORTRESS = new StructureBookRule(
 		List.of(Enchantments.FIRE_PROTECTION),
 		StructureBookSpots::netherFortress,
-		StructureBookRule.Placement.OPEN,
-		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.SPAWNERS, StructureBookSpots.fortressBlazeSpawners(pieces))
+		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.SPAWNERS, FortressBlazeSpawners.spawners(pieces))
 	);
 	private static final StructureBookRule END_CITY = ordinary(List.of(Enchantments.FEATHER_FALLING), StructureBookSpots::endCity);
 	private static final StructureBookRule ANCIENT_CITY = new StructureBookRule(
 		List.of(Enchantments.SWIFT_SNEAK),
 		StructureBookSpots::ancientCity,
-		StructureBookRule.Placement.OPEN,
 		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.SHRIEKERS, ShriekerKeepers.choose(book, ShriekerKeepers.origins(pieces), random))
 	);
 	private static final StructureBookRule WOODLAND_MANSION = ordinary(List.of(Enchantments.FORTUNE), StructureBookSpots::woodlandMansion);
 	private static final StructureBookRule STRONGHOLD = new StructureBookRule(
 		List.of(Enchantments.UNBREAKING),
 		StructureBookSpots::stronghold,
-		StructureBookRule.Placement.OPEN,
-		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.EVOKERS, StrongholdIllagers.keeperKeys(pieces, random))
+		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.EVOKERS, strongholdKeeperKeys(pieces, random))
 	);
-	private static final StructureBookRule BURIED_TREASURE = new StructureBookRule(
+	private static final StructureBookRule BURIED_TREASURE = ordinary(
 		List.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION),
-		StructureBookSpots::buriedTreasure,
-		StructureBookRule.Placement.IN_CHEST
+		StructureBookSpots::buriedTreasure
 	);
-	private static final StructureBookRule TRAIL_RUINS = new StructureBookRule(
-		List.of(Enchantments.SILK_TOUCH),
-		StructureBookSpots::trailRuins,
-		StructureBookRule.Placement.IN_SUSPICIOUS_GRAVEL
-	);
-
-	// Each Bastion layout, named by the template its start piece places, holds its own book.
-	private static final Map<Identifier, StructureBookRule> BASTION_LAYOUTS = bastionLayouts();
+	private static final StructureBookRule TRAIL_RUINS = ordinary(List.of(Enchantments.SILK_TOUCH), StructureBookSpots::trailRuins);
 
 	/** Every Abandoned Camp, one per biome variant. */
 	public static final List<ResourceKey<Structure>> ABANDONED_CAMPS = List.of(
@@ -101,18 +94,27 @@ public final class StructureBookRules {
 		BuiltinStructures.ABANDONED_CAMP_WOODED_BADLANDS
 	);
 
-	private static final Map<ResourceKey<Structure>, StructureBookRule> RULES = rules();
+	private static final Map<ResourceKey<Structure>, Layouts> RULES = rules();
 
 	private StructureBookRules() {
 	}
 
 	/** The enchantments a structure's book can hold, or none for a structure without a book. */
 	public static List<ResourceKey<Enchantment>> enchantmentsFor(ResourceKey<Structure> structure) {
-		if (structure.equals(BuiltinStructures.BASTION_REMNANT)) {
-			return BASTION_LAYOUTS.values().stream().flatMap(layout -> layout.enchantments().stream()).toList();
-		}
+		Layouts layouts = RULES.get(structure);
 
-		return Optional.ofNullable(RULES.get(structure)).map(StructureBookRule::enchantments).orElse(List.of());
+		if (layouts == null) return List.of();
+
+		return layouts.rules().stream().flatMap(rule -> rule.enchantments().stream()).toList();
+	}
+
+	/**
+	 * Has {@code rooms} choose the keeper rooms of every Stronghold planned from now on. The Evoker its garrison places
+	 * in each locks the Stronghold's book, keyed by {@link MobKeepers#roomKey}. Until this is called, a Stronghold's
+	 * book is planned unlocked. Call once from mod init.
+	 */
+	public static void chooseStrongholdKeeperRoomsWith(KeeperRooms rooms) {
+		strongholdKeeperRooms = rooms;
 	}
 
 	/**
@@ -135,7 +137,9 @@ public final class StructureBookRules {
 	) {
 		if (pieces.isEmpty()) return pieces;
 
-		Optional<StructureBookRule> rule = structure.unwrapKey().flatMap(key -> ruleFor(key, pieces.pieces()));
+		Optional<StructureBookRule> rule = structure.unwrapKey()
+			.flatMap(key -> Optional.ofNullable(RULES.get(key)))
+			.flatMap(layouts -> layouts.ruleFor().apply(pieces.pieces()));
 
 		if (rule.isEmpty()) return pieces;
 
@@ -147,34 +151,21 @@ public final class StructureBookRules {
 
 		ResourceKey<Enchantment> enchantment = rule.get().chooseEnchantment(random);
 		BookLocks.Keys keys = rule.get().lock().keys(pieces.pieces(), spot.get().pos(), random);
-		int anchorIndex = pieces.pieces().indexOf(spot.get().anchor());
-		StructureBookPiece book = new StructureBookPiece(
-			spot.get().pos(),
-			enchantment,
-			anchorIndex,
-			spot.get().anchor(),
-			rule.get().placement(),
-			keys
-		);
+		StructureBookPiece book = new StructureBookPiece(pieces.pieces(), spot.get(), enchantment, keys);
 
 		return new PiecesContainer(Stream.concat(pieces.pieces().stream(), Stream.of(book)).toList());
 	}
 
-	// A Bastion's rule is its layout's; a layout this mod doesn't know, such as a datapack's, holds no book.
-	private static Optional<StructureBookRule> ruleFor(ResourceKey<Structure> structure, List<StructurePiece> pieces) {
-		if (structure.equals(BuiltinStructures.BASTION_REMNANT)) {
-			return StructureBookSpots.startTemplate(pieces).map(BASTION_LAYOUTS::get);
-		}
-
-		return Optional.ofNullable(RULES.get(structure));
+	private static List<BlockPos> strongholdKeeperKeys(List<StructurePiece> pieces, RandomSource random) {
+		return strongholdKeeperRooms.choose(pieces, random).stream().map(MobKeepers::roomKey).toList();
 	}
 
 	private static StructureBookRule ordinary(List<ResourceKey<Enchantment>> enchantments, StructureBookRule.SpotRule spot) {
-		return new StructureBookRule(enchantments, spot, StructureBookRule.Placement.OPEN);
+		return new StructureBookRule(enchantments, spot);
 	}
 
-	private static Map<ResourceKey<Structure>, StructureBookRule> rules() {
-		Map<ResourceKey<Structure>, StructureBookRule> rules = new HashMap<>(Map.of(
+	private static Map<ResourceKey<Structure>, Layouts> rules() {
+		Map<ResourceKey<Structure>, StructureBookRule> sharedByEveryLayout = new HashMap<>(Map.of(
 			BuiltinStructures.MINESHAFT, MINESHAFT,
 			BuiltinStructures.MINESHAFT_MESA, MINESHAFT,
 			BuiltinStructures.DESERT_PYRAMID, DESERT_PYRAMID,
@@ -187,18 +178,24 @@ public final class StructureBookRules {
 			BuiltinStructures.PILLAGER_OUTPOST, PILLAGER_OUTPOST
 		));
 
-		rules.put(BuiltinStructures.FORTRESS, NETHER_FORTRESS);
-		rules.put(BuiltinStructures.END_CITY, END_CITY);
-		rules.put(BuiltinStructures.ANCIENT_CITY, ANCIENT_CITY);
-		rules.put(BuiltinStructures.BURIED_TREASURE, BURIED_TREASURE);
-		rules.put(BuiltinStructures.TRAIL_RUINS, TRAIL_RUINS);
-		rules.put(BuiltinStructures.WOODLAND_MANSION, WOODLAND_MANSION);
-		rules.put(BuiltinStructures.STRONGHOLD, STRONGHOLD);
-		ABANDONED_CAMPS.forEach(camp -> rules.put(camp, ABANDONED_CAMP));
+		sharedByEveryLayout.put(BuiltinStructures.FORTRESS, NETHER_FORTRESS);
+		sharedByEveryLayout.put(BuiltinStructures.END_CITY, END_CITY);
+		sharedByEveryLayout.put(BuiltinStructures.ANCIENT_CITY, ANCIENT_CITY);
+		sharedByEveryLayout.put(BuiltinStructures.BURIED_TREASURE, BURIED_TREASURE);
+		sharedByEveryLayout.put(BuiltinStructures.TRAIL_RUINS, TRAIL_RUINS);
+		sharedByEveryLayout.put(BuiltinStructures.WOODLAND_MANSION, WOODLAND_MANSION);
+		sharedByEveryLayout.put(BuiltinStructures.STRONGHOLD, STRONGHOLD);
+		ABANDONED_CAMPS.forEach(camp -> sharedByEveryLayout.put(camp, ABANDONED_CAMP));
+
+		Map<ResourceKey<Structure>, Layouts> rules = new HashMap<>();
+
+		sharedByEveryLayout.forEach((structure, rule) -> rules.put(structure, Layouts.sharing(rule)));
+		rules.put(BuiltinStructures.BASTION_REMNANT, Layouts.byStartTemplate(bastionLayouts()));
 
 		return Map.copyOf(rules);
 	}
 
+	// Each Bastion layout, named by the template its start piece places, holds its own book.
 	private static Map<Identifier, StructureBookRule> bastionLayouts() {
 		Map<Identifier, StructureBookRule> layouts = new LinkedHashMap<>();
 
@@ -215,7 +212,6 @@ public final class StructureBookRules {
 		return new StructureBookRule(
 			List.of(enchantment),
 			spot,
-			StructureBookRule.Placement.OPEN,
 			(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.BRUTES, StructureBookSpots.bastionKeepers(pieces, random))
 		);
 	}
@@ -230,5 +226,33 @@ public final class StructureBookRules {
 		random.setLargeFeatureWithSalt(seed, chunkPos.x(), chunkPos.z(), BOOK_SALT);
 
 		return random;
+	}
+
+	/** Chooses a structure's keeper rooms: the pieces whose keeper mobs lock its book. */
+	@FunctionalInterface
+	public interface KeeperRooms {
+		/**
+		 * The keeper rooms among a structure's planned pieces, in the order their keys are kept.
+		 *
+		 * @param random the book's planning random, so the same world seed picks the same rooms
+		 */
+		List<StructurePiece> choose(List<StructurePiece> pieces, RandomSource random);
+	}
+
+	/**
+	 * The rules of one structure's layouts.
+	 *
+	 * @param rules every layout's rule
+	 * @param ruleFor the rule of the layout a structure's planned pieces make, none for a layout that holds no book
+	 */
+	private record Layouts(List<StructureBookRule> rules, Function<List<StructurePiece>, Optional<StructureBookRule>> ruleFor) {
+		static Layouts sharing(StructureBookRule rule) {
+			return new Layouts(List.of(rule), pieces -> Optional.of(rule));
+		}
+
+		// A layout this mod doesn't know, such as a datapack's, holds no book.
+		static Layouts byStartTemplate(Map<Identifier, StructureBookRule> rules) {
+			return new Layouts(List.copyOf(rules.values()), pieces -> StructureBookSpots.startTemplate(pieces).map(rules::get));
+		}
 	}
 }

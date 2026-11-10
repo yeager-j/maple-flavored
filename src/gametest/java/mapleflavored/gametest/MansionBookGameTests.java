@@ -12,7 +12,6 @@ import mapleflavored.structurebooks.StructureBookBlockEntity;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
-import mapleflavored.structurebooks.TerrainPreview;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -39,17 +38,12 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.levelgen.RandomState;
-import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
-import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
-import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.structures.WoodlandMansionPieces;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.AABB;
@@ -92,7 +86,7 @@ public class MansionBookGameTests {
 
 		for (int plan = 0; plan < PLANS; plan++) {
 			StructureStart start = planMansion(level, TestSites.of(helper), plan);
-			List<StructureBookPiece> books = BastionBookGameTests.bookPieces(start);
+			List<StructureBookPiece> books = Books.pieces(start);
 
 			helper.assertValueEqual(books.size(), 1, "books planned in the mansion at " + start.getChunkPos());
 			helper.assertValueEqual(books.getFirst().enchantment(), Enchantments.FORTUNE, "the book planned at " + start.getChunkPos());
@@ -110,10 +104,10 @@ public class MansionBookGameTests {
 	public void takingTheBookTurnsEveryIllagerInTheMansionOnAnOrichalcumWearer(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, TestSites.of(helper), PLANS));
-		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		ServerPlayer player = orichalcumWearer(helper);
 
-		helper.assertValueEqual(BastionBookGameTests.enchantmentAt(level, book), Enchantments.FORTUNE, "the book's enchantment");
+		helper.assertValueEqual(Books.enchantmentAt(level, book), Enchantments.FORTUNE, "the book's enchantment");
 		helper.assertTrue(level.getBlockState(book.below(2)).is(Blocks.WOOL.orange()), "the book floats over the fake portal's orange wool");
 
 		BoundingBox box = start.getBoundingBox();
@@ -141,7 +135,7 @@ public class MansionBookGameTests {
 	public void huntersAcrossTheMansionCloseInUntilTheirQuarryDies(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, TestSites.of(helper), PLANS + 1));
-		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		ServerPlayer player = orichalcumWearer(helper);
 
 		// So the hunters can't end their hunt by killing the player mid-chase.
@@ -196,7 +190,7 @@ public class MansionBookGameTests {
 	public void aRefusedBookAlertsNoIllager(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, TestSites.of(helper), PLANS + 2));
-		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		ServerPlayer player = orichalcumWearer(helper);
 		Inventory inventory = player.getInventory();
 
@@ -243,22 +237,7 @@ public class MansionBookGameTests {
 
 		WoodlandMansionPieces.generateMansion(level.getStructureTemplateManager(), origin, Rotation.getRandom(random), pieces, random);
 
-		Holder.Reference<Structure> mansion = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(BuiltinStructures.WOODLAND_MANSION);
-		ChunkGenerator generator = level.getChunkSource().getGenerator();
-		RandomState randomState = level.getChunkSource().randomState();
-		TerrainPreview terrain = TerrainPreview.of(
-			generator, generator.getBiomeSource(), randomState.createClimateSampler(SamplerContext.EMPTY_UNCACHED), randomState, level
-		);
-		PiecesContainer withBook = StructureBookRules.withBook(
-			mansion,
-			new PiecesContainer(List.copyOf(pieces)),
-			level.getSeed(),
-			chunk,
-			terrain,
-			level.getStructureTemplateManager()
-		);
-
-		return new StructureStart(mansion.value(), chunk, 0, withBook);
+		return Books.planWithBook(level, BuiltinStructures.WOODLAND_MANSION, chunk, pieces);
 	}
 
 	private static ServerPlayer orichalcumWearer(GameTestHelper helper) {

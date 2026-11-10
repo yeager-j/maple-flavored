@@ -110,25 +110,31 @@ public final class ShriekerKeepers {
 
 	/** The origins of a city's sculk patches: the positions of its pieces that place one. */
 	public static List<BlockPos> origins(List<StructurePiece> pieces) {
-		return pieces.stream()
-			.filter(ShriekerKeepers::isSculkPatch)
-			.map(piece -> ((PoolElementStructurePiece) piece).getPosition())
-			.toList();
+		return pieces.stream().flatMap(piece -> patchOrigin(piece).stream()).toList();
+	}
+
+	/** The origin of the sculk patch the piece places, if it places one: the piece's position. */
+	static Optional<BlockPos> patchOrigin(StructurePiece piece) {
+		if (!(piece instanceof PoolElementStructurePiece poolPiece)) return Optional.empty();
+		if (!(poolPiece.getElement() instanceof FeaturePoolElement feature)) return Optional.empty();
+
+		boolean sculkPatch = ((FeaturePoolElementAccessor) feature).feature().is(SCULK_PATCH);
+
+		return sculkPatch ? Optional.of(poolPiece.getPosition()) : Optional.empty();
 	}
 
 	/**
 	 * Places a keeper shrieker once a keeper's sculk patch has been built: at the patch's origin, or on top of the
 	 * catalyst the patch put there. It can summon, and replaces whatever is there. Call after every piece's build.
 	 *
-	 * @param pieces the structure's pieces, its book last if it has one
+	 * @param pieces the structure's pieces
 	 */
 	static void placeIfKeeper(StructurePiece piece, List<StructurePiece> pieces, WorldGenLevel level) {
-		if (!isSculkPatch(piece) || !(pieces.getLast() instanceof StructureBookPiece book)) return;
+		Optional<BlockPos> keeperOrigin = StructureBookPiece.among(pieces).flatMap(book -> book.keeperShriekerPlacedBy(piece));
 
-		BlockPos origin = ((PoolElementStructurePiece) piece).getPosition();
+		if (keeperOrigin.isEmpty()) return;
 
-		if (!book.keepers().contains(origin)) return;
-
+		BlockPos origin = keeperOrigin.get();
 		BlockPos spot = level.getBlockState(origin).is(Blocks.SCULK_CATALYST) ? origin.above() : origin;
 		BlockState keeper = Blocks.SCULK_SHRIEKER.defaultBlockState()
 			.setValue(SculkShriekerBlock.CAN_SUMMON, true)
@@ -172,13 +178,6 @@ public final class ShriekerKeepers {
 
 	private static boolean isSummoningShrieker(BlockState state) {
 		return state.is(Blocks.SCULK_SHRIEKER) && state.getValue(SculkShriekerBlock.CAN_SUMMON);
-	}
-
-	private static boolean isSculkPatch(StructurePiece piece) {
-		if (!(piece instanceof PoolElementStructurePiece poolPiece)) return false;
-		if (!(poolPiece.getElement() instanceof FeaturePoolElement feature)) return false;
-
-		return ((FeaturePoolElementAccessor) feature).feature().is(SCULK_PATCH);
 	}
 
 	// The farthest origin not yet a keeper within the first window around the direction that has one.

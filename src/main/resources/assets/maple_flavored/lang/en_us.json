@@ -54,6 +54,7 @@
 	"block.maple_flavored.steel_block": "Block of Steel",
 	"block.maple_flavored.structure_book": "Structure Book",
 	"block.maple_flavored.structure_book.no_room": "No room for the book",
+	"block.maple_flavored.structure_book.blank": "The book is blank, and crumbles",
 	"block.maple_flavored.structure_book.locked": "Locked until every Blaze spawner here is Cleared (%s of %s)",
 	"block.maple_flavored.structure_book.locked_by_keepers": "Locked until every keeper Brute here is dead (%s of %s)",
 	"block.maple_flavored.structure_book.locked_by_shriekers": "Locked until every keeper shrieker here is broken (%s of %s)",

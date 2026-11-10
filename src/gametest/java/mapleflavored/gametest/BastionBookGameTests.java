@@ -10,7 +10,6 @@ import mapleflavored.structurebooks.StructureBookBlockEntity;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
-import mapleflavored.structurebooks.TerrainPreview;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -37,16 +36,11 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.RandomState;
-import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
-import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
-import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -102,7 +96,7 @@ public class BastionBookGameTests {
 		for (int i = 0; i < PLANS; i++) {
 			StructureStart start = Structures.plan(level, BuiltinStructures.BASTION_REMNANT, TestSites.of(helper).chunk(i));
 			Layout layout = layoutOf(start).orElseThrow(() -> new IllegalStateException("an unknown Bastion layout at " + start.getChunkPos()));
-			List<StructureBookPiece> books = bookPieces(start);
+			List<StructureBookPiece> books = Books.pieces(start);
 
 			helper.assertValueEqual(books.size(), 1, "books planned in the Bastion at " + start.getChunkPos());
 			helper.assertValueEqual(books.getFirst().enchantment(), layout.enchantment(), "the book planned at " + start.getChunkPos());
@@ -135,7 +129,7 @@ public class BastionBookGameTests {
 	public void anAngeredPiglinAttacksAPlayerWearingGold(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
-		BlockPos book = onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		AbstractPiglin piglin = spawn(level, EntityTypes.PIGLIN, book.east());
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
 
@@ -155,7 +149,7 @@ public class BastionBookGameTests {
 	public void piglinsAcrossTheBastionHuntThePlayerUntilTheirAngerEnds(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
-		BlockPos book = onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
 
 		player.setPos(Vec3.atBottomCenterOf(book.west()));
@@ -229,7 +223,7 @@ public class BastionBookGameTests {
 	public void aDeathTheHuntersNeverSawEndsTheHunt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
-		BlockPos book = onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
 
 		player.setPos(Vec3.atBottomCenterOf(book.west()));
@@ -269,21 +263,9 @@ public class BastionBookGameTests {
 			.filter(piece -> !(piece instanceof StructureBookPiece))
 			.filter(piece -> templateOf(piece).filter(STABLES_WITH_A_CHEST::contains).isEmpty())
 			.toList();
-		ChunkGenerator generator = level.getChunkSource().getGenerator();
-		RandomState randomState = level.getChunkSource().randomState();
-		TerrainPreview terrain = TerrainPreview.of(
-			generator, generator.getBiomeSource(), randomState.createClimateSampler(SamplerContext.EMPTY_UNCACHED), randomState, level
+		List<StructureBookPiece> books = Books.pieces(
+			Books.planWithBook(level, BuiltinStructures.BASTION_REMNANT, planned.getChunkPos(), withoutStableChests)
 		);
-		Holder.Reference<Structure> bastion = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(BuiltinStructures.BASTION_REMNANT);
-		PiecesContainer withBook = StructureBookRules.withBook(
-			bastion,
-			new PiecesContainer(withoutStableChests),
-			level.getSeed(),
-			planned.getChunkPos(),
-			terrain,
-			level.getStructureTemplateManager()
-		);
-		List<StructureBookPiece> books = bookPieces(new StructureStart(bastion.value(), planned.getChunkPos(), 0, withBook));
 
 		helper.assertValueEqual(books.size(), 1, "books planned without a stable chest");
 
@@ -301,7 +283,7 @@ public class BastionBookGameTests {
 	public void aRefusedBookAngersNoPiglin(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = placeUnlocked(helper, planLayout(level, TREASURE_ROOM, TestSites.of(helper)));
-		BlockPos book = onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		AbstractPiglin piglin = spawn(level, EntityTypes.PIGLIN, book);
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.DIRT);
 		Inventory inventory = player.getInventory();
@@ -339,9 +321,9 @@ public class BastionBookGameTests {
 	private static void placeTakeAndCheckAnger(GameTestHelper helper, Layout layout) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = placeUnlocked(helper, planLayout(level, layout, TestSites.of(helper)));
-		BlockPos book = onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 
-		helper.assertValueEqual(enchantmentAt(level, book), layout.enchantment(), "the book's enchantment");
+		helper.assertValueEqual(Books.enchantmentAt(level, book), layout.enchantment(), "the book's enchantment");
 		helper.assertTrue(level.getBlockState(book.below()).is(Blocks.CHEST), "the layout's chest is under the book");
 
 		List<AbstractPiglin> bastionsOwn = piglinsIn(level, start);
@@ -396,7 +378,7 @@ public class BastionBookGameTests {
 	private static StructureStart placeUnlocked(GameTestHelper helper, StructureStart planned) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = placeRegistered(level, planned);
-		BlockPos book = onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 
 		MobKeepers.liveKeepers(level, book).forEach(keeper -> keeper.kill(level));
 		helper.assertTrue(!BookLocks.isLocked(level, book), "the book is unlocked once its keepers are dead");
@@ -435,24 +417,6 @@ public class BastionBookGameTests {
 
 	private static Optional<LivingEntity> attackTarget(AbstractPiglin piglin) {
 		return piglin.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET);
-	}
-
-	static List<StructureBookPiece> bookPieces(StructureStart start) {
-		return start.getPieces().stream().filter(StructureBookPiece.class::isInstance).map(StructureBookPiece.class::cast).toList();
-	}
-
-	static BlockPos onlyBook(GameTestHelper helper, StructureStart start) {
-		List<BlockPos> books = Structures.books(helper.getLevel(), start);
-
-		helper.assertValueEqual(books.size(), 1, "the Bastion's books");
-
-		return books.getFirst();
-	}
-
-	static ResourceKey<Enchantment> enchantmentAt(ServerLevel level, BlockPos pos) {
-		if (!(level.getBlockEntity(pos) instanceof StructureBookBlockEntity book)) throw new IllegalStateException("no book at " + pos);
-
-		return book.enchantment().flatMap(Holder::unwrapKey).orElseThrow();
 	}
 
 	static List<AbstractPiglin> piglinsIn(ServerLevel level, StructureStart start) {

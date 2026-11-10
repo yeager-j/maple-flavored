@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** needs-info (findings 5 and 9 wait on Jackson's decisions; the rest is done)
 
 **Priority:** P2 (Medium)
 
@@ -119,14 +119,26 @@ The mod is at `0.1.0` (`gradle.properties:16`) and is intended for new worlds. `
 - `sb/StructureBookPiece.java:48-51`, `:101-111`, `:118-120`, `:157`
 - `test/StructureBookGameTests.java:418-456`
 
+## Decisions
+
+Claude made these while implementing; Jackson has not reviewed them.
+
+- **`structurebooks` no longer imports `strongholds`.** The rule table still names the Stronghold's lock, but the choice of keeper rooms is handed to it at mod init (`StrongholdIllagers.register`), and the table turns the rooms into keys with `MobKeepers.roomKey`. Until that call, a Stronghold's book is planned unlocked.
+- **A keeper this mod spawns is tagged with an explicit call.** `MobKeepers.keeperPlacedBy` says which keeper a piece places, and the Stronghold tags or forgives its Evoker with the answer. The thread-local is left only for a Bastion's Brutes, which the game spawns from a template.
+- **A locked book stays where it was planned.** It doesn't follow its anchor, so its planned spot, its block and its lock's key are one position by construction. If a settling structure is ever given a lock, the book is visibly left behind and an error is logged when it's built, where before it was silently never locked. `spot()` documents when it is the book's block.
+- **The Igloo reload case is real.** An Igloo saves where it was planned, so a built Igloo loaded again reads its book's `spot()` at the planned height. Shipwrecks, Ocean Ruins and temples save where they settled. Building is unaffected, since it always runs after the anchor settles. A GameTest pins this.
+- **The block says whether an Ancient City's book is gone.** `TakenBooks` is replaced by `GoneBooks`, which reads the block when its chunk is loaded and remembers what it says for when it isn't, so a player at the city's edge with the centre unloaded still gets the right answer. A book is also remembered gone the moment its block leaves a loaded chunk, through `LevelChunkMixin`. The saved data's id changed from `taken_books` to `gone_books`; a world saved before forgets its taken books until each book's chunk is next loaded with a player in the city.
+- **A book block can't always hold an enchantment**, because the game makes the block entity before giving it one. A blank book, as `/setblock` with no data places, now crumbles with a message when a player tries to take it, where before it was unbreakable and refused silently.
+- **"Up to three keepers" is still encoded three ways.** No checklist item covers it, and planning has no level to read a game rule from.
+
 ## Checklist
 
-- [ ] 1. (The book piece saves the lock's kind, and `StructureBookPiece.among` is the lookup: done with ticket 01. The rest is open.) The book piece saves the lock's kind, one `StructureBookPiece` lookup over a piece list replaces every `getLast()` check, the Stronghold tags its keeper Evoker with an explicit call, and `structurebooks` no longer imports `strongholds`.
-- [ ] 2. A book has an identity that doesn't move, or `withBook` refuses a lock rule on an anchor that settles and `spot()` documents when it is valid. The Igloo reload case is checked.
-- [ ] 3. An Ancient City stops Grounding when its book is gone for any reason, including one that was never placed.
-- [ ] 4. One predicate says what a Blaze spawner room is, and the Fortress mixin and the lock's key list both use it.
+- [x] 1. (The book piece saves the lock's kind, and `StructureBookPiece.among` is the lookup: done with ticket 01. The rest is open.) The book piece saves the lock's kind, one `StructureBookPiece` lookup over a piece list replaces every `getLast()` check, the Stronghold tags its keeper Evoker with an explicit call, and `structurebooks` no longer imports `strongholds`.
+- [x] 2. A book has an identity that doesn't move, or `withBook` refuses a lock rule on an anchor that settles and `spot()` documents when it is valid. The Igloo reload case is checked.
+- [x] 3. An Ancient City stops Grounding when its book is gone for any reason, including one that was never placed.
+- [x] 4. One predicate says what a Blaze spawner room is, and the Fortress mixin and the lock's key list both use it.
 - [ ] 5. Jackson has decided whether the Buried Treasure book moves to a loot pool; if it does, `ChestBlockEntityMixin` and the invoker are removed.
-- [ ] 6. The rule map resolves a layout-dependent rule, and `BASTION_REMNANT` is named once.
-- [ ] 7. The piece constructor takes each fact once, a spot rule carries its own placement, and a book block always has an enchantment.
-- [ ] 8. Tests plan a book through one entry point, the mineshaft test has an oracle independent of production, and `floating` is not public production API.
+- [x] 6. The rule map resolves a layout-dependent rule, and `BASTION_REMNANT` is named once.
+- [x] 7. The piece constructor takes each fact once, a spot rule carries its own placement, and a book block always has an enchantment.
+- [x] 8. Tests plan a book through one entry point, the mineshaft test has an oracle independent of production, and `floating` is not public production API.
 - [ ] 9. Jackson has decided whether any playtest world needs the legacy paths; if none does, they and their test are removed.

@@ -115,7 +115,6 @@ public final class StructureBooks {
 	public static void register() {
 		// The block, block entity and piece register in the static fields above; this call makes sure they run.
 		BookLocks.register();
-		TakenBooks.register();
 		PiglinAnger.register();
 		IllagerAlert.register();
 		MobKeepers.register();
@@ -128,7 +127,7 @@ public final class StructureBooks {
 	 * Builds a structure's piece along with the keepers it places: it tags a Bastion's keeper Brutes as they're placed,
 	 * and places an Ancient City's keeper shrieker once its sculk patch has grown. Call around every piece's build.
 	 *
-	 * @param pieces the structure's pieces, its book last if it has one
+	 * @param pieces the structure's pieces
 	 */
 	public static void buildPiece(StructurePiece piece, List<StructurePiece> pieces, WorldGenLevel level, Runnable buildPiece) {
 		MobKeepers.build(piece, pieces, level.getLevel().dimension(), buildPiece);
@@ -137,8 +136,9 @@ public final class StructureBooks {
 
 	/**
 	 * Takes the structure book at {@code pos} for the player, as one action: the player gets its level I book, the
-	 * block is removed and {@link #TAKEN} fires. Refused, with nothing changed and no event, when there's no book with an
-	 * enchantment there, the book is locked or the player has no free inventory slot. The lock is checked against the
+	 * block is removed and {@link #TAKEN} fires. Refused, with nothing changed and no event, when there's no book there,
+	 * the book is locked or the player has no free inventory slot. A blank book, one with no enchantment, as a command
+	 * can place, is refused too, and crumbles so it's never left behind unbreakable. The lock is checked against the
 	 * world first, so a key the world shows is done never keeps the book locked. A locked book shows the player
 	 * trails leading to the spawners still to be Cleared, the keeper Brutes still alive, which glow, or the keeper
 	 * shriekers still standing.
@@ -147,11 +147,16 @@ public final class StructureBooks {
 	 */
 	public static boolean take(ServerPlayer player, BlockPos pos) {
 		ServerLevel level = player.level();
-		Optional<Holder<Enchantment>> enchantment = level.getBlockEntity(pos) instanceof StructureBookBlockEntity book
-			? book.enchantment()
-			: Optional.empty();
+		if (!(level.getBlockEntity(pos) instanceof StructureBookBlockEntity book)) return false;
 
-		if (enchantment.isEmpty()) return false;
+		Optional<Holder<Enchantment>> enchantment = book.enchantment();
+
+		if (enchantment.isEmpty()) {
+			level.destroyBlock(pos, false);
+			player.sendOverlayMessage(Component.translatable("block.maple_flavored.structure_book.blank"));
+
+			return false;
+		}
 
 		Optional<BookLocks.Lock> lock = BookLocks.lockCheckedAgainstWorld(level, pos).filter(BookLocks.Lock::isLocked);
 

@@ -15,7 +15,9 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Holds the enchantment of a structure book. A book without one can't be taken. Clients are sent only how much of the
+ * Holds the enchantment of a structure book. The game makes the block entity before it's given one, so a book can be
+ * blank, as one a command places without data is; such a book crumbles when a player tries to take it. Clients are
+ * sent only how much of the
  * book's lock is still on; {@link BookLocks} decides that on the server.
  */
 public class StructureBookBlockEntity extends BlockEntity {

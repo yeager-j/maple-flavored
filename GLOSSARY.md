@@ -90,7 +90,7 @@ An area a boss opens around itself to shut down the cheapest way of avoiding its
 _Avoid_: Domain, aura
 
 **Grounded**:
-An effect that stops Elytra gliding, greatly increases Ender Pearl gravity to shorten throws, and stops Riptide and Zephyr's double jump. It applies inside a Warden's Subspace, and inside an Ancient City until its book is taken.
+An effect that stops Elytra gliding, greatly increases Ender Pearl gravity to shorten throws, and stops Riptide and Zephyr's double jump. It applies inside a Warden's Subspace, and inside an Ancient City until its book is gone, however it went.
 _Avoid_: Heavy, gravity
 
 **Warden Territory**:

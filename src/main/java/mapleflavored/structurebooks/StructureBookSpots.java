@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 import mapleflavored.mixin.ListPoolElementAccessor;
 import mapleflavored.mixin.SinglePoolElementAccessor;
 import mapleflavored.mixin.StructurePieceInvoker;
-import mapleflavored.strongholds.StrongholdIllagers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -40,7 +39,7 @@ import net.minecraft.world.level.storage.loot.LootTable;
 /**
  * Where structures' books go: each in the structure's most important spot, where a player exploring it properly will
  * find it. Buried Treasure and Trail Ruins have no open room, so theirs is in the treasure chest and in one of the ruin's
- * gravel blocks. The Nether Fortress's book is also locked by the Blaze spawners found here, and each Bastion layout's
+ * gravel blocks. Each Bastion layout's
  * book floats above that layout's own chest. The Woodland Mansion's is in its fake End portal room, which
  * {@link MansionPortalRoom} makes sure every mansion has, and the Stronghold's floats over its End portal. Local coordinates come from vanilla's code-built pieces and
  * templates.
@@ -81,8 +80,6 @@ final class StructureBookSpots {
 	private static final BlockPos FORTRESS_LAVA_WELL = new BlockPos(6, 7, 6);
 	// The centre of the bridge crossing every fortress starts from, at head height.
 	private static final BlockPos FORTRESS_START_CROSSING = new BlockPos(9, 6, 9);
-	// Where a fortress's spawner room places its Blaze spawner.
-	private static final BlockPos FORTRESS_BLAZE_SPAWNER = new BlockPos(3, 5, 5);
 
 	private static final String BASTION_HOUSING_COURTYARDS = "bastion/units/center_pieces/";
 	private static final Identifier BASTION_STABLE_WALL = Identifier.withDefaultNamespace("bastion/hoglin_stable/walls/wall_base");
@@ -193,7 +190,7 @@ final class StructureBookSpots {
 		return firstOfType(pieces, BuriedTreasurePieces.BuriedTreasurePiece.class).map(treasure -> {
 			BoundingBox box = treasure.getBoundingBox();
 
-			return new BookSpot(treasure, new BlockPos(box.minX(), box.minY(), box.minZ()));
+			return new BookSpot(treasure, new BlockPos(box.minX(), box.minY(), box.minZ()), BookSpot.Placement.IN_CHEST);
 		});
 	}
 
@@ -210,7 +207,9 @@ final class StructureBookSpots {
 
 			if (gravel.isEmpty()) return Optional.empty();
 
-			return Optional.of(new BookSpot(piece, gravel.get(planning.random().nextInt(gravel.size()))));
+			BlockPos chosen = gravel.get(planning.random().nextInt(gravel.size()));
+
+			return Optional.of(new BookSpot(piece, chosen, BookSpot.Placement.IN_SUSPICIOUS_GRAVEL));
 		});
 	}
 
@@ -224,9 +223,9 @@ final class StructureBookSpots {
 
 	/** Above the altar in front of the portal in the city's centre, with room under the book for a Warden. */
 	static Optional<BookSpot> ancientCity(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
-		if (startTemplate(pieces).filter(ANCIENT_CITY_CENTRES::contains).isEmpty()) return Optional.empty();
-
-		return Optional.of(inPoolElement((PoolElementStructurePiece) pieces.getFirst(), ANCIENT_CITY_ALTAR));
+		return startPiece(pieces)
+			.filter(centre -> firstTemplate(centre).filter(ANCIENT_CITY_CENTRES::contains).isPresent())
+			.map(centre -> inPoolElement(centre, ANCIENT_CITY_ALTAR));
 	}
 
 	/** In the fake End portal of the mansion's portal room. */
@@ -239,21 +238,9 @@ final class StructureBookSpots {
 		return firstOfType(pieces, StrongholdPieces.PortalRoom.class).map(room -> inCodeBuiltPiece(room, STRONGHOLD_PORTAL));
 	}
 
-	/** Where each of the fortress's spawner rooms will place its Blaze spawner. */
-	static List<BlockPos> fortressBlazeSpawners(List<StructurePiece> pieces) {
-		return pieces.stream()
-			.filter(NetherFortressPieces.MonsterThrone.class::isInstance)
-			.map(throne -> inCodeBuiltPiece(throne, FORTRESS_BLAZE_SPAWNER).pos())
-			.toList();
-	}
-
 	/** The template a jigsaw structure's start piece places, which names its layout. */
 	static Optional<Identifier> startTemplate(List<StructurePiece> pieces) {
-		if (pieces.isEmpty() || !(pieces.getFirst() instanceof PoolElementStructurePiece start)) return Optional.empty();
-
-		return singleElements(start.getElement())
-			.findFirst()
-			.flatMap(single -> ((SinglePoolElementAccessor) single).template().left());
+		return startPiece(pieces).flatMap(StructureBookSpots::firstTemplate);
 	}
 
 	/** Above the treasure chest in the gold pile at the treasure room's heart. */
@@ -289,28 +276,18 @@ final class StructureBookSpots {
 	 * place them. Every Brute when there are fewer.
 	 */
 	static List<BlockPos> bastionKeepers(List<StructurePiece> pieces, RandomSource random) {
-		List<BlockPos> brutes = new ArrayList<>(pieces.stream()
-			.filter(PoolElementStructurePiece.class::isInstance)
-			.map(PoolElementStructurePiece.class::cast)
-			.filter(piece -> placesTemplate(piece, BASTION_BRUTES::contains))
-			.map(PoolElementStructurePiece::getPosition)
-			.toList());
+		List<BlockPos> brutes = new ArrayList<>(pieces.stream().flatMap(piece -> bastionBruteKey(piece).stream()).toList());
 
 		Util.shuffle(brutes, random);
 
 		return List.copyOf(brutes.subList(0, Math.min(BASTION_KEEPERS, brutes.size())));
 	}
 
-	/**
-	 * The key of the keeper the piece places, a Bastion's Brute or a Stronghold's Evoker, if it places one of the
-	 * {@code keepers} its book was planned with.
-	 */
-	static Optional<BlockPos> keeperKey(StructurePiece piece, List<BlockPos> keepers) {
-		Optional<BlockPos> key = piece instanceof PoolElementStructurePiece pool && placesTemplate(pool, BASTION_BRUTES::contains)
-			? Optional.of(pool.getPosition())
-			: StrongholdIllagers.keeperKey(piece);
+	/** The key a Bastion's piece gives the Piglin Brute it places, if it places one: the piece's position. */
+	static Optional<BlockPos> bastionBruteKey(StructurePiece piece) {
+		if (!(piece instanceof PoolElementStructurePiece pool) || !placesTemplate(pool, BASTION_BRUTES::contains)) return Optional.empty();
 
-		return key.filter(keepers::contains);
+		return Optional.of(pool.getPosition());
 	}
 
 	private static Optional<BookSpot> aboveChest(
@@ -344,6 +321,18 @@ final class StructureBookSpots {
 			.max(Comparator.comparingInt(piece -> piece.getBoundingBox().maxY()));
 	}
 
+	private static Optional<PoolElementStructurePiece> startPiece(List<StructurePiece> pieces) {
+		if (pieces.isEmpty() || !(pieces.getFirst() instanceof PoolElementStructurePiece start)) return Optional.empty();
+
+		return Optional.of(start);
+	}
+
+	private static Optional<Identifier> firstTemplate(PoolElementStructurePiece piece) {
+		return singleElements(piece.getElement())
+			.findFirst()
+			.flatMap(single -> ((SinglePoolElementAccessor) single).template().left());
+	}
+
 	private static <T extends StructurePiece> Optional<T> firstOfType(List<StructurePiece> pieces, Class<T> type) {
 		return pieces.stream().filter(type::isInstance).map(type::cast).findFirst();
 	}
@@ -373,7 +362,7 @@ final class StructureBookSpots {
 			.anyMatch(single -> ((SinglePoolElementAccessor) single).template().left().filter(location).isPresent());
 	}
 
-	private static BookSpot inCodeBuiltPiece(StructurePiece piece, BlockPos local) {
+	static BookSpot inCodeBuiltPiece(StructurePiece piece, BlockPos local) {
 		StructurePieceInvoker world = (StructurePieceInvoker) piece;
 		BlockPos pos = new BlockPos(world.worldX(local.getX(), local.getZ()), world.worldY(local.getY()), world.worldZ(local.getX(), local.getZ()));
 

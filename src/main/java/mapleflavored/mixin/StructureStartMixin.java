@@ -65,10 +65,8 @@ public abstract class StructureStartMixin {
 			piece,
 			start.getPieces(),
 			level,
-			() -> {
-				postProcess.call(piece, level, structureManager, generator, random, chunkBB, chunkPos, referencePos);
-				StrongholdIllagers.placeGuards(piece, start.getPieces(), level, chunkBB);
-			}
+			() -> postProcess.call(piece, level, structureManager, generator, random, chunkBB, chunkPos, referencePos)
 		);
+		StrongholdIllagers.placeGuards(piece, start.getPieces(), level, chunkBB);
 	}
 }
