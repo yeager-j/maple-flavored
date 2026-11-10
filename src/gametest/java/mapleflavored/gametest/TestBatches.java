@@ -24,6 +24,8 @@ public final class TestBatches {
 	/**
 	 * Registers an environment only {@code test} uses, which sets up what {@code declared} does, and returns it. This is
 	 * what puts a {@link RunsAlone} test in its own batch.
+	 *
+	 * @param environments the environment registry while it can still be written to, before the server freezes it
 	 */
 	public static Holder.Reference<TestEnvironmentDefinition<?>> environmentOfItsOwn(
 		Registry<TestEnvironmentDefinition<?>> environments, Identifier test, Holder<TestEnvironmentDefinition<?>> declared
