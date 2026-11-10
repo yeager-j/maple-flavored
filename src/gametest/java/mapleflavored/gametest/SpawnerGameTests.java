@@ -167,7 +167,7 @@ public class SpawnerGameTests {
 	}
 
 	@GameTest
-	public void twelveDeathsClearASoloSpawnerOnceAndTheForcefieldClosesIn(GameTestHelper helper) {
+	public void twelveDeathsClearASoloSpawnerOnceAsItsGlowCools(GameTestHelper helper) {
 		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
 
 		playerAt(helper, Vec3.atCenterOf(spawner.getBlockPos()).add(1.0, 0.0, 0.0));
@@ -186,7 +186,7 @@ public class SpawnerGameTests {
 
 		killMarkedMobs(helper, spawner, 1);
 		helper.assertTrue(clearing(spawner).isCleared(), "the 12th death Clears it");
-		helper.assertValueEqual(clearing(spawner).remainingShare(), 0.0F, "a Cleared spawner has no forcefield");
+		helper.assertValueEqual(clearing(spawner).remainingShare(), 0.0F, "a Cleared spawner has no glow left");
 		helper.assertValueEqual(clearsAt(spawner), 1, "Cleared events after the 12th death");
 
 		killMarkedMobs(helper, spawner, 3);

@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Gives each spawner block its Clearing, saved with it and sent to clients in its update tag, where the forcefield
+ * Gives each spawner block its Clearing, saved with it and sent to clients in its update tag, where the heat
  * renderer reads it. Each server tick records the players in range.
  */
 @Mixin(SpawnerBlockEntity.class)

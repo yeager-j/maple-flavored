@@ -22,9 +22,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
@@ -107,8 +105,7 @@ public final class BookLocks extends SavedData {
 	}
 
 	/**
-	 * Marks a keeper mob's key done: the keeper is gone for good. Updates the book's clients once that unlocks a loaded
-	 * book.
+	 * Marks a keeper mob's key done: the keeper is gone for good. Updates the book's clients when the book is loaded.
 	 *
 	 * @param level the book's level
 	 */
@@ -127,8 +124,8 @@ public final class BookLocks extends SavedData {
 	}
 
 	/**
-	 * Marks a keeper shrieker's key done, if {@code key} is one: the shrieker is broken. Updates the book's clients once
-	 * that unlocks a loaded book.
+	 * Marks a keeper shrieker's key done, if {@code key} is one: the shrieker is broken. Updates the book's clients
+	 * when the book is loaded.
 	 *
 	 * @param level the keeper's level, which is its book's
 	 */
@@ -149,6 +146,14 @@ public final class BookLocks extends SavedData {
 	/** Whether the book at {@code book} can't be taken yet. Reads the lock as {@link #lockAt} does. */
 	public static boolean isLocked(ServerLevel level, BlockPos book) {
 		return lockAt(level, book).map(Lock::isLocked).orElse(false);
+	}
+
+	/**
+	 * The share of its keys still to be done before the book at {@code book} can be taken: 1 with none done, and 0 for a
+	 * book that can be taken or was never locked. Reads the lock as {@link #lockAt} does.
+	 */
+	public static float remainingShare(ServerLevel level, BlockPos book) {
+		return lockAt(level, book).map(Lock::remainingShare).orElse(0.0F);
 	}
 
 	/**
@@ -174,8 +179,8 @@ public final class BookLocks extends SavedData {
 	 * The lock on the book at {@code book}, read as {@link #lockAt} does, once its remaining keys are checked against
 	 * the world. A spawner's key is done when its spawner is Cleared or gone, and a keeper shrieker's when it's gone,
 	 * however that came about. A key is only checked in a chunk that's already loaded and fully generated. A keeper
-	 * mob's key is never done this way: a keeper that isn't there may have wandered off. Updates the book's clients once
-	 * this unlocks a loaded book.
+	 * mob's key is never done this way: a keeper that isn't there may have wandered off. Updates the book's clients
+	 * for each key this finds done, when the book is loaded.
 	 */
 	public static Optional<Lock> lockCheckedAgainstWorld(ServerLevel level, BlockPos book) {
 		BookLocks locks = of(level);
@@ -298,15 +303,8 @@ public final class BookLocks extends SavedData {
 		// own chunk can reach the disk before.
 		if (withKey.kind().isMob()) level.getDataStorage().scheduleSave();
 
-		if (!withKey.isLocked() && level.isLoaded(book)) showUnlocked(level, book);
-	}
-
-	// Sends the book's block entity again, so clients stop drawing it locked. An unloaded book is sent unlocked when
-	// its chunk is.
-	private static void showUnlocked(ServerLevel level, BlockPos book) {
-		BlockState state = level.getBlockState(book);
-
-		level.sendBlockUpdated(book, state, state, Block.UPDATE_CLIENTS);
+		// An unloaded book is sent with what's left of its lock when its chunk is.
+		if (level.isLoaded(book)) StructureBooks.showKeyDone(level, book);
 	}
 
 	private List<Lock> locks() {
@@ -403,6 +401,13 @@ public final class BookLocks extends SavedData {
 		/** The keys still to be done, in planned order. */
 		public List<BlockPos> remainingKeys() {
 			return keys.stream().filter(key -> !done.contains(key)).toList();
+		}
+
+		/** The share of the keys still to be done: 1 with none done, down to 0 once the book can be taken. */
+		public float remainingShare() {
+			if (keys.isEmpty()) return 0.0F;
+
+			return (float) remainingKeys().size() / keys.size();
 		}
 
 		Lock withDone(BlockPos key) {

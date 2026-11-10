@@ -6,13 +6,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import mapleflavored.MapleFlavored;
+import mapleflavored.effects.CreakingTrails;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.core.particles.TrailParticleOption;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -21,7 +23,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Mob;
@@ -35,7 +36,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.border.BorderStatus;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.minecraft.world.level.material.PushReaction;
@@ -54,13 +55,14 @@ public final class StructureBooks {
 	private static final float UNBREAKABLE = -1.0F;
 	private static final float BLAST_PROOF = 3_600_000.0F;
 
-	// Trails to what still locks a book, drawn like the Creaking heart's in the forcefield's colour.
-	private static final int TRAILS_PER_TARGET = 5;
 	// As long as a bell makes nearby raiders glow.
 	private static final int KEEPER_GLOW_TICKS = 60;
-	private static final int TRAIL_COLOR = BorderStatus.STATIONARY.getColor();
-	private static final int TRAIL_MIN_TICKS = 10;
-	private static final int TRAIL_EXTRA_TICKS = 40;
+	// Trails to what still locks a book run in the gold of its cage.
+	private static final int TRAIL_COLOR = 0xE2AA12;
+	// The bits of cage that fall when a key is done.
+	private static final BlockParticleOption CAGE_SHARDS = new BlockParticleOption(ParticleTypes.BLOCK, Blocks.GOLD_BLOCK.defaultBlockState());
+	private static final int CAGE_SHARD_COUNT = 12;
+	private static final double CAGE_SHARD_SPREAD = 0.3;
 
 	/** The structure book block. It has no item. */
 	public static final Block BLOCK = Registry.register(
@@ -184,9 +186,10 @@ public final class StructureBooks {
 		};
 
 		player.sendOverlayMessage(Component.translatable(message, done, lock.keys().size()));
+		level.playSound(null, book, SoundEvents.VAULT_INSERT_ITEM_FAIL, SoundSource.BLOCKS, 1.0F, 1.0F);
 
 		switch (lock.kind()) {
-			case SPAWNERS, SHRIEKERS -> remaining.forEach(key -> showTrails(level, book, key));
+			case SPAWNERS, SHRIEKERS -> remaining.forEach(key -> CreakingTrails.show(level, book, key, TRAIL_COLOR));
 			case BRUTES, EVOKERS -> pointOutKeepers(level, book, remaining);
 		}
 	}
@@ -203,31 +206,32 @@ public final class StructureBooks {
 			Mob keeper = liveByKey.get(key);
 
 			if (keeper == null) {
-				showTrails(level, book, key);
+				CreakingTrails.show(level, book, key, TRAIL_COLOR);
 
 				continue;
 			}
 
 			keeper.addEffect(new MobEffectInstance(MobEffects.GLOWING, KEEPER_GLOW_TICKS));
-			showTrails(level, book, keeper.blockPosition());
+			CreakingTrails.show(level, book, keeper.blockPosition(), TRAIL_COLOR);
 		}
 	}
 
-	// Each trail runs from somewhere in the book's block to somewhere in the target's.
-	private static void showTrails(ServerLevel level, BlockPos book, BlockPos target) {
-		RandomSource random = level.getRandom();
+	/**
+	 * Shows clients a loaded book whose lock just had a key done: the book is sent again, and the share of its cage
+	 * that key held breaks away. Does nothing where the book hasn't been built yet.
+	 */
+	static void showKeyDone(ServerLevel level, BlockPos book) {
+		BlockState state = level.getBlockState(book);
 
-		for (int i = 0; i < TRAILS_PER_TARGET; i++) {
-			Vec3 from = withinBlock(book, random);
-			Vec3 to = withinBlock(target, random);
-			TrailParticleOption trail = new TrailParticleOption(to, TRAIL_COLOR, TRAIL_MIN_TICKS + random.nextInt(TRAIL_EXTRA_TICKS));
+		if (!state.is(BLOCK)) return;
 
-			level.sendParticles(trail, true, true, from.x, from.y, from.z, 1, 0.0, 0.0, 0.0, 0.0);
-		}
-	}
+		Vec3 centre = Vec3.atCenterOf(book);
 
-	private static Vec3 withinBlock(BlockPos pos, RandomSource random) {
-		return Vec3.atLowerCornerOf(pos).add(random.nextDouble(), random.nextDouble(), random.nextDouble());
+		level.sendBlockUpdated(book, state, state, Block.UPDATE_CLIENTS);
+		level.playSound(null, book, SoundEvents.CHAIN_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
+		level.sendParticles(
+			CAGE_SHARDS, centre.x, centre.y, centre.z, CAGE_SHARD_COUNT, CAGE_SHARD_SPREAD, CAGE_SHARD_SPREAD, CAGE_SHARD_SPREAD, 0.0
+		);
 	}
 
 	/** The enchanted book a structure book gives: {@code enchantment} at level I. */

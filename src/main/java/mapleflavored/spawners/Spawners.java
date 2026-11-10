@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import mapleflavored.MapleFlavored;
 import mapleflavored.advancements.MapleTriggers;
+import mapleflavored.effects.CreakingTrails;
 import mapleflavored.items.MapleItems;
 import mapleflavored.mixin.BaseSpawnerAccessor;
 import mapleflavored.structurebooks.StructureBooks;
@@ -19,6 +20,8 @@ import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.ConversionParams;
 import net.minecraft.world.entity.ConversionType;
 import net.minecraft.world.entity.Entity;
@@ -32,19 +35,21 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
  * The Spawners module: normal spawners ignore light, and can't be broken or blown up until they are Cleared by the
- * deaths of their own mobs. Until then they spawn twice as fast. Breaking a Cleared spawner gives 1 Pith, and the book
- * it holds, if any.
+ * deaths of their own mobs. Until then they spawn twice as fast and glow hot, cooling a little with each of those
+ * deaths. Breaking a Cleared spawner gives 1 Pith, and the book it holds, if any.
  *
  * <p>Trial spawners are left vanilla. Each spawner's state is a {@link SpawnerClearing} on its block entity.
  */
@@ -56,6 +61,11 @@ public final class Spawners {
 		MapleFlavored.id("spawned_by"),
 		builder -> builder.persistent(GlobalPos.CODEC)
 	);
+
+	// Trails to and from a spawner run in the orange of its glow.
+	private static final int TRAIL_COLOR = 0xFF8A1C;
+	// How far from a spawner its living mobs are pointed out.
+	private static final double TRAIL_RANGE = 32.0;
 
 	/** Fires once per spawner, on the death that Clears it. The Fortress lock listens here. */
 	public static final Event<Cleared> CLEARED = EventFactory.createArrayBacked(Cleared.class, listeners -> (level, pos) -> {
@@ -132,6 +142,22 @@ public final class Spawners {
 		if (anyNewPlayer) sendChange(level, pos, spawner);
 	}
 
+	/**
+	 * Answers a hit on a spawner that isn't Cleared: it flares up, and trails lead from it to each of its mobs alive
+	 * nearby.
+	 */
+	public static void refuseHit(ServerLevel level, BlockPos pos) {
+		GlobalPos spawner = GlobalPos.of(level.dimension(), pos);
+		AABB nearby = new AABB(pos).inflate(TRAIL_RANGE);
+
+		level.levelEvent(LevelEvent.PARTICLES_MOBBLOCK_SPAWN, pos, 0);
+		level.playSound(null, pos, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
+
+		for (LivingEntity mob : level.getEntitiesOfClass(LivingEntity.class, nearby, entity -> isLivingMobOf(entity, spawner))) {
+			CreakingTrails.show(level, pos, mob.blockPosition(), TRAIL_COLOR);
+		}
+	}
+
 	/** Fires the advancement for a player who broke a Cleared spawner and so got its Pith. */
 	public static void onBrokenByPlayer(ServerPlayer player, @Nullable BlockEntity blockEntity) {
 		if (clearing(blockEntity).map(SpawnerClearing::isCleared).orElse(false)) {
@@ -166,8 +192,20 @@ public final class Spawners {
 
 		clearing.recordDeath();
 		sendChange(level, origin.pos(), spawner);
+		showDeathCounted(level, origin.pos(), entity);
 
 		if (clearing.isCleared()) CLEARED.invoker().onCleared(level, origin.pos());
+	}
+
+	// A trail runs from where the mob died to its spawner, which hisses and steams as a patch of it cools.
+	private static void showDeathCounted(ServerLevel level, BlockPos spawner, LivingEntity dead) {
+		if (dead.level() == level) CreakingTrails.show(level, dead.blockPosition(), spawner, TRAIL_COLOR);
+
+		level.levelEvent(LevelEvent.LAVA_FIZZ, spawner, 0);
+	}
+
+	private static boolean isLivingMobOf(LivingEntity entity, GlobalPos spawner) {
+		return entity.isAlive() && spawnedBy(entity).filter(spawner::equals).isPresent();
 	}
 
 	// A zombie that drowns is still its spawner's mob, so its death as a drowned counts. A slime's split-off children
@@ -189,7 +227,7 @@ public final class Spawners {
 		clearing.get().heldBook().ifPresent(book -> drops.add(StructureBooks.levelOneBook(book)));
 	}
 
-	// Saves the change and sends it to clients, which draw the forcefield and predict whether the spawner can be mined.
+	// Saves the change and sends it to clients, which draw the glow and predict whether the spawner can be mined.
 	private static void sendChange(ServerLevel level, BlockPos pos, SpawnerBlockEntity spawner) {
 		BlockState state = spawner.getBlockState();
 

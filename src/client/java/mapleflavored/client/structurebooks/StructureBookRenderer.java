@@ -2,7 +2,8 @@ package mapleflavored.client.structurebooks;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import mapleflavored.client.Forcefield;
+import mapleflavored.MapleFlavored;
+import mapleflavored.client.StagedBox;
 import mapleflavored.structurebooks.StructureBookBlockEntity;
 import mapleflavored.structurebooks.StructureBooks;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -14,16 +15,20 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.blockentity.EnchantTableRenderer;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.sprite.SpriteGetter;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Draws a structure book as the enchanting table's open book, floating, bobbing and slowly turning. A locked book is
- * drawn closed and still, inside the world border's forcefield.
+ * drawn closed and still at the middle of a glowing gold cage, which breaks away in patches as the keys of its lock
+ * are done.
  */
 public final class StructureBookRenderer implements BlockEntityRenderer<StructureBookBlockEntity, StructureBookRenderer.State> {
 	// Wraps the game time so it stays precise as a float; the animation skips once per wrap, about every 14 hours.
@@ -35,9 +40,13 @@ public final class StructureBookRenderer implements BlockEntityRenderer<Structur
 	private static final float TILT_DEGREES = 80.0F;
 	private static final float OPEN = 1.0F;
 	private static final float CLOSED = 0.0F;
-	// The locked forcefield's box within the block. Tuning values for the hand check.
-	private static final float LOCKED_FORCEFIELD_MIN = 0.1F;
-	private static final float LOCKED_FORCEFIELD_MAX = 0.9F;
+	// A closed book's covers stand 6 pixels up from its spine, which sits at the block's centre. Half of that back down
+	// puts the middle of the book there instead.
+	private static final float CLOSED_BOOK_CENTRING = -3.0F / 16.0F;
+	private static final Identifier CAGE = MapleFlavored.id("textures/entity/structure_book_cage.png");
+	// The cage's box within the block: the 14 pixels its atlas draws for each face, centred.
+	private static final float CAGE_MIN = 1.0F / 16.0F;
+	private static final float CAGE_MAX = 15.0F / 16.0F;
 	private static final float LEFT_PAGE = 0.1F;
 	private static final float RIGHT_PAGE = 0.9F;
 
@@ -72,19 +81,20 @@ public final class StructureBookRenderer implements BlockEntityRenderer<Structur
 		long gameTime = book.getLevel() == null ? 0L : book.getLevel().getGameTime();
 
 		state.time = gameTime % TIME_WRAP + partialTicks;
-		state.locked = book.isShownLocked();
+		state.lockRemaining = book.shownLockRemaining();
 	}
 
 	@Override
 	public void submit(State state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
-		// A locked book stays as it is at time 0: closed, level and facing one way.
-		float time = state.locked ? 0.0F : state.time;
-		BookModel.State bookState = BookModel.State.forAnimation(time, LEFT_PAGE, RIGHT_PAGE, state.locked ? CLOSED : OPEN);
+		boolean locked = state.lockRemaining > 0.0F;
+		BookPose pose = locked ? BookPose.CAGED : BookPose.free(state.time);
+		BookModel.State bookState = BookModel.State.forAnimation(pose.time, LEFT_PAGE, RIGHT_PAGE, pose.openness);
 
 		poseStack.pushPose();
-		poseStack.translate(0.5F, 0.5F + Mth.sin(time * BOB_SPEED) * BOB_HEIGHT, 0.5F);
-		poseStack.rotate(Axis.YP, -time * TURN_PER_TICK);
+		poseStack.translate(0.5F, 0.5F + Mth.sin(pose.time * BOB_SPEED) * BOB_HEIGHT, 0.5F);
+		poseStack.rotate(Axis.YP, -pose.time * TURN_PER_TICK);
 		poseStack.rotateDegrees(Axis.ZP, TILT_DEGREES);
+		poseStack.translate(pose.alongCovers, 0.0F, 0.0F);
 		submitNodeCollector.submitModel(
 			bookModel,
 			bookState,
@@ -98,12 +108,40 @@ public final class StructureBookRenderer implements BlockEntityRenderer<Structur
 		);
 		poseStack.popPose();
 
-		if (state.locked) Forcefield.submit(poseStack, submitNodeCollector, LOCKED_FORCEFIELD_MIN, LOCKED_FORCEFIELD_MAX);
+		if (!locked) return;
+
+		StagedBox.submit(
+			poseStack,
+			submitNodeCollector,
+			RenderTypes.entityCutout(CAGE),
+			StagedBox.stageAt(1.0F - state.lockRemaining),
+			CAGE_MIN,
+			CAGE_MAX,
+			StagedBox.Side.OUTSIDE,
+			LightCoordsUtil.FULL_BRIGHT,
+			StagedBox.UNTINTED
+		);
 	}
 
-	/** What one frame of a structure book needs: the animation time, in ticks, and whether it's locked. */
+	/**
+	 * How the book itself is posed.
+	 *
+	 * @param time the animation time it bobs and turns by, in ticks
+	 * @param openness how far open it is, from {@link #CLOSED} to {@link #OPEN}
+	 * @param alongCovers how far it is moved along its covers, away from its spine, in blocks
+	 */
+	private record BookPose(float time, float openness, float alongCovers) {
+		// Closed, level and facing one way, as an unlocked book is at time 0, with its middle at the cage's.
+		static final BookPose CAGED = new BookPose(0.0F, CLOSED, CLOSED_BOOK_CENTRING);
+
+		static BookPose free(float time) {
+			return new BookPose(time, OPEN, 0.0F);
+		}
+	}
+
+	/** What one frame of a structure book needs: the animation time, in ticks, and the share of its lock still on. */
 	public static final class State extends BlockEntityRenderState {
 		float time;
-		boolean locked;
+		float lockRemaining;
 	}
 }
