@@ -1,7 +1,6 @@
 package mapleflavored.structurebooks;
 
 import com.mojang.serialization.Codec;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -50,12 +49,7 @@ public class StructureBookPiece extends StructurePiece {
 	private static final String OFFSET = "Offset";
 	private static final String PLACEMENT = "Placement";
 	private static final String LOCK = "Lock";
-	// Saved before the piece saved its whole lock: a keeper lock's keys, without their kind.
-	private static final String LEGACY_KEEPERS = "Keepers";
-	// Saved before books could be placed other than floating: whether the book carved a pocket.
-	private static final String LEGACY_POCKET = "Pocket";
 	private static final Codec<ResourceKey<Enchantment>> ENCHANTMENT_CODEC = ResourceKey.codec(Registries.ENCHANTMENT);
-	private static final int NO_ANCHOR = -1;
 	private static final int POCKET_RADIUS = 1;
 
 	private final ResourceKey<Enchantment> enchantment;
@@ -63,7 +57,6 @@ public class StructureBookPiece extends StructurePiece {
 	private final BlockPos offset;
 	private final BookSpot.Placement placement;
 	private final BookLocks.Keys lock;
-	private final List<BlockPos> keepers;
 	// Linked from the structure's pieces whenever they're gathered, so it's never saved.
 	private @Nullable StructurePiece anchor;
 
@@ -87,20 +80,16 @@ public class StructureBookPiece extends StructurePiece {
 		this.offset = spot.pos().subtract(originOf(spot.anchor()));
 		this.placement = spot.placement();
 		this.lock = lock;
-		this.keepers = lock.kind().isKeeper() ? lock.positions() : List.of();
 	}
 
-	/** Loads a saved book piece. A book saved without an anchor stays at its saved spot. */
+	/** Loads a saved book piece. An unlocked book saves no lock. */
 	public StructureBookPiece(CompoundTag tag) {
 		super(StructureBooks.PIECE, tag);
 		this.enchantment = tag.read(ENCHANTMENT, ENCHANTMENT_CODEC).orElseThrow();
-		this.anchorIndex = tag.getIntOr(ANCHOR, NO_ANCHOR);
-		this.offset = tag.read(OFFSET, BlockPos.CODEC).orElse(BlockPos.ZERO);
-		this.placement = tag.getString(PLACEMENT)
-			.map(BookSpot.Placement::valueOf)
-			.orElseGet(() -> tag.getBooleanOr(LEGACY_POCKET, true) ? BookSpot.Placement.POCKET : BookSpot.Placement.OPEN);
+		this.anchorIndex = tag.getInt(ANCHOR).orElseThrow();
+		this.offset = tag.read(OFFSET, BlockPos.CODEC).orElseThrow();
+		this.placement = tag.read(PLACEMENT, BookSpot.Placement.CODEC).orElseThrow();
 		this.lock = tag.read(LOCK, BookLocks.Keys.CODEC).orElse(BookLocks.Keys.NONE);
-		this.keepers = lock.kind().isKeeper() ? lock.positions() : tag.read(LEGACY_KEEPERS, BlockPos.CODEC.listOf()).orElse(List.of());
 	}
 
 	/** The structure's book among its pieces, if it holds one. */
@@ -146,8 +135,7 @@ public class StructureBookPiece extends StructurePiece {
 	}
 
 	/**
-	 * What locks the book, as planned with its structure: {@link BookLocks.Keys#NONE} when nothing does, or when the piece
-	 * was saved before it saved its lock.
+	 * What locks the book, as planned with its structure: {@link BookLocks.Keys#NONE} when nothing does.
 	 */
 	public BookLocks.Keys lock() {
 		return lock;
@@ -158,7 +146,7 @@ public class StructureBookPiece extends StructurePiece {
 	 * Ancient City, Evoker rooms for a Stronghold. None when keepers don't lock it.
 	 */
 	public List<BlockPos> keepers() {
-		return keepers;
+		return lock.kind().isKeeper() ? lock.positions() : List.of();
 	}
 
 	/** The key in the book's lock of the keeper mob {@code piece} places, if it places one of the book's keepers. */
@@ -172,14 +160,9 @@ public class StructureBookPiece extends StructurePiece {
 	}
 
 	private Optional<BlockPos> keeperPlacedBy(StructurePiece piece, Predicate<BookLocks.Kind> placed) {
-		return keeperKinds().filter(placed).flatMap(kind -> keyGivenBy(kind, piece).stream()).filter(keepers::contains).findFirst();
-	}
+		if (!placed.test(lock.kind())) return Optional.empty();
 
-	// A piece saved before it saved its lock doesn't know what kind its keepers are, so every kind is tried.
-	private Stream<BookLocks.Kind> keeperKinds() {
-		if (isLocked()) return Stream.of(lock.kind());
-
-		return Arrays.stream(BookLocks.Kind.values()).filter(BookLocks.Kind::isKeeper);
+		return keyGivenBy(lock.kind(), piece).filter(lock.positions()::contains);
 	}
 
 	// The key a piece gives the keeper it places, for each kind of keeper a piece can place.
@@ -209,13 +192,9 @@ public class StructureBookPiece extends StructurePiece {
 		tag.store(ENCHANTMENT, ENCHANTMENT_CODEC, enchantment);
 		tag.putInt(ANCHOR, anchorIndex);
 		tag.store(OFFSET, BlockPos.CODEC, offset);
-		tag.putString(PLACEMENT, placement.name());
+		tag.store(PLACEMENT, BookSpot.Placement.CODEC, placement);
 
-		if (isLocked()) {
-			tag.store(LOCK, BookLocks.Keys.CODEC, lock);
-		} else if (!keepers.isEmpty()) {
-			tag.store(LEGACY_KEEPERS, BlockPos.CODEC.listOf(), keepers);
-		}
+		if (isLocked()) tag.store(LOCK, BookLocks.Keys.CODEC, lock);
 	}
 
 	@Override

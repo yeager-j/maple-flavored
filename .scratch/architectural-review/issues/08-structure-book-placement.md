@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-info (findings 5 and 9 wait on Jackson's decisions; the rest is done)
+**Status:** needs-info (finding 5 waits on Jackson's decision; the rest is done)
 
 **Priority:** P2 (Medium)
 
@@ -127,8 +127,9 @@ Claude made these while implementing; Jackson has not reviewed them.
 - **A keeper this mod spawns is tagged with an explicit call.** `MobKeepers.keeperPlacedBy` says which keeper a piece places, and the Stronghold tags or forgives its Evoker with the answer. The thread-local is left only for a Bastion's Brutes, which the game spawns from a template.
 - **A locked book stays where it was planned.** It doesn't follow its anchor, so its planned spot, its block and its lock's key are one position by construction. If a settling structure is ever given a lock, the book is visibly left behind and an error is logged when it's built, where before it was silently never locked. `spot()` documents when it is the book's block.
 - **The Igloo reload case is real.** An Igloo saves where it was planned, so a built Igloo loaded again reads its book's `spot()` at the planned height. Shipwrecks, Ocean Ruins and temples save where they settled. Building is unaffected, since it always runs after the anchor settles. A GameTest pins this.
-- **The block says whether an Ancient City's book is gone.** `TakenBooks` is replaced by `GoneBooks`, which reads the block when its chunk is loaded and remembers what it says for when it isn't, so a player at the city's edge with the centre unloaded still gets the right answer. A book is also remembered gone the moment its block leaves a loaded chunk, through `LevelChunkMixin`. The saved data's id changed from `taken_books` to `gone_books`; a world saved before forgets its taken books until each book's chunk is next loaded with a player in the city.
+- **The block says whether an Ancient City's book is gone.** `TakenBooks` is replaced by `GoneBooks`, which reads the block when its chunk is loaded and remembers what it says for when it isn't, so a player at the city's edge with the centre unloaded still gets the right answer. A book is also remembered gone the moment its block leaves a loaded chunk, through `LevelChunkMixin`. The saved data's id changed from `taken_books` to `gone_books`.
 - **A book block can't always hold an enchantment**, because the game makes the block entity before giving it one. A blank book, as `/setblock` with no data places, now crumbles with a message when a player tries to take it, where before it was unbreakable and refused silently.
+- **Legacy save paths are removed (Jackson, 2026-11-10: "Legacy saves aren't an issue. The mod hasn't been released yet.").** `StructureBookPiece` no longer reads the `Pocket` flag, a missing anchor, a missing placement or the kind-less `Keepers` list, and their test is gone. A placement is saved by an explicit name, not its constant's. A book piece saved in an older format now fails to load, so its structure loses its book. Left for ticket 09, which owns those files: `BookLocks.Lock.CODEC` still reads the old `spawners` and `cleared` field names with a default kind, and `PiglinAnger`'s hunt still reads an optional `quarry_deaths`.
 - **"Up to three keepers" is still encoded three ways.** No checklist item covers it, and planning has no level to read a game rule from.
 
 ## Checklist
@@ -141,4 +142,4 @@ Claude made these while implementing; Jackson has not reviewed them.
 - [x] 6. The rule map resolves a layout-dependent rule, and `BASTION_REMNANT` is named once.
 - [x] 7. The piece constructor takes each fact once, a spot rule carries its own placement, and a book block always has an enchantment.
 - [x] 8. Tests plan a book through one entry point, the mineshaft test has an oracle independent of production, and `floating` is not public production API.
-- [ ] 9. Jackson has decided whether any playtest world needs the legacy paths; if none does, they and their test are removed.
+- [x] 9. Jackson has decided whether any playtest world needs the legacy paths; if none does, they and their test are removed.

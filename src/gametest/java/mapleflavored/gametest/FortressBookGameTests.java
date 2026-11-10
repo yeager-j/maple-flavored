@@ -41,7 +41,6 @@ import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
-import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.structures.NetherFortressPieces;
 import org.jspecify.annotations.Nullable;
 
@@ -266,22 +265,6 @@ public class FortressBookGameTests {
 		helper.assertValueEqual(loaded.lock(), book.lock(), "the lock the loaded piece carries");
 		helper.assertValueEqual(loaded.keepers(), List.of(), "the keepers of a book that spawners lock");
 
-		// Saved before the piece saved its lock: a keeper lock's keys alone, which must still place its keepers.
-		StructurePieceSerializationContext context = StructurePieceSerializationContext.fromLevel(level);
-		CompoundTag legacy = book.createTag(context);
-
-		legacy.remove("Lock");
-		legacy.store("Keepers", BlockPos.CODEC.listOf(), spawners);
-
-		StructureBookPiece old = new StructureBookPiece(legacy);
-
-		helper.assertValueEqual(old.keepers(), spawners, "the keepers of a piece saved before locks");
-		helper.assertValueEqual(old.lock(), BookLocks.Keys.NONE, "the lock of a piece saved before locks");
-		helper.assertValueEqual(
-			old.createTag(context).read("Keepers", BlockPos.CODEC.listOf()),
-			Optional.of(spawners),
-			"the keepers saved again"
-		);
 		helper.succeed();
 	}
 
