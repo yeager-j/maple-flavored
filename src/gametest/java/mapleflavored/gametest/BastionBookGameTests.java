@@ -2,9 +2,11 @@ package mapleflavored.gametest;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 import mapleflavored.mixin.SinglePoolElementAccessor;
 import mapleflavored.structurebooks.BookLocks;
+import mapleflavored.structurebooks.Hunt;
 import mapleflavored.structurebooks.MobKeepers;
 import mapleflavored.structurebooks.StructureBookBlockEntity;
 import mapleflavored.structurebooks.StructureBookPiece;
@@ -251,6 +253,52 @@ public class BastionBookGameTests {
 		helper.assertValueEqual(attackTarget(hunter), Optional.empty(), "the hunter's target after its quarry died");
 		helper.assertFalse(hunter.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(HUNT_RANGE), "the hunter keeps the hunting range");
 		helper.assertValueEqual(angryAt(retargeted), Optional.of(bystander.getUUID()), "the retargeted Piglin is angry at");
+		helper.succeed();
+	}
+
+	// The hunt's ten minutes run out while the Piglin's anger, which lasts as long, still names its quarry.
+	@GameTest(maxTicks = 400)
+	public void aHuntThatRunsOutEndsThoughThePiglinIsStillAngryAtItsQuarry(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
+		BlockPos book = Books.only(helper, start);
+		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+
+		player.setPos(Vec3.atBottomCenterOf(book.west()));
+		helper.assertTrue(StructureBooks.take(player, book), "the book is taken");
+
+		// Out of the 16 blocks vanilla's own anger reaches, so only a hunt sets one of these on the player.
+		List<AbstractPiglin> farAway = piglinsIn(level, start).stream()
+			.filter(piglin -> piglin.isAdult() && piglin.distanceTo(player) > HUNT_MIN_DISTANCE)
+			.toList();
+
+		helper.assertTrue(farAway.size() >= 2, "the Bastion has two adult Piglins more than " + HUNT_MIN_DISTANCE + " blocks from the book");
+
+		long now = level.getGameTime();
+		AbstractPiglin stillHunting = Hunts.reloadedWithHuntUntil(helper, farAway.get(0), Hunts.PIGLIN_HUNT, now + 1);
+		AbstractPiglin ranOut = Hunts.reloadedWithHuntUntil(helper, farAway.get(1), Hunts.PIGLIN_HUNT, now);
+
+		tick(stillHunting);
+		tick(ranOut);
+		helper.assertValueEqual(attackTarget(stillHunting), Optional.of(player), "the target of the Piglin with a tick of its hunt left");
+		helper.assertTrue(stillHunting.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(HUNT_RANGE), "the hunting range with a tick of the hunt left");
+		helper.assertValueEqual(angryAt(ranOut), Optional.of(player.getUUID()), "the Piglin whose hunt ran out is angry at");
+		helper.assertValueEqual(attackTarget(ranOut), Optional.empty(), "the target of the Piglin whose hunt ran out");
+		helper.assertFalse(ranOut.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(HUNT_RANGE), "the Piglin whose hunt ran out keeps the hunting range");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void aHuntLastsUntilItsEndOrItsQuarrysNextDeath(GameTestHelper helper) {
+		long end = 1000L;
+		int deathsAtTheStart = 3;
+		Hunt hunt = new Hunt(UUID.randomUUID(), end, deathsAtTheStart);
+
+		helper.assertValueEqual(hunt.statusAt(end - 1, OptionalInt.of(deathsAtTheStart)), Hunt.Status.ON, "the hunt a tick before its end");
+		helper.assertValueEqual(hunt.statusAt(end, OptionalInt.of(deathsAtTheStart)), Hunt.Status.OVER, "the hunt at its end");
+		helper.assertValueEqual(hunt.statusAt(end - 1, OptionalInt.of(deathsAtTheStart + 1)), Hunt.Status.QUARRY_DIED, "the hunt once its quarry has died again");
+		helper.assertValueEqual(hunt.statusAt(end - 1, OptionalInt.empty()), Hunt.Status.ON, "the hunt while its quarry is offline");
+		helper.assertValueEqual(hunt.statusAt(end, OptionalInt.empty()), Hunt.Status.OVER, "the hunt at its end while its quarry is offline");
 		helper.succeed();
 	}
 

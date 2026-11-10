@@ -2,7 +2,9 @@ package mapleflavored.structurebooks;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import mapleflavored.MapleFlavored;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -122,6 +124,31 @@ public final class MobKeepers {
 		return Optional.ofNullable(mob.getAttached(KEEPER)).map(Keeper::key);
 	}
 
+	/** The loaded keepers of the book at {@code book} in its level that are still alive there, each by its key. */
+	static Map<BlockPos, Mob> liveKeepersByKey(ServerLevel level, BlockPos book) {
+		Map<BlockPos, Mob> liveByKey = new HashMap<>();
+
+		for (Mob keeper : liveKeepers(level, book)) {
+			keyOf(keeper).ifPresent(key -> liveByKey.put(key, keeper));
+		}
+
+		return liveByKey;
+	}
+
+	/**
+	 * How the keeper with this key in the lock is, and where it was last known to be. Only sees a keeper that's loaded in
+	 * the book's level.
+	 *
+	 * @param lock the lock the key is one of
+	 */
+	public static Sighting sighting(ServerLevel level, BookLocks.Lock lock, BlockPos key) {
+		if (lock.done().contains(key)) return new Sighting(Status.GONE, key);
+
+		Mob keeper = liveKeepersByKey(level, lock.book()).get(key);
+
+		return keeper == null ? new Sighting(Status.UNLOADED, key) : new Sighting(Status.ALIVE, keeper.blockPosition());
+	}
+
 	// Removed without dying, as by converting or Peaceful's removal of monsters. Counting a keeper twice changes nothing.
 	private static void countIfGone(Entity entity, ServerLevel level) {
 		Entity.RemovalReason reason = entity.getRemovalReason();
@@ -137,6 +164,24 @@ public final class MobKeepers {
 		ServerLevel bookLevel = level.getServer().getLevel(keeper.book().dimension());
 
 		if (bookLevel != null) BookLocks.markKeeperGone(bookLevel, keeper.book().pos(), keeper.key());
+	}
+
+	/** How a keeper mob is. */
+	public enum Status {
+		/** Loaded and alive in its book's level. */
+		ALIVE,
+		/** Its lock has counted it gone for good. */
+		GONE,
+		/** Not counted gone and not loaded in its book's level: unloaded, in another dimension, or never spawned. */
+		UNLOADED
+	}
+
+	/**
+	 * One keeper mob, as it is now.
+	 *
+	 * @param at where it is, or its key, which is where its piece placed it, when it isn't loaded
+	 */
+	public record Sighting(Status status, BlockPos at) {
 	}
 
 	/**

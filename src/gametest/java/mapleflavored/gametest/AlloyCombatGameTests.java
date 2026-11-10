@@ -48,9 +48,6 @@ public class AlloyCombatGameTests {
 	private static final BlockPos HIDDEN_POS = new BlockPos(6, 1, 6);
 	// Long enough for an Illager's target goals to run several times.
 	private static final int TARGETING_TICKS = 40;
-	private static final long LONG_ANGER_TICKS = 150L;
-	// Past the orichalcum_illager_anger environment's 60 ticks of anger, short of LONG_ANGER_TICKS.
-	private static final int PAST_THE_RULES_ANGER = 100;
 
 	@GameTest
 	public void steelArmorTakesTenPercentPerPieceOffExplosionsAndSonicBooms(GameTestHelper helper) {
@@ -176,22 +173,6 @@ public class AlloyCombatGameTests {
 			.thenSucceed();
 	}
 
-	// The environment's anger lasts 60 ticks, so a hit that cut the alert's anger to it would end it before the check.
-	@GameTest(environment = "maple_flavored_gametest:orichalcum_illager_anger", maxTicks = 200)
-	public void anAttackNeverCutsALongerAngerShort(GameTestHelper helper) {
-		ServerLevel level = helper.getLevel();
-		ServerPlayer player = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
-		Vindicator vindicator = helper.spawnWithNoFreeWill(EntityTypes.VINDICATOR, ILLAGER_POS);
-
-		IllagerNeutrality.anger(level, vindicator, player, LONG_ANGER_TICKS);
-		vindicator.hurtServer(level, level.damageSources().playerAttack(player), 1.0F);
-
-		helper.runAfterDelay(PAST_THE_RULES_ANGER, () -> {
-			helper.assertTrue(vindicator.canAttack(player), "the Vindicator is still angry at the player");
-			helper.succeed();
-		});
-	}
-
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void raidingIllagersAttackOrichalcumWearers(GameTestHelper helper) {
 		ServerPlayer player = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
@@ -203,16 +184,16 @@ public class AlloyCombatGameTests {
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
-	public void aBookAlertTurnsAnIllagerHostileToThatPlayerOnly(GameTestHelper helper) {
-		ServerPlayer alerted = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
+	public void anIllagersAngerIsAtThatPlayerOnly(GameTestHelper helper) {
+		ServerPlayer angeredAt = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
 		Vindicator vindicator = helper.spawn(EntityTypes.VINDICATOR, ILLAGER_POS);
 		ServerPlayer bystander = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
 
-		IllagerNeutrality.anger(helper.getLevel(), vindicator, alerted);
+		IllagerNeutrality.anger(helper.getLevel(), vindicator, angeredAt);
 
-		helper.assertTrue(vindicator.canAttack(alerted), "the Vindicator can attack the alerted player");
+		helper.assertTrue(vindicator.canAttack(angeredAt), "the Vindicator can attack the player it's angry at");
 		helper.assertFalse(vindicator.canAttack(bystander), "the Vindicator can attack the other Orichalcum wearer");
-		helper.succeedWhen(() -> assertTargets(helper, vindicator, alerted));
+		helper.succeedWhen(() -> assertTargets(helper, vindicator, angeredAt));
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)

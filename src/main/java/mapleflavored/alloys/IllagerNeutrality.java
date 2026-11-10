@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import mapleflavored.MapleFlavored;
 import mapleflavored.gamerules.MapleGameRules;
+import mapleflavored.structurebooks.IllagerAlert;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.core.UUIDUtil;
@@ -21,8 +22,8 @@ import net.minecraft.world.entity.player.Player;
 /**
  * Orichalcum armor's Illager neutrality: an Illager, and an Evoker's Vexes, won't attack a player wearing any Orichalcum
  * piece, as a Piglin won't attack one wearing gold. It still attacks them in a raid, and while it's angry at them: for
- * {@link MapleGameRules#ORICHALCUM_ILLAGER_ANGER_TIME} after they attack it or an Illager it can see nearby, and while a
- * structure book's alert has it hunting them.
+ * {@link MapleGameRules#ORICHALCUM_ILLAGER_ANGER_TIME} after they attack it or an Illager it can see nearby. It also
+ * attacks them while a structure book's alert has it hunting them, which {@link IllagerAlert} alone keeps time of.
  */
 public final class IllagerNeutrality {
 	// Vanilla's reach for a hurt Piglin's call to the Piglins around it.
@@ -49,7 +50,7 @@ public final class IllagerNeutrality {
 
 	/**
 	 * Whether the mob leaves the target alone: an Illager, or a Vex an Illager summoned, facing a player in Orichalcum the
-	 * Illager isn't raiding or angry at. A Vex whose Illager is gone leaves every Orichalcum wearer alone.
+	 * Illager isn't raiding, angry at or hunting. A Vex whose Illager is gone leaves every Orichalcum wearer alone.
 	 */
 	public static boolean isNeutralTo(Mob attacker, LivingEntity target) {
 		if (!(target instanceof Player player) || AlloyGear.piecesWorn(player, Alloy.ORICHALCUM) == 0) return false;
@@ -87,18 +88,11 @@ public final class IllagerNeutrality {
 
 	/**
 	 * Makes the Illager hostile to the player, Orichalcum or not, for {@link MapleGameRules#ORICHALCUM_ILLAGER_ANGER_TIME}.
-	 * Renews any shorter anger it already has at them.
+	 * Renews any shorter anger it already has at them, and never cuts a longer one short.
 	 */
 	public static void anger(ServerLevel level, AbstractIllager illager, ServerPlayer player) {
-		anger(level, illager, player, level.getGameRules().get(MapleGameRules.ORICHALCUM_ILLAGER_ANGER_TIME));
-	}
-
-	/**
-	 * Makes the Illager hostile to the player, Orichalcum or not, for {@code ticks}. Renews any shorter anger it already
-	 * has at them, and never cuts a longer one short.
-	 */
-	public static void anger(ServerLevel level, AbstractIllager illager, ServerPlayer player, long ticks) {
 		long now = level.getGameTime();
+		long ticks = level.getGameRules().get(MapleGameRules.ORICHALCUM_ILLAGER_ANGER_TIME);
 		Map<UUID, Long> anger = new HashMap<>(illager.getAttachedOrElse(ANGER, Map.of()));
 
 		anger.values().removeIf(end -> end <= now);
@@ -106,17 +100,8 @@ public final class IllagerNeutrality {
 		illager.setAttached(ANGER, anger);
 	}
 
-	/** Ends the Illager's anger at the player, if it has any. */
-	public static void calm(AbstractIllager illager, Player player) {
-		Map<UUID, Long> anger = new HashMap<>(illager.getAttachedOrElse(ANGER, Map.of()));
-
-		if (anger.remove(player.getUUID()) == null) return;
-
-		illager.setAttached(ANGER, anger);
-	}
-
 	private static boolean isNeutral(AbstractIllager illager, Player player) {
-		return !illager.hasActiveRaid() && !isAngryAt(illager, player);
+		return !illager.hasActiveRaid() && !isAngryAt(illager, player) && !IllagerAlert.isHunting(illager, player);
 	}
 
 	private static boolean isAngryAt(AbstractIllager illager, Player player) {

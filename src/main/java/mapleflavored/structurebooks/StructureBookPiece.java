@@ -3,7 +3,6 @@ package mapleflavored.structurebooks;
 import com.mojang.serialization.Codec;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import mapleflavored.MapleFlavored;
 import mapleflavored.mixin.BrushableBlockEntityAccessor;
@@ -36,8 +35,8 @@ import org.jspecify.annotations.Nullable;
  * settles onto the terrain as it's built. Shipwrecks, Ocean Ruins, Igloos and temples all move up or down then. Those
  * moves are vertical, so the book's chunk never changes. The piece's own bounding box is the spot as planned.
  *
- * <p>A locked book is the exception: it stays where it was planned, since its lock, its keepers and its structure all
- * find it by that spot.
+ * <p>A book with a lock is the exception: it stays where it was planned, since its lock, its keepers and its structure
+ * all find it by that spot.
  */
 public class StructureBookPiece extends StructurePiece {
 	private static final String ENCHANTMENT = "Enchantment";
@@ -52,7 +51,7 @@ public class StructureBookPiece extends StructurePiece {
 	private final int anchorIndex;
 	private final BlockPos offset;
 	private final BookSpot.Placement placement;
-	private final BookLocks.Keys lock;
+	private final Optional<BookLocks.Keys> lock;
 	// Linked from the structure's pieces whenever they're gathered, so it's never saved.
 	private @Nullable StructurePiece anchor;
 
@@ -61,10 +60,10 @@ public class StructureBookPiece extends StructurePiece {
 	 * last piece.
 	 *
 	 * @param pieces the structure's planned pieces, which hold the spot's anchor
-	 * @param lock what locks the book, {@link BookLocks.Keys#NONE} when nothing does
+	 * @param lock what locks the book, or empty when nothing does
 	 * @throws IllegalArgumentException if the spot's anchor isn't one of the pieces
 	 */
-	public StructureBookPiece(List<StructurePiece> pieces, BookSpot spot, ResourceKey<Enchantment> enchantment, BookLocks.Keys lock) {
+	public StructureBookPiece(List<StructurePiece> pieces, BookSpot spot, ResourceKey<Enchantment> enchantment, Optional<BookLocks.Keys> lock) {
 		super(StructureBooks.PIECE, 0, new BoundingBox(spot.pos()));
 
 		int anchorIndex = pieces.indexOf(spot.anchor());
@@ -78,14 +77,14 @@ public class StructureBookPiece extends StructurePiece {
 		this.lock = lock;
 	}
 
-	/** Loads a saved book piece. An unlocked book saves no lock. */
+	/** Loads a saved book piece. A book nothing locks saves no lock. */
 	public StructureBookPiece(CompoundTag tag) {
 		super(StructureBooks.PIECE, tag);
 		this.enchantment = tag.read(ENCHANTMENT, ENCHANTMENT_CODEC).orElseThrow();
 		this.anchorIndex = tag.getInt(ANCHOR).orElseThrow();
 		this.offset = tag.read(OFFSET, BlockPos.CODEC).orElseThrow();
 		this.placement = tag.read(PLACEMENT, BookSpot.Placement.CODEC).orElseThrow();
-		this.lock = tag.read(LOCK, BookLocks.Keys.CODEC).orElse(BookLocks.Keys.NONE);
+		this.lock = tag.read(LOCK, BookLocks.Keys.CODEC);
 	}
 
 	/** The structure's book among its pieces, if it holds one. */
@@ -104,15 +103,15 @@ public class StructureBookPiece extends StructurePiece {
 	}
 
 	/**
-	 * Where the book is placed. A locked book's spot is where it was planned and never changes.
+	 * Where the book is placed. The spot of a book with a lock is where it was planned and never changes.
 	 *
-	 * <p>An unlocked book follows its anchor, so its spot is where it was planned until the anchor's part of the book's
+	 * <p>A book without one follows its anchor, so its spot is where it was planned until the anchor's part of the book's
 	 * chunk is built, and the book's own block from then on, for as long as the structure stays in memory. A structure
 	 * loaded again from its chunk only says where the book is if its anchor saves where it settled. An Igloo doesn't,
 	 * so its book's spot reads as planned again. Building always sees the anchor settled.
 	 */
 	public BlockPos spot() {
-		if (anchor == null || isLocked()) return plannedSpot();
+		if (anchor == null || lock.isPresent()) return plannedSpot();
 
 		return originOf(anchor).offset(offset);
 	}
@@ -131,9 +130,10 @@ public class StructureBookPiece extends StructurePiece {
 	}
 
 	/**
-	 * What locks the book, as planned with its structure: {@link BookLocks.Keys#NONE} when nothing does.
+	 * What locks the book, as planned with its structure, or empty when nothing does. Keys with no positions mean the
+	 * structure looked for keys and found none, which leaves the book free to take.
 	 */
-	public BookLocks.Keys lock() {
+	public Optional<BookLocks.Keys> lock() {
 		return lock;
 	}
 
@@ -142,23 +142,21 @@ public class StructureBookPiece extends StructurePiece {
 	 * Ancient City, Evoker rooms for a Stronghold. None when keepers don't lock it.
 	 */
 	public List<BlockPos> keepers() {
-		return lock.kind().isKeeper() ? lock.positions() : List.of();
+		return lock.filter(keys -> keys.kind().isKeeper()).map(BookLocks.Keys::positions).orElse(List.of());
 	}
 
 	/** The key in the book's lock of the keeper mob {@code piece} places, if it places one of the book's keepers. */
 	Optional<BlockPos> keeperMobPlacedBy(StructurePiece piece) {
-		return keeperPlacedBy(piece, BookLocks.Kind::isMob);
+		return keeperPlacedBy(piece, lock.filter(keys -> keys.kind().form() == BookLocks.KeyForm.KEEPER_MOB));
 	}
 
 	/** The key in the book's lock of the keeper shrieker {@code piece} places, if it places one of the book's keepers. */
 	Optional<BlockPos> keeperShriekerPlacedBy(StructurePiece piece) {
-		return keeperPlacedBy(piece, kind -> kind == BookLocks.Kind.SHRIEKERS);
+		return keeperPlacedBy(piece, lock.filter(keys -> keys.kind() == BookLocks.Kind.SHRIEKERS));
 	}
 
-	private Optional<BlockPos> keeperPlacedBy(StructurePiece piece, Predicate<BookLocks.Kind> placed) {
-		if (!placed.test(lock.kind())) return Optional.empty();
-
-		return keyGivenBy(lock.kind(), piece).filter(lock.positions()::contains);
+	private static Optional<BlockPos> keeperPlacedBy(StructurePiece piece, Optional<BookLocks.Keys> keepers) {
+		return keepers.flatMap(keys -> keyGivenBy(keys.kind(), piece).filter(keys.positions()::contains));
 	}
 
 	// The key a piece gives the keeper it places, for each kind of keeper a piece can place.
@@ -169,10 +167,6 @@ public class StructureBookPiece extends StructurePiece {
 			case EVOKERS -> Optional.of(MobKeepers.roomKey(piece));
 			case SPAWNERS -> Optional.empty();
 		};
-	}
-
-	private boolean isLocked() {
-		return !lock.positions().isEmpty();
 	}
 
 	// A piece's bounding box always matches where it was last built: code-built pieces move their box to the ground,
@@ -190,7 +184,7 @@ public class StructureBookPiece extends StructurePiece {
 		tag.store(OFFSET, BlockPos.CODEC, offset);
 		tag.store(PLACEMENT, BookSpot.Placement.CODEC, placement);
 
-		if (isLocked()) tag.store(LOCK, BookLocks.Keys.CODEC, lock);
+		lock.ifPresent(keys -> tag.store(LOCK, BookLocks.Keys.CODEC, keys));
 	}
 
 	@Override

@@ -38,7 +38,7 @@ public final class ShriekerKeepers {
 		Identifier.withDefaultNamespace("sculk_patch_ancient_city")
 	);
 	// Playtest values: keepers stay well away from the book, each in its own third of the ring around it.
-	private static final double MIN_DISTANCE = 30.0;
+	private static final long MIN_DISTANCE = 30;
 	private static final List<Double> TURNS = List.of(120.0, 240.0);
 	private static final List<Double> WINDOWS = List.of(30.0, 45.0, 60.0);
 
@@ -65,8 +65,8 @@ public final class ShriekerKeepers {
 	public static List<BlockPos> choose(BlockPos book, List<BlockPos> origins, RandomSource random) {
 		List<BlockPos> eligible = origins.stream()
 			.distinct()
-			.filter(origin -> distance(book, origin) >= MIN_DISTANCE)
-			.sorted(Comparator.comparingDouble((BlockPos origin) -> distance(book, origin)).reversed())
+			.filter(origin -> distanceSquared(book, origin) >= MIN_DISTANCE * MIN_DISTANCE)
+			.sorted(Comparator.comparingLong((BlockPos origin) -> distanceSquared(book, origin)).reversed())
 			.toList();
 
 		if (eligible.isEmpty()) return List.of();
@@ -91,13 +91,22 @@ public final class ShriekerKeepers {
 	}
 
 	/**
+	 * How the keeper with this key in the lock is, and where. Never loads the keeper's chunk to look.
+	 *
+	 * @param lock the lock the key is one of
+	 */
+	public static Keeper keeper(ServerLevel level, BookLocks.Lock lock, BlockPos key) {
+		return lock.done().contains(key) ? new Keeper(Status.BROKEN, key) : inWorld(level, key);
+	}
+
+	/**
 	 * Where the keeper with this key stands: a summoning shrieker at the key, or on the catalyst above it. Empty when the
 	 * keeper isn't standing there or its chunk isn't loaded, which is never loaded to check.
 	 */
 	public static Optional<BlockPos> standingSpot(ServerLevel level, BlockPos key) {
-		if (!BookLocks.isChunkBuilt(level, key)) return Optional.empty();
+		Keeper keeper = inWorld(level, key);
 
-		return Stream.of(key, key.above()).filter(spot -> isSummoningShrieker(level.getBlockState(spot))).findFirst();
+		return keeper.status() == Status.STANDING ? Optional.of(keeper.spot()) : Optional.empty();
 	}
 
 	/**
@@ -105,7 +114,18 @@ public final class ShriekerKeepers {
 	 * a chunk that isn't loaded isn't known to be gone, and the chunk is never loaded to check.
 	 */
 	static boolean isGone(ServerLevel level, BlockPos key) {
-		return BookLocks.isChunkBuilt(level, key) && standingSpot(level, key).isEmpty();
+		return inWorld(level, key).status() == Status.MISSING;
+	}
+
+	// The keeper as the world alone shows it, which never says a keeper was counted broken.
+	private static Keeper inWorld(ServerLevel level, BlockPos key) {
+		if (!BookLocks.isChunkBuilt(level, key)) return new Keeper(Status.UNLOADED, key);
+
+		return Stream.of(key, key.above())
+			.filter(spot -> isSummoningShrieker(level.getBlockState(spot)))
+			.findFirst()
+			.map(spot -> new Keeper(Status.STANDING, spot))
+			.orElse(new Keeper(Status.MISSING, key));
 	}
 
 	/** The origins of a city's sculk patches: the positions of its pieces that place one. */
@@ -194,16 +214,41 @@ public final class ShriekerKeepers {
 		return Optional.empty();
 	}
 
-	private static double distance(BlockPos book, BlockPos origin) {
-		return Math.hypot(origin.getX() - book.getX(), origin.getZ() - book.getZ());
+	// Across the horizontal plane, in whole blocks squared, so comparing two distances is exact.
+	private static long distanceSquared(BlockPos book, BlockPos origin) {
+		long x = origin.getX() - book.getX();
+		long z = origin.getZ() - book.getZ();
+
+		return x * x + z * z;
 	}
 
-	// In degrees, measured around the book on the horizontal plane.
+	// In degrees, measured around the book on the horizontal plane. StrictMath gives every platform the same direction,
+	// so the same world seed picks the same keepers on each.
 	private static double direction(BlockPos book, BlockPos origin) {
-		return Math.toDegrees(Math.atan2(origin.getZ() - book.getZ(), origin.getX() - book.getX()));
+		return StrictMath.toDegrees(StrictMath.atan2(origin.getZ() - book.getZ(), origin.getX() - book.getX()));
 	}
 
 	private static double angleBetween(double a, double b) {
 		return Math.abs(Mth.wrapDegrees(a - b));
+	}
+
+	/** How a keeper is. */
+	public enum Status {
+		/** A summoning shrieker stands at its spot. */
+		STANDING,
+		/** Its lock has counted it broken. */
+		BROKEN,
+		/** Its chunk isn't loaded or isn't generated yet, so nothing shows whether it stands. */
+		UNLOADED,
+		/** Its chunk is loaded with no summoning shrieker at its spot, and its lock hasn't counted it broken. */
+		MISSING
+	}
+
+	/**
+	 * One keeper, as it is now.
+	 *
+	 * @param spot where it stands, or its key when it isn't standing
+	 */
+	public record Keeper(Status status, BlockPos spot) {
 	}
 }

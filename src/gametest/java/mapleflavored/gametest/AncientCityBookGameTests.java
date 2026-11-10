@@ -6,17 +6,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import mapleflavored.grounded.Grounded;
 import mapleflavored.structurebooks.BookLocks;
+import mapleflavored.structurebooks.BookSpot;
 import mapleflavored.structurebooks.GoneBooks;
 import mapleflavored.structurebooks.ShriekerKeepers;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.commands.CommandSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
@@ -28,7 +28,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -47,6 +46,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
@@ -80,18 +80,17 @@ public class AncientCityBookGameTests {
 	private static final int FIRST_PICKS = 200;
 
 	private static final String LOCKED_BY_SHRIEKERS = "block.maple_flavored.structure_book.locked_by_shriekers";
-	private static final String KEEPERS_BOOK = "commands.maple_flavored.keepers.book";
-	private static final String KEEPERS_KEEPER = "commands.maple_flavored.keepers.keeper";
+	private static final String NO_KEEPERS = "commands.maple_flavored.keepers.no_keepers";
+	// Clear of the lock the city itself planned for the book in its centre.
+	private static final int ABOVE_THE_CITYS_OWN_BOOK = 8;
 	private static final double SUBSPACE_RADIUS = SubspaceArena.RADIUS;
 	// Past the Grounded the city last topped up, which lasts 60 ticks.
 	private static final int GROUNDED_WEARS_OFF = 70;
 	private static final int GROUNDING_TICKS = 2;
 	private static final double WARDENS_SEARCHED = 120.0;
 
-	private static final Set<BlockPos> TAKEN = ConcurrentHashMap.newKeySet();
-
 	static {
-		StructureBooks.TAKEN.register((player, level, pos, enchantment) -> TAKEN.add(pos.immutable()));
+		Books.recordTakes();
 	}
 
 	@GameTest(maxTicks = 400)
@@ -314,7 +313,7 @@ public class AncientCityBookGameTests {
 		level.destroyBlock(onCatalyst.above(), false);
 		helper.assertValueEqual(BookLocks.remainingKeys(level, book), List.of(underPlayersShrieker), "the keepers left after the one on a catalyst breaks");
 
-		FortressBookGameTests.reloadBookLocks(level);
+		Locks.reload(level);
 		helper.assertValueEqual(BookLocks.remainingKeys(level, book), List.of(underPlayersShrieker), "the keepers left after a reload");
 
 		level.destroyBlock(underPlayersShrieker, false);
@@ -359,7 +358,7 @@ public class AncientCityBookGameTests {
 
 		helper.assertFalse(StructureBooks.take(player, book), "The locked book was taken");
 		helper.assertTrue(level.getBlockState(book).is(StructureBooks.BLOCK), "The locked book isn't there");
-		helper.assertFalse(TAKEN.contains(book), "A taken event fired for the locked book");
+		helper.assertValueEqual(Books.takes(book), List.of(), "the taken events fired for the locked book");
 		helper.assertValueEqual(overlay.size(), 1, "the messages shown");
 
 		TranslatableContents message = (TranslatableContents) overlay.getFirst().getContents();
@@ -371,7 +370,7 @@ public class AncientCityBookGameTests {
 
 		helper.assertTrue(StructureBooks.take(player, book), "The unlocked book wasn't taken");
 		helper.assertTrue(holdsSwiftSneakBook(helper, player), "The player doesn't hold Swift Sneak I");
-		helper.assertTrue(TAKEN.contains(book), "No taken event fired");
+		helper.assertValueEqual(Books.takes(book), List.of(Enchantments.SWIFT_SNEAK), "the taken events fired");
 		helper.assertValueEqual(wardensAround(level, book), List.of(), "the Wardens around the city's book");
 		helper.succeed();
 	}
@@ -382,22 +381,22 @@ public class AncientCityBookGameTests {
 		StructureStart start = planWithKeepers(level, TestSites.of(helper), MAX_KEEPERS);
 		BlockPos book = Books.piece(start).spot();
 		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
-		List<Component> output = new ArrayList<>();
 
 		placeKeeper(level, keepers.get(0));
 		placeKeeper(level, keepers.get(1));
 		level.destroyBlock(keepers.get(1), false);
 		level.setBlock(keepers.get(2), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-		runAt(level, Vec3.atCenterOf(book), "keepers", output);
+
+		List<Component> output = Locks.keepersAt(level, Vec3.atCenterOf(book));
 
 		helper.assertValueEqual(
-			output.stream().map(AncientCityBookGameTests::key).toList(),
-			List.of(KEEPERS_BOOK, KEEPERS_KEEPER, KEEPERS_KEEPER, KEEPERS_KEEPER),
+			output.stream().map(Locks::key).toList(),
+			List.of(Locks.KEEPERS_BOOK, Locks.KEEPERS_KEEPER, Locks.KEEPERS_KEEPER, Locks.KEEPERS_KEEPER),
 			"the lines /keepers wrote"
 		);
-		helper.assertValueEqual(args(output.get(0)).subList(1, 3), List.<Object>of(1, MAX_KEEPERS), "the broken keepers counted");
+		helper.assertValueEqual(Locks.args(output.get(0)).subList(1, 3), List.<Object>of(1, MAX_KEEPERS), "the broken keepers counted");
 		helper.assertValueEqual(
-			output.stream().skip(1).map(line -> key((Component) args(line).get(3))).toList(),
+			output.stream().skip(1).map(Locks::keeperStatus).toList(),
 			List.of("commands.maple_flavored.keepers.standing", "commands.maple_flavored.keepers.broken", "commands.maple_flavored.keepers.missing"),
 			"each keeper's status"
 		);
@@ -405,6 +404,71 @@ public class AncientCityBookGameTests {
 		level.setBlock(keepers.get(2), Blocks.SCULK_CATALYST.defaultBlockState(), Block.UPDATE_ALL);
 		placeKeeper(level, keepers.get(2).above());
 		helper.assertValueEqual(ShriekerKeepers.standingSpot(level, keepers.get(2)), Optional.of(keepers.get(2).above()), "where the keeper on a catalyst stands");
+		helper.succeed();
+	}
+
+	// A keeper in a chunk that isn't loaded is neither standing nor missing: nothing shows which.
+	@GameTest(maxTicks = 400)
+	public void aKeepersStatusTellsAnUnloadedChunkFromAMissingKeeper(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), MAX_KEEPERS);
+		BlockPos book = Books.piece(start).spot();
+		BookLocks.Lock lock = BookLocks.lockAt(level, book).orElseThrow();
+		BlockPos missing = lock.keys().get(0);
+		BlockPos unloaded = lock.keys().get(1);
+
+		level.getChunk(missing);
+		helper.assertFalse(isChunkLoaded(level, unloaded), "The second keeper's chunk is loaded");
+
+		helper.assertValueEqual(
+			ShriekerKeepers.keeper(level, lock, missing),
+			new ShriekerKeepers.Keeper(ShriekerKeepers.Status.MISSING, missing),
+			"the keeper in a loaded chunk with no shrieker"
+		);
+		helper.assertValueEqual(
+			ShriekerKeepers.keeper(level, lock, unloaded),
+			new ShriekerKeepers.Keeper(ShriekerKeepers.Status.UNLOADED, unloaded),
+			"the keeper in a chunk that isn't loaded"
+		);
+		helper.assertFalse(isChunkLoaded(level, unloaded), "Asking loaded the keeper's chunk");
+		helper.assertValueEqual(
+			Locks.keepersAt(level, Vec3.atCenterOf(book)).stream().skip(1).map(Locks::keeperStatus).limit(2).toList(),
+			List.of("commands.maple_flavored.keepers.missing", "commands.maple_flavored.keepers.unloaded"),
+			"the statuses /keepers wrote"
+		);
+		helper.succeed();
+	}
+
+	// A city can have no sculk patch far enough from its book to be a keeper. Its book is free to take, and its lock
+	// says why: it has one, with no keys, where a structure nothing locks has none.
+	@GameTest(maxTicks = 400)
+	public void aCityThatFoundNoKeepersHasALockWithNoKeysAndKeepersSaysSo(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart planned = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, TestSites.of(helper).chunk(0));
+		List<StructurePiece> cityPieces = planned.getPieces().stream().filter(piece -> !(piece instanceof StructureBookPiece)).toList();
+		BlockPos keeperless = Books.piece(planned).spot().above(ABOVE_THE_CITYS_OWN_BOOK);
+		BlockPos lockless = keeperless.above(ABOVE_THE_CITYS_OWN_BOOK);
+		BookLocks.Keys noKeepers = new BookLocks.Keys(BookLocks.Kind.SHRIEKERS, List.of());
+		StructureStart withNoKeepers = cityWithBook(planned, cityPieces, keeperless, Optional.of(noKeepers));
+		StructureStart withNoLock = cityWithBook(planned, cityPieces, lockless, Optional.empty());
+
+		BookLocks.plan(level.dimension(), withNoKeepers.getPieces());
+		BookLocks.plan(level.dimension(), withNoLock.getPieces());
+
+		BookLocks.Lock lock = BookLocks.lockAt(level, keeperless).orElseThrow(() -> new IllegalStateException("the keeperless book has no lock"));
+
+		helper.assertValueEqual(lock.kind(), BookLocks.Kind.SHRIEKERS, "the keeperless lock's kind");
+		helper.assertValueEqual(lock.keys(), List.of(), "the keeperless lock's keys");
+		helper.assertFalse(lock.isLocked(), "A lock with no keys locks its book");
+		helper.assertValueEqual(BookLocks.lockAt(level, lockless), Optional.empty(), "the lock of a book nothing locks");
+		helper.assertTrue(Locks.savedBooks(level).contains(keeperless), "the keeperless lock is in the saved locks");
+
+		helper.assertValueEqual(Books.piece(Structures.saveAndLoad(level, withNoKeepers)).lock(), Optional.of(noKeepers), "the lock a saved keeperless book carries");
+		helper.assertValueEqual(Books.piece(Structures.saveAndLoad(level, withNoLock)).lock(), Optional.empty(), "the lock a saved lockless book carries");
+
+		List<Component> output = Locks.keepersAt(level, Vec3.atCenterOf(keeperless));
+
+		helper.assertValueEqual(output.stream().map(Locks::key).toList(), List.of(NO_KEEPERS), "the lines /keepers wrote");
 		helper.succeed();
 	}
 
@@ -463,7 +527,7 @@ public class AncientCityBookGameTests {
 				level.setBlock(book, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 			})
 			.thenExecuteAfter(GROUNDED_WEARS_OFF, () -> {
-				helper.assertFalse(TAKEN.contains(book), "The broken book counts as taken");
+				helper.assertValueEqual(Books.takes(book), List.of(), "the taken events a broken book fired");
 				helper.assertFalse(Grounded.isGrounded(player), "A player is still Grounded once the book is broken");
 			})
 			.thenSucceed();
@@ -536,12 +600,25 @@ public class AncientCityBookGameTests {
 		StructureStart bookless = new StructureStart(planned.getStructure(), planned.getChunkPos(), 0, new PiecesContainer(withoutBook));
 		BlockPos centre = planned.getPieces().getFirst().getBoundingBox().getCenter();
 		ServerPlayer player = standingAt(helper, arena, centre, GameType.SURVIVAL);
+		Structure ancientCity = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getValue(BuiltinStructures.ANCIENT_CITY);
 
 		Structures.register(level, bookless);
 
 		helper.startSequence()
-			.thenExecuteAfter(GROUNDING_TICKS, () -> helper.assertFalse(Grounded.isGrounded(player), "A city without a book Grounded a player"))
+			.thenExecuteAfter(GROUNDING_TICKS, () -> {
+				// The control: the city is there to Ground the player, and only its missing book stops it.
+				helper.assertTrue(level.structureManager().getStructureAt(player.blockPosition(), ancientCity).isValid(), "No city is found where the player stands");
+				helper.assertFalse(Grounded.isGrounded(player), "A city without a book Grounded a player");
+			})
 			.thenSucceed();
+	}
+
+	// The city's pieces with a book of its own added at the spot, as planning adds one.
+	private static StructureStart cityWithBook(StructureStart city, List<StructurePiece> cityPieces, BlockPos spot, Optional<BookLocks.Keys> lock) {
+		StructureBookPiece book = new StructureBookPiece(cityPieces, new BookSpot(cityPieces.getFirst(), spot), Enchantments.SWIFT_SNEAK, lock);
+		List<StructurePiece> withBook = Stream.concat(cityPieces.stream(), Stream.of(book)).toList();
+
+		return new StructureStart(city.getStructure(), city.getChunkPos(), 0, new PiecesContainer(withBook));
 	}
 
 	// The portal frame stands in one vertical plane. The altar is out from its middle, on the axis the city's entrance
@@ -647,42 +724,6 @@ public class AncientCityBookGameTests {
 		int z = book.getZ() - bounds.minZ() > bounds.maxZ() - book.getZ() ? bounds.minZ() + 2 : bounds.maxZ() - 2;
 
 		return new BlockPos(x, book.getY(), z);
-	}
-
-	// Runs the command as an operator at the position, adding each line it writes to the output.
-	private static void runAt(ServerLevel level, Vec3 position, String command, List<Component> output) {
-		CommandSource capture = new CommandSource() {
-			@Override
-			public void sendSystemMessage(Component message) {
-				output.add(message);
-			}
-
-			@Override
-			public boolean acceptsSuccess() {
-				return true;
-			}
-
-			@Override
-			public boolean acceptsFailure() {
-				return true;
-			}
-
-			@Override
-			public boolean shouldInformAdmins() {
-				return false;
-			}
-		};
-		MinecraftServer server = level.getServer();
-
-		server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSource(capture).withLevel(level).withPosition(position), command);
-	}
-
-	private static String key(Component message) {
-		return ((TranslatableContents) message.getContents()).getKey();
-	}
-
-	private static List<Object> args(Component message) {
-		return List.of(((TranslatableContents) message.getContents()).getArgs());
 	}
 
 	private static boolean holdsSwiftSneakBook(GameTestHelper helper, ServerPlayer player) {

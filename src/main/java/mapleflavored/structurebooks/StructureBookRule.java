@@ -41,15 +41,16 @@ record StructureBookRule(List<ResourceKey<Enchantment>> enchantments, SpotRule s
 	@FunctionalInterface
 	interface LockRule {
 		/** Nothing locks the book. */
-		LockRule NONE = (pieces, book, random) -> BookLocks.Keys.NONE;
+		LockRule NONE = (pieces, book, random) -> Optional.empty();
 
 		/**
-		 * The keys that lock the book, none when nothing does.
+		 * The keys that lock the book, or empty when nothing locks it. Keys with no positions mean the structure has a
+		 * lock of that kind and found nothing to be its keys.
 		 *
 		 * @param book the book's spot as planned
 		 * @param random the book's planning random, so the same world seed picks the same keys
 		 */
-		BookLocks.Keys keys(List<StructurePiece> pieces, BlockPos book, RandomSource random);
+		Optional<BookLocks.Keys> keys(List<StructurePiece> pieces, BlockPos book, RandomSource random);
 	}
 
 	/**

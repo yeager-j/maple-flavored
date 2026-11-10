@@ -106,6 +106,7 @@ public class MansionBookGameTests {
 		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, TestSites.of(helper), PLANS));
 		BlockPos book = Books.only(helper, start);
 		ServerPlayer player = orichalcumWearer(helper);
+		ServerPlayer bystander = orichalcumWearer(helper);
 
 		helper.assertValueEqual(Books.enchantmentAt(level, book), Enchantments.FORTUNE, "the book's enchantment");
 		helper.assertTrue(level.getBlockState(book.below(2)).is(Blocks.WOOL.orange()), "the book floats over the fake portal's orange wool");
@@ -124,6 +125,7 @@ public class MansionBookGameTests {
 			String which = "the " + illager.getType().toShortString() + " at " + illager.blockPosition();
 
 			helper.assertTrue(illager.canAttack(player), which + " can attack the player");
+			helper.assertFalse(illager.canAttack(bystander), which + " can attack an Orichalcum wearer who didn't take the book");
 			helper.assertTrue(illager.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(HUNT_RANGE), which + " has the hunting range");
 		}
 
@@ -184,6 +186,29 @@ public class MansionBookGameTests {
 				helper.assertFalse(hunter.canAttack(player), "the hunter can attack the respawned Orichalcum wearer");
 			})
 			.thenSucceed();
+	}
+
+	// The hunt's own clock is all that says it's over: the quarry is alive, and nothing else kept its end time.
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
+	public void anIllagerWhoseHuntHasRunOutLeavesAnOrichalcumWearerAlone(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, TestSites.of(helper), PLANS));
+		BlockPos book = Books.only(helper, start);
+		ServerPlayer player = orichalcumWearer(helper);
+
+		helper.assertTrue(StructureBooks.take(player, book), "the book is taken");
+
+		List<AbstractIllager> hunters = illagersIn(level, start);
+
+		helper.assertTrue(hunters.size() >= 2, "the mansion generated with two Illagers");
+
+		long now = level.getGameTime();
+		AbstractIllager stillHunting = Hunts.reloadedWithHuntUntil(helper, hunters.get(0), Hunts.ILLAGER_HUNT, now + 1);
+		AbstractIllager ranOut = Hunts.reloadedWithHuntUntil(helper, hunters.get(1), Hunts.ILLAGER_HUNT, now);
+
+		helper.assertTrue(stillHunting.canAttack(player), "the Illager with a tick of its hunt left can attack its quarry");
+		helper.assertFalse(ranOut.canAttack(player), "the Illager whose hunt has run out can attack the Orichalcum wearer");
+		helper.succeed();
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)

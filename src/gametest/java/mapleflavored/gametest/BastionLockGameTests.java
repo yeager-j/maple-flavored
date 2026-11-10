@@ -1,13 +1,11 @@
 package mapleflavored.gametest;
 
-import com.mojang.serialization.Codec;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import mapleflavored.structurebooks.BookLocks;
 import mapleflavored.structurebooks.MobKeepers;
 import mapleflavored.structurebooks.StructureBookPiece;
@@ -15,12 +13,8 @@ import mapleflavored.structurebooks.StructureBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -40,7 +34,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * A Bastion's book is locked until three of its Piglin Brutes, its keepers, chosen when it's planned, are gone for good,
- * by any cause. A refused take points the keepers out. Peaceful, which has no Brutes, opens the lock.
+ * by any cause. A refused take points the keepers out, and {@code /keepers} lists them. Peaceful, which has no Brutes,
+ * opens the lock.
  */
 public class BastionLockGameTests {
 	private static final int PLANS = 80;
@@ -52,13 +47,8 @@ public class BastionLockGameTests {
 		Identifier.withDefaultNamespace("bastion/mobs/melee_piglin_always")
 	);
 
-	// Fabric events can't be unregistered, so one listener counts every take for the tests, by absolute position.
-	private static final Map<BlockPos, AtomicInteger> TAKES = new ConcurrentHashMap<>();
-
 	static {
-		StructureBooks.TAKEN.register((player, level, pos, enchantment) ->
-			TAKES.computeIfAbsent(pos.immutable(), unused -> new AtomicInteger()).incrementAndGet()
-		);
+		Books.recordTakes();
 	}
 
 	@GameTest(maxTicks = 400)
@@ -94,19 +84,19 @@ public class BastionLockGameTests {
 
 		helper.assertValueEqual(keys.size(), KEEPERS, "the book's keepers");
 		helper.assertValueEqual(
-			keepers.stream().map(keeper -> MobKeepers.keyOf(keeper).orElseThrow()).collect(java.util.stream.Collectors.toSet()),
+			keepers.stream().map(keeper -> MobKeepers.keyOf(keeper).orElseThrow()).collect(Collectors.toSet()),
 			Set.copyOf(keys),
 			"the keys of the Brutes tagged as keepers"
 		);
 		helper.assertValueEqual(keepers.size(), KEEPERS, "keepers alive");
-		helper.assertTrue(sentLocked(level, book), "the book is sent locked");
+		helper.assertTrue(Locks.sentLocked(level, book), "the book is sent locked");
 
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
 
 		helper.assertTrue(!StructureBooks.take(player, book), "a locked book is refused");
 		helper.assertValueEqual(player.getInventory().countItem(Items.ENCHANTED_BOOK), 0, "books given");
 		helper.assertTrue(level.getBlockState(book).is(StructureBooks.BLOCK), "the book is still there");
-		helper.assertValueEqual(takes(book), 0, "takes");
+		helper.assertValueEqual(Books.takes(book).size(), 0, "takes");
 
 		for (Mob keeper : keepers) {
 			MobEffectInstance glow = keeper.getEffect(MobEffects.GLOWING);
@@ -150,16 +140,16 @@ public class BastionLockGameTests {
 
 		keepers.get(1).hurtServer(level, level.damageSources().lava(), LAVA_DAMAGE);
 		helper.assertValueEqual(BookLocks.remainingKeys(level, book).size(), KEEPERS - 2, "keepers left after one burns in lava");
-		helper.assertTrue(sentLocked(level, book), "the book is sent locked with a keeper left");
+		helper.assertTrue(Locks.sentLocked(level, book), "the book is sent locked with a keeper left");
 
 		keepers.get(2).discard();
 		helper.assertValueEqual(BookLocks.remainingKeys(level, book), List.of(), "keepers left after the last is removed");
-		helper.assertTrue(!sentLocked(level, book), "the book is sent unlocked");
+		helper.assertTrue(!Locks.sentLocked(level, book), "the book is sent unlocked");
 
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
 
 		helper.assertTrue(StructureBooks.take(player, book), "the unlocked book is taken");
-		helper.assertValueEqual(takes(book), 1, "takes");
+		helper.assertValueEqual(Books.takes(book).size(), 1, "takes");
 
 		List<AbstractPiglin> hunters = BastionBookGameTests.piglinsIn(level, start);
 
@@ -185,12 +175,7 @@ public class BastionLockGameTests {
 
 		keepers.getFirst().kill(level);
 
-		BookLocks locks = level.getDataStorage().computeIfAbsent(BookLocks.TYPE);
-		RegistryOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-		Codec<BookLocks> codec = BookLocks.TYPE.codec();
-		BookLocks roundTripped = codec.parse(ops, codec.encodeStart(ops, locks).getOrThrow()).getOrThrow();
-
-		level.getDataStorage().set(BookLocks.TYPE, roundTripped);
+		Locks.reload(level);
 		helper.assertValueEqual(BookLocks.remainingKeys(level, book.spot()).size(), KEEPERS - 1, "keepers left once the locks are reloaded");
 		helper.assertValueEqual(lockKind(level, book.spot()), Optional.of(BookLocks.Kind.BRUTES), "the reloaded lock's kind");
 
@@ -217,33 +202,36 @@ public class BastionLockGameTests {
 		helper.succeed();
 	}
 
-	// Saved before Brute locks existed, a lock has no kind and is a spawner lock.
-	@GameTest
-	public void aLockSavedWithoutAKindIsASpawnerLock(GameTestHelper helper) {
+	// A keeper that unloads, as its chunk does when players leave, comes back with it, so only one gone for good counts.
+	@GameTest(maxTicks = 400)
+	public void aKeeperThatOnlyUnloadsStillLocksTheBookAndKeepersSaysHowEachOneIs(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos book = helper.absolutePos(new BlockPos(1, 2, 3));
-		BlockPos spawner = helper.absolutePos(new BlockPos(4, 5, 6));
-		BlockPos cleared = helper.absolutePos(new BlockPos(7, 8, 9));
-		CompoundTag legacy = new CompoundTag();
-		RegistryOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-		Codec<BookLocks> codec = BookLocks.TYPE.codec();
+		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, TestSites.of(helper)));
+		BlockPos book = Books.only(helper, start);
+		List<BlockPos> keys = BookLocks.remainingKeys(level, book);
+		Map<BlockPos, Mob> keepers = MobKeepers.liveKeepers(level, book).stream()
+			.collect(Collectors.toMap(keeper -> MobKeepers.keyOf(keeper).orElseThrow(), keeper -> keeper));
 
-		legacy.store("book", BlockPos.CODEC, book);
-		legacy.store("spawners", BlockPos.CODEC.listOf(), List.of(spawner, cleared));
-		legacy.store("cleared", BlockPos.CODEC.listOf(), List.of(cleared));
+		helper.assertValueEqual(keepers.keySet(), Set.copyOf(keys), "the keys of the Brutes tagged as keepers");
+		helper.assertValueEqual(keys.size(), KEEPERS, "the book's keepers");
 
-		// Loaded alongside the level's own locks, so no other test's lock is lost.
-		BookLocks.lockAt(level, book);
+		keepers.get(keys.get(0)).kill(level);
+		keepers.get(keys.get(1)).remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+		helper.assertValueEqual(BookLocks.remainingKeys(level, book), keys.subList(1, KEEPERS), "the keepers left after one dies and one unloads");
 
-		ListTag saved = (ListTag) codec.encodeStart(ops, level.getDataStorage().computeIfAbsent(BookLocks.TYPE)).getOrThrow();
+		List<Component> lines = Locks.keepersAt(level, Vec3.atCenterOf(book));
 
-		saved.add(legacy);
-		level.getDataStorage().set(BookLocks.TYPE, codec.parse(ops, saved).getOrThrow());
-
-		BookLocks.Lock lock = BookLocks.lockAt(level, book).orElseThrow();
-
-		helper.assertValueEqual(lock.kind(), BookLocks.Kind.SPAWNERS, "the legacy lock's kind");
-		helper.assertValueEqual(lock.remainingKeys(), List.of(spawner), "the legacy lock's spawners left to Clear");
+		helper.assertValueEqual(
+			lines.stream().map(Locks::key).toList(),
+			List.of(Locks.KEEPERS_BOOK, Locks.KEEPERS_KEEPER, Locks.KEEPERS_KEEPER, Locks.KEEPERS_KEEPER),
+			"the lines /keepers wrote"
+		);
+		helper.assertValueEqual(Locks.args(lines.get(0)).subList(1, 3), List.<Object>of(1, KEEPERS), "the keepers /keepers counted gone");
+		helper.assertValueEqual(
+			lines.stream().skip(1).map(Locks::keeperStatus).toList(),
+			List.of("commands.maple_flavored.keepers.gone", "commands.maple_flavored.keepers.mob_unloaded", "commands.maple_flavored.keepers.alive"),
+			"each keeper's status"
+		);
 		helper.succeed();
 	}
 
@@ -270,11 +258,4 @@ public class BastionLockGameTests {
 		return BookLocks.lockAt(level, book).map(BookLocks.Lock::kind);
 	}
 
-	private static boolean sentLocked(ServerLevel level, BlockPos book) {
-		return level.getBlockEntity(book).getUpdateTag(level.registryAccess()).getFloatOr("lock_remaining", 0.0F) > 0.0F;
-	}
-
-	private static int takes(BlockPos book) {
-		return TAKES.getOrDefault(book, new AtomicInteger()).get();
-	}
 }
