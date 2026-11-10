@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "diamond",
+  "ingredients": [
+    "maple_flavored:diamond_shard",
+    "maple_flavored:diamond_shard",
+    "maple_flavored:diamond_shard",
+    "maple_flavored:diamond_shard"
+  ],
+  "result": {
+    "id": "minecraft:diamond"
+  }
+}

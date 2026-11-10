@@ -54,7 +54,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Each Bastion layout holds its own level I book above that layout's chest: Fire Aspect in the treasure room, Soul
- * Speed on the bridge, Flame in the housing units and Knockback in the hoglin stables. Once its keeper Brutes are dead,
+ * Speed on the bridge, Flame in the housing units and Thorns in the hoglin stables. Once its keeper Brutes are dead,
  * taking it sets every Piglin and Piglin Brute in the Bastion hunting the player, however far away and whatever the
  * player wears. {@link BastionLockGameTests} covers the keepers.
  */
@@ -86,7 +86,7 @@ public class BastionBookGameTests {
 	static final Layout TREASURE_ROOM = new Layout("treasure/big_air_full", Enchantments.FIRE_ASPECT);
 	static final Layout BRIDGE = new Layout("bridge/starting_pieces/entrance_base", Enchantments.SOUL_SPEED);
 	static final Layout HOUSING_UNITS = new Layout("units/air_base", Enchantments.FLAME);
-	static final Layout HOGLIN_STABLES = new Layout("hoglin_stable/air_base", Enchantments.KNOCKBACK);
+	static final Layout HOGLIN_STABLES = new Layout("hoglin_stable/air_base", Enchantments.THORNS);
 	private static final List<Layout> LAYOUTS = List.of(TREASURE_ROOM, BRIDGE, HOUSING_UNITS, HOGLIN_STABLES);
 
 	@GameTest
@@ -297,7 +297,7 @@ public class BastionBookGameTests {
 			.filter(piece -> templateOf(piece).equals(Optional.of(STABLES_BASE_WALL)))
 			.anyMatch(wall -> wall.getBoundingBox().isInside(spot.below()));
 
-		helper.assertValueEqual(books.getFirst().enchantment(), Enchantments.KNOCKBACK, "the book's enchantment");
+		helper.assertValueEqual(books.getFirst().enchantment(), Enchantments.THORNS, "the book's enchantment");
 		helper.assertTrue(aboveTheBaseWall, "the book at " + spot + " is above a chest in the stables' base wall");
 		helper.succeed();
 	}

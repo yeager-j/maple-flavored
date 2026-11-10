@@ -22,7 +22,7 @@ import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.item.component.DeathProtection;
 import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
 
-/** The mod's items: the Crystal Heart and Pith. */
+/** The mod's items: the Crystal Heart, Pith and the Diamond Shard. */
 public final class MapleItems {
 	private static final int TICKS_PER_SECOND = 20;
 
@@ -52,6 +52,9 @@ public final class MapleItems {
 	/** The rare material behind Crystal Hearts and Netherite Ingots. */
 	public static final Item PITH = register("pith", Item::new, new Item.Properties().rarity(Rarity.UNCOMMON));
 
+	/** What diamond ore drops; 4 craft 1 diamond. */
+	public static final Item DIAMOND_SHARD = register("diamond_shard", Item::new, new Item.Properties());
+
 	private MapleItems() {
 	}
 
@@ -61,6 +64,7 @@ public final class MapleItems {
 
 		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(output -> output.insertAfter(Items.TOTEM_OF_UNDYING, CRYSTAL_HEART));
 		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(output -> output.insertAfter(Items.NETHER_STAR, PITH));
+		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(output -> output.insertBefore(Items.DIAMOND, DIAMOND_SHARD));
 	}
 
 	private static Item register(String name, Function<Item.Properties, Item> factory, Item.Properties properties) {

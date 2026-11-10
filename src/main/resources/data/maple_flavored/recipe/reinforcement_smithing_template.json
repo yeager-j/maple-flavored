@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "#": "minecraft:diamond",
+    "#": "maple_flavored:diamond_shard",
     "I": "minecraft:iron_block",
     "S": "maple_flavored:reinforcement_smithing_template"
   },

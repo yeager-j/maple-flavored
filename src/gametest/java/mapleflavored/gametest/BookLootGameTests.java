@@ -12,10 +12,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.context.ContextKeySet;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -23,11 +21,8 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
-import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * Loot never skips the Library: chest books became diamonds, every book left is one enchantment at level I and comes
@@ -62,7 +57,7 @@ public class BookLootGameTests {
 			RandomSource random = RandomSource.create(name.hashCode());
 
 			for (int i = 0; i < SWEEP_ROLLS; i++) {
-				for (ItemStack drop : roll(helper, table.key(), random)) {
+				for (ItemStack drop : LootRolls.roll(helper, table.key(), random)) {
 					helper.assertFalse(drop.isEnchanted(), name + " gave enchanted " + drop);
 
 					if (drop.is(Items.ENCHANTED_BOOK)) {
@@ -158,7 +153,7 @@ public class BookLootGameTests {
 		Set<Item> seen = new HashSet<>();
 
 		for (int i = 0; i < 2000; i++) {
-			List<ItemStack> barter = roll(helper, BuiltInLootTables.PIGLIN_BARTERING, random);
+			List<ItemStack> barter = LootRolls.roll(helper, BuiltInLootTables.PIGLIN_BARTERING, random);
 
 			// A removed entry left behind as an empty outcome would give nothing.
 			helper.assertValueEqual(barter.size(), 1, "stacks per barter");
@@ -172,7 +167,7 @@ public class BookLootGameTests {
 	@GameTest
 	public void chestGearTurnsPlainButKeepsItsOtherData(GameTestHelper helper) {
 		ResourceKey<LootTable> fixture = ResourceKey.create(Registries.LOOT_TABLE, Identifier.parse("maple_flavored_gametest:named_stone_pickaxe_in_chest"));
-		List<ItemStack> drops = roll(helper, fixture, RandomSource.create(0L));
+		List<ItemStack> drops = LootRolls.roll(helper, fixture, RandomSource.create(0L));
 
 		helper.assertValueEqual(drops.size(), 1, "drop count");
 
@@ -193,7 +188,7 @@ public class BookLootGameTests {
 		Set<ResourceKey<Enchantment>> kept = new HashSet<>();
 
 		for (int i = 0; i < 40; i++) {
-			List<ItemStack> drops = roll(helper, fixture, random);
+			List<ItemStack> drops = LootRolls.roll(helper, fixture, random);
 
 			helper.assertValueEqual(drops.size(), 1, "drop count");
 			kept.add(onlyEnchantmentAtLevelOne(helper, drops.getFirst(), "fixture book"));
@@ -216,32 +211,10 @@ public class BookLootGameTests {
 		List<ItemStack> drops = new ArrayList<>();
 
 		for (int i = 0; i < rolls; i++) {
-			drops.addAll(roll(helper, key, random));
+			drops.addAll(LootRolls.roll(helper, key, random));
 		}
 
 		return new Rolls(drops);
-	}
-
-	/** One roll of the table, with only the parameters its declared type allows. */
-	private static List<ItemStack> roll(GameTestHelper helper, ResourceKey<LootTable> key, RandomSource random) {
-		ServerLevel level = helper.getLevel();
-		LootTable table = level.getServer().reloadableRegistries().getLootTable(key);
-		ContextKeySet type = table.getParamSet();
-		LootParams.Builder params = new LootParams.Builder(level);
-
-		if (type.allowed().contains(LootContextParams.ORIGIN)) {
-			params.withParameter(LootContextParams.ORIGIN, helper.absoluteVec(Vec3.ZERO));
-		}
-
-		if (type.allowed().contains(LootContextParams.THIS_ENTITY)) {
-			params.withParameter(LootContextParams.THIS_ENTITY, new ItemEntity(level, 0, 0, 0, new ItemStack(Items.STICK)));
-		}
-
-		if (type.allowed().contains(LootContextParams.TOOL)) {
-			params.withParameter(LootContextParams.TOOL, new ItemStack(Items.FISHING_ROD));
-		}
-
-		return table.getRandomItems(params.create(type), random);
 	}
 
 	private static ResourceKey<Enchantment> onlyEnchantmentAtLevelOne(GameTestHelper helper, ItemStack book, String source) {

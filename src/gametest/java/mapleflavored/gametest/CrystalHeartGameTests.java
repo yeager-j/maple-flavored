@@ -165,12 +165,15 @@ public class CrystalHeartGameTests {
 	}
 
 	@GameTest
-	public void eightDiamondsAroundPithCraftACrystalHeart(GameTestHelper helper) {
+	public void fiveDiamondsInAHeartAroundPithCraftACrystalHeart(GameTestHelper helper) {
 		ItemStack diamond = new ItemStack(Items.DIAMOND);
 		ItemStack pith = new ItemStack(MapleItems.PITH);
-		List<ItemStack> grid = List.of(diamond, diamond, diamond, diamond, pith, diamond, diamond, diamond, diamond);
+		ItemStack none = ItemStack.EMPTY;
+		List<ItemStack> heart = List.of(diamond, none, diamond, diamond, pith, diamond, none, diamond, none);
+		List<ItemStack> eight = List.of(diamond, diamond, diamond, diamond, pith, diamond, diamond, diamond, diamond);
 
-		assertCrafts(helper, CraftingInput.of(3, 3, grid), new ItemStack(MapleItems.CRYSTAL_HEART));
+		assertCrafts(helper, CraftingInput.of(3, 3, heart), new ItemStack(MapleItems.CRYSTAL_HEART));
+		helper.assertTrue(craft(helper, CraftingInput.of(3, 3, eight)).isEmpty(), "eight diamonds around Pith craft nothing");
 		helper.succeed();
 	}
 

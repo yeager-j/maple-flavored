@@ -50,11 +50,11 @@ Standing choices:
 - [Stronghold Illagers](issues/18-stronghold-illagers.md): Vindicators, Pillagers and 1 to 3 Evokers fill each Stronghold by piece, about 12 to 20 in all, with the strongest guard and the book in the portal room; no Captains or Ravagers; spots sit only on the stone bricks family, infested variants included, so every one can be Restored.
 - [Illager book drops](issues/19-illager-book-drops.md): books drop on player kills from any Illager a raid didn't spawn, each on its own roll; Vindicator Sharpness 10% and Sweeping Edge 2.5%, Captain Power 20%, Punch and Infinity 5%, Evoker Protection 15% on one roll, Ravager Knockback 10%; Looting adds 20% of the base per level.
 - [Librarian book trades](issues/20-librarian-book-trades.md): every Novice Librarian buys any enchanted book, paying per find 4 emeralds, 10 villager XP and 50 player XP points, so level V pays 64 emeralds; fixed price, 12 uses; levels 2 to 4 lose their book slot.
-- [Deep caves](issues/21-deep-caves.md): surface mobs stay weak, underground mobs have vanilla health, and below Y 0 Deep variants have 1.5x health and double damage; Deep Cores in large caves snuff placed light and buff mobs by level until players win their raid, dropping Fortune and Pith; Fortune, Looting, Thorns and Knockback books move.
+- [Deep caves](issues/21-deep-caves.md): surface mobs stay weak, underground mobs have vanilla health, and below Y 0 Deep variants have 1.5x health and double damage. Deep Cores were dropped on 2026-11-10, before they were built, and the Fortune, Looting, Thorns and Knockback books went back to their earlier sources. Diamond scarcity takes their place: ticket 61 in the build tracker.
 
 ## Not yet specified
 
-- What Raids give in place of the Knockback book, which moved from Ravagers to Bastions in [Deep caves](issues/21-deep-caves.md).
+- Diamond scarcity: ore drops a piece, and 4 craft 1 diamond. The item, the recipe and which diamond costs change are open in ticket 61 of the build tracker.
 
 ## Out of scope
 

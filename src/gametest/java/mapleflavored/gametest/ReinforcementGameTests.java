@@ -7,6 +7,7 @@ import java.util.Optional;
 import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyGear;
 import mapleflavored.alloys.GearKind;
+import mapleflavored.items.MapleItems;
 import mapleflavored.reinforcement.Reinforcement;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
@@ -244,21 +245,27 @@ public class ReinforcementGameTests {
 	}
 
 	@GameTest
-	public void sevenDiamondsAndABlockOfIronCopyTheTemplate(GameTestHelper helper) {
-		ItemStack diamond = new ItemStack(Items.DIAMOND);
+	public void sevenDiamondShardsAndABlockOfIronCopyTheTemplate(GameTestHelper helper) {
+		ItemStack copied = copyTemplate(helper, new ItemStack(MapleItems.DIAMOND_SHARD));
+
+		helper.assertValueEqual(copied.getItem(), Reinforcement.TEMPLATE, "the copied template");
+		helper.assertValueEqual(copied.getCount(), 2, "templates made");
+		helper.assertTrue(copyTemplate(helper, new ItemStack(Items.DIAMOND)).isEmpty(), "seven diamonds copy nothing");
+		helper.succeed();
+	}
+
+	// The copy recipe's grid, with the material around the template and the block of iron.
+	private static ItemStack copyTemplate(GameTestHelper helper, ItemStack material) {
 		CraftingInput input = CraftingInput.of(3, 3, List.of(
-			diamond, new ItemStack(Reinforcement.TEMPLATE), diamond,
-			diamond, new ItemStack(Items.IRON_BLOCK), diamond,
-			diamond, diamond, diamond
+			material, new ItemStack(Reinforcement.TEMPLATE), material,
+			material, new ItemStack(Items.IRON_BLOCK), material,
+			material, material, material
 		));
 		ServerLevel level = helper.getLevel();
-		ItemStack result = level.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, level)
+
+		return level.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, level)
 			.map(recipe -> recipe.value().assemble(input))
 			.orElse(ItemStack.EMPTY);
-
-		helper.assertValueEqual(result.getItem(), Reinforcement.TEMPLATE, "the copied template");
-		helper.assertValueEqual(result.getCount(), 2, "templates made");
-		helper.succeed();
 	}
 
 	private static ArmorTrim trim(GameTestHelper helper) {

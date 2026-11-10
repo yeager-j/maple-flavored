@@ -4,7 +4,7 @@
 
 **Blocked by:** 53 (Deep Skeleton, Deep Creeper and Deep Spider), 56 (Deep Core snuffing and buffs)
 
-**Status:** ready-for-agent
+**Status:** wontfix
 
 Spec: the Maple Flavored spec in this folder, user stories 193g–193l and 193n, the Deep Cores module's Raid bullets, the Lights Out advancement under Milestones and advancements, the Deep Core game rules, and the raid bullets under Spec defaults.
 
@@ -33,3 +33,8 @@ Spec: the Maple Flavored spec in this folder, user stories 193g–193l and 193n,
 - Confirm vanilla's Raid delay between waves and its boss bar progress on the 26.3 jar. Reuse what fits rather than copying it.
 - The raid state belongs on the block entity, so it survives the chunk unloading. Decide what happens to a raid whose chunk unloads mid-wave, and record it in the spec if it isn't obvious.
 - `src/main/java/mapleflavored/mobs/RaidWaves.java` already tracks vanilla raid waves for book drops. Check whether any of it applies.
+
+## Comments
+
+
+Closed on 2026-11-10: Deep Cores were dropped before they were built. Diamond scarcity (ticket 61) takes their place. The reasons are in the last comment of `.scratch/maple-flavored-design/issues/21-deep-caves.md`.

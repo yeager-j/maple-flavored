@@ -4,7 +4,7 @@
 
 **Blocked by:** 55 (Deep Core generation)
 
-**Status:** ready-for-human
+**Status:** wontfix
 
 Spec: the Maple Flavored spec in this folder, user story 193f and the Deep Cores module.
 
@@ -25,3 +25,8 @@ Spec: the Maple Flavored spec in this folder, user story 193f and the Deep Cores
 - An uncharged respawn anchor at y 5 stands in for the Deep Core block, and it gives no light. Ticket 55 swaps it for the real block when the piece places the template.
 - Reach: with the base on the cave floor, the core's centre is about 5.5 blocks up, beyond vanilla's 4.5-block reach, and the y 4 pedestal blocks the angle from the y 1 stairs. A player has to pillar up about 3 blocks to hit it. That may be intended, since it makes starting the raid deliberate.
 - The 20 saved air blocks clear whatever they land on, such as dripstone. Structure voids would stop that where it isn't wanted.
+
+## Comments
+
+
+Closed on 2026-11-10: Deep Cores were dropped before they were built. Diamond scarcity (ticket 61) takes their place. The reasons are in the last comment of `.scratch/maple-flavored-design/issues/21-deep-caves.md`. The template was deleted with ticket 61; it is in git history before that.

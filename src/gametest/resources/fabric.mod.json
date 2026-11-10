@@ -24,6 +24,7 @@
 			"mapleflavored.gametest.EnchantedBookGameTests",
 			"mapleflavored.gametest.GoldenAppleGameTests",
 			"mapleflavored.gametest.BookLootGameTests",
+			"mapleflavored.gametest.DiamondShardGameTests",
 			"mapleflavored.gametest.StructureChestGameTests",
 			"mapleflavored.gametest.SpawnedGearGameTests",
 			"mapleflavored.gametest.CommonMobGameTests",
