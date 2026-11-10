@@ -45,7 +45,6 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
-import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
@@ -175,15 +174,6 @@ final class SubspaceArena {
 		return loaded;
 	}
 
-	/**
-	 * Moves the player as the server does, so the chunks around them load. A player who has moved is invulnerable until
-	 * their client's first movement arrives, which a mock never sends, so that wait is cleared.
-	 */
-	static void teleport(ServerPlayer player, Vec3 position) {
-		player.teleport(new TeleportTransition(player.level(), position, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING));
-		player.hasChangedDimension();
-	}
-
 	ServerLevel level() {
 		return level;
 	}
@@ -282,7 +272,7 @@ final class SubspaceArena {
 		Vec3 feet = at(offset);
 
 		level.setBlock(BlockPos.containing(feet).below(), FLOOR.defaultBlockState(), 3);
-		teleport(player, feet);
+		MockPlayers.teleport(player, player.level(), feet);
 	}
 
 	/** Lays a three-block-wide floor along the arena's x axis, from {@code fromX} to {@code toX} blocks out. */

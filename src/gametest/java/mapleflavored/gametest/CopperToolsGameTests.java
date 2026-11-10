@@ -1,5 +1,7 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,14 +32,12 @@ import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -188,7 +188,7 @@ public class CopperToolsGameTests {
 	@GameTest
 	public void witherSkeletonsNeverDropTheirNetheriteSword(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		ItemStack lootingSword = new ItemStack(Items.DIAMOND_SWORD);
 		var looting = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.LOOTING);
 
@@ -207,27 +207,27 @@ public class CopperToolsGameTests {
 
 	@GameTest
 	public void gettingAnUpgradeAndTheTorchRecipeAskForACopperPickaxe(GameTestHelper helper) {
-		ServerPlayer stonePlayer = helper.makeMockServerPlayerInLevel();
-		ServerPlayer copperPlayer = helper.makeMockServerPlayerInLevel();
+		ServerPlayer stonePlayer = MockPlayers.survivalPlayer(helper);
+		ServerPlayer copperPlayer = MockPlayers.survivalPlayer(helper);
 		ResourceKey<Recipe<?>> torch = ResourceKey.create(Registries.RECIPE, Identifier.withDefaultNamespace("torch"));
 
 		give(stonePlayer, Items.STONE_PICKAXE);
 		give(copperPlayer, Items.COPPER_PICKAXE);
 
-		helper.assertFalse(isDone(helper, stonePlayer, "minecraft:story/upgrade_tools"), "a stone pickaxe grants Getting an Upgrade");
+		helper.assertFalse(isDone(helper, stonePlayer, Identifier.parse("minecraft:story/upgrade_tools")), "a stone pickaxe grants Getting an Upgrade");
 		helper.assertFalse(stonePlayer.getRecipeBook().contains(torch), "a stone pickaxe unlocks the torch recipe");
-		helper.assertTrue(isDone(helper, copperPlayer, "minecraft:story/upgrade_tools"), "a copper pickaxe grants Getting an Upgrade");
+		helper.assertTrue(isDone(helper, copperPlayer, Identifier.parse("minecraft:story/upgrade_tools")), "a copper pickaxe grants Getting an Upgrade");
 		helper.assertTrue(copperPlayer.getRecipeBook().contains(torch), "a copper pickaxe unlocks the torch recipe");
 		helper.succeed();
 	}
 
 	@GameTest
 	public void cobblestoneStillGrantsStoneAge(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		give(player, Items.COBBLESTONE);
 
-		helper.assertTrue(isDone(helper, player, "minecraft:story/mine_stone"), "cobblestone grants Stone Age");
+		helper.assertTrue(isDone(helper, player, Identifier.parse("minecraft:story/mine_stone")), "cobblestone grants Stone Age");
 		helper.succeed();
 	}
 
@@ -244,9 +244,7 @@ public class CopperToolsGameTests {
 	}
 
 	private static void assertMiningDrops(GameTestHelper helper, List<MiningCase> cases) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		player.setGameMode(GameType.SURVIVAL);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		for (int i = 0; i < cases.size(); i++) {
 			MiningCase miningCase = cases.get(i);
@@ -324,13 +322,5 @@ public class CopperToolsGameTests {
 		MinecraftServer server = helper.getLevel().getServer();
 
 		return server.getAdvancements().get(Identifier.parse(id));
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String id) {
-		AdvancementHolder holder = advancement(helper, id);
-
-		helper.assertTrue(holder != null, id + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 }

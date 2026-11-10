@@ -5,6 +5,7 @@ import static mapleflavored.alloys.AlloyFurnaceSlots.BASE;
 import static mapleflavored.alloys.AlloyFurnaceSlots.COUNT;
 import static mapleflavored.alloys.AlloyFurnaceSlots.FUEL;
 import static mapleflavored.alloys.AlloyFurnaceSlots.RESULT;
+import static mapleflavored.gametest.Advancements.isDone;
 import static mapleflavored.gametest.MockPlayers.survivalPlayer;
 
 import java.util.ArrayList;
@@ -601,14 +602,6 @@ public class AlloyGameTests {
 		player.getInventory().add(new ItemStack(item));
 		// A ticking player sends inventory changes to advancement triggers each tick; a mock player is never ticked.
 		player.inventoryMenu.broadcastChanges();
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, Identifier advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(advancement);
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 
 	private static void assertAdvancement(GameTestHelper helper, Identifier id, String parent, AdvancementType frame, boolean hidden, int experience) {

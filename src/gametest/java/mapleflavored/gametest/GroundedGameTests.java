@@ -18,7 +18,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
@@ -133,7 +132,7 @@ public class GroundedGameTests {
 
 	@GameTest
 	public void howDidWeGetHereNeedsGrounded(GameTestHelper helper) {
-		ServerPlayer player = MockPlayers.playerWithMaxHearts(helper, 10);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		AdvancementHolder advancement = helper.getLevel().getServer().getAdvancements().get(HOW_DID_WE_GET_HERE);
 
 		helper.assertTrue(advancement != null, HOW_DID_WE_GET_HERE + " exists");
@@ -207,10 +206,9 @@ public class GroundedGameTests {
 	}
 
 	private static ServerPlayer survivalPlayerAt(GameTestHelper helper, BlockPos feet) {
-		ServerPlayer player = MockPlayers.playerWithMaxHearts(helper, 10);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		Vec3 position = Vec3.atBottomCenterOf(helper.absolutePos(feet));
 
-		player.setGameMode(GameType.SURVIVAL);
 		player.snapTo(position.x, position.y, position.z, FACING_EAST, 0.0F);
 
 		return player;

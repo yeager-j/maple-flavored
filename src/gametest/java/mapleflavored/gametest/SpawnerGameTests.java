@@ -1,5 +1,7 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,7 +11,6 @@ import mapleflavored.spawners.SpawnerClearing;
 import mapleflavored.spawners.SpawnerView;
 import mapleflavored.spawners.Spawners;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -19,19 +20,17 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ConversionParams;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.vehicle.minecart.MinecartSpawner;
 import net.minecraft.world.entity.monster.zombie.Drowned;
 import net.minecraft.world.entity.monster.zombie.Zombie;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -146,7 +145,7 @@ public class SpawnerGameTests {
 
 	@GameTest
 	public void aTrialSpawnerCanStillBeMined(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper, Items.DIAMOND_PICKAXE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.DIAMOND_PICKAXE);
 
 		helper.setBlock(SPAWNER, Blocks.TRIAL_SPAWNER);
 
@@ -157,7 +156,7 @@ public class SpawnerGameTests {
 	@GameTest
 	public void aSpawnerCantBeMinedUntilClearedThenDropsPithAndGrantsTheAdvancement(GameTestHelper helper) {
 		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
-		ServerPlayer player = survivalPlayer(helper, Items.DIAMOND_PICKAXE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.DIAMOND_PICKAXE);
 
 		helper.assertValueEqual(destroyProgress(helper, player), 0.0F, "mining progress before Cleared");
 
@@ -175,7 +174,7 @@ public class SpawnerGameTests {
 	@GameTest
 	public void aClearedSpawnerBrokenByHandDropsNothing(GameTestHelper helper) {
 		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
-		ServerPlayer player = survivalPlayer(helper, Items.AIR);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.AIR);
 
 		killMarkedMobs(helper, spawner, 12);
 		player.gameMode.destroyBlock(spawner.getBlockPos());
@@ -326,7 +325,7 @@ public class SpawnerGameTests {
 	@GameTest
 	public void aClearedSpawnerDropsACopyOfTheDropItHolds(GameTestHelper helper) {
 		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
-		ServerPlayer player = survivalPlayer(helper, Items.DIAMOND_PICKAXE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.DIAMOND_PICKAXE);
 
 		Spawners.holdDrop(spawner, new ItemStack(Items.NAME_TAG, 3));
 		killMarkedMobs(helper, spawner, 12);
@@ -413,13 +412,20 @@ public class SpawnerGameTests {
 		return spawner;
 	}
 
-	/** Spawns {@code count} mobs as if the spawner had, and kills each. */
+	/** Spawns {@code count} mobs in the test structure as if the spawner had, and kills each. */
 	static void killMarkedMobs(GameTestHelper helper, SpawnerBlockEntity spawner, int count) {
-		for (int i = 0; i < count; i++) {
-			Mob zombie = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, MOB_SPOT);
+		killMarkedZombies(helper.getLevel(), spawner, helper.absoluteVec(Vec3.atBottomCenterOf(MOB_SPOT)), count);
+	}
 
-			Spawners.markSpawned(helper.getLevel(), spawner.getBlockPos(), spawner.getSpawner(), zombie);
-			zombie.kill(helper.getLevel());
+	/** Spawns {@code count} zombies at {@code position} as if the spawner had, and kills each. */
+	static void killMarkedZombies(ServerLevel level, SpawnerBlockEntity spawner, Vec3 position, int count) {
+		for (int i = 0; i < count; i++) {
+			Zombie zombie = EntityTypes.ZOMBIE.create(level, EntitySpawnReason.COMMAND);
+
+			zombie.snapTo(position);
+			level.addFreshEntity(zombie);
+			Spawners.markSpawned(level, spawner.getBlockPos(), spawner.getSpawner(), zombie);
+			zombie.kill(level);
 		}
 	}
 
@@ -481,25 +487,8 @@ public class SpawnerGameTests {
 			.toList();
 	}
 
-	static ServerPlayer survivalPlayer(GameTestHelper helper, Item tool) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		player.setGameMode(GameType.SURVIVAL);
-		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(tool));
-
-		return player;
-	}
-
-	static boolean isDone(GameTestHelper helper, ServerPlayer player, Identifier id) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(id);
-
-		helper.assertTrue(holder != null, id + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
-	}
-
 	private static ServerPlayer playerAt(GameTestHelper helper, Vec3 position) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		player.teleportTo(position.x, position.y, position.z);
 

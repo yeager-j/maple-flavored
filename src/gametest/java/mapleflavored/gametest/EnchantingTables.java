@@ -11,31 +11,25 @@ import mapleflavored.enchanting.Checklist;
 import mapleflavored.enchanting.EnchantingTableMenu;
 import mapleflavored.enchanting.EnchantmentChecklist;
 import mapleflavored.experience.ExperiencePoints;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EnchantingTableBlock;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 
 /**
- * An Enchanting Table with its Library, a grindstone, survival players and the save assertions for GameTests that use the
- * table.
+ * An Enchanting Table with its Library, a grindstone, players with XP levels and the save assertions for GameTests that
+ * use the table.
  */
 final class EnchantingTables {
 	/** Where the table stands in the test structure. */
@@ -87,7 +81,7 @@ final class EnchantingTables {
 	/** One book per enchantment but Mending, each at its max level. */
 	static List<ItemStack> fullLibraryBooks(GameTestHelper helper) {
 		return fullLibraryLevels(helper).entrySet().stream()
-			.map(entry -> book(entry.getKey(), entry.getValue()))
+			.map(entry -> TestItems.book(entry.getKey(), entry.getValue()))
 			.toList();
 	}
 
@@ -115,12 +109,11 @@ final class EnchantingTables {
 		return new GrindstoneMenu(0, player.getInventory(), ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(GRINDSTONE_POS)));
 	}
 
-	/** A mock player in survival at {@code level}. */
-	static ServerPlayer survivalPlayer(GameTestHelper helper, int level) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+	/** A loaded mock player in Survival with {@code levels} XP levels. */
+	static ServerPlayer survivalPlayerWithLevels(GameTestHelper helper, int levels) {
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
-		player.setGameMode(GameType.SURVIVAL);
-		player.setExperienceLevels(level);
+		player.setExperienceLevels(levels);
 
 		return player;
 	}
@@ -130,25 +123,6 @@ final class EnchantingTables {
 		table.getSlot(EnchantingTableMenu.ITEM_SLOT).set(item);
 		table.getSlot(EnchantingTableMenu.LAPIS_SLOT).set(lapis == 0 ? ItemStack.EMPTY : new ItemStack(Items.LAPIS_LAZULI, lapis));
 		table.getSlot(EnchantingTableMenu.MATERIAL_SLOT).set(material);
-	}
-
-	/** Whether the player has earned the advancement, failing the test if it doesn't exist. */
-	static boolean isDone(GameTestHelper helper, ServerPlayer player, Identifier advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(advancement);
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
-	}
-
-	/** An enchanted book holding the one enchantment. */
-	static ItemStack book(Holder<Enchantment> enchantment, int level) {
-		return EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, level));
-	}
-
-	/** The registered enchantment. */
-	static Holder<Enchantment> enchantment(GameTestHelper helper, ResourceKey<Enchantment> key) {
-		return helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
 	}
 
 	/** The number of the enchantment's row in a gear checklist. */

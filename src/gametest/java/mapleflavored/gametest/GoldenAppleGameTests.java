@@ -1,21 +1,21 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
 import static mapleflavored.gametest.EnchantingTables.UPPER_RING;
 import static mapleflavored.gametest.EnchantingTables.apple;
 import static mapleflavored.gametest.EnchantingTables.assertRefuses;
 import static mapleflavored.gametest.EnchantingTables.assertSaves;
-import static mapleflavored.gametest.EnchantingTables.book;
-import static mapleflavored.gametest.EnchantingTables.enchantment;
 import static mapleflavored.gametest.EnchantingTables.fill;
 import static mapleflavored.gametest.EnchantingTables.fullLibraryBooks;
 import static mapleflavored.gametest.EnchantingTables.fullLibraryLevels;
 import static mapleflavored.gametest.EnchantingTables.grindstone;
-import static mapleflavored.gametest.EnchantingTables.isDone;
 import static mapleflavored.gametest.EnchantingTables.placeTable;
 import static mapleflavored.gametest.EnchantingTables.shelves;
-import static mapleflavored.gametest.EnchantingTables.survivalPlayer;
+import static mapleflavored.gametest.EnchantingTables.survivalPlayerWithLevels;
 import static mapleflavored.gametest.EnchantingTables.table;
 import static mapleflavored.gametest.EnchantingTables.toggle;
+import static mapleflavored.gametest.TestItems.book;
+import static mapleflavored.gametest.TestItems.enchantment;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -78,7 +78,7 @@ public class GoldenAppleGameTests {
 
 	@GameTest
 	public void aPlainGoldenAppleIsFoodWithNoEffects(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper, 0);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 0);
 
 		player.getFoodData().setFoodLevel(10);
 		new ItemStack(Items.GOLDEN_APPLE).finishUsingItem(helper.getLevel(), player);
@@ -109,7 +109,7 @@ public class GoldenAppleGameTests {
 	public void aTableBelowFifteenBookshelvesOffersNoAppleEffects(GameTestHelper helper) {
 		placeTable(helper, List.of(), shelves(fullLibraryBooks(helper)));
 
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		EnchantingTableMenu table = table(helper, player);
 
 		helper.assertTrue(table.library().progress().isFull(), "the Library is Full");
@@ -137,7 +137,7 @@ public class GoldenAppleGameTests {
 	public void theFirstSaveTakesABlockOfGoldAndEachEffectALapis(GameTestHelper helper) {
 		placeLibraryWorth(helper, 130);
 
-		ServerPlayer player = survivalPlayer(helper, 90);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 90);
 		EnchantingTableMenu table = table(helper, player);
 
 		fill(table, new ItemStack(Items.GOLDEN_APPLE), 2, ItemStack.EMPTY);
@@ -174,11 +174,11 @@ public class GoldenAppleGameTests {
 	public void anEffectTheLibraryNoLongerOffersBlocksTheSave(GameTestHelper helper) {
 		placeLibraryWorth(helper, 130);
 
-		ItemStack resistanceApple = makeApple(helper, survivalPlayer(helper, 30), AppleEffect.RESISTANCE);
+		ItemStack resistanceApple = makeApple(helper, survivalPlayerWithLevels(helper, 30), AppleEffect.RESISTANCE);
 
 		placeLibraryWorth(helper, 20);
 
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		EnchantingTableMenu table = table(helper, player);
 
 		fill(table, resistanceApple, 1, ItemStack.EMPTY);
@@ -200,7 +200,7 @@ public class GoldenAppleGameTests {
 	public void anEnchantedGoldenAppleGivesExactlyItsEffects(GameTestHelper helper) {
 		placeLibraryWorth(helper, 130);
 
-		ServerPlayer player = survivalPlayer(helper, 120);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 120);
 		ItemStack everything = makeApple(helper, player, AppleEffect.values());
 
 		everything.finishUsingItem(helper.getLevel(), player);
@@ -215,7 +215,7 @@ public class GoldenAppleGameTests {
 
 		helper.assertTrue(criterion != null && criterion.isDone(), "A Balanced Diet counts the enchanted golden apple");
 
-		ServerPlayer eater = survivalPlayer(helper, 60);
+		ServerPlayer eater = survivalPlayerWithLevels(helper, 60);
 
 		makeApple(helper, eater, AppleEffect.FIRE_RESISTANCE, AppleEffect.ABSORPTION).finishUsingItem(helper.getLevel(), eater);
 
@@ -229,7 +229,7 @@ public class GoldenAppleGameTests {
 	public void aCarriedEffectSavesAsTheAppleStoresIt(GameTestHelper helper) {
 		placeLibraryWorth(helper, 130);
 
-		ServerPlayer player = survivalPlayer(helper, 60);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 60);
 		EnchantingTableMenu table = table(helper, player);
 		MobEffectInstance weakRegeneration = new MobEffectInstance(MobEffects.REGENERATION, 100, 0);
 		ItemStack oldApple = AppleEffect.enchant(new ItemStack(Items.GOLDEN_APPLE), List.of(weakRegeneration));
@@ -267,9 +267,9 @@ public class GoldenAppleGameTests {
 	public void applesStackOnlyWhenTheirEffectsMatch(GameTestHelper helper) {
 		placeLibraryWorth(helper, 130);
 
-		ItemStack regeneration = makeApple(helper, survivalPlayer(helper, 30), AppleEffect.REGENERATION);
-		ItemStack otherRegeneration = makeApple(helper, survivalPlayer(helper, 30), AppleEffect.REGENERATION);
-		ItemStack fireResistance = makeApple(helper, survivalPlayer(helper, 30), AppleEffect.FIRE_RESISTANCE);
+		ItemStack regeneration = makeApple(helper, survivalPlayerWithLevels(helper, 30), AppleEffect.REGENERATION);
+		ItemStack otherRegeneration = makeApple(helper, survivalPlayerWithLevels(helper, 30), AppleEffect.REGENERATION);
+		ItemStack fireResistance = makeApple(helper, survivalPlayerWithLevels(helper, 30), AppleEffect.FIRE_RESISTANCE);
 
 		helper.assertTrue(ItemStack.isSameItemSameComponents(regeneration, otherRegeneration), "two Regeneration apples stack");
 		helper.assertFalse(ItemStack.isSameItemSameComponents(regeneration, fireResistance), "Regeneration and Fire Resistance apples stack");
@@ -280,7 +280,7 @@ public class GoldenAppleGameTests {
 	public void theTableTakesOneAppleFromAStack(GameTestHelper helper) {
 		placeLibraryWorth(helper, 130);
 
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		EnchantingTableMenu table = table(helper, player);
 
 		player.getInventory().setItem(FIRST_MAIN_INVENTORY_SLOT, new ItemStack(Items.GOLDEN_APPLE, 3));
@@ -307,7 +307,7 @@ public class GoldenAppleGameTests {
 	public void theGrindstoneTurnsOneAppleBackIntoAGoldenApple(GameTestHelper helper) {
 		placeLibraryWorth(helper, 130);
 
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		ItemStack apple = makeApple(helper, player, AppleEffect.REGENERATION);
 		GrindstoneMenu grindstone = grindstone(helper, player);
 		int pointsBefore = ExperiencePoints.total(player);
@@ -342,7 +342,7 @@ public class GoldenAppleGameTests {
 	public void anyEnchantedGoldenAppleCuresAZombieVillager(GameTestHelper helper) {
 		placeLibraryWorth(helper, 130);
 
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		ItemStack fireResistance = makeApple(helper, player, AppleEffect.FIRE_RESISTANCE);
 
 		helper.assertTrue(cures(helper, fireResistance), "a Fire Resistance apple cures");
@@ -367,8 +367,8 @@ public class GoldenAppleGameTests {
 	public void makingAnAppleGrantsAnAppleADay(GameTestHelper helper) {
 		placeLibraryWorth(helper, 130);
 
-		ServerPlayer appleMaker = survivalPlayer(helper, 30);
-		ServerPlayer swordMaker = survivalPlayer(helper, 30);
+		ServerPlayer appleMaker = survivalPlayerWithLevels(helper, 30);
+		ServerPlayer swordMaker = survivalPlayerWithLevels(helper, 30);
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		EnchantingTableMenu table = table(helper, swordMaker);
 
@@ -412,7 +412,7 @@ public class GoldenAppleGameTests {
 	private static void assertAppleOffers(GameTestHelper helper, int levels, Set<AppleEffect> expected) {
 		placeLibraryWorth(helper, levels);
 
-		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
+		EnchantingTableMenu table = table(helper, survivalPlayerWithLevels(helper, 0));
 
 		helper.assertValueEqual(table.library().progress().levels(), levels, "Library Progress");
 		helper.assertValueEqual(table.appleOffers(), expected, "apple offers at " + levels + " levels");
@@ -420,7 +420,7 @@ public class GoldenAppleGameTests {
 
 	/** Saves an apple with {@code effects} at {@code level}, failing unless it saves exactly when they fit the {@code slots}. */
 	private static void assertSlotLimit(GameTestHelper helper, int level, List<AppleEffect> effects, int slots) {
-		ServerPlayer player = survivalPlayer(helper, level);
+		ServerPlayer player = survivalPlayerWithLevels(helper, level);
 		EnchantingTableMenu table = table(helper, player);
 		String label = effects.size() + " effects at level " + level;
 
@@ -461,7 +461,7 @@ public class GoldenAppleGameTests {
 	/** Whether a player feeding {@code apple} to a zombie villager under Weakness starts curing it. */
 	private static boolean cures(GameTestHelper helper, ItemStack apple) {
 		ZombieVillager zombie = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE_VILLAGER, ZOMBIE_SPOT);
-		ServerPlayer player = survivalPlayer(helper, 0);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 0);
 
 		zombie.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 600));
 		player.setItemInHand(InteractionHand.MAIN_HAND, apple.copy());

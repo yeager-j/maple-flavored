@@ -1,5 +1,7 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -8,7 +10,6 @@ import mapleflavored.alloys.AlloyGear;
 import mapleflavored.alloys.GearKind;
 import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -45,7 +46,7 @@ public class DiamondShardGameTests {
 	// Fortune III's ore formula gives 1, 1, 2, 3 or 4 at even odds.
 	private static final double FORTUNE_III_MEAN = 2.2;
 	private static final double MEAN_TOLERANCE = 0.1;
-	private static final String MINE_DIAMOND = "minecraft:story/mine_diamond";
+	private static final Identifier MINE_DIAMOND = Identifier.parse("minecraft:story/mine_diamond");
 
 	// The tables Jackson moved to shards, safe and early sources whose book diamonds become shards too.
 	private static final List<String> SHARD_TABLES = List.of(
@@ -192,7 +193,7 @@ public class DiamondShardGameTests {
 	@GameTest(maxTicks = 400)
 	public void safeLootGivesShardsAndNoDiamonds(GameTestHelper helper) {
 		for (String table : SHARD_TABLES) {
-			List<ItemStack> drops = rollMany(helper, table);
+			List<ItemStack> drops = dropsOf(helper, table);
 
 			helper.assertTrue(count(drops, Items.DIAMOND) == 0, table + " gave a diamond");
 			helper.assertTrue(count(drops, MapleItems.DIAMOND_SHARD) > 0, table + " gave no shards in " + TABLE_ROLLS + " rolls");
@@ -204,7 +205,7 @@ public class DiamondShardGameTests {
 	@GameTest(maxTicks = 400)
 	public void dangerousLootKeepsWholeDiamonds(GameTestHelper helper) {
 		for (String table : WHOLE_DIAMOND_TABLES) {
-			List<ItemStack> drops = rollMany(helper, table);
+			List<ItemStack> drops = dropsOf(helper, table);
 
 			helper.assertTrue(count(drops, MapleItems.DIAMOND_SHARD) == 0, table + " gave a shard");
 			helper.assertTrue(count(drops, Items.DIAMOND) > 0, table + " gave no diamonds in " + TABLE_ROLLS + " rolls");
@@ -219,7 +220,7 @@ public class DiamondShardGameTests {
 		// Its diamond entry, weight 5, gives 1 to 3 shards, a single one a third of the time. Without the books, single
 		// shards would come only from that entry, at about a thirteenth of this rate.
 		double expectedSingles = TABLE_ROLLS * 3.0 * (20.0 + 5.0 / 3.0) / 247.0;
-		List<ItemStack> drops = rollMany(helper, "chests/desert_pyramid");
+		List<ItemStack> drops = dropsOf(helper, "chests/desert_pyramid");
 		long singles = drops.stream().filter(drop -> drop.is(MapleItems.DIAMOND_SHARD) && drop.getCount() == 1).count();
 
 		helper.assertTrue(Math.abs(singles - expectedSingles) <= 0.2 * expectedSingles, singles + " single shards, expected about " + Math.round(expectedSingles));
@@ -260,16 +261,11 @@ public class DiamondShardGameTests {
 		return stack;
 	}
 
-	private static List<ItemStack> rollMany(GameTestHelper helper, String path) {
+	// Every drop from rolling the vanilla table at the path many times.
+	private static List<ItemStack> dropsOf(GameTestHelper helper, String path) {
 		ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace(path));
-		RandomSource random = RandomSource.create(path.hashCode());
-		List<ItemStack> drops = new ArrayList<>();
 
-		for (int roll = 0; roll < TABLE_ROLLS; roll++) {
-			drops.addAll(LootRolls.roll(helper, key, random));
-		}
-
-		return drops;
+		return LootRolls.rollMany(helper, key, TABLE_ROLLS).stream().flatMap(List::stream).toList();
 	}
 
 	private static void assertCooks(GameTestHelper helper, RecipeType<? extends AbstractCookingRecipe> type, SingleRecipeInput input, String what) {
@@ -298,14 +294,6 @@ public class DiamondShardGameTests {
 
 		player.getInventory().add(stack);
 		CriteriaTriggers.INVENTORY_CHANGED.trigger(player, player.getInventory(), added);
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(advancement));
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 
 	private static int count(List<ItemStack> stacks, Item item) {

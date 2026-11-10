@@ -1,13 +1,14 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.TestItems.damaged;
+import static mapleflavored.gametest.TestItems.enchantment;
+
 import java.util.List;
 import mapleflavored.smithing.UpgradeRefusalMenu;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityTypes;
@@ -22,7 +23,6 @@ import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -34,7 +34,7 @@ public class WorkstationGameTests {
 
 	@GameTest
 	public void theGrindstoneStripsAnItemButGivesNoXp(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		GrindstoneMenu grindstone = grindstone(helper, player);
 		ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
 
@@ -55,7 +55,7 @@ public class WorkstationGameTests {
 
 	@GameTest
 	public void theGrindstoneNeverMergesTwoItems(GameTestHelper helper) {
-		GrindstoneMenu grindstone = grindstone(helper, survivalPlayer(helper));
+		GrindstoneMenu grindstone = grindstone(helper, MockPlayers.survivalPlayer(helper));
 
 		grindstone.getSlot(0).set(damaged(Items.IRON_PICKAXE));
 		grindstone.getSlot(1).set(damaged(Items.IRON_PICKAXE));
@@ -75,7 +75,7 @@ public class WorkstationGameTests {
 
 	@GameTest
 	public void materialUpgradesRefuseEnchantedGear(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		ItemStack enchantedSword = new ItemStack(Items.DIAMOND_SWORD);
 
 		enchantedSword.enchant(enchantment(helper, Enchantments.SHARPNESS), 1);
@@ -90,7 +90,7 @@ public class WorkstationGameTests {
 
 	@GameTest
 	public void trimsStillWorkOnEnchantedGear(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		ItemStack chestplate = new ItemStack(Items.IRON_CHESTPLATE);
 
 		chestplate.enchant(enchantment(helper, Enchantments.PROTECTION), 1);
@@ -104,7 +104,7 @@ public class WorkstationGameTests {
 
 	@GameTest
 	public void theSmithingMenuSaysWhenEnchantmentIsTheOnlyProblem(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		ItemStack enchantedDiamondSword = new ItemStack(Items.DIAMOND_SWORD);
 		ItemStack enchantedIronSword = new ItemStack(Items.IRON_SWORD);
@@ -157,26 +157,5 @@ public class WorkstationGameTests {
 
 	private static ContainerLevelAccess access(GameTestHelper helper) {
 		return ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(STATION_POS));
-	}
-
-	private static ServerPlayer survivalPlayer(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		player.setGameMode(GameType.SURVIVAL);
-
-		return player;
-	}
-
-	/** The item with 1 durability left. */
-	private static ItemStack damaged(Item item) {
-		ItemStack stack = new ItemStack(item);
-
-		stack.setDamageValue(stack.getMaxDamage() - 1);
-
-		return stack;
-	}
-
-	private static Holder<Enchantment> enchantment(GameTestHelper helper, ResourceKey<Enchantment> key) {
-		return helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
 	}
 }

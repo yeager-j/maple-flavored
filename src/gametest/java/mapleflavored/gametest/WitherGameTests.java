@@ -1,5 +1,7 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
+
 import java.util.List;
 import mapleflavored.MapleFlavored;
 import mapleflavored.grounded.Grounded;
@@ -8,7 +10,6 @@ import mapleflavored.subspaces.Subspace;
 import mapleflavored.subspaces.Subspaces;
 import mapleflavored.subspaces.WitherSubspaces;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -47,9 +48,9 @@ public class WitherGameTests {
 	private static final int RECOVERY_INTERVAL = 200;
 	// Waits stay clear of the exact interval, where the order of the test's tick and the withering tick decides.
 	private static final int MARGIN = 10;
-	private static final String RECOVERY_ADVANCEMENT = "maple_flavored:nether/recover_withered_heart";
-	private static final String KILL_ADVANCEMENT = "maple_flavored:nether/kill_wither";
-	private static final String NICE_TRY_ADVANCEMENT = "maple_flavored:nether/nice_try";
+	private static final Identifier RECOVERY_ADVANCEMENT = Identifier.parse("maple_flavored:nether/recover_withered_heart");
+	private static final Identifier KILL_ADVANCEMENT = Identifier.parse("maple_flavored:nether/kill_wither");
+	private static final Identifier NICE_TRY_ADVANCEMENT = Identifier.parse("maple_flavored:nether/nice_try");
 	private static final ResourceKey<Enchantment> BLIGHT = ResourceKey.create(Registries.ENCHANTMENT, MapleFlavored.id("blight"));
 	private static final double EPSILON = 1.0E-6;
 
@@ -301,13 +302,5 @@ public class WitherGameTests {
 
 	private static void place(WitherBoss wither, Vec3 position) {
 		wither.snapTo(position.x, position.y, position.z);
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(advancement));
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 }

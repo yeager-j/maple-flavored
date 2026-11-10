@@ -36,7 +36,6 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.equipment.trim.ArmorTrim;
 import net.minecraft.world.item.equipment.trim.TrimMaterials;
 import net.minecraft.world.item.equipment.trim.TrimPatterns;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -126,7 +125,7 @@ public class AlloyGearGameTests {
 
 	@GameTest
 	public void netheriteGearAndAnAlloyIngotSmithIntoAlloyGearWithNoTemplate(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		SmithingMenu smithing = smithing(helper, player, ItemStack.EMPTY, new ItemStack(Items.NETHERITE_SWORD), new ItemStack(Alloy.STEEL.ingot(), 2));
 
 		smithing.setCarried(ItemStack.EMPTY);
@@ -164,7 +163,7 @@ public class AlloyGearGameTests {
 
 	@GameTest
 	public void alloySmithingRefusesATemplateAndEnchantedGear(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		ItemStack enchantedSword = new ItemStack(Items.NETHERITE_SWORD);
 
 		enchantedSword.enchant(helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SHARPNESS), 1);
@@ -235,7 +234,7 @@ public class AlloyGearGameTests {
 
 	@GameTest
 	public void steelGearLastsLongerAndKnocksBackHarder(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		helper.assertValueEqual(maxDamage(Alloy.STEEL, GearKind.SWORD), 3046, "Steel sword durability");
 		helper.assertValueEqual(maxDamage(Alloy.STEEL, GearKind.PICKAXE), 3046, "Steel pickaxe durability");
@@ -260,7 +259,7 @@ public class AlloyGearGameTests {
 
 	@GameTest
 	public void shakudoGearAttacksAndMovesFaster(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		equip(player, null, GearKind.SWORD);
 		helper.assertValueEqual(round(player.getAttributeValue(Attributes.ATTACK_SPEED)), 1.6, "attack speed with a Netherite sword");
@@ -275,7 +274,7 @@ public class AlloyGearGameTests {
 
 	@GameTest
 	public void adamantGearHitsHarderAndIsTougher(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		equip(player, null, GearKind.SWORD);
 		helper.assertValueEqual(player.getAttributeValue(Attributes.ATTACK_DAMAGE), 8.0, "attack damage with a Netherite sword");
@@ -293,7 +292,7 @@ public class AlloyGearGameTests {
 
 	@GameTest
 	public void orichalcumGearHasNetheritesStats(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		equip(player, Alloy.ORICHALCUM, GearKind.SWORD);
 		wearFullSet(player, Alloy.ORICHALCUM);
@@ -368,13 +367,5 @@ public class AlloyGearGameTests {
 		smithing.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(addition);
 
 		return smithing;
-	}
-
-	private static ServerPlayer survivalPlayer(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		player.setGameMode(GameType.SURVIVAL);
-
-		return player;
 	}
 }

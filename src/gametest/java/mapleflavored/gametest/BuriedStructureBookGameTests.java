@@ -110,7 +110,7 @@ public class BuriedStructureBookGameTests {
 			counts.merge(onlyBookEnchantment(rolled), 1, Integer::sum);
 		}
 
-		Books.assertCount(helper, "Aqua Affinity", counts.getOrDefault(Enchantments.AQUA_AFFINITY, 0), CHOICE_ROLLS, 0.5);
+		LootRolls.assertRate(helper, "Aqua Affinity", counts.getOrDefault(Enchantments.AQUA_AFFINITY, 0), CHOICE_ROLLS, 0.5);
 		helper.succeed();
 	}
 
@@ -245,7 +245,7 @@ public class BuriedStructureBookGameTests {
 		ItemStack brush = new ItemStack(Items.BRUSH);
 
 		for (int stroke = 0; stroke < BRUSH_STROKES; stroke++) {
-			gravel.brush(time + (long) stroke * BRUSH_COOLDOWN, level, helper.makeMockServerPlayerInLevel(), Direction.UP, brush);
+			gravel.brush(time + (long) stroke * BRUSH_COOLDOWN, level, MockPlayers.survivalPlayer(helper), Direction.UP, brush);
 		}
 	}
 

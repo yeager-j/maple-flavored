@@ -133,7 +133,7 @@ public class BastionBookGameTests {
 		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
 		BlockPos book = Books.only(helper, start);
 		AbstractPiglin piglin = spawn(level, EntityTypes.PIGLIN, book.east());
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		piglin.setBaby(false);
 		player.setPos(Vec3.atBottomCenterOf(book.west()));
@@ -152,7 +152,7 @@ public class BastionBookGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
 		BlockPos book = Books.only(helper, start);
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		player.setPos(Vec3.atBottomCenterOf(book.west()));
 		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.GOLDEN_HELMET));
@@ -204,7 +204,7 @@ public class BastionBookGameTests {
 		helper.assertTrue(hunter.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(HUNT_RANGE), "the hunting range once the quarry is back");
 
 		AbstractPiglin retargeted = farAway.getLast();
-		ServerPlayer bystander = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer bystander = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		retargeted.getBrain().setMemoryWithExpiry(MemoryModuleType.ANGRY_AT, bystander.getUUID(), VANILLA_ANGER_TICKS);
 		tick(retargeted);
@@ -226,7 +226,7 @@ public class BastionBookGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
 		BlockPos book = Books.only(helper, start);
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		player.setPos(Vec3.atBottomCenterOf(book.west()));
 		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.GOLDEN_HELMET));
@@ -238,7 +238,7 @@ public class BastionBookGameTests {
 
 		AbstractPiglin hunter = adults.getFirst();
 		AbstractPiglin retargeted = adults.get(1);
-		ServerPlayer bystander = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer bystander = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		tick(hunter);
 		helper.assertValueEqual(attackTarget(hunter), Optional.of(player), "the hunter's target once the book is taken");
@@ -262,7 +262,7 @@ public class BastionBookGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
 		BlockPos book = Books.only(helper, start);
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		player.setPos(Vec3.atBottomCenterOf(book.west()));
 		helper.assertTrue(StructureBooks.take(player, book), "the book is taken");
@@ -333,7 +333,7 @@ public class BastionBookGameTests {
 		StructureStart start = placeUnlocked(helper, planLayout(level, TREASURE_ROOM, TestSites.of(helper)));
 		BlockPos book = Books.only(helper, start);
 		AbstractPiglin piglin = spawn(level, EntityTypes.PIGLIN, book);
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.DIRT);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.DIRT);
 		Inventory inventory = player.getInventory();
 
 		for (int slot = 0; slot < Inventory.INVENTORY_SIZE; slot++) {
@@ -357,7 +357,7 @@ public class BastionBookGameTests {
 		((StructureBookBlockEntity) level.getBlockEntity(book)).setEnchantment(fireAspect);
 
 		AbstractPiglin piglin = spawn(level, EntityTypes.PIGLIN, book.east());
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		helper.assertTrue(StructureBooks.take(player, book), "the book is taken");
 		helper.assertValueEqual(angryAt(piglin), Optional.empty(), "the Piglin beside a book outside any Bastion is angry at");
@@ -385,7 +385,7 @@ public class BastionBookGameTests {
 		BoundingBox box = start.getBoundingBox();
 		AbstractPiglin outsider = spawn(level, EntityTypes.PIGLIN, new BlockPos(box.maxX() + OUTSIDE_THE_BASTION, book.getY(), box.maxZ() + OUTSIDE_THE_BASTION));
 		AbstractPiglin betweenPieces = spawn(level, EntityTypes.PIGLIN, outsideEveryPiece(start));
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.GOLDEN_HELMET));
 

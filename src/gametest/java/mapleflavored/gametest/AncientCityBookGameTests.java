@@ -703,7 +703,7 @@ public class AncientCityBookGameTests {
 		level.setBlock(feet, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 		level.setBlock(feet.above(), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 		player.setGameMode(gameType);
-		SubspaceArena.teleport(player, Vec3.atBottomCenterOf(feet));
+		MockPlayers.teleport(player, player.level(), Vec3.atBottomCenterOf(feet));
 
 		return player;
 	}

@@ -49,7 +49,6 @@ import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.equipment.trim.ArmorTrim;
 import net.minecraft.world.item.equipment.trim.TrimMaterials;
 import net.minecraft.world.item.equipment.trim.TrimPatterns;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
@@ -339,10 +338,9 @@ public class ArmoredElytraGameTests {
 
 	/** A loaded survival mock player in open air wearing the glider. A mock is never ticked, so it stays put. */
 	private static ServerPlayer playerInTheAir(GameTestHelper helper, Item glider, int lane) {
-		ServerPlayer player = MockPlayers.playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 		Vec3 position = Vec3.atBottomCenterOf(helper.absolutePos(SKY.offset(0, 0, lane)));
 
-		player.setGameMode(GameType.SURVIVAL);
 		player.snapTo(position.x, position.y, position.z, FACING_EAST, 0.0F);
 		player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(glider));
 		player.setOnGround(false);
