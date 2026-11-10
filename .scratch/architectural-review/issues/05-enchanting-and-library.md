@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** ready-for-human
 
 **Priority:** P2 (Medium)
 
@@ -111,10 +111,16 @@ Saving bakes effect instances into the apple, and eating applies exactly those. 
 
 ## Checklist
 
-- [ ] 1. A table below 15 bookshelves tells the player so, the screen shows no checkpoint as unlocked there, and "Full" is decided in one place.
-- [ ] 2. One module owns when a Deposit is due, paid, carried and handed back. `EnchantingDeposit.COMPONENT` is not read outside it, and the grindstone mixins delegate to it.
-- [ ] 3. `cost()` and the creative exemption exist once, the screen builds one checklist per frame, and the checklists no longer call into `EnchantingTableMenu`.
+- [x] 1. A table below 15 bookshelves tells the player so, the screen shows no checkpoint as unlocked there, and "Full" is decided in one place.
+- [x] 2. One module owns when a Deposit is due, paid, carried and handed back. `EnchantingDeposit.COMPONENT` is not read outside it, and the grindstone mixins delegate to it.
+- [x] 3. `cost()` and the creative exemption exist once, the screen builds one checklist per frame, and the checklists no longer call into `EnchantingTableMenu`.
 - [ ] 4. An empty table is its own state with no deposit line, confirmed in game, and the item decides which toggle runs.
-- [ ] 5. An apple's tooltip and preselection read the effects stored on the stack.
-- [ ] 6. The five tags are derived from `RemovedEnchantments.KEYS`, or a test asserts each tag equals vanilla's minus the keys. Zephyr and Blight have a place in the tooltip order.
-- [ ] 7. The save and refuse helpers exist once and name the `Problem`, and a test builds the client menu and compares its checklist with the server's.
+- [x] 5. An apple's tooltip and preselection read the effects stored on the stack.
+- [x] 6. The five tags are derived from `RemovedEnchantments.KEYS`, or a test asserts each tag equals vanilla's minus the keys. Zephyr and Blight have a place in the tooltip order.
+- [x] 7. The save and refuse helpers exist once and name the `Problem`, and a test builds the client menu and compares its checklist with the server's.
+
+## Left for Jackson
+
+- 4 is built and covered by GameTests, but not confirmed in game. Open a table with nothing in it and hover Save: it should read "Put in gear or a golden apple" with no deposit line.
+- 5: a carried apple effect now saves exactly as the apple stores it, the way carried enchantments keep their level. Effects the table doesn't know, as on a command-made apple, are still dropped on save. Decide whether they should be kept.
+- 6: Zephyr and Blight sit at the end of the tooltip order, after Mending. Placing them anywhere else means replacing vanilla's `tooltip_order` tag again.

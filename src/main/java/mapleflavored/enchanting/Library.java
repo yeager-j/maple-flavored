@@ -43,9 +43,12 @@ public record Library(Registry<Enchantment> enchantments, int bookshelves, Map<H
 	 * @param fullLevels the levels a Full Library holds
 	 */
 	public record Progress(int levels, int fullLevels) {
+		/** The share of a Full Library, in percent, that is a Full Library. */
+		public static final int FULL_PERCENT = 100;
+
 		/** Whether every enchantment but Mending is shelved at its max level. */
 		public boolean isFull() {
-			return levels >= fullLevels;
+			return reached(FULL_PERCENT);
 		}
 
 		/** The share of a Full Library shelved, from 0 to 1. */
@@ -64,10 +67,29 @@ public record Library(Registry<Enchantment> enchantments, int bookshelves, Map<H
 		public boolean reached(int percent) {
 			return levels >= levelsFor(percent);
 		}
+	}
 
-		/** Whether enough levels are shelved for the checkpoint's reward. */
-		public boolean reached(LibraryCheckpoint checkpoint) {
-			return reached(checkpoint.percent());
+	/**
+	 * What decides a Library's offers, and all of it the table's screen is sent: the bookshelves that power the table
+	 * and the Library Progress its books give. Enough books unlock nothing while the table has too few bookshelves.
+	 *
+	 * @param bookshelves the table's bookshelves of either kind, as vanilla counts them for power
+	 * @param progress the Library Progress
+	 */
+	public record Status(int bookshelves, Progress progress) {
+		/** Whether the table has the bookshelves it needs before it offers anything. */
+		public boolean isPowered() {
+			return bookshelves >= REQUIRED_BOOKSHELVES;
+		}
+
+		/** Whether the table offers what {@code percent} of a Full Library unlocks. */
+		public boolean unlocked(int percent) {
+			return isPowered() && progress.reached(percent);
+		}
+
+		/** Whether the table offers the checkpoint's reward. */
+		public boolean unlocked(LibraryCheckpoint checkpoint) {
+			return unlocked(checkpoint.percent());
 		}
 	}
 
@@ -116,19 +138,26 @@ public record Library(Registry<Enchantment> enchantments, int bookshelves, Map<H
 		return new Progress(levels, fullLevels(enchantments));
 	}
 
+	/** This Library's bookshelves and Library Progress, which decide what it offers. */
+	public Status status() {
+		return new Status(bookshelves, progress());
+	}
+
 	/**
 	 * What the table offers: each shelved enchantment at its highest shelved level, or nothing below 15 bookshelves.
 	 * Mending is offered at its max level while the Library is Full, and never because a Mending book is shelved.
 	 */
 	public Map<Holder<Enchantment>, Integer> offers() {
-		if (bookshelves < REQUIRED_BOOKSHELVES) return Map.of();
+		Status status = status();
+
+		if (!status.isPowered()) return Map.of();
 
 		Map<Holder<Enchantment>, Integer> offers = new HashMap<>(highestLevels);
 		Holder<Enchantment> mending = enchantments.getOrThrow(Enchantments.MENDING);
 
 		offers.remove(mending);
 
-		if (progress().reached(LibraryCheckpoint.MENDING)) offers.put(mending, mending.value().getMaxLevel());
+		if (status.unlocked(LibraryCheckpoint.MENDING)) offers.put(mending, mending.value().getMaxLevel());
 
 		return Map.copyOf(offers);
 	}
@@ -139,12 +168,9 @@ public record Library(Registry<Enchantment> enchantments, int bookshelves, Map<H
 	 */
 	public Set<AppleEffect> appleOffers() {
 		Set<AppleEffect> offers = EnumSet.noneOf(AppleEffect.class);
+		Status status = status();
 
-		if (bookshelves < REQUIRED_BOOKSHELVES) return offers;
-
-		Progress progress = progress();
-
-		Arrays.stream(AppleEffect.values()).filter(effect -> progress.reached(effect.percent())).forEach(offers::add);
+		Arrays.stream(AppleEffect.values()).filter(effect -> status.unlocked(effect.percent())).forEach(offers::add);
 
 		return offers;
 	}
