@@ -1,14 +1,15 @@
 package mapleflavored.anvil;
 
 import java.util.Optional;
+import mapleflavored.enchanting.Checklist;
 import mapleflavored.materialunits.MaterialUnits;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -16,8 +17,8 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.jspecify.annotations.Nullable;
 
 /**
- * What the anvil makes. It repairs an item with its material unit for free, combines two matching books into the next
- * level, and renames, charging XP points. It never combines two items or puts a book on gear.
+ * What the anvil does with its two slots. It repairs an item with its material unit for free, combines two matching
+ * books into the next level, and renames, charging XP points. It never combines two items or puts a book on gear.
  */
 public final class AnvilResults {
 	private static final int RENAME_COST = 10;
@@ -26,14 +27,35 @@ public final class AnvilResults {
 	private AnvilResults() {
 	}
 
+	/** What the anvil does with its slots and the typed name. */
+	public sealed interface Outcome {
+	}
+
 	/**
-	 * What the anvil makes.
+	 * The anvil makes an item.
 	 *
 	 * @param item the stack to take from the result slot
 	 * @param xpCost the XP points taking it costs
-	 * @param materialUsed how many items taking it uses up from the second slot, or 0 to use up the whole slot
+	 * @param materialUsed how many items taking it uses up from the second slot
 	 */
-	public record Result(ItemStack item, int xpCost, int materialUsed) {
+	public record Made(ItemStack item, int xpCost, int materialUsed) implements Outcome {
+	}
+
+	/** The anvil refuses what the slots ask of it, for a reason the player can be told. */
+	public enum Refused implements Outcome {
+		/** An enchanted book or item was offered to something the Enchanting Table enchants; only the table enchants. */
+		ENCHANTS_AT_TABLE,
+		/** A damaged item was offered something other than its material unit, such as another copy of itself. */
+		WRONG_MATERIAL,
+		/** Two enchanted books that don't hold the same single enchantment at the same level. */
+		MISMATCHED_BOOKS,
+		/** Two matching books already at their enchantment's highest level. */
+		MAXIMUM_LEVEL
+	}
+
+	/** The slots ask nothing of the anvil: they are empty, or hold nothing it works on. */
+	public enum Nothing implements Outcome {
+		INSTANCE
 	}
 
 	/** Book combining's only input: a book holding exactly one enchantment. */
@@ -41,65 +63,44 @@ public final class AnvilResults {
 	}
 
 	/**
-	 * The result of the anvil's two slots and the typed name, or empty if the anvil makes nothing from them.
+	 * What the anvil does with its two slots and the typed name.
 	 *
 	 * @param name the name typed in the anvil; null or blank removes a custom name
 	 * @param recipes the server's recipes, which set how many units a full repair takes
+	 * @param enchantments the enchantments the Enchanting Table can put on items
 	 */
-	public static Optional<Result> compute(ItemStack input, ItemStack addition, @Nullable String name, RecipeManager recipes) {
-		if (input.isEmpty() || !EnchantmentHelper.canStoreEnchantments(input)) return Optional.empty();
-		if (triesToEnchant(input, addition)) return Optional.empty();
-		if (offersWrongMaterial(input, addition)) return Optional.empty();
+	public static Outcome compute(
+		ItemStack input, ItemStack addition, @Nullable String name, RecipeManager recipes, Registry<Enchantment> enchantments
+	) {
+		if (input.isEmpty() || !EnchantmentHelper.canStoreEnchantments(input)) return Nothing.INSTANCE;
+		if (EnchantmentHelper.hasAnyEnchantments(addition) && Checklist.accepts(input, enchantments)) return Refused.ENCHANTS_AT_TABLE;
 
-		Optional<Result> work = addition.isEmpty() ? Optional.of(new Result(input.copy(), 0, 0)) : combine(input, addition, recipes);
+		Outcome work = addition.isEmpty() ? new Made(input.copy(), 0, 0) : combine(input, addition, recipes);
 
-		if (work.isEmpty()) return Optional.empty();
+		if (!(work instanceof Made made)) return work;
 
-		ItemStack result = work.get().item();
-		boolean renamed = applyName(result, input, name);
+		boolean renamed = applyName(made.item(), input, name);
 
-		if (addition.isEmpty() && !renamed) return Optional.empty();
+		if (addition.isEmpty() && !renamed) return Nothing.INSTANCE;
 
-		int xpCost = work.get().xpCost() + (renamed ? RENAME_COST : 0);
-
-		return Optional.of(new Result(result, xpCost, work.get().materialUsed()));
+		return new Made(made.item(), made.xpCost() + (renamed ? RENAME_COST : 0), made.materialUsed());
 	}
 
-	/**
-	 * Whether the slots try to enchant an item: an enchanted book or enchanted item offered to anything the Enchanting
-	 * Table enchants. The anvil always refuses this, since only the table enchants. Needs no recipes, so it works on
-	 * either side.
-	 */
-	public static boolean triesToEnchant(ItemStack input, ItemStack addition) {
-		return EnchantmentHelper.hasAnyEnchantments(addition) && MaterialUnits.materialOf(input).isPresent();
-	}
-
-	/**
-	 * Whether the slots offer a damaged item something other than its material unit, such as another copy of the same
-	 * tool. The anvil refuses this, since items repair only with their material. Attempts to enchant don't count; see
-	 * {@link #triesToEnchant}. Needs no recipes, so it works on either side.
-	 */
-	public static boolean offersWrongMaterial(ItemStack input, ItemStack addition) {
-		if (addition.isEmpty() || !input.isDamaged() || triesToEnchant(input, addition)) return false;
-
-		return MaterialUnits.materialOf(input).filter(material -> !material.test(addition)).isPresent();
-	}
-
-	private static Optional<Result> combine(ItemStack input, ItemStack addition, RecipeManager recipes) {
+	private static Outcome combine(ItemStack input, ItemStack addition, RecipeManager recipes) {
 		if (input.is(Items.ENCHANTED_BOOK) && addition.is(Items.ENCHANTED_BOOK)) return combineBooks(input, addition);
 
 		return repair(input, addition, recipes);
 	}
 
-	private static Optional<Result> combineBooks(ItemStack book, ItemStack otherBook) {
+	private static Outcome combineBooks(ItemStack book, ItemStack otherBook) {
 		Optional<SingleEnchantment> enchantment = singleEnchantment(book);
 
-		if (enchantment.isEmpty() || !enchantment.equals(singleEnchantment(otherBook))) return Optional.empty();
+		if (enchantment.isEmpty() || !enchantment.equals(singleEnchantment(otherBook))) return Refused.MISMATCHED_BOOKS;
 
 		Holder<Enchantment> holder = enchantment.get().enchantment();
 		int combinedLevel = enchantment.get().level() + 1;
 
-		if (combinedLevel > holder.value().getMaxLevel()) return Optional.empty();
+		if (combinedLevel > holder.value().getMaxLevel()) return Refused.MAXIMUM_LEVEL;
 
 		ItemEnchantments.Mutable combined = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
 		ItemStack result = book.copy();
@@ -107,7 +108,7 @@ public final class AnvilResults {
 		combined.set(holder, combinedLevel);
 		EnchantmentHelper.setEnchantments(result, combined.toImmutable());
 
-		return Optional.of(new Result(result, BOOK_COST_PER_LEVEL * combinedLevel, 0));
+		return new Made(result, BOOK_COST_PER_LEVEL * combinedLevel, 1);
 	}
 
 	private static Optional<SingleEnchantment> singleEnchantment(ItemStack book) {
@@ -121,10 +122,9 @@ public final class AnvilResults {
 	}
 
 	/** Each unit restores an equal share of the item's durability, so a full repair takes its full repair units. */
-	private static Optional<Result> repair(ItemStack item, ItemStack material, RecipeManager recipes) {
-		Optional<Ingredient> itemMaterial = MaterialUnits.materialOf(item);
-
-		if (!item.isDamaged() || itemMaterial.isEmpty() || !itemMaterial.get().test(material)) return Optional.empty();
+	private static Outcome repair(ItemStack item, ItemStack material, RecipeManager recipes) {
+		if (!item.isDamaged() || !MaterialUnits.hasMaterial(item)) return Nothing.INSTANCE;
+		if (!MaterialUnits.isMaterialOf(item, material)) return Refused.WRONG_MATERIAL;
 
 		int share = Math.ceilDiv(item.getMaxDamage(), MaterialUnits.fullRepairUnits(item, recipes));
 		int unitsUsed = Math.min(material.getCount(), Math.ceilDiv(item.getDamageValue(), share));
@@ -132,7 +132,7 @@ public final class AnvilResults {
 
 		repaired.setDamageValue(Math.max(item.getDamageValue() - unitsUsed * share, 0));
 
-		return Optional.of(new Result(repaired, 0, unitsUsed));
+		return new Made(repaired, 0, unitsUsed);
 	}
 
 	/** Gives the result the typed name, matching vanilla's rules, and returns whether that changed its name. */

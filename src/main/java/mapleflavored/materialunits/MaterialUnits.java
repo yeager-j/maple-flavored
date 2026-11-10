@@ -1,12 +1,14 @@
 package mapleflavored.materialunits;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import mapleflavored.MapleFlavored;
+import java.util.WeakHashMap;
+import java.util.stream.Collectors;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
@@ -44,7 +46,6 @@ public final class MaterialUnits {
 		Map.entry(Items.CARROT_ON_A_STICK, Items.CARROT),
 		Map.entry(Items.WARPED_FUNGUS_ON_A_STICK, Items.WARPED_FUNGUS)
 	);
-	private static final TagKey<Item> ALLOY_INGOTS = TagKey.create(Registries.ITEM, MapleFlavored.id("alloy_ingots"));
 	/** Units for a full repair of items with no crafting recipe, matching vanilla's 25% per unit. */
 	private static final Map<Item, Integer> UNCRAFTED_FULL_REPAIR_UNITS = Map.of(Items.ELYTRA, 4, Items.TRIDENT, 4);
 	/** Chainmail has no recipe, so it repairs like the iron piece for the same slot. */
@@ -54,13 +55,21 @@ public final class MaterialUnits {
 		Items.CHAINMAIL_LEGGINGS, Items.IRON_LEGGINGS,
 		Items.CHAINMAIL_BOOTS, Items.IRON_BOOTS
 	);
+	// A server builds a new RecipeManager on every recipe reload, so each manager's recipes are indexed once.
+	private static final Map<RecipeManager, Map<Item, List<NormalCraftingRecipe>>> CRAFTING_RECIPES_BY_RESULT =
+		Collections.synchronizedMap(new WeakHashMap<>());
 
 	private MaterialUnits() {
 	}
 
-	/** The item's material, or empty if it has none, so it can be neither repaired nor enchanted. */
-	public static Optional<Ingredient> materialOf(ItemStack item) {
-		return materialItems(item).map(Ingredient::of);
+	/** Whether the item has a material unit. An item without one can be neither repaired nor enchanted. */
+	public static boolean hasMaterial(ItemStack item) {
+		return materialItems(item).isPresent();
+	}
+
+	/** Whether {@code stack} is the item's material unit. Always false for an item that has none. */
+	public static boolean isMaterialOf(ItemStack item, ItemStack stack) {
+		return materialItems(item).map(material -> stack.is(material)).orElse(false);
 	}
 
 	/**
@@ -73,16 +82,15 @@ public final class MaterialUnits {
 
 	/**
 	 * The units of the item's material a full repair takes, at least 1: one fewer than its cheapest crafting recipe
-	 * uses, or 1 for Netherite and Alloy gear.
+	 * uses, or 1 for an item no recipe crafts from its material, such as Netherite and Alloy gear.
 	 *
 	 * @param recipes the server's recipes, which the client doesn't have
 	 * @throws IllegalArgumentException if the item has no material
 	 */
 	public static int fullRepairUnits(ItemStack item, RecipeManager recipes) {
-		Ingredient material = materialOf(item).orElseThrow(() -> new IllegalArgumentException(item + " has no material unit"));
-
-		if (isIngotRepaired(material)) return 1;
-
+		Ingredient material = materialItems(item)
+			.map(Ingredient::of)
+			.orElseThrow(() -> new IllegalArgumentException(item + " has no material unit"));
 		Integer uncraftedUnits = UNCRAFTED_FULL_REPAIR_UNITS.get(item.getItem());
 
 		if (uncraftedUnits != null) return uncraftedUnits;
@@ -91,12 +99,6 @@ public final class MaterialUnits {
 		OptionalInt craftingUnits = cheapestCraftingUnits(craftedItem, material, recipes);
 
 		return Math.max(craftingUnits.orElse(1) - 1, 1);
-	}
-
-	// Netherite and Alloy gear have no crafting recipe to count; one of their ingot repairs them fully.
-	@SuppressWarnings("deprecation")
-	private static boolean isIngotRepaired(Ingredient material) {
-		return material.items().anyMatch(item -> item.value() == Items.NETHERITE_INGOT || item.is(ALLOY_INGOTS));
 	}
 
 	private static Optional<HolderSet<Item>> materialItems(ItemStack item) {
@@ -126,14 +128,20 @@ public final class MaterialUnits {
 	}
 
 	private static OptionalInt cheapestCraftingUnits(Item craftedItem, Ingredient material, RecipeManager recipes) {
+		return CRAFTING_RECIPES_BY_RESULT.computeIfAbsent(recipes, MaterialUnits::craftingRecipesByResult)
+			.getOrDefault(craftedItem, List.of())
+			.stream()
+			.mapToInt(recipe -> unitsUsedBy(recipe, material))
+			.filter(units -> units > 0)
+			.min();
+	}
+
+	private static Map<Item, List<NormalCraftingRecipe>> craftingRecipesByResult(RecipeManager recipes) {
 		return recipes.getRecipes().stream()
 			.map(RecipeHolder::value)
 			.filter(recipe -> recipe instanceof ShapedRecipe || recipe instanceof ShapelessRecipe)
 			.map(NormalCraftingRecipe.class::cast)
-			.filter(recipe -> recipe.assemble(CraftingInput.EMPTY).is(craftedItem))
-			.mapToInt(recipe -> unitsUsedBy(recipe, material))
-			.filter(units -> units > 0)
-			.min();
+			.collect(Collectors.groupingBy(recipe -> recipe.assemble(CraftingInput.EMPTY).getItem()));
 	}
 
 	// Ingredient.items() is deprecated, but comparing two ingredients needs their items, and test() takes only a stack.

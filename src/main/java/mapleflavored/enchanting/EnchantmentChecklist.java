@@ -96,7 +96,7 @@ public record EnchantmentChecklist(
 	 * can go on it. Books and golden apples have no enchantments that can go on them, so they aren't gear.
 	 */
 	public static boolean accepts(ItemStack item, Registry<Enchantment> enchantments) {
-		if (MaterialUnits.materialOf(item).isEmpty()) return false;
+		if (!MaterialUnits.hasMaterial(item)) return false;
 
 		return enchantments.stream().anyMatch(enchantment -> enchantment.canEnchant(item));
 	}

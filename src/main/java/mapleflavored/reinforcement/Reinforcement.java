@@ -12,10 +12,8 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlotGroup;
@@ -56,9 +54,6 @@ public final class Reinforcement {
 		DataComponentType.<Unit>builder().persistent(Unit.CODEC).networkSynchronized(Unit.STREAM_CODEC).build()
 	);
 
-	/** The pieces Reinforcement accepts: worn armor, the turtle helmet and Armored Elytra, but no plain Elytra, heads or mob armor. */
-	public static final TagKey<Item> REINFORCEABLE = TagKey.create(Registries.ITEM, MapleFlavored.id("reinforceable"));
-
 	/** Consumed with a chainmail piece to Reinforce an armor piece. */
 	public static final Item TEMPLATE = registerTemplate();
 
@@ -86,9 +81,12 @@ public final class Reinforcement {
 		return stack.has(REINFORCED);
 	}
 
-	/** The piece Reinforced, or empty if it already is. Keeps everything else on it, enchantments and trim included. */
+	/**
+	 * The piece Reinforced, or empty if it already is or isn't worn in an armor slot, where Reinforced would give it
+	 * nothing. Keeps everything else on it, enchantments and trim included.
+	 */
 	static ItemStack reinforce(ItemStack base) {
-		if (isReinforced(base)) return ItemStack.EMPTY;
+		if (isReinforced(base) || wornArmorSlot(base) == null) return ItemStack.EMPTY;
 
 		ItemStack reinforced = base.copyWithCount(1);
 
@@ -120,9 +118,14 @@ public final class Reinforcement {
 
 	// The humanoid armor slot a Reinforced piece is worn in, or null if it isn't Reinforced armor.
 	private static EquipmentSlot armorSlot(ItemStack stack) {
+		return isReinforced(stack) ? wornArmorSlot(stack) : null;
+	}
+
+	// The humanoid armor slot the piece is worn in, or null if it isn't worn in one.
+	private static EquipmentSlot wornArmorSlot(ItemStack stack) {
 		Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
 
-		if (!isReinforced(stack) || equippable == null || equippable.slot().getType() != EquipmentSlot.Type.HUMANOID_ARMOR) return null;
+		if (equippable == null || equippable.slot().getType() != EquipmentSlot.Type.HUMANOID_ARMOR) return null;
 
 		return equippable.slot();
 	}

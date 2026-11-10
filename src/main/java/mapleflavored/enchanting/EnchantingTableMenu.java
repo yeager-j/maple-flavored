@@ -270,7 +270,7 @@ public class EnchantingTableMenu extends AbstractContainerMenu {
 			return true;
 		}
 
-		boolean isMaterial = MaterialUnits.materialOf(item()).map(material -> material.test(stack)).orElse(false);
+		boolean isMaterial = MaterialUnits.isMaterialOf(item(), stack);
 
 		return isMaterial && moveItemStackTo(stack, MATERIAL_SLOT, MATERIAL_SLOT + 1, false);
 	}

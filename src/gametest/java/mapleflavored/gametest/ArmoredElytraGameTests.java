@@ -223,7 +223,7 @@ public class ArmoredElytraGameTests {
 			helper.assertValueEqual(
 				EnchantmentSlots.available(30, armoredElytra), EnchantmentSlots.available(30, chestplate), label + "'s Enchantment Slots at level 30"
 			);
-			helper.assertTrue(MaterialUnits.materialOf(armoredElytra).orElseThrow().test(new ItemStack(alloy.ingot())), label + "'s material is its ingot");
+			helper.assertTrue(MaterialUnits.isMaterialOf(armoredElytra, new ItemStack(alloy.ingot())), label + "'s material is its ingot");
 			helper.assertValueEqual(MaterialUnits.fullRepairUnits(armoredElytra, recipes), 1, label + "'s full repair units");
 		}
 

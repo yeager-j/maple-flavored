@@ -20,8 +20,9 @@ import net.minecraft.world.item.crafting.display.SmithingRecipeDisplay;
 
 /**
  * The smithing recipe that Reinforces an armor piece: a template, the piece and a chainmail piece give the piece
- * Reinforced, keeping its enchantments, trim and wear. A piece already Reinforced makes nothing. Unlike a material
- * upgrade, it accepts enchanted armor.
+ * Reinforced, keeping its enchantments, trim and wear. The recipe's data lists the pieces it takes as its base, the
+ * {@code maple_flavored:reinforceable} tag. A piece already Reinforced makes nothing, and neither does a base that
+ * isn't worn in an armor slot. Unlike a material upgrade, it accepts enchanted armor.
  */
 public class ReinforcementRecipe extends SimpleSmithingRecipe {
 	static final MapCodec<ReinforcementRecipe> MAP_CODEC = RecordCodecBuilder.mapCodec(i -> i.group(

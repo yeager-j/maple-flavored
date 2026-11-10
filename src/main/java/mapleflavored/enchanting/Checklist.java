@@ -78,7 +78,7 @@ public sealed interface Checklist permits EnchantmentChecklist, AppleChecklist, 
 			ItemStack item = checklist.item();
 			Cost cost = cost(checklist);
 			int lapisHeld = lapis.is(Items.LAPIS_LAZULI) ? lapis.getCount() : 0;
-			boolean holdsMaterial = MaterialUnits.materialOf(item).map(unit -> unit.test(material)).orElse(false);
+			boolean holdsMaterial = MaterialUnits.isMaterialOf(item, material);
 
 			if (cost.slots() > checklist.slots()) problems.add(new TooMany(cost.slots(), checklist.slots()));
 			if (lapisHeld < cost.lapis()) problems.add(new NeedsLapis(cost.lapis()));

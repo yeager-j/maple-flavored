@@ -84,7 +84,6 @@
 		"ThrownEnderpearlMixin",
 		"TridentItemMixin",
 		"VexMixin",
-		"VillagerMixin",
 		"WardenEntitySensorMixin",
 		"WardenSpawnTrackerAccessor",
 		"WitherBossMixin",
