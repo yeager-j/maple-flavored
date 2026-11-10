@@ -12,7 +12,7 @@ import mapleflavored.client.enchanting.EnchantingTableScreen;
 import mapleflavored.client.hearts.DeathScreenMaxHearts;
 import mapleflavored.client.items.CrystalHeartActivation;
 import mapleflavored.client.remnants.RemnantRenderer;
-import mapleflavored.client.spawners.SpawnerForcefieldRenderer;
+import mapleflavored.client.spawners.SpawnerHeatRenderer;
 import mapleflavored.client.structurebooks.StructureBookRenderer;
 import mapleflavored.client.subspaces.SubspaceShellRenderer;
 import mapleflavored.client.subspaces.WitherSubspaceLight;
@@ -32,7 +32,7 @@ public class MapleFlavoredClient implements ClientModInitializer {
 		MenuScreens.register(Alloys.ALLOY_FURNACE_MENU, AlloyFurnaceScreen::new);
 		AppleTooltip.register();
 		StructureBookRenderer.register();
-		SpawnerForcefieldRenderer.register();
+		SpawnerHeatRenderer.register();
 		SubspaceShellRenderer.register();
 		WitherSubspaceLight.register();
 		PortalTrim.register();

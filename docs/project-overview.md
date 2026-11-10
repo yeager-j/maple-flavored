@@ -67,7 +67,7 @@ Details: [Structures](../.scratch/maple-flavored-design/issues/14-structures.md)
 
 ### Spawners and Pith
 
-Normal spawners ignore light and spawn twice as fast until they are **Cleared** by defeating twelve of their mobs, plus two more for each additional player who approached. Any death counts, including traps and lava. Until then a spawner cannot be broken or blown up, and a forcefield around it shrinks as the count rises. Once Cleared, it spawns at vanilla's pace and stays Cleared, so you can keep it for a farm or break it for **Pith**. Dungeon and cave spider spawners also hold an enchanted book that drops with the Pith. Dungeons are more common, and trial spawners are unchanged.
+Normal spawners ignore light and spawn twice as fast until they are **Cleared** by defeating twelve of their mobs, plus two more for each additional player who approached. Any death counts, including traps and lava. Until then a spawner cannot be broken or blown up, and it glows hot, cooling in patches as the count rises. Once Cleared, it spawns at vanilla's pace and stays Cleared, so you can keep it for a farm or break it for **Pith**. Dungeon and cave spider spawners also hold an enchanted book that drops with the Pith. Dungeons are more common, and trial spawners are unchanged.
 
 Pith is the rare material behind health and Netherite. It comes from broken spawners, Elder Guardians, Evokers, Piglin Brutes, guarded chests, and a Nether Star, which crafts into nine. A Crystal Heart is five diamonds and one Pith in a heart shape, and a Netherite Ingot needs four Pith in place of gold.
 

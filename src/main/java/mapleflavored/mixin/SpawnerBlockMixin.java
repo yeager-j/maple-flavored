@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.SpawnerBlock;
@@ -17,8 +18,8 @@ import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 
 /**
- * A spawner can't be mined or blown up until it is Cleared. Breaking a Cleared one with a pickaxe fires its
- * advancement; its drops come from {@link Spawners}.
+ * A spawner can't be mined or blown up until it is Cleared, and flares up at a player who tries. Breaking a Cleared
+ * one with a pickaxe fires its advancement; its drops come from {@link Spawners}.
  */
 @Mixin(SpawnerBlock.class)
 public abstract class SpawnerBlockMixin extends BaseEntityBlock {
@@ -31,6 +32,14 @@ public abstract class SpawnerBlockMixin extends BaseEntityBlock {
 		if (!Spawners.isCleared(level, pos)) return 0.0F;
 
 		return super.getDestroyProgress(state, player, level, pos);
+	}
+
+	// Vanilla calls this as a survival player starts to mine the block.
+	@Override
+	protected void attack(BlockState state, Level level, BlockPos pos, Player player) {
+		super.attack(state, level, pos, player);
+
+		if (level instanceof ServerLevel serverLevel && !Spawners.isCleared(level, pos)) Spawners.refuseHit(serverLevel, pos);
 	}
 
 	@Override

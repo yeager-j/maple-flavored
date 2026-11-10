@@ -65,7 +65,8 @@
 			"mapleflavored.gametest.client.BloodMoonSkyClientGameTest",
 			"mapleflavored.gametest.client.PortalTrimClientGameTest",
 			"mapleflavored.gametest.client.ArmoredElytraClientGameTest",
-			"mapleflavored.gametest.client.ReinforcementClientGameTest"
+			"mapleflavored.gametest.client.ReinforcementClientGameTest",
+			"mapleflavored.gametest.client.LockedLooksClientGameTest"
 		]
 	},
 	"mixins": [

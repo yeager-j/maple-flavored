@@ -15,16 +15,16 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Holds the enchantment of a structure book. A book without one can't be taken. Clients are sent only whether the book
- * is locked; {@link BookLocks} decides that on the server.
+ * Holds the enchantment of a structure book. A book without one can't be taken. Clients are sent only how much of the
+ * book's lock is still on; {@link BookLocks} decides that on the server.
  */
 public class StructureBookBlockEntity extends BlockEntity {
 	private static final String ENCHANTMENT = "enchantment";
-	private static final String LOCKED = "locked";
+	private static final String LOCK_REMAINING = "lock_remaining";
 
 	private @Nullable Holder<Enchantment> enchantment;
 	// The client's copy of the lock, as last sent. Never saved.
-	private boolean shownLocked;
+	private float shownLockRemaining;
 
 	public StructureBookBlockEntity(BlockPos pos, BlockState state) {
 		super(StructureBooks.BLOCK_ENTITY, pos, state);
@@ -41,16 +41,19 @@ public class StructureBookBlockEntity extends BlockEntity {
 		setChanged();
 	}
 
-	/** Whether the book was locked when the server last sent it. For drawing it on the client. */
-	public boolean isShownLocked() {
-		return shownLocked;
+	/**
+	 * The share of the book's lock that was still on when the server last sent it: 1 with no key done, down to 0 for a
+	 * book that can be taken. For drawing it on the client.
+	 */
+	public float shownLockRemaining() {
+		return shownLockRemaining;
 	}
 
 	@Override
 	protected void loadAdditional(ValueInput input) {
 		super.loadAdditional(input);
 		enchantment = input.read(ENCHANTMENT, Enchantment.CODEC).orElse(null);
-		shownLocked = input.getBooleanOr(LOCKED, false);
+		shownLockRemaining = input.getFloatOr(LOCK_REMAINING, 0.0F);
 	}
 
 	@Override
@@ -69,7 +72,7 @@ public class StructureBookBlockEntity extends BlockEntity {
 	public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
 		CompoundTag tag = new CompoundTag();
 
-		if (level instanceof ServerLevel serverLevel) tag.putBoolean(LOCKED, BookLocks.isLocked(serverLevel, worldPosition));
+		if (level instanceof ServerLevel serverLevel) tag.putFloat(LOCK_REMAINING, BookLocks.remainingShare(serverLevel, worldPosition));
 
 		return tag;
 	}

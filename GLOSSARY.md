@@ -79,7 +79,7 @@ The only kind of village: vanilla's zombie village, decayed, populated by zombie
 _Avoid_: Ruined village, zombie village
 
 **Cleared**:
-A spawner whose mobs have died enough times, 12 plus 2 per additional player, so it can be broken. Until then it spawns twice as fast, and a forcefield like the world border's surrounds it and closes in as its mobs die. A Cleared spawner looks like any other and stays Cleared.
+A spawner whose mobs have died enough times, 12 plus 2 per additional player, so it can be broken. Until then it spawns twice as fast and glows hot, cooling back to its plain look in patches as its mobs die. A Cleared spawner looks like any other and stays Cleared.
 
 **Restored**:
 Said of a structure whose mobs have returned after a Blood Moon.
@@ -109,7 +109,7 @@ _Avoid_: Elite, deep mob
 One of up to three guards chosen when a structure is planned, which unlock its book once all are gone. A Bastion's keepers are Piglin Brutes: any death counts, and a refused take makes the living ones glow and sends trails to them. An Ancient City's keepers are sculk shriekers placed in a ring near its edge: breaking them by any means counts, and a refused take sends trails to the ones still standing. A Stronghold's keepers are Evokers, one in the portal room and one in each of two big rooms chosen far from it and from each other: any death counts, and a refused take makes the living ones glow and sends trails to them.
 
 **Structure book**:
-The one level I enchanted book a structure or Dungeon holds, in a fixed spot. Most float where they can be seen. Buried Treasure keeps its book in the treasure chest, Trail Ruins keep theirs in one suspicious gravel, and a Dungeon's spawner holds its book and drops it with its Pith once Cleared and broken. Mineshaft cave spider spawners each hold a Bane of Arthropods book the same way, besides the Mineshaft's own book. The Nether Fortress's book is locked until every Blaze spawner the fortress generated with is Cleared, and a Bastion's or Ancient City's until its keepers are gone. Taking it can wake the structure, as a Bastion's, Stronghold's or Woodland Mansion's does.
+The one level I enchanted book a structure or Dungeon holds, in a fixed spot. Most float where they can be seen. Buried Treasure keeps its book in the treasure chest, Trail Ruins keep theirs in one suspicious gravel, and a Dungeon's spawner holds its book and drops it with its Pith once Cleared and broken. Mineshaft cave spider spawners each hold a Bane of Arthropods book the same way, besides the Mineshaft's own book. The Nether Fortress's book is locked until every Blaze spawner the fortress generated with is Cleared, and a Bastion's or Ancient City's until its keepers are gone. A locked book floats closed in a gold cage, which breaks away in patches as those spawners are Cleared or keepers go. Taking it can wake the structure, as a Bastion's, Stronghold's or Woodland Mansion's does.
 _Avoid_: Floating book, book pedestal
 
 **Library**:

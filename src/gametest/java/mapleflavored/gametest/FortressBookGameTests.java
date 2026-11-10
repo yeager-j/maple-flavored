@@ -215,15 +215,22 @@ public class FortressBookGameTests {
 	}
 
 	@GameTest(maxTicks = 400)
-	public void aBuiltBookUnlocksAsItsLastSpawnerIsCleared(GameTestHelper helper) {
+	public void aBuiltBookIsSentLessOfItsLockAsEachSpawnerIsCleared(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = planFortress(level, 4, start -> true, "any fortress");
 		BlockPos book = bookPiece(planned).spot();
+		List<BlockPos> spawners = blazeSpawners(planned);
 
 		Structures.chunks(planned).forEach(chunk -> Structures.build(level, planned, chunk));
-		helper.assertValueEqual(sentLocked(level, book), true, "the book is sent locked");
+		helper.assertValueEqual(sentLockRemaining(level, book), 1.0F, "the share of the lock sent before any spawner is Cleared");
 
-		blazeSpawners(planned).forEach(spawner -> clear(helper, spawner));
+		for (int cleared = 1; cleared <= spawners.size(); cleared++) {
+			clear(helper, spawners.get(cleared - 1));
+
+			float remaining = (float) (spawners.size() - cleared) / spawners.size();
+
+			helper.assertValueEqual(sentLockRemaining(level, book), remaining, "the share of the lock sent with " + cleared + " Cleared");
+		}
 
 		helper.assertValueEqual(BookLocks.isLocked(level, book), false, "unlocked");
 		helper.assertValueEqual(sentLocked(level, book), false, "the book is sent unlocked");
@@ -485,7 +492,12 @@ public class FortressBookGameTests {
 	}
 
 	private static boolean sentLocked(ServerLevel level, BlockPos book) {
-		return level.getBlockEntity(book).getUpdateTag(level.registryAccess()).getBooleanOr("locked", false);
+		return sentLockRemaining(level, book) > 0.0F;
+	}
+
+	// The share of the book's lock still on, as clients are sent it to draw the book's cage.
+	private static float sentLockRemaining(ServerLevel level, BlockPos book) {
+		return level.getBlockEntity(book).getUpdateTag(level.registryAccess()).getFloatOr("lock_remaining", 0.0F);
 	}
 
 	private static ResourceKey<Enchantment> bookEnchantment(ServerLevel level, BlockPos book) {

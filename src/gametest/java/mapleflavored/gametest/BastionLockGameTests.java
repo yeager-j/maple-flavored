@@ -274,7 +274,7 @@ public class BastionLockGameTests {
 	}
 
 	private static boolean sentLocked(ServerLevel level, BlockPos book) {
-		return level.getBlockEntity(book).getUpdateTag(level.registryAccess()).getBooleanOr("locked", false);
+		return level.getBlockEntity(book).getUpdateTag(level.registryAccess()).getFloatOr("lock_remaining", 0.0F) > 0.0F;
 	}
 
 	private static int takes(BlockPos book) {
