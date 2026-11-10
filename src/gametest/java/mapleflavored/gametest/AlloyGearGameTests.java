@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyGear;
+import mapleflavored.alloys.AlloySets;
 import mapleflavored.alloys.GearKind;
 import mapleflavored.smithing.UpgradeRefusalMenu;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -334,7 +335,7 @@ public class AlloyGearGameTests {
 
 	/** Wears the Alloy's full armor set, or Netherite's when {@code alloy} is null, and applies it. */
 	private static void wearFullSet(ServerPlayer player, Alloy alloy) {
-		for (GearKind kind : List.of(GearKind.HELMET, GearKind.CHESTPLATE, GearKind.LEGGINGS, GearKind.BOOTS)) {
+		for (GearKind kind : AlloySets.PIECES) {
 			Item item = alloy == null ? kind.netheriteItem() : AlloyGear.of(alloy, kind);
 
 			player.setItemSlot(kind.slot(), new ItemStack(item));

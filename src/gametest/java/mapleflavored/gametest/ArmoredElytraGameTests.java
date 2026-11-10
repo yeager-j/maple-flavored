@@ -72,7 +72,7 @@ public class ArmoredElytraGameTests {
 		DataComponents.GLIDER,
 		DataComponents.RARITY
 	);
-	private static final List<GearKind> SET_KINDS = List.of(GearKind.HELMET, GearKind.LEGGINGS, GearKind.BOOTS);
+	private static final List<GearKind> SET_KINDS = AlloySets.PIECES.stream().filter(kind -> kind != GearKind.CHESTPLATE).toList();
 	private static final Identifier ADVANCEMENT = Identifier.parse("maple_flavored:end/obtain_armored_elytra");
 
 	@GameTest

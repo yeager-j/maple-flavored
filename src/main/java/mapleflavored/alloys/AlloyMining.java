@@ -2,6 +2,7 @@ package mapleflavored.alloys;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Objects;
+import java.util.Optional;
 import mapleflavored.MapleFlavored;
 import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.gamerules.MapleGameRules;
@@ -72,11 +73,20 @@ public final class AlloyMining {
 		return Math.min(hardness, rules(player.level()).adamantHardnessCap());
 	}
 
-	/** Whether the player can break bedrock: an Adamant pickaxe with Efficiency V or higher, under Haste II or higher. */
-	public static boolean breaksBedrock(Player player) {
+	/**
+	 * The share of the block the player mines each tick where Adamant sets it: bedrock, for a player who can break it
+	 * with an Adamant pickaxe with Efficiency V or higher, under Haste II or higher. Empty for every other block and
+	 * player, which leaves the progress to vanilla.
+	 */
+	public static Optional<Float> bedrockProgress(Player player, BlockState state) {
+		if (!state.is(Blocks.BEDROCK) || !breaksBedrock(player)) return Optional.empty();
+
+		return Optional.of(1.0F / rules(player.level()).adamantBedrockBreakTime());
+	}
+
+	private static boolean breaksBedrock(Player player) {
 		ItemStack tool = player.getMainHandItem();
-		boolean adamantPickaxe = AlloyGear.alloyOf(tool).orElse(null) == Alloy.ADAMANT
-			&& AlloyGear.kindOf(tool).orElse(null) == GearKind.PICKAXE;
+		boolean adamantPickaxe = AlloyGear.pieceOf(tool).equals(Optional.of(new AlloyGear.Piece(Alloy.ADAMANT, GearKind.PICKAXE)));
 		Holder<Enchantment> efficiency = player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.EFFICIENCY);
 		MobEffectInstance haste = player.getEffect(MobEffects.HASTE);
 
@@ -86,21 +96,16 @@ public final class AlloyMining {
 			&& haste.getAmplifier() >= BEDROCK_HASTE_AMPLIFIER;
 	}
 
-	/** The share of a bedrock block a player who {@link #breaksBedrock breaks bedrock} mines each tick. */
-	public static float bedrockProgress(Level level) {
-		return 1.0F / rules(level).adamantBedrockBreakTime();
-	}
-
 	private static boolean holdsTool(Player player, Alloy alloy) {
-		ItemStack held = player.getMainHandItem();
-
-		return AlloyGear.alloyOf(held).orElse(null) == alloy && AlloyGear.kindOf(held).map(GearKind::isHeld).orElse(false);
+		return AlloyGear.pieceOf(player.getMainHandItem()).filter(piece -> piece.isToolOf(alloy)).isPresent();
 	}
 
 	private static boolean holdsToolFor(Player player, BlockState state, Alloy alloy) {
-		ItemStack held = player.getMainHandItem();
-
-		return AlloyGear.alloyOf(held).orElse(null) == alloy && AlloyGear.kindOf(held).flatMap(GearKind::mineable).map(state::is).orElse(false);
+		return AlloyGear.pieceOf(player.getMainHandItem())
+			.filter(piece -> piece.alloy() == alloy)
+			.flatMap(piece -> piece.kind().mineable())
+			.filter(state::is)
+			.isPresent();
 	}
 
 	// Game rules stay on the server, so their values reach clients as level data, and a change shows at once.

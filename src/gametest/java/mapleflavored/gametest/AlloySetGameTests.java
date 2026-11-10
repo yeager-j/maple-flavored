@@ -55,8 +55,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * must run.
  */
 public class AlloySetGameTests {
-	private static final List<EquipmentSlot> SET_SLOTS = List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET);
-	private static final List<GearKind> SET_KINDS = List.of(GearKind.HELMET, GearKind.CHESTPLATE, GearKind.LEGGINGS, GearKind.BOOTS);
+	private static final List<GearKind> SET_KINDS = AlloySets.PIECES;
+	private static final List<EquipmentSlot> SET_SLOTS = SET_KINDS.stream().map(GearKind::slot).toList();
 	private static final List<Item> NETHERITE_SET = List.of(Items.NETHERITE_HELMET, Items.NETHERITE_CHESTPLATE, Items.NETHERITE_LEGGINGS, Items.NETHERITE_BOOTS);
 	private static final float TOLERANCE = 1.0E-4F;
 

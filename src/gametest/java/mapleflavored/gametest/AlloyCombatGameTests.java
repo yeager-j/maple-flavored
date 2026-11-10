@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.Function;
 import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyGear;
+import mapleflavored.alloys.AlloySets;
 import mapleflavored.alloys.GearKind;
 import mapleflavored.alloys.IllagerNeutrality;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -37,7 +38,7 @@ import net.minecraft.world.phys.Vec3;
 public class AlloyCombatGameTests {
 	private static final float HIT = 4.0F;
 	private static final float TOLERANCE = 1.0E-4F;
-	private static final List<EquipmentSlot> HUMANOID_SLOTS = List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET);
+	private static final List<EquipmentSlot> HUMANOID_SLOTS = AlloySets.PIECES.stream().map(GearKind::slot).toList();
 	private static final List<Item> NETHERITE_SET = List.of(Items.NETHERITE_HELMET, Items.NETHERITE_CHESTPLATE, Items.NETHERITE_LEGGINGS, Items.NETHERITE_BOOTS);
 
 	private static final Vec3 PLAYER_POS = new Vec3(1.5, 1.0, 4.5);
@@ -280,12 +281,7 @@ public class AlloyCombatGameTests {
 	}
 
 	private static List<Item> alloySet(Alloy alloy) {
-		return List.of(
-			AlloyGear.of(alloy, GearKind.HELMET),
-			AlloyGear.of(alloy, GearKind.CHESTPLATE),
-			AlloyGear.of(alloy, GearKind.LEGGINGS),
-			AlloyGear.of(alloy, GearKind.BOOTS)
-		);
+		return AlloySets.PIECES.stream().map(kind -> AlloyGear.of(alloy, kind)).toList();
 	}
 
 	private static List<Item> electrumWithNetheriteHelmet() {

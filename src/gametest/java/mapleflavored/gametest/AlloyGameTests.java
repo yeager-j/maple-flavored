@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyFurnaceBlockEntity;
 import mapleflavored.alloys.AlloyFurnaceMenu;
@@ -130,6 +131,8 @@ public class AlloyGameTests {
 
 	@GameTest
 	public void eachStorageBlockAndANetheriteIngotMakeItsAlloy(GameTestHelper helper) {
+		helper.assertValueEqual(Set.copyOf(STORAGE_BLOCKS.values()), Set.of(Alloy.values()), "the Alloys with a storage block");
+
 		STORAGE_BLOCKS.forEach((block, alloy) ->
 			helper.assertValueEqual(alloyOf(helper, Items.NETHERITE_INGOT, block.asItem()), alloy.ingot(), block + " makes")
 		);
