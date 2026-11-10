@@ -1,10 +1,11 @@
 package mapleflavored.gametest;
 
-import static mapleflavored.gametest.MockPlayers.assertMaxHearts;
+import static mapleflavored.gametest.MaxHearts.assertMaxHearts;
+import static mapleflavored.gametest.MaxHearts.survivalPlayerWithMaxHearts;
 import static mapleflavored.gametest.MockPlayers.dieAndRespawn;
-import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
 import static mapleflavored.gametest.MockPlayers.relog;
 import static mapleflavored.gametest.MockPlayers.runCommand;
+import static mapleflavored.gametest.MockPlayers.survivalPlayer;
 
 import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.hearts.Hearts;
@@ -19,7 +20,7 @@ import net.minecraft.world.level.gamerules.GameRules;
 public class HeartsGameTests {
 	@GameTest
 	public void freshPlayerHasTenMaxHearts(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = survivalPlayer(helper);
 
 		assertMaxHearts(helper, player, 10);
 		helper.succeed();
@@ -72,7 +73,7 @@ public class HeartsGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void keepInventoryKeepsItemsAndStillCostsMaxHearts(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 12);
+		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 12);
 
 		player.getInventory().add(new ItemStack(Items.DIAMOND));
 
@@ -85,7 +86,7 @@ public class HeartsGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:keep_inventory_off")
 	public void keepInventoryOffDropsItemsAndStillCostsMaxHearts(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 12);
+		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 12);
 
 		player.getInventory().add(new ItemStack(Items.DIAMOND));
 
@@ -98,7 +99,7 @@ public class HeartsGameTests {
 
 	@GameTest
 	public void maxHeartsAndHealthSurviveRelog(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 12);
+		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 12);
 
 		player.setHealth(23.0F);
 
@@ -111,7 +112,7 @@ public class HeartsGameTests {
 
 	@GameTest
 	public void addingAMaxHeartIsRefusedAtThirty(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 30);
+		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 30);
 
 		helper.assertFalse(Hearts.addMaxHeart(player), "a 31st Max Heart is refused");
 		assertMaxHearts(helper, player, 30);
@@ -120,7 +121,7 @@ public class HeartsGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void deathBelowTheHeartFloorNeverRaisesMaxHearts(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		runCommand(helper, player, "maxhearts set @s 8");
 
@@ -132,7 +133,7 @@ public class HeartsGameTests {
 
 	@GameTest
 	public void maxHeartsCommandSetsAndAddsHearts(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		runCommand(helper, player, "maxhearts set @s 15");
 		assertMaxHearts(helper, player, 15);
@@ -144,7 +145,7 @@ public class HeartsGameTests {
 
 	@GameTest
 	public void maxHeartsCommandKeepsHeartsBetweenOneAndThirty(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		runCommand(helper, player, "maxhearts add @s 50");
 		assertMaxHearts(helper, player, 30);
@@ -161,7 +162,7 @@ public class HeartsGameTests {
 	}
 
 	private static void assertDeathCost(GameTestHelper helper, int maxHeartsBefore, int maxHeartsAfter) {
-		ServerPlayer player = playerWithMaxHearts(helper, maxHeartsBefore);
+		ServerPlayer player = survivalPlayerWithMaxHearts(helper, maxHeartsBefore);
 		ServerPlayer respawned = dieAndRespawn(helper, player);
 
 		assertMaxHearts(helper, respawned, maxHeartsAfter);

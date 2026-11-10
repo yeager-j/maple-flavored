@@ -1,13 +1,14 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
+import static mapleflavored.gametest.MaxHearts.survivalPlayerWithMaxHearts;
 import static mapleflavored.gametest.MockPlayers.dieAndRespawn;
-import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
 import static mapleflavored.gametest.MockPlayers.relog;
 import static mapleflavored.gametest.MockPlayers.runCommand;
+import static mapleflavored.gametest.MockPlayers.survivalPlayer;
 
 import mapleflavored.hearts.Hearts;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -30,11 +31,11 @@ public class WitheredHeartsGameTests {
 	private static final int RECOVERY_INTERVAL = 200;
 	// Waits stay clear of the exact interval, where the order of the test's tick and the withering tick decides.
 	private static final int MARGIN = 10;
-	private static final String RECOVERY_ADVANCEMENT = "maple_flavored:nether/recover_withered_heart";
+	private static final Identifier RECOVERY_ADVANCEMENT = Identifier.parse("maple_flavored:nether/recover_withered_heart");
 
 	@GameTest(maxTicks = 300)
 	public void aHeartWithersEveryFiveSecondsWithoutChangingMaxHearts(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		wither(player);
 
@@ -50,7 +51,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(dimension = "minecraft:the_nether", maxTicks = 200)
 	public void theTimerResetsWhenTheEffectEnds(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 		int exposure = WITHERING_INTERVAL / 2 + MARGIN;
 
 		wither(player);
@@ -64,7 +65,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(maxTicks = 400)
 	public void witheringStopsAtOneUsableHeart(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		runCommand(helper, player, "maxhearts set @s 3");
 		wither(player);
@@ -89,7 +90,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(dimension = "minecraft:the_nether", maxTicks = 400)
 	public void witheredHeartsStayInTheNetherAndReturnOnLeaving(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		wither(player);
 
@@ -109,7 +110,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(maxTicks = 700)
 	public void witheredHeartsReturnOneEveryTenSeconds(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		wither(player);
 
@@ -136,7 +137,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(maxTicks = 500)
 	public void theRecoveryTimerResetsWhenWitherReturns(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 		int partway = RECOVERY_INTERVAL / 2 + MARGIN;
 
 		wither(player);
@@ -153,7 +154,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(dimension = "minecraft:the_nether", maxTicks = 500)
 	public void theRecoveryTimerResetsOnEnteringTheNether(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 		int partway = RECOVERY_INTERVAL / 2 + MARGIN;
 
 		wither(player);
@@ -173,7 +174,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(maxTicks = 400)
 	public void recoveryTimerProgressSurvivesRelog(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 		int intoRecovery = RECOVERY_INTERVAL / 2;
 
 		wither(player);
@@ -195,7 +196,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(dimension = "minecraft:the_nether", maxTicks = 300)
 	public void witheredHeartsDroppedByLowerMaxHeartsNeverReturnInTheNether(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		runCommand(helper, player, "maxhearts set @s 3");
 		wither(player);
@@ -225,7 +226,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(dimension = "minecraft:the_nether", maxTicks = 300)
 	public void deathClearsEveryWitheredHeartAtOnce(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 12);
+		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 12);
 
 		wither(player);
 
@@ -244,7 +245,7 @@ public class WitheredHeartsGameTests {
 
 	@GameTest(dimension = "minecraft:the_nether", maxTicks = 300)
 	public void witheredHeartsAndTimerProgressSurviveRelog(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 		int intoSecondInterval = WITHERING_INTERVAL / 2;
 
 		wither(player);
@@ -265,7 +266,7 @@ public class WitheredHeartsGameTests {
 	}
 
 	private static void assertRecoversWhereTheEffectEnds(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		wither(player);
 
@@ -301,13 +302,5 @@ public class WitheredHeartsGameTests {
 		var transition = new TeleportTransition(level, new Vec3(0.5, 100.0, 0.5), Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING);
 
 		player.teleport(transition);
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(advancement));
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 }

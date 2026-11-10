@@ -1,10 +1,12 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
 import static mapleflavored.gametest.MockPlayers.dieAndRespawn;
 import static mapleflavored.gametest.MockPlayers.logIn;
 import static mapleflavored.gametest.MockPlayers.logOut;
-import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
 import static mapleflavored.gametest.MockPlayers.runCommand;
+import static mapleflavored.gametest.MockPlayers.survivalPlayer;
+import static mapleflavored.gametest.MockPlayers.teleport;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,7 +16,6 @@ import mapleflavored.hearts.Hearts;
 import mapleflavored.remnants.Remnant;
 import mapleflavored.remnants.Remnants;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -32,10 +33,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
@@ -50,7 +49,7 @@ import net.minecraft.world.phys.Vec3;
  * from level and progress, which is what a player sees and spends.
  */
 public class RemnantsGameTests {
-	private static final String COLLECT_ADVANCEMENT = "maple_flavored:adventure/collect_remnant";
+	private static final Identifier COLLECT_ADVANCEMENT = Identifier.parse("maple_flavored:adventure/collect_remnant");
 	private static final BlockPos DEATH_SPOT = new BlockPos(2, 2, 2);
 	private static final BlockPos SOLID_GROUND = new BlockPos(5, 2, 5);
 	private static final BlockPos RESPAWN_POINT = new BlockPos(7, 2, 2);
@@ -159,7 +158,7 @@ public class RemnantsGameTests {
 	@GameTest(maxTicks = 100)
 	public void onlyTheOwnerSeesAndCollectsTheirRemnant(GameTestHelper helper) {
 		ServerPlayer owner = playerWithXp(helper, 100);
-		ServerPlayer other = playerWithMaxHearts(helper, 10);
+		ServerPlayer other = survivalPlayer(helper);
 
 		standAt(helper, owner, DEATH_SPOT);
 
@@ -278,7 +277,7 @@ public class RemnantsGameTests {
 		ServerPlayer respawned = dieAndRespawn(helper, player);
 		CompoundTag savedRemnant = unload(helper, onlyRemnant(helper));
 
-		moveTo(respawned, helper.getLevel().getServer().getLevel(Level.NETHER), new Vec3(0.5, 100.0, 0.5));
+		teleport(respawned, helper.getLevel().getServer().getLevel(Level.NETHER), new Vec3(0.5, 100.0, 0.5));
 
 		ServerPlayer afterNetherDeath = dieAndRespawn(helper, respawned);
 		ServerPlayer afterSecondDeath = dieAndRespawn(helper, afterNetherDeath);
@@ -436,7 +435,6 @@ public class RemnantsGameTests {
 	private static void assertSaveMakesNoRemnant(GameTestHelper helper, Item savingItem) {
 		ServerPlayer player = playerWithXp(helper, 100);
 
-		player.setGameMode(GameType.SURVIVAL);
 		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(savingItem));
 		standAt(helper, player, DEATH_SPOT);
 		player.hurtServer(helper.getLevel(), helper.getLevel().damageSources().generic(), 1000.0F);
@@ -448,7 +446,7 @@ public class RemnantsGameTests {
 	}
 
 	private static ServerPlayer playerWithXp(GameTestHelper helper, int points) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		player.giveExperiencePoints(points);
 
@@ -458,20 +456,20 @@ public class RemnantsGameTests {
 	// The server takes a player's on-ground flag from their client's movement, which a mock player never sends.
 	private static void standAt(GameTestHelper helper, ServerPlayer player, BlockPos spot) {
 		helper.setBlock(spot.below(), Blocks.STONE);
-		moveTo(player, helper.getLevel(), helper.absoluteVec(Vec3.atBottomCenterOf(spot)));
+		teleport(player, helper.getLevel(), helper.absoluteVec(Vec3.atBottomCenterOf(spot)));
 		player.setOnGround(true);
 	}
 
 	private static void standOnSlab(GameTestHelper helper, ServerPlayer player, BlockPos spot) {
 		helper.setBlock(spot, Blocks.STONE_SLAB);
-		moveTo(player, helper.getLevel(), helper.absoluteVec(Vec3.atBottomCenterOf(spot).add(0.0, 0.5, 0.0)));
+		teleport(player, helper.getLevel(), helper.absoluteVec(Vec3.atBottomCenterOf(spot).add(0.0, 0.5, 0.0)));
 		player.setOnGround(true);
 	}
 
 	private static void fallIntoTheVoid(GameTestHelper helper, ServerPlayer player) {
 		Vec3 above = helper.absoluteVec(Vec3.atBottomCenterOf(DEATH_SPOT));
 
-		moveTo(player, helper.getLevel(), new Vec3(above.x, helper.getLevel().getMinY() - 10, above.z));
+		teleport(player, helper.getLevel(), new Vec3(above.x, helper.getLevel().getMinY() - 10, above.z));
 	}
 
 	private static void setRespawnPoint(ServerPlayer player, BlockPos pos) {
@@ -481,13 +479,7 @@ public class RemnantsGameTests {
 	}
 
 	private static void moveOnto(ServerPlayer player, Remnant remnant) {
-		moveTo(player, (ServerLevel) remnant.level(), remnant.position());
-	}
-
-	// A player changing dimension is invulnerable until their client's first movement arrives, which a mock never sends.
-	private static void moveTo(ServerPlayer player, ServerLevel level, Vec3 position) {
-		player.teleport(new TeleportTransition(level, position, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING));
-		player.hasChangedDimension();
+		teleport(player, (ServerLevel) remnant.level(), remnant.position());
 	}
 
 	private static Remnant onlyRemnant(GameTestHelper helper) {
@@ -544,13 +536,5 @@ public class RemnantsGameTests {
 		helper.assertTrue(helper.getLevel().addFreshEntity(loaded), "the saved Remnant is added back");
 
 		return (Remnant) loaded;
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(advancement));
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 }

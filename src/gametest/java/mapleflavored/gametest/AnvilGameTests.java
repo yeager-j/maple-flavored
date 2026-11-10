@@ -1,5 +1,9 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.TestItems.book;
+import static mapleflavored.gametest.TestItems.damaged;
+import static mapleflavored.gametest.TestItems.enchantment;
+
 import java.util.List;
 import java.util.Optional;
 import mapleflavored.alloys.Alloy;
@@ -12,11 +16,9 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ContainerInput;
@@ -26,10 +28,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -101,7 +101,7 @@ public class AnvilGameTests {
 
 	@GameTest
 	public void eachUnitRestoresAnEqualShare(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		AnvilMenu anvil = anvil(helper, player);
 
 		anvil.getSlot(AnvilMenu.INPUT_SLOT).set(damaged(Items.DIAMOND_CHESTPLATE));
@@ -117,7 +117,7 @@ public class AnvilGameTests {
 
 	@GameTest
 	public void repairsCostNoXpAndIgnorePriorWork(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		AnvilMenu anvil = anvil(helper, player);
 		ItemStack pickaxe = damaged(Items.IRON_PICKAXE);
 		Holder<Enchantment> efficiency = enchantment(helper, Enchantments.EFFICIENCY);
@@ -153,7 +153,7 @@ public class AnvilGameTests {
 
 	@GameTest
 	public void twoMatchingBooksMakeTheNextLevel(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		AnvilMenu anvil = anvil(helper, player);
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 
@@ -179,7 +179,7 @@ public class AnvilGameTests {
 
 	@GameTest
 	public void payingInPointsLeavesTheRestOfThePlayersXp(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		AnvilMenu anvil = anvil(helper, player);
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 
@@ -206,7 +206,7 @@ public class AnvilGameTests {
 
 	@GameTest
 	public void aCombineCantBeTakenWithoutEnoughPoints(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		AnvilMenu anvil = anvil(helper, player);
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 
@@ -245,7 +245,7 @@ public class AnvilGameTests {
 
 	@GameTest
 	public void renamingCostsTenPoints(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		AnvilMenu anvil = anvil(helper, player);
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		ItemStack named = new ItemStack(Items.IRON_SWORD);
@@ -351,7 +351,7 @@ public class AnvilGameTests {
 	}
 
 	private static void assertFullRepairs(GameTestHelper helper, List<RepairCase> cases) {
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		for (RepairCase repairCase : cases) {
 			AnvilMenu anvil = anvil(helper, player);
@@ -381,7 +381,7 @@ public class AnvilGameTests {
 
 	/** What the anvil's menu syncs to its screen as the reason it refuses these slots. */
 	private static Optional<Refused> refusal(GameTestHelper helper, ItemStack input, ItemStack addition) {
-		AnvilMenu anvil = anvil(helper, survivalPlayer(helper));
+		AnvilMenu anvil = anvil(helper, MockPlayers.survivalPlayer(helper));
 
 		anvil.getSlot(AnvilMenu.INPUT_SLOT).set(input);
 		anvil.getSlot(AnvilMenu.ADDITIONAL_SLOT).set(addition);
@@ -402,20 +402,12 @@ public class AnvilGameTests {
 	}
 
 	private static void assertNoResult(GameTestHelper helper, ItemStack input, ItemStack addition, String label) {
-		AnvilMenu anvil = anvil(helper, survivalPlayer(helper));
+		AnvilMenu anvil = anvil(helper, MockPlayers.survivalPlayer(helper));
 
 		anvil.getSlot(AnvilMenu.INPUT_SLOT).set(input);
 		anvil.getSlot(AnvilMenu.ADDITIONAL_SLOT).set(addition);
 
 		helper.assertTrue(anvil.getSlot(AnvilMenu.RESULT_SLOT).getItem().isEmpty(), label + " makes a result");
-	}
-
-	private static ServerPlayer survivalPlayer(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		player.setGameMode(GameType.SURVIVAL);
-
-		return player;
 	}
 
 	private static AnvilMenu anvil(GameTestHelper helper, ServerPlayer player) {
@@ -432,25 +424,8 @@ public class AnvilGameTests {
 		return anvil.getCarried();
 	}
 
-	/** The item with 1 durability left. */
-	private static ItemStack damaged(Item item) {
-		ItemStack stack = new ItemStack(item);
-
-		stack.setDamageValue(stack.getMaxDamage() - 1);
-
-		return stack;
-	}
-
-	private static ItemStack book(Holder<Enchantment> enchantment, int level) {
-		return EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, level));
-	}
-
 	private static int storedLevel(ItemStack book, Holder<Enchantment> enchantment) {
 		return book.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).getLevel(enchantment);
-	}
-
-	private static Holder<Enchantment> enchantment(GameTestHelper helper, ResourceKey<Enchantment> key) {
-		return helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
 	}
 
 	private static int pointsIntoLevel(ServerPlayer player) {

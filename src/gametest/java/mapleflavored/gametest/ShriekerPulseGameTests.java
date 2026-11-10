@@ -49,7 +49,7 @@ public class ShriekerPulseGameTests {
 		}
 
 		for (MockPlayers.Listening listening : List.of(holder, offhand, bystander)) {
-			SubspaceArena.teleport(listening.player(), Vec3.atBottomCenterOf(feet));
+			MockPlayers.teleport(listening.player(), listening.player().level(), Vec3.atBottomCenterOf(feet));
 			listening.sent(Object.class);
 		}
 

@@ -1,6 +1,7 @@
 package mapleflavored.gametest;
 
-import java.util.ArrayList;
+import static mapleflavored.gametest.LootRolls.assertRate;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,6 @@ public class BookLootGameTests {
 		BuiltInLootTables.TRIAL_CHAMBERS_REWARD_OMINOUS_RARE
 	);
 	private static final int SWEEP_ROLLS = 50;
-	// A seeded rate must land within this many binomial standard deviations of the expected rate.
-	private static final double RATE_TOLERANCE = 4.0;
 
 	@GameTest(maxTicks = 400)
 	public void noChestVaultFishingOrBarterTableGivesEnchantedGearOrStrayBooks(GameTestHelper helper) {
@@ -92,7 +91,7 @@ public class BookLootGameTests {
 	@GameTest
 	public void aChestBookEntryGivesOneDiamond(GameTestHelper helper) {
 		// The library's first pool has no diamond of its own, and its enchanted book entry has weight 10 of 52.
-		Rolls library = rollMany(helper, BuiltInLootTables.STRONGHOLD_LIBRARY, 500);
+		Rolls library = Rolls.of(helper, BuiltInLootTables.STRONGHOLD_LIBRARY, 500);
 		List<ItemStack> poolRolls = library.drops().stream().filter(drop -> !drop.is(Items.EYE_ARMOR_TRIM_SMITHING_TEMPLATE)).toList();
 		List<ItemStack> diamonds = library.of(Items.DIAMOND);
 
@@ -105,7 +104,7 @@ public class BookLootGameTests {
 	@GameTest
 	public void theNormalVaultGivesDiamondsForBooksAndPlainGear(GameTestHelper helper) {
 		int rolls = 1000;
-		Rolls rare = rollMany(helper, BuiltInLootTables.TRIAL_CHAMBERS_REWARD_RARE, rolls);
+		Rolls rare = Rolls.of(helper, BuiltInLootTables.TRIAL_CHAMBERS_REWARD_RARE, rolls);
 
 		helper.assertTrue(rare.of(Items.ENCHANTED_BOOK).isEmpty(), "the normal vault gave an enchanted book");
 		// Two book entries of weight 2 out of 23, and no other diamonds.
@@ -117,7 +116,7 @@ public class BookLootGameTests {
 	@GameTest
 	public void theOminousVaultKeepsOnlyTheMaceBooks(GameTestHelper helper) {
 		int rolls = 1000;
-		Rolls rare = rollMany(helper, BuiltInLootTables.TRIAL_CHAMBERS_REWARD_OMINOUS_RARE, rolls);
+		Rolls rare = Rolls.of(helper, BuiltInLootTables.TRIAL_CHAMBERS_REWARD_OMINOUS_RARE, rolls);
 		List<ItemStack> books = rare.of(Items.ENCHANTED_BOOK);
 		List<ItemStack> diamonds = rare.of(Items.DIAMOND);
 
@@ -145,7 +144,7 @@ public class BookLootGameTests {
 
 	@GameTest
 	public void aWholeOminousVaultOpeningKeepsItsMaceBooks(GameTestHelper helper) {
-		Rolls openings = rollMany(helper, BuiltInLootTables.TRIAL_CHAMBERS_REWARD_OMINOUS, 300);
+		Rolls openings = Rolls.of(helper, BuiltInLootTables.TRIAL_CHAMBERS_REWARD_OMINOUS, 300);
 		Set<ResourceKey<Enchantment>> seen = enchantmentsOn(helper, openings.of(Items.ENCHANTED_BOOK), "ominous vault opening");
 
 		helper.assertFalse(seen.isEmpty(), "an ominous vault opening gave a Mace book");
@@ -156,7 +155,7 @@ public class BookLootGameTests {
 	@GameTest
 	public void fishingGivesOnlyLuckOfTheSeaAndLureBooksAndPlainGear(GameTestHelper helper) {
 		int rolls = 600;
-		Rolls treasure = rollMany(helper, BuiltInLootTables.FISHING_TREASURE, rolls);
+		Rolls treasure = Rolls.of(helper, BuiltInLootTables.FISHING_TREASURE, rolls);
 		List<ItemStack> books = treasure.of(Items.ENCHANTED_BOOK);
 
 		helper.assertValueEqual(enchantmentsOn(helper, books, "fishing"), FISHING_BOOKS, "fishing books");
@@ -226,20 +225,13 @@ public class BookLootGameTests {
 
 	/** Every drop from rolling one table many times with a seed of its own. */
 	private record Rolls(List<ItemStack> drops) {
+		static Rolls of(GameTestHelper helper, ResourceKey<LootTable> key, int rolls) {
+			return new Rolls(LootRolls.rollMany(helper, key, rolls).stream().flatMap(List::stream).toList());
+		}
+
 		List<ItemStack> of(Item item) {
 			return this.drops.stream().filter(drop -> drop.is(item)).toList();
 		}
-	}
-
-	private static Rolls rollMany(GameTestHelper helper, ResourceKey<LootTable> key, int rolls) {
-		RandomSource random = RandomSource.create(key.identifier().hashCode());
-		List<ItemStack> drops = new ArrayList<>();
-
-		for (int i = 0; i < rolls; i++) {
-			drops.addAll(LootRolls.roll(helper, key, random));
-		}
-
-		return new Rolls(drops);
 	}
 
 	private static ResourceKey<Enchantment> onlyEnchantmentAtLevelOne(GameTestHelper helper, ItemStack book, String source) {
@@ -269,12 +261,5 @@ public class BookLootGameTests {
 			helper.assertFalse(found.isEmpty(), item + " was rolled");
 			helper.assertTrue(found.stream().noneMatch(ItemStack::isEnchanted), item + " is plain");
 		}
-	}
-
-	private static void assertRate(GameTestHelper helper, String what, int count, int trials, double expected) {
-		double mean = trials * expected;
-		double band = RATE_TOLERANCE * Math.sqrt(trials * expected * (1.0 - expected));
-
-		helper.assertTrue(Math.abs(count - mean) <= band, what + ": " + count + " of " + trials + ", expected about " + Math.round(mean));
 	}
 }

@@ -31,9 +31,6 @@ import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
  * records which books were taken.
  */
 final class Books {
-	// How many standard deviations a count may stray from its expected share.
-	private static final double RATE_TOLERANCE = 4.0;
-
 	private static final AtomicBoolean RECORDING_TAKES = new AtomicBoolean();
 	private static final Map<BlockPos, List<ResourceKey<Enchantment>>> TAKES = new ConcurrentHashMap<>();
 
@@ -103,13 +100,5 @@ final class Books {
 		);
 
 		return new StructureStart(structure.value(), chunk, 0, withBook);
-	}
-
-	/** Fails the test unless {@code count} of {@code trials} is about the {@code expected} share of them. */
-	static void assertCount(GameTestHelper helper, String what, int count, int trials, double expected) {
-		double mean = trials * expected;
-		double band = RATE_TOLERANCE * Math.sqrt(trials * expected * (1.0 - expected));
-
-		helper.assertTrue(Math.abs(count - mean) <= band, what + ": " + count + " of " + trials + ", expected about " + Math.round(mean));
 	}
 }

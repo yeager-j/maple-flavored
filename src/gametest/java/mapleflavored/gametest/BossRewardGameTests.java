@@ -1,11 +1,12 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
+
 import java.util.List;
 import mapleflavored.MapleFlavored;
 import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -41,9 +42,9 @@ import net.minecraft.world.phys.Vec3;
  * {@link SubspaceArena}.
  */
 public class BossRewardGameTests {
-	private static final String ELDER_GUARDIAN_ADVANCEMENT = "maple_flavored:adventure/kill_elder_guardian";
-	private static final String FREE_THE_END = "minecraft:end/kill_dragon";
-	private static final String SNEAK_100 = "minecraft:adventure/avoid_vibration";
+	private static final Identifier ELDER_GUARDIAN_ADVANCEMENT = Identifier.parse("maple_flavored:adventure/kill_elder_guardian");
+	private static final Identifier FREE_THE_END = Identifier.parse("minecraft:end/kill_dragon");
+	private static final Identifier SNEAK_100 = Identifier.parse("minecraft:adventure/avoid_vibration");
 	private static final ResourceKey<Enchantment> ZEPHYR = ResourceKey.create(Registries.ENCHANTMENT, MapleFlavored.id("zephyr"));
 
 	// A dragon fight counts players within 192 blocks of the point 128 blocks above its origin.
@@ -243,13 +244,5 @@ public class BossRewardGameTests {
 			.stream()
 			.map(ItemEntity::getItem)
 			.toList();
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(advancement));
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 }

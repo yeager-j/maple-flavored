@@ -1,25 +1,25 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
 import static mapleflavored.gametest.EnchantingTables.TABLE_POS;
 import static mapleflavored.gametest.EnchantingTables.UPPER_RING;
 import static mapleflavored.gametest.EnchantingTables.apple;
 import static mapleflavored.gametest.EnchantingTables.assertRefuses;
 import static mapleflavored.gametest.EnchantingTables.assertSaves;
-import static mapleflavored.gametest.EnchantingTables.book;
-import static mapleflavored.gametest.EnchantingTables.enchantment;
 import static mapleflavored.gametest.EnchantingTables.fill;
 import static mapleflavored.gametest.EnchantingTables.fullLibraryBooks;
 import static mapleflavored.gametest.EnchantingTables.fullLibraryLevels;
 import static mapleflavored.gametest.EnchantingTables.gear;
 import static mapleflavored.gametest.EnchantingTables.grindstone;
-import static mapleflavored.gametest.EnchantingTables.isDone;
 import static mapleflavored.gametest.EnchantingTables.placeChiseledShelf;
 import static mapleflavored.gametest.EnchantingTables.placeTable;
 import static mapleflavored.gametest.EnchantingTables.row;
 import static mapleflavored.gametest.EnchantingTables.shelves;
-import static mapleflavored.gametest.EnchantingTables.survivalPlayer;
+import static mapleflavored.gametest.EnchantingTables.survivalPlayerWithLevels;
 import static mapleflavored.gametest.EnchantingTables.table;
 import static mapleflavored.gametest.EnchantingTables.toggle;
+import static mapleflavored.gametest.TestItems.book;
+import static mapleflavored.gametest.TestItems.enchantment;
 
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +67,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 
@@ -92,7 +91,7 @@ public class EnchantingTableGameTests {
 
 		placeTable(helper, plainShelves, List.of(List.of(book(sharpness, 2))));
 
-		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
+		EnchantingTableMenu table = table(helper, survivalPlayerWithLevels(helper, 0));
 
 		helper.assertValueEqual(table.offers(), Map.of(sharpness, 2), "offers with 15 shelves");
 
@@ -115,7 +114,7 @@ public class EnchantingTableGameTests {
 		));
 
 		helper.assertValueEqual(
-			table(helper, survivalPlayer(helper, 0)).offers(), Map.of(sharpness, 3, smite, 1), "offers (never Mending)"
+			table(helper, survivalPlayerWithLevels(helper, 0)).offers(), Map.of(sharpness, 3, smite, 1), "offers (never Mending)"
 		);
 		helper.succeed();
 	}
@@ -128,7 +127,7 @@ public class EnchantingTableGameTests {
 		placeTable(helper, UPPER_RING, List.of());
 		placeChiseledShelf(helper, TABLE_POS.offset(chiseledOffset), List.of(book(smite, 1)));
 
-		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
+		EnchantingTableMenu table = table(helper, survivalPlayerWithLevels(helper, 0));
 
 		helper.assertValueEqual(table.offers(), Map.of(smite, 1), "offers with the gap open");
 
@@ -143,7 +142,7 @@ public class EnchantingTableGameTests {
 	public void aSaveAppliesTheChecklistForLapisAndADeposit(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		List<BlockPos> chiseled = placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 3))));
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		EnchantingTableMenu table = table(helper, player);
 		List<ItemStack> shelvedBefore = shelvedBooks(helper, chiseled);
 
@@ -168,7 +167,7 @@ public class EnchantingTableGameTests {
 	public void incompatibleChoicesAreRefused(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		Holder<Enchantment> smite = enchantment(helper, Enchantments.SMITE);
-		ServerPlayer player = survivalPlayer(helper, 60);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 60);
 		ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
 
 		sword.enchant(sharpness, 1);
@@ -237,7 +236,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void alloyGearsDepositIsItsOwnIngot(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		Item steelSword = AlloyGear.of(Alloy.STEEL, GearKind.SWORD);
 
 		placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 1))));
@@ -258,7 +257,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void anEnchantmentAboveTheLibraryMustBeLowered(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		ItemStack sword = new ItemStack(Items.IRON_SWORD);
 
 		sword.enchant(sharpness, 5);
@@ -288,7 +287,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void anEnchantmentBelowTheLibraryRisesToIt(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		ItemStack sword = new ItemStack(Items.IRON_SWORD);
 
 		sword.enchant(sharpness, 3);
@@ -306,7 +305,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void aSavedEnchantmentIsCarriedEvenWhenTheItemIsUnchanged(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		ItemStack sword = new ItemStack(Items.IRON_SWORD);
 
 		sword.enchant(sharpness, 3);
@@ -331,7 +330,7 @@ public class EnchantingTableGameTests {
 	public void aChoiceWhoseBookIsTakenCanBeUnticked(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		Holder<Enchantment> unbreaking = enchantment(helper, Enchantments.UNBREAKING);
-		ServerPlayer player = survivalPlayer(helper, 60);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 60);
 		BlockPos shelf = placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 1), book(unbreaking, 1)))).getFirst();
 		EnchantingTableMenu table = table(helper, player);
 
@@ -357,7 +356,7 @@ public class EnchantingTableGameTests {
 	public void untickingAnEnchantmentRemovesIt(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		Holder<Enchantment> unbreaking = enchantment(helper, Enchantments.UNBREAKING);
-		ServerPlayer player = survivalPlayer(helper, 60);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 60);
 		ItemStack sword = new ItemStack(Items.IRON_SWORD);
 
 		sword.enchant(sharpness, 1);
@@ -380,7 +379,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void usingTheTableOpensTheChecklist(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 
 		placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 1))));
 		helper.useBlock(TABLE_POS, player);
@@ -399,8 +398,8 @@ public class EnchantingTableGameTests {
 	public void playersShareALibraryButNotTheirSlots(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		Holder<Enchantment> unbreaking = enchantment(helper, Enchantments.UNBREAKING);
-		ServerPlayer enchanter = survivalPlayer(helper, 60);
-		ServerPlayer friend = survivalPlayer(helper, 30);
+		ServerPlayer enchanter = survivalPlayerWithLevels(helper, 60);
+		ServerPlayer friend = survivalPlayerWithLevels(helper, 30);
 
 		placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 2), book(unbreaking, 3))));
 
@@ -430,7 +429,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void savingNeedsAChoiceAndItsPayment(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 
 		placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 1))));
 
@@ -458,7 +457,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void theTableTakesOnlyEnchantableGearAndGoldenApples(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
+		EnchantingTableMenu table = table(helper, survivalPlayerWithLevels(helper, 0));
 
 		placeTable(helper, UPPER_RING, List.of());
 
@@ -483,9 +482,8 @@ public class EnchantingTableGameTests {
 	public void creativePlayersPayNothing(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		Holder<Enchantment> unbreaking = enchantment(helper, Enchantments.UNBREAKING);
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.creativePlayer(helper);
 
-		player.setGameMode(GameType.CREATIVE);
 		placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 1), book(unbreaking, 1))));
 
 		EnchantingTableMenu table = table(helper, player);
@@ -502,7 +500,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void onlyListedEnchantmentsToggle(GameTestHelper helper) {
 		Holder<Enchantment> protection = enchantment(helper, Enchantments.PROTECTION);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 
 		placeTable(helper, UPPER_RING, List.of(List.of(book(protection, 1))));
 
@@ -521,7 +519,7 @@ public class EnchantingTableGameTests {
 	public void theGrindstoneHandsBackTheDeposit(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		Holder<Enchantment> unbreaking = enchantment(helper, Enchantments.UNBREAKING);
-		ServerPlayer player = survivalPlayer(helper, 60);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 60);
 
 		placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 1), book(unbreaking, 1))));
 
@@ -600,7 +598,7 @@ public class EnchantingTableGameTests {
 		Holder<Enchantment> mending = enchantment(helper, Enchantments.MENDING);
 		placeTable(helper, UPPER_RING, shelves(fullLibraryBooks(helper)));
 
-		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
+		EnchantingTableMenu table = table(helper, survivalPlayerWithLevels(helper, 0));
 		Map<Holder<Enchantment>, Integer> expectedOffers = new HashMap<>(fullLibraryLevels(helper));
 
 		expectedOffers.put(mending, 1);
@@ -624,7 +622,7 @@ public class EnchantingTableGameTests {
 
 		placeTable(helper, UPPER_RING, shelves(blightOne));
 
-		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
+		EnchantingTableMenu table = table(helper, survivalPlayerWithLevels(helper, 0));
 
 		helper.assertValueEqual(table.library().progress(), new Library.Progress(129, 130), "progress with Blight I");
 		helper.assertFalse(table.offers().containsKey(mending), "Mending is offered with Blight I");
@@ -642,7 +640,7 @@ public class EnchantingTableGameTests {
 		Holder<Enchantment> mending = enchantment(helper, Enchantments.MENDING);
 		Holder<Enchantment> zephyr = enchantment(helper, Zephyr.ENCHANTMENT);
 		List<BlockPos> chiseled = placeTable(helper, UPPER_RING, shelves(fullLibraryBooks(helper)));
-		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
+		EnchantingTableMenu table = table(helper, survivalPlayerWithLevels(helper, 0));
 		ChiseledBookShelfBlockEntity zephyrShelf = null;
 		int zephyrSlot = -1;
 
@@ -675,7 +673,7 @@ public class EnchantingTableGameTests {
 	public void aFullLibraryWithoutPowerOffersNothingButStillCounts(GameTestHelper helper) {
 		placeTable(helper, List.of(), shelves(fullLibraryBooks(helper)));
 
-		ServerPlayer player = survivalPlayer(helper, 0);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 0);
 
 		helper.useBlock(TABLE_POS, player);
 
@@ -692,7 +690,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void aFullLibraryLetsGearTakeAndKeepMending(GameTestHelper helper) {
 		Holder<Enchantment> mending = enchantment(helper, Enchantments.MENDING);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		ItemStack carriedMending = new ItemStack(Items.IRON_SWORD);
 
 		carriedMending.enchant(mending, 1);
@@ -715,7 +713,7 @@ public class EnchantingTableGameTests {
 	public void gearKeepsMendingOnlyUntilSavedWithoutAFullLibrary(GameTestHelper helper) {
 		Holder<Enchantment> mending = enchantment(helper, Enchantments.MENDING);
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		ServerPlayer player = survivalPlayer(helper, 60);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 60);
 		ItemStack sword = new ItemStack(Items.IRON_SWORD);
 
 		sword.enchant(mending, 1);
@@ -744,7 +742,7 @@ public class EnchantingTableGameTests {
 		Holder<Enchantment> zephyr = enchantment(helper, Zephyr.ENCHANTMENT);
 		List<ItemStack> noZephyr = fullLibraryBooks(helper).stream().filter(book -> !holds(book, zephyr)).toList();
 		List<BlockPos> chiseled = placeTable(helper, UPPER_RING, shelves(noZephyr));
-		ServerPlayer player = survivalPlayer(helper, 0);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 0);
 		EnchantingTableMenu table = table(helper, player);
 
 		helper.assertFalse(isDone(helper, player, FULL_LIBRARY_ADVANCEMENT), "a Library one book short grants Well Read");
@@ -753,9 +751,9 @@ public class EnchantingTableGameTests {
 		table.broadcastChanges();
 
 		helper.assertTrue(isDone(helper, player, FULL_LIBRARY_ADVANCEMENT), "completing the Library with the table open grants Well Read");
-		helper.assertFalse(isDone(helper, survivalPlayer(helper, 0), FULL_LIBRARY_ADVANCEMENT), "a player who never used the table has it");
+		helper.assertFalse(isDone(helper, survivalPlayerWithLevels(helper, 0), FULL_LIBRARY_ADVANCEMENT), "a player who never used the table has it");
 
-		ServerPlayer secondPlayer = survivalPlayer(helper, 0);
+		ServerPlayer secondPlayer = survivalPlayerWithLevels(helper, 0);
 
 		table(helper, secondPlayer);
 		helper.assertTrue(isDone(helper, secondPlayer, FULL_LIBRARY_ADVANCEMENT), "opening a Full table grants Well Read");
@@ -770,7 +768,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void aTableBelowFifteenBookshelvesSaysSo(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		ItemStack sword = new ItemStack(Items.IRON_SWORD);
 
 		sword.enchant(sharpness, 5);
@@ -802,7 +800,7 @@ public class EnchantingTableGameTests {
 	@GameTest
 	public void anEmptyTableOnlyAsksForAnItem(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 
 		placeTable(helper, UPPER_RING, List.of(List.of(book(sharpness, 1))));
 
@@ -819,7 +817,7 @@ public class EnchantingTableGameTests {
 
 	@GameTest
 	public void theItemDecidesWhatAButtonToggles(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 
 		placeTable(helper, UPPER_RING, shelves(fullLibraryBooks(helper)));
 
@@ -838,7 +836,7 @@ public class EnchantingTableGameTests {
 
 	@GameTest
 	public void shiftClickingTheItemsMaterialFillsTheMaterialSlot(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 
 		placeTable(helper, UPPER_RING, List.of());
 
@@ -865,7 +863,7 @@ public class EnchantingTableGameTests {
 	public void theClientBuildsTheServersChecklist(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		Holder<Enchantment> smite = enchantment(helper, Enchantments.SMITE);
-		ServerPlayer player = survivalPlayer(helper, 30);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 30);
 		ItemStack sword = new ItemStack(Items.IRON_SWORD);
 
 		sword.enchant(sharpness, 5);
@@ -948,7 +946,7 @@ public class EnchantingTableGameTests {
 	private static void assertProgress(GameTestHelper helper, List<ItemStack> books, int levels, String label) {
 		placeTable(helper, UPPER_RING, List.of(books));
 
-		helper.assertValueEqual(table(helper, survivalPlayer(helper, 0)).library().progress().levels(), levels, label);
+		helper.assertValueEqual(table(helper, survivalPlayerWithLevels(helper, 0)).library().progress().levels(), levels, label);
 	}
 
 	private static List<ItemStack> shelvedBooks(GameTestHelper helper, List<BlockPos> shelves) {
@@ -974,7 +972,7 @@ public class EnchantingTableGameTests {
 	private static void assertChoicesSave(
 		GameTestHelper helper, int level, ItemStack item, ItemStack material, List<Holder<Enchantment>> choices, int slots
 	) {
-		ServerPlayer player = survivalPlayer(helper, level);
+		ServerPlayer player = survivalPlayerWithLevels(helper, level);
 		EnchantingTableMenu table = table(helper, player);
 		String label = choices.size() + " on " + item.getItem() + " at level " + level;
 
@@ -1021,7 +1019,7 @@ public class EnchantingTableGameTests {
 
 	/** Shelves the book with a fresh player's click, returning whether that player earned the shelving advancement. */
 	private static boolean shelve(GameTestHelper helper, BlockPos shelf, ItemStack book) {
-		ServerPlayer player = survivalPlayer(helper, 0);
+		ServerPlayer player = survivalPlayerWithLevels(helper, 0);
 
 		player.setItemInHand(InteractionHand.MAIN_HAND, book);
 		helper.useBlock(shelf, player);

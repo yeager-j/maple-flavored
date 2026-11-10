@@ -34,7 +34,7 @@ public class SpawnedGearGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void spawnedGearDropsAtVanillasChanceWithoutEnchantments(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		for (int i = 0; i < KILLS; i++) {
 			Zombie zombie = addZombie(helper);
@@ -45,10 +45,8 @@ public class SpawnedGearGameTests {
 		}
 
 		List<ItemStack> swords = droppedItems(helper, Items.IRON_SWORD);
-		double mean = KILLS * DROP_CHANCE;
-		double band = 4.0 * Math.sqrt(KILLS * DROP_CHANCE * (1.0 - DROP_CHANCE));
 
-		helper.assertTrue(Math.abs(swords.size() - mean) <= band, swords.size() + " of " + KILLS + " swords dropped, expected about " + Math.round(mean));
+		LootRolls.assertRate(helper, "swords dropped", swords.size(), KILLS, DROP_CHANCE);
 		helper.assertTrue(swords.stream().noneMatch(ItemStack::isEnchanted), "a dropped sword kept its enchantments");
 		helper.succeed();
 	}
@@ -56,7 +54,7 @@ public class SpawnedGearGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void spawnedGearSwappedForPickedUpGearDropsPlainAndThePickedUpGearDropsAsItWas(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		Zombie zombie = addZombie(helper);
 		ItemStack found = enchanted(helper, Items.NETHERITE_SWORD, Enchantments.UNBREAKING, 2);
 

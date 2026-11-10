@@ -1,6 +1,6 @@
 package mapleflavored.gametest;
 
-import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
+import static mapleflavored.gametest.MockPlayers.survivalPlayer;
 
 import mapleflavored.experience.ExperiencePoints;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -16,7 +16,7 @@ public class ExperiencePointsGameTests {
 
 	@GameTest
 	public void everyPointTotalRoundTripsThroughLevelAndProgress(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 		int level = 0;
 		int pointsIntoLevel = 0;
 
@@ -41,7 +41,7 @@ public class ExperiencePointsGameTests {
 
 	@GameTest
 	public void largePointTotalsRoundTrip(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		for (int points : LARGE_POINTS) {
 			ExperiencePoints.set(player, points);
@@ -54,7 +54,7 @@ public class ExperiencePointsGameTests {
 
 	@GameTest
 	public void addingPointsLandsExactlyOnTheNextLevel(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		// Level 30 is 1,395 points.
 		ExperiencePoints.set(player, 1_394);
@@ -69,7 +69,7 @@ public class ExperiencePointsGameTests {
 
 	@GameTest
 	public void addingPointsStopsAtTheMostAnIntHolds(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		ExperiencePoints.set(player, Integer.MAX_VALUE - 5);
 		ExperiencePoints.add(player, 100);
@@ -80,8 +80,8 @@ public class ExperiencePointsGameTests {
 
 	@GameTest
 	public void clearingTakesEveryPointAndCopyingCarriesLevelsSetByCommand(GameTestHelper helper) {
-		ServerPlayer from = playerWithMaxHearts(helper, 10);
-		ServerPlayer to = playerWithMaxHearts(helper, 10);
+		ServerPlayer from = survivalPlayer(helper);
+		ServerPlayer to = survivalPlayer(helper);
 
 		MockPlayers.runCommand(helper, from, "xp set @s 40 levels");
 		MockPlayers.runCommand(helper, from, "xp add @s 10 points");

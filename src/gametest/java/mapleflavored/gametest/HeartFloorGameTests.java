@@ -1,18 +1,20 @@
 package mapleflavored.gametest;
 
-import static mapleflavored.gametest.MockPlayers.assertMaxHearts;
+import static mapleflavored.gametest.Advancements.advancement;
+import static mapleflavored.gametest.Advancements.isDone;
+import static mapleflavored.gametest.MaxHearts.assertMaxHearts;
+import static mapleflavored.gametest.MaxHearts.survivalPlayerWithMaxHearts;
 import static mapleflavored.gametest.MockPlayers.dieAndRespawn;
 import static mapleflavored.gametest.MockPlayers.inHardcore;
-import static mapleflavored.gametest.MockPlayers.playerReadingChat;
-import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
 import static mapleflavored.gametest.MockPlayers.respawn;
 import static mapleflavored.gametest.MockPlayers.runCommand;
+import static mapleflavored.gametest.MockPlayers.survivalPlayer;
+import static mapleflavored.gametest.MockPlayers.survivalPlayerReadingChat;
 
 import java.util.ArrayList;
 import java.util.List;
 import mapleflavored.hearts.Hearts;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
@@ -27,20 +29,20 @@ import net.minecraft.world.item.Items;
 /** Milestones, the Heart Floor they lower on Normal and Hard, and what death costs around that floor. */
 public class HeartFloorGameTests {
 	// Written out here rather than read from Milestones, so the test also checks that each advancement is loaded.
-	private static final List<String> MILESTONES = List.of(
-		"maple_flavored:story/obtain_copper_ingot",
-		"minecraft:story/smelt_iron",
-		"minecraft:story/mine_diamond",
-		"minecraft:story/enter_the_nether",
-		"maple_flavored:story/obtain_ender_eye",
-		"minecraft:story/enter_the_end",
-		"maple_flavored:nether/obtain_netherite_ingot"
+	private static final List<Identifier> MILESTONES = List.of(
+		Identifier.parse("maple_flavored:story/obtain_copper_ingot"),
+		Identifier.parse("minecraft:story/smelt_iron"),
+		Identifier.parse("minecraft:story/mine_diamond"),
+		Identifier.parse("minecraft:story/enter_the_nether"),
+		Identifier.parse("maple_flavored:story/obtain_ender_eye"),
+		Identifier.parse("minecraft:story/enter_the_end"),
+		Identifier.parse("maple_flavored:nether/obtain_netherite_ingot")
 	);
 	private static final FontDescription BROKEN_HEART_FONT = new FontDescription.Resource(Identifier.parse("maple_flavored:icons"));
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void eachMilestoneLowersTheHeartFloorOnNormal(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		helper.assertValueEqual(heartFloor(player), 10, "Heart Floor with no Milestones");
 
@@ -69,7 +71,7 @@ public class HeartFloorGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void grantingAMilestoneTwiceCountsOnce(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		grant(helper, player, MILESTONES.getFirst());
 		grant(helper, player, MILESTONES.getFirst());
@@ -80,7 +82,7 @@ public class HeartFloorGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void revokingAMilestoneRaisesTheHeartFloor(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		grant(helper, player, MILESTONES.get(0));
 		grant(helper, player, MILESTONES.get(1));
@@ -92,7 +94,7 @@ public class HeartFloorGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void anItemMilestoneCountsOnceTheItemIsInTheInventory(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		player.getInventory().add(new ItemStack(Items.COPPER_INGOT));
 		// A ticking player sends inventory changes to advancement triggers each tick; a mock player is never ticked.
@@ -105,7 +107,7 @@ public class HeartFloorGameTests {
 
 	@GameTest
 	public void eachMilestoneDescriptionStartsWithABrokenHeart(GameTestHelper helper) {
-		for (String milestone : MILESTONES) {
+		for (Identifier milestone : MILESTONES) {
 			Component description = advancement(helper, milestone).value().display().orElseThrow().description();
 			boolean startsWithBrokenHeart = description.getSiblings().getFirst().getContents() instanceof PlainTextContents text
 				&& text.text().equals("")
@@ -131,10 +133,10 @@ public class HeartFloorGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void chatAnnouncesEachLowerHeartFloor(GameTestHelper helper) {
 		List<Component> chat = new ArrayList<>();
-		ServerPlayer player = playerReadingChat(helper, chat);
+		ServerPlayer player = survivalPlayerReadingChat(helper, chat);
 
 		grant(helper, player, MILESTONES.get(0));
-		grant(helper, player, "minecraft:story/mine_stone");
+		grant(helper, player, Identifier.parse("minecraft:story/mine_stone"));
 		grant(helper, player, MILESTONES.get(1));
 		revoke(helper, player, MILESTONES.get(1));
 		grant(helper, player, MILESTONES.get(1));
@@ -146,7 +148,7 @@ public class HeartFloorGameTests {
 	@GameTest(environment = "maple_flavored_gametest:easy")
 	public void chatAnnouncesNoHeartFloorOnEasy(GameTestHelper helper) {
 		List<Component> chat = new ArrayList<>();
-		ServerPlayer player = playerReadingChat(helper, chat);
+		ServerPlayer player = survivalPlayerReadingChat(helper, chat);
 
 		grant(helper, player, MILESTONES.getFirst());
 
@@ -156,7 +158,7 @@ public class HeartFloorGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:hard")
 	public void deathAfterMilestonesFallsToTheLowerHeartFloor(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		grantMilestones(helper, player, 3);
 
@@ -172,7 +174,7 @@ public class HeartFloorGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void deathBelowTheHeartFloorAfterARevokedMilestoneCostsNothing(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		grantMilestones(helper, player, 4);
 		runCommand(helper, player, "maxhearts set @s 6");
@@ -190,7 +192,7 @@ public class HeartFloorGameTests {
 	@GameTest(environment = "maple_flavored_gametest:easy")
 	public void chatAnnouncesTheHeartFloorADifficultySwitchLowers(GameTestHelper helper) {
 		List<Component> chat = new ArrayList<>();
-		ServerPlayer player = playerReadingChat(helper, chat);
+		ServerPlayer player = survivalPlayerReadingChat(helper, chat);
 		var server = helper.getLevel().getServer();
 
 		grantMilestones(helper, player, 2);
@@ -211,7 +213,7 @@ public class HeartFloorGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void hardcoreHasNoHeartFloorAndAnnouncesNone(GameTestHelper helper) {
 		List<Component> chat = new ArrayList<>();
-		ServerPlayer player = playerReadingChat(helper, chat);
+		ServerPlayer player = survivalPlayerReadingChat(helper, chat);
 
 		inHardcore(helper, () -> {
 			grant(helper, player, MILESTONES.get(0));
@@ -229,7 +231,7 @@ public class HeartFloorGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:hard")
 	public void deathInHardcoreCostsNoMaxHearts(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 13);
+		ServerPlayer player = survivalPlayerWithMaxHearts(helper, 13);
 
 		inHardcore(helper, () -> player.kill(player.level()));
 
@@ -245,7 +247,7 @@ public class HeartFloorGameTests {
 	// Stands in for a world switched to Easy while a player is below their floor.
 	@GameTest(environment = "maple_flavored_gametest:easy")
 	public void deathBelowTheHeartFloorOnEasyCostsNothing(GameTestHelper helper) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		grantMilestones(helper, player, MILESTONES.size());
 		runCommand(helper, player, "maxhearts set @s 5");
@@ -257,7 +259,7 @@ public class HeartFloorGameTests {
 	}
 
 	private static void assertHeartFloorWithAllMilestones(GameTestHelper helper, int heartFloor) {
-		ServerPlayer player = playerWithMaxHearts(helper, 10);
+		ServerPlayer player = survivalPlayer(helper);
 
 		grantMilestones(helper, player, MILESTONES.size());
 
@@ -280,36 +282,24 @@ public class HeartFloorGameTests {
 	}
 
 	private static void assertParent(GameTestHelper helper, String advancement, String parent) {
-		var parentId = advancement(helper, advancement).value().parent();
+		var parentId = advancement(helper, Identifier.parse(advancement)).value().parent();
 
 		helper.assertValueEqual(parentId.map(Identifier::toString).orElse("none"), parent, advancement + "'s parent");
 	}
 
 	private static void grantMilestones(GameTestHelper helper, ServerPlayer player, int count) {
-		for (String milestone : MILESTONES.subList(0, count)) {
+		for (Identifier milestone : MILESTONES.subList(0, count)) {
 			grant(helper, player, milestone);
 		}
 	}
 
-	private static void grant(GameTestHelper helper, ServerPlayer player, String advancement) {
+	private static void grant(GameTestHelper helper, ServerPlayer player, Identifier advancement) {
 		runCommand(helper, player, "advancement grant @s only " + advancement);
 		helper.assertTrue(isDone(helper, player, advancement), advancement + " is granted");
 	}
 
-	private static void revoke(GameTestHelper helper, ServerPlayer player, String advancement) {
+	private static void revoke(GameTestHelper helper, ServerPlayer player, Identifier advancement) {
 		runCommand(helper, player, "advancement revoke @s only " + advancement);
 		helper.assertFalse(isDone(helper, player, advancement), advancement + " is revoked");
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String advancement) {
-		return player.getAdvancements().getOrStartProgress(advancement(helper, advancement)).isDone();
-	}
-
-	private static AdvancementHolder advancement(GameTestHelper helper, String id) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(id));
-
-		helper.assertTrue(holder != null, id + " is loaded");
-
-		return holder;
 	}
 }

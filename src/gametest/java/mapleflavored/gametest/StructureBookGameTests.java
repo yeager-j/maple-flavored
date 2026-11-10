@@ -15,7 +15,6 @@ import mapleflavored.structurebooks.TerrainPreview;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -35,7 +34,6 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
@@ -152,7 +150,7 @@ public class StructureBookGameTests {
 			.filter(bookChunk::isInside)
 			.forEach(pos -> helper.assertTrue(level.getFluidState(pos).isEmpty(), "liquid left at " + pos));
 
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		use(player, book);
 
@@ -164,7 +162,7 @@ public class StructureBookGameTests {
 	public void takingAMineshaftBookGivesEfficiencyOne(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos book = Books.only(helper, Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)));
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		use(player, book);
 
@@ -178,7 +176,7 @@ public class StructureBookGameTests {
 	public void aFullInventoryRefusesTheBook(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos book = Books.only(helper, Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)));
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		Inventory inventory = player.getInventory();
 
 		for (int slot = 0; slot < MAIN_INVENTORY_SLOTS; slot++) {
@@ -228,7 +226,7 @@ public class StructureBookGameTests {
 
 		helper.assertValueEqual(chunksThatAddedABook, List.of(ChunkPos.containing(book)), "chunks whose building added a book");
 
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		use(player, book);
 
@@ -251,7 +249,7 @@ public class StructureBookGameTests {
 
 		helper.assertTrue(level.getBlockState(book).is(StructureBooks.BLOCK), "the book survives the overlapping structure");
 
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		use(player, book);
 
@@ -281,7 +279,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void theBookCantBeMined(GameTestHelper helper) {
 		BlockPos book = setBook(helper);
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		player.snapTo(Vec3.atBottomCenterOf(helper.absolutePos(BOOK_POS.north(2))));
 		helper.assertTrue(player.isWithinBlockInteractionRange(book, 1.0), "the player can reach the book");
@@ -328,7 +326,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void aBucketCantReplaceTheBook(GameTestHelper helper) {
 		BlockPos book = setBook(helper);
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 		BucketItem bucket = (BucketItem) Items.WATER_BUCKET;
 
 		bucket.emptyContents(player, helper.getLevel(), book, hitTop(book));
@@ -352,7 +350,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void placingABlockOnTheBookPlacesItBeside(GameTestHelper helper) {
 		BlockPos book = setBook(helper);
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		player.snapTo(Vec3.atBottomCenterOf(helper.absolutePos(BOOK_POS.north(2))));
 		player.setShiftKeyDown(true);
@@ -427,7 +425,7 @@ public class StructureBookGameTests {
 	public void aBlankBookCrumblesWhenAPlayerTriesToTakeIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos book = helper.absolutePos(BOOK_POS);
-		ServerPlayer player = survivalPlayer(helper);
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		MockPlayers.runCommand(helper, player, "setblock %d %d %d maple_flavored:structure_book".formatted(book.getX(), book.getY(), book.getZ()));
 		helper.assertBlockPresent(StructureBooks.BLOCK, BOOK_POS);
@@ -445,18 +443,10 @@ public class StructureBookGameTests {
 		String command = "setblock %d %d %d maple_flavored:structure_book{enchantment:\"minecraft:efficiency\"}"
 			.formatted(book.getX(), book.getY(), book.getZ());
 
-		MockPlayers.runCommand(helper, survivalPlayer(helper), command);
+		MockPlayers.runCommand(helper, MockPlayers.survivalPlayer(helper), command);
 		helper.assertBlockPresent(StructureBooks.BLOCK, BOOK_POS);
 
 		return book;
-	}
-
-	private static ServerPlayer survivalPlayer(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		player.setGameMode(GameType.SURVIVAL);
-
-		return player;
 	}
 
 	private static void use(ServerPlayer player, BlockPos pos) {

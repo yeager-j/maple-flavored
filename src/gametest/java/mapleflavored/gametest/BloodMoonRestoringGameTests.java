@@ -261,7 +261,7 @@ public class BloodMoonRestoringGameTests {
 		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = Spots.of(helper, original);
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		site.putPlayer(player, 20);
 		original.kill(site.level());
@@ -284,7 +284,7 @@ public class BloodMoonRestoringGameTests {
 		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = Spots.of(helper, original);
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		site.putPlayer(player, 10);
 		original.kill(site.level());
@@ -309,7 +309,7 @@ public class BloodMoonRestoringGameTests {
 	public void missedBloodMoonsDontStack(GameTestHelper helper) {
 		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		site.putPlayer(player, 10);
 		original.kill(site.level());

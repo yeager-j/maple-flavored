@@ -1,6 +1,7 @@
 package mapleflavored.gametest;
 
-import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
+import static mapleflavored.gametest.MockPlayers.survivalPlayer;
+import static mapleflavored.gametest.TestItems.enchantment;
 
 import java.util.List;
 import mapleflavored.MapleFlavored;
@@ -23,7 +24,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.level.GameType;
 
 /**
  * Blight: a hit gives Wither I for 4 seconds per level, each hit refreshes it, and it can't join Fire Aspect.
@@ -73,11 +73,9 @@ public class BlightGameTests {
 	@GameTest(maxTicks = 200)
 	public void repeatedHitsKeepWitheringAPlayersHearts(GameTestHelper helper) {
 		ServerPlayer attacker = attackerWithBlight(helper, 1);
-		ServerPlayer victim = playerWithMaxHearts(helper, 10);
+		ServerPlayer victim = survivalPlayer(helper);
 		int rehit = WITHERING_INTERVAL / 2 + MARGIN;
 
-		// The test level is in Creative, where players can't be hurt.
-		victim.setGameMode(GameType.SURVIVAL);
 		attacker.attack(victim);
 		assertWither(helper, victim, TICKS_PER_LEVEL);
 
@@ -122,17 +120,13 @@ public class BlightGameTests {
 	}
 
 	private static ServerPlayer attackerWithBlight(GameTestHelper helper, int level) {
-		ServerPlayer attacker = helper.makeMockServerPlayerInLevel();
+		ServerPlayer attacker = survivalPlayer(helper);
 		ItemStack sword = new ItemStack(Items.IRON_SWORD);
 
 		sword.enchant(enchantment(helper, BLIGHT), level);
 		attacker.setItemInHand(InteractionHand.MAIN_HAND, sword);
 
 		return attacker;
-	}
-
-	private static Holder<Enchantment> enchantment(GameTestHelper helper, ResourceKey<Enchantment> key) {
-		return helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
 	}
 
 	private static void assertWither(GameTestHelper helper, LivingEntity victim, int ticks) {

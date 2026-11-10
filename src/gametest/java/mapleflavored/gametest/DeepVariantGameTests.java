@@ -23,7 +23,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -323,7 +322,7 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void eachDeepVariantDropsItsBaseMobsLootAndTwiceItsXp(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		ServerPlayer killer = MockPlayers.survivalPlayer(helper);
 
 		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
 			EntityType<? extends Mob> baseType = DeepVariants.baseOf(deepType).orElseThrow();
@@ -352,7 +351,7 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void aDeepSkeletonWithABowDropsTwiceASkeletonsXp(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		ServerPlayer killer = MockPlayers.survivalPlayer(helper);
 		Mob archer = archer(helper, DeepVariants.DEEP_SKELETON, MOB_POS);
 
 		// A skeleton with a bow gives its 5 XP plus 1 to 3 for the bow.

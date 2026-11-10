@@ -1,7 +1,8 @@
 package mapleflavored.gametest;
 
-import static mapleflavored.gametest.MockPlayers.assertMaxHearts;
-import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
+import static mapleflavored.gametest.Advancements.isDone;
+import static mapleflavored.gametest.MaxHearts.assertMaxHearts;
+import static mapleflavored.gametest.MaxHearts.survivalPlayerWithMaxHearts;
 import static mapleflavored.gametest.MockPlayers.runCommand;
 
 import java.util.Collections;
@@ -31,7 +32,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
@@ -43,11 +43,11 @@ public class CrystalHeartGameTests {
 	private static final int LOOT_ROLLS = 2000;
 	private static final long LOOT_SEED = 7L;
 	private static final double DROP_RATE_TOLERANCE = 0.03;
-	private static final String POSTMORTAL = "minecraft:adventure/totem_of_undying";
-	private static final String BREAK_CLEARED_SPAWNER = "maple_flavored:adventure/break_cleared_spawner";
-	private static final String CONSUME_CRYSTAL_HEART = "maple_flavored:adventure/consume_crystal_heart";
-	private static final String SAVED_BY_CRYSTAL_HEART = "maple_flavored:adventure/saved_by_crystal_heart";
-	private static final String MAX_HEARTS_CAP = "maple_flavored:adventure/max_hearts_cap";
+	private static final Identifier POSTMORTAL = Identifier.parse("minecraft:adventure/totem_of_undying");
+	private static final Identifier BREAK_CLEARED_SPAWNER = Identifier.parse("maple_flavored:adventure/break_cleared_spawner");
+	private static final Identifier CONSUME_CRYSTAL_HEART = Identifier.parse("maple_flavored:adventure/consume_crystal_heart");
+	private static final Identifier SAVED_BY_CRYSTAL_HEART = Identifier.parse("maple_flavored:adventure/saved_by_crystal_heart");
+	private static final Identifier MAX_HEARTS_CAP = Identifier.parse("maple_flavored:adventure/max_hearts_cap");
 
 	@GameTest
 	public void consumingACrystalHeartAddsOneMaxHeart(GameTestHelper helper) {
@@ -103,7 +103,7 @@ public class CrystalHeartGameTests {
 
 	@GameTest
 	public void theCrystalHeartAdvancementsHangUnderBreakAClearedSpawner(GameTestHelper helper) {
-		assertAdvancement(helper, BREAK_CLEARED_SPAWNER, "minecraft:adventure/kill_a_mob", AdvancementType.TASK, 0);
+		assertAdvancement(helper, BREAK_CLEARED_SPAWNER, Identifier.parse("minecraft:adventure/kill_a_mob"), AdvancementType.TASK, 0);
 		assertAdvancement(helper, CONSUME_CRYSTAL_HEART, BREAK_CLEARED_SPAWNER, AdvancementType.TASK, 0);
 		assertAdvancement(helper, SAVED_BY_CRYSTAL_HEART, CONSUME_CRYSTAL_HEART, AdvancementType.TASK, 0);
 		assertAdvancement(helper, MAX_HEARTS_CAP, CONSUME_CRYSTAL_HEART, AdvancementType.CHALLENGE, 100);
@@ -245,16 +245,6 @@ public class CrystalHeartGameTests {
 		helper.assertValueEqual(instance.getDuration(), duration, effect.getRegisteredName() + " duration");
 	}
 
-	// The GameTest mock player reports Creative, so items aren't used up and damage is ignored until it is switched.
-	private static ServerPlayer survivalPlayerWithMaxHearts(GameTestHelper helper, int maxHearts) {
-		ServerPlayer player = playerWithMaxHearts(helper, maxHearts);
-
-		player.setGameMode(GameType.SURVIVAL);
-		helper.assertFalse(player.hasInfiniteMaterials(), "the player is in Survival");
-
-		return player;
-	}
-
 	private static void hold(ServerPlayer player, InteractionHand hand, Item item) {
 		player.setItemInHand(hand, new ItemStack(item));
 	}
@@ -312,20 +302,11 @@ public class CrystalHeartGameTests {
 		);
 	}
 
-	private static void assertAdvancement(GameTestHelper helper, String id, String parent, AdvancementType frame, int experience) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(id));
+	private static void assertAdvancement(GameTestHelper helper, Identifier id, Identifier parent, AdvancementType frame, int experience) {
+		AdvancementHolder holder = Advancements.advancement(helper, id);
 
-		helper.assertTrue(holder != null, id + " exists");
-		helper.assertValueEqual(holder.value().parent(), Optional.of(Identifier.parse(parent)), id + " parent");
+		helper.assertValueEqual(holder.value().parent(), Optional.of(parent), id + " parent");
 		helper.assertValueEqual(holder.value().display().map(DisplayInfo::type), Optional.of(frame), id + " frame");
 		helper.assertValueEqual(holder.value().rewards().experience(), experience, id + " XP reward");
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(advancement));
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 }

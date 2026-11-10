@@ -7,7 +7,6 @@
 	"environment": "*",
 	"entrypoints": {
 		"fabric-gametest": [
-			"mapleflavored.gametest.SmokeGameTests",
 			"mapleflavored.gametest.TestSitesGameTests",
 			"mapleflavored.gametest.HeartsGameTests",
 			"mapleflavored.gametest.HeartFloorGameTests",
