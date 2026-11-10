@@ -24,7 +24,10 @@ import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
-/** Which structures hold a book, and where each one's book goes. */
+/**
+ * Which structures hold a book, and where each one's book goes. Buried Treasure isn't here: it has no open room, so its
+ * book comes with its chest's loot, from {@code mapleflavored.loot.ChestBooks}.
+ */
 public final class StructureBookRules {
 	// Seeds the book's choices apart from the structure's own randomness, so adding a book changes no layout.
 	private static final int BOOK_SALT = 0x5B00C;
@@ -65,10 +68,6 @@ public final class StructureBookRules {
 		List.of(Enchantments.UNBREAKING),
 		StructureBookSpots::stronghold,
 		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.EVOKERS, strongholdKeeperKeys(pieces, random))
-	);
-	private static final StructureBookRule BURIED_TREASURE = ordinary(
-		List.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION),
-		StructureBookSpots::buriedTreasure
 	);
 	private static final StructureBookRule TRAIL_RUINS = ordinary(List.of(Enchantments.SILK_TOUCH), StructureBookSpots::trailRuins);
 
@@ -181,7 +180,6 @@ public final class StructureBookRules {
 		sharedByEveryLayout.put(BuiltinStructures.FORTRESS, NETHER_FORTRESS);
 		sharedByEveryLayout.put(BuiltinStructures.END_CITY, END_CITY);
 		sharedByEveryLayout.put(BuiltinStructures.ANCIENT_CITY, ANCIENT_CITY);
-		sharedByEveryLayout.put(BuiltinStructures.BURIED_TREASURE, BURIED_TREASURE);
 		sharedByEveryLayout.put(BuiltinStructures.TRAIL_RUINS, TRAIL_RUINS);
 		sharedByEveryLayout.put(BuiltinStructures.WOODLAND_MANSION, WOODLAND_MANSION);
 		sharedByEveryLayout.put(BuiltinStructures.STRONGHOLD, STRONGHOLD);

@@ -3,7 +3,6 @@ package mapleflavored.loot;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.minecraft.core.Holder;
@@ -24,7 +23,8 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 /**
  * Keeps loot from skipping the Library. Every loot roll, from any table, is rewritten by what its table keeps: an
  * enchanted book the table doesn't keep becomes 1 diamond (a Diamond Shard where {@link LootDiamonds} says so), a book
- * it keeps holds one enchantment at level I, and gear is plain unless the table keeps it as rolled.
+ * it keeps holds one enchantment at level I, and gear is plain unless the table keeps it as rolled. A table always
+ * keeps the structure book {@link ChestBooks} gives it.
  *
  * <p>This holds for vanilla's tables and any data pack's. Maple's own table files declare what they give after it.
  */
@@ -76,7 +76,7 @@ public final class LootEnchantments {
 	private static ItemStack rewrite(ItemStack drop, Holder<LootTable> table, RandomSource random) {
 		Kept kept = keptBy(table);
 
-		if (drop.is(Items.ENCHANTED_BOOK)) return keptBook(drop, table, kept.books(), random);
+		if (drop.is(Items.ENCHANTED_BOOK)) return keptBook(drop, table, kept.books().or(book -> ChestBooks.gives(table, book)), random);
 
 		return kept.gear() == Gear.PLAIN ? plain(drop) : drop;
 	}

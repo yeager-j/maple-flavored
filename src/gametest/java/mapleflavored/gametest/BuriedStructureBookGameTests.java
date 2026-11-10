@@ -4,8 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import mapleflavored.mixin.BaseContainerBlockEntityInvoker;
-import mapleflavored.structurebooks.StructureBookRules;
+import java.util.stream.IntStream;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -15,6 +14,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -29,23 +29,24 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.phys.AABB;
 
 /**
- * Buried Treasure keeps its Aqua Affinity or Respiration book in the treasure chest, through saves and the loot roll.
- * Trail Ruins keep their Silk Touch book in one suspicious gravel of the ruin's tower, given by brushing. Neither has a
- * floating book.
+ * Buried Treasure's chest gives its Aqua Affinity or Respiration book with its loot. Trail Ruins keep their Silk Touch
+ * book in one suspicious gravel of the ruin's tower, given by brushing. Neither has a floating book.
  */
 public class BuriedStructureBookGameTests {
-	private static final int CHOICE_PLANS = 200;
-	// A seeded count must land within this many binomial standard deviations of the expected count.
+	private static final List<ResourceKey<Enchantment>> BURIED_TREASURE_BOOKS = List.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION);
+	private static final int CHOICE_ROLLS = 400;
+	private static final int SEEDS = 20;
 	// The GameTest world is flat, with its surface near the bottom, under which a Trail Ruin would be planned.
 	private static final int TRAIL_RUIN_LIFT_ABOVE_SURFACE = 10;
 	private static final int BRUSH_STROKES = 10;
 	private static final int BRUSH_COOLDOWN = 10;
 
 	@GameTest(maxTicks = 400)
-	public void buriedTreasureKeepsOneBookInItsChestThroughASaveAndTheLootRoll(GameTestHelper helper) {
+	public void buriedTreasureGivesOneBookWithItsChestsLoot(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = Structures.plan(level, BuiltinStructures.BURIED_TREASURE, TestSites.of(helper).chunk(0));
 		BlockPos treasure = plannedTreasure(start);
@@ -55,23 +56,31 @@ public class BuriedStructureBookGameTests {
 
 		ChestBlockEntity chest = onlyChest(helper, level, start);
 
-		helper.assertTrue(chest.getLootTable() != null, "the chest's loot is still unrolled");
-		assertOneBook(helper, unrolledItems(chest), StructureBookRules.enchantmentsFor(BuiltinStructures.BURIED_TREASURE), "the chest as built");
+		helper.assertValueEqual(Books.pieces(start), List.of(), "the book pieces Buried Treasure plans");
 		helper.assertTrue(Structures.books(level, start).isEmpty(), "Buried Treasure has no floating book");
+		helper.assertValueEqual(chest.getLootTable(), BuiltInLootTables.BURIED_TREASURE, "the chest's unrolled loot");
+		helper.assertTrue(chest.getLootTableSeed() != 0L, "the chest's loot was seeded when the treasure was built");
 
-		ChestBlockEntity reloaded = (ChestBlockEntity) saveAndLoad(level, chest);
+		chest.unpackLootTable(null);
 
-		helper.assertTrue(reloaded.getLootTable() != null, "the reloaded chest's loot is still unrolled");
-		assertOneBook(helper, unrolledItems(reloaded), StructureBookRules.enchantmentsFor(BuiltinStructures.BURIED_TREASURE), "the reloaded chest");
+		List<ItemStack> rolled = IntStream.range(0, chest.getContainerSize()).mapToObj(chest::getItem).filter(stack -> !stack.isEmpty()).toList();
 
-		reloaded.setLevel(level);
-		reloaded.unpackLootTable(null);
-
-		List<ItemStack> rolled = unrolledItems(reloaded);
-
-		helper.assertTrue(reloaded.getLootTable() == null, "opening the chest rolled its loot");
 		helper.assertTrue(rolled.stream().anyMatch(stack -> stack.is(Items.HEART_OF_THE_SEA)), "vanilla's loot is there too");
-		assertOneBook(helper, rolled, StructureBookRules.enchantmentsFor(BuiltinStructures.BURIED_TREASURE), "the chest after its loot roll");
+		assertOneBook(helper, rolled, BURIED_TREASURE_BOOKS, "the chest after its loot roll");
+		helper.succeed();
+	}
+
+	// The seed a treasure's chest is given at generation decides its book, so the same world gives the same one.
+	@GameTest
+	public void theSameLootSeedGivesTheSameBuriedTreasureBook(GameTestHelper helper) {
+		for (long seed = 1; seed <= SEEDS; seed++) {
+			List<ItemStack> first = LootRolls.roll(helper, BuiltInLootTables.BURIED_TREASURE, RandomSource.create(seed));
+			List<ItemStack> again = LootRolls.roll(helper, BuiltInLootTables.BURIED_TREASURE, RandomSource.create(seed));
+
+			assertOneBook(helper, first, BURIED_TREASURE_BOOKS, "the roll seeded " + seed);
+			helper.assertValueEqual(onlyBookEnchantment(again), onlyBookEnchantment(first), "the book of a second roll seeded " + seed);
+		}
+
 		helper.succeed();
 	}
 
@@ -89,22 +98,19 @@ public class BuriedStructureBookGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(maxTicks = 400)
+	@GameTest
 	public void buriedTreasurePicksAquaAffinityOrRespirationWithEqualWeight(GameTestHelper helper) {
-		ServerLevel level = helper.getLevel();
+		RandomSource random = RandomSource.create(BuiltInLootTables.BURIED_TREASURE.identifier().hashCode());
 		Map<ResourceKey<Enchantment>, Integer> counts = new HashMap<>();
 
-		for (int i = 0; i < CHOICE_PLANS; i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.BURIED_TREASURE, TestSites.of(helper).chunk(i));
+		for (int i = 0; i < CHOICE_ROLLS; i++) {
+			List<ItemStack> rolled = LootRolls.roll(helper, BuiltInLootTables.BURIED_TREASURE, random);
 
-			counts.merge(Books.piece(start).enchantment(), 1, Integer::sum);
+			assertOneBook(helper, rolled, BURIED_TREASURE_BOOKS, "roll " + i);
+			counts.merge(onlyBookEnchantment(rolled), 1, Integer::sum);
 		}
 
-		helper.assertTrue(
-			StructureBookRules.enchantmentsFor(BuiltinStructures.BURIED_TREASURE).containsAll(counts.keySet()),
-			"chose only from its list: " + counts
-		);
-		Books.assertCount(helper, "Aqua Affinity", counts.getOrDefault(Enchantments.AQUA_AFFINITY, 0), CHOICE_PLANS, 0.5);
+		Books.assertCount(helper, "Aqua Affinity", counts.getOrDefault(Enchantments.AQUA_AFFINITY, 0), CHOICE_ROLLS, 0.5);
 		helper.succeed();
 	}
 
@@ -156,20 +162,6 @@ public class BuriedStructureBookGameTests {
 
 		helper.assertValueEqual(withBooks.size(), 1, "suspicious blocks holding a book after a reload");
 		helper.assertValueEqual(withBooks.getFirst().getBlockPos(), Books.piece(loaded).spot(), "the gravel is at the book's planned spot");
-		helper.succeed();
-	}
-
-	@GameTest(maxTicks = 400)
-	public void aBuriedTreasureBookIsPlacedFromASavedStructure(GameTestHelper helper) {
-		ServerLevel level = helper.getLevel();
-		StructureStart loaded = Structures.saveAndLoad(level, Structures.plan(level, BuiltinStructures.BURIED_TREASURE, TestSites.of(helper).chunk(0)));
-
-		layStoneUnder(level, plannedTreasure(loaded));
-		Structures.chunks(loaded).forEach(chunk -> Structures.build(level, loaded, chunk));
-
-		ChestBlockEntity chest = onlyChest(helper, level, loaded);
-
-		assertOneBook(helper, unrolledItems(chest), StructureBookRules.enchantmentsFor(BuiltinStructures.BURIED_TREASURE), "the chest after a reload");
 		helper.succeed();
 	}
 
@@ -239,11 +231,6 @@ public class BuriedStructureBookGameTests {
 			.toList();
 	}
 
-	// Reads the slots without rolling the loot, which reading them through the container would do.
-	private static List<ItemStack> unrolledItems(ChestBlockEntity chest) {
-		return ((BaseContainerBlockEntityInvoker) chest).items().stream().filter(stack -> !stack.isEmpty()).toList();
-	}
-
 	private static BlockEntity saveAndLoad(ServerLevel level, BlockEntity blockEntity) {
 		CompoundTag tag = blockEntity.saveWithFullMetadata(level.registryAccess());
 		BlockEntity loaded = BlockEntity.loadStatic(blockEntity.getBlockPos(), blockEntity.getBlockState(), tag, level.registryAccess());
@@ -260,6 +247,15 @@ public class BuriedStructureBookGameTests {
 		for (int stroke = 0; stroke < BRUSH_STROKES; stroke++) {
 			gravel.brush(time + (long) stroke * BRUSH_COOLDOWN, level, helper.makeMockServerPlayerInLevel(), Direction.UP, brush);
 		}
+	}
+
+	private static ResourceKey<Enchantment> onlyBookEnchantment(List<ItemStack> stacks) {
+		ItemStack book = stacks.stream().filter(stack -> stack.is(Items.ENCHANTED_BOOK)).findFirst().orElseThrow();
+
+		return book.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).keySet().stream()
+			.findFirst()
+			.flatMap(Holder::unwrapKey)
+			.orElseThrow();
 	}
 
 	// Exactly one enchanted book among the stacks, holding one enchantment from the list at level I.

@@ -18,14 +18,12 @@ import net.minecraft.util.Util;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
 import net.minecraft.world.level.levelgen.structure.pools.ListPoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.SinglePoolElement;
 import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
-import net.minecraft.world.level.levelgen.structure.structures.BuriedTreasurePieces;
 import net.minecraft.world.level.levelgen.structure.structures.DesertPyramidPiece;
 import net.minecraft.world.level.levelgen.structure.structures.JungleTemplePiece;
 import net.minecraft.world.level.levelgen.structure.structures.NetherFortressPieces;
@@ -38,11 +36,10 @@ import net.minecraft.world.level.storage.loot.LootTable;
 
 /**
  * Where structures' books go: each in the structure's most important spot, where a player exploring it properly will
- * find it. Buried Treasure and Trail Ruins have no open room, so theirs is in the treasure chest and in one of the ruin's
- * gravel blocks. Each Bastion layout's
- * book floats above that layout's own chest. The Woodland Mansion's is in its fake End portal room, which
- * {@link MansionPortalRoom} makes sure every mansion has, and the Stronghold's floats over its End portal. Local coordinates come from vanilla's code-built pieces and
- * templates.
+ * find it. Trail Ruins have no open room, so theirs is in one of the ruin's gravel blocks. Each Bastion layout's book
+ * floats above that layout's own chest. The Woodland Mansion's is in its fake End portal room, which
+ * {@link MansionPortalRoom} makes sure every mansion has, and the Stronghold's floats over its End portal. Local
+ * coordinates come from vanilla's code-built pieces and templates.
  */
 final class StructureBookSpots {
 	// In the shaft of the hidden treasure room, one block above the TNT pressure plate.
@@ -183,15 +180,6 @@ final class StructureBookSpots {
 		return lootRoom.or(() -> highestTemplatePiece(pieces, templates, END_CITY_TOWER_TOP)
 			.map(piece -> inTemplate(piece, END_CITY_TOWER_TOP_CENTRE))
 		);
-	}
-
-	/** In the treasure chest, which the treasure places where it comes to rest on stone. */
-	static Optional<BookSpot> buriedTreasure(List<StructurePiece> pieces, StructureBookRule.Planning planning) {
-		return firstOfType(pieces, BuriedTreasurePieces.BuriedTreasurePiece.class).map(treasure -> {
-			BoundingBox box = treasure.getBoundingBox();
-
-			return new BookSpot(treasure, new BlockPos(box.minX(), box.minY(), box.minZ()), BookSpot.Placement.IN_CHEST);
-		});
 	}
 
 	/** One of the gravel blocks of the ruin's tower, the one piece every Trail Ruin has, chosen at random. */

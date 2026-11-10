@@ -6,17 +6,14 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import mapleflavored.MapleFlavored;
-import mapleflavored.mixin.BaseContainerBlockEntityInvoker;
 import mapleflavored.mixin.BrushableBlockEntityAccessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.StructureManager;
@@ -24,7 +21,6 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BrushableBlockEntity;
-import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -231,7 +227,6 @@ public class StructureBookPiece extends StructurePiece {
 				placeFloatingBook(level, spot, holder.get());
 			}
 			case OPEN -> placeFloatingBook(level, spot, holder.get());
-			case IN_CHEST -> putInChest(level, spot, holder.get());
 			case IN_SUSPICIOUS_GRAVEL -> placeSuspiciousGravel(level, spot, holder.get());
 		}
 	}
@@ -243,17 +238,6 @@ public class StructureBookPiece extends StructurePiece {
 		level.setBlock(spot, book, Block.UPDATE_CLIENTS);
 
 		if (level.getBlockEntity(spot) instanceof StructureBookBlockEntity bookEntity) bookEntity.setEnchantment(enchantment);
-	}
-
-	// Written straight into the slots, since setItem would roll the chest's loot now. The roll fills only empty slots.
-	// With no chest at the spot, as when Buried Treasure finds no stone to rest on, there's no book either.
-	private static void putInChest(WorldGenLevel level, BlockPos spot, Holder<Enchantment> enchantment) {
-		if (!(level.getBlockEntity(spot) instanceof ChestBlockEntity chest)) return;
-
-		NonNullList<ItemStack> slots = ((BaseContainerBlockEntityInvoker) chest).items();
-
-		slots.set(slots.size() / 2, StructureBooks.levelOneBook(enchantment));
-		chest.setChanged();
 	}
 
 	// Replaces whatever the structure's archaeology left at the spot, even its own suspicious gravel.
