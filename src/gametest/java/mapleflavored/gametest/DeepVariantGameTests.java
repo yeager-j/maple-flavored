@@ -360,7 +360,7 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:deep_variant_pith_always")
 	public void eachDeepVariantDropsOnePithWhenAPlayerKillsItAndTheRuleAllowsIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		ServerPlayer killer = MockPlayers.survivalPlayer(helper);
 
 		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
 			Mob deep = gearless(helper.spawnWithNoFreeWill(deepType, MOB_POS));
@@ -379,7 +379,7 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:deep_variant_pith_always")
 	public void aDeepVariantASpawnerMadeDropsNoPith(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		ServerPlayer killer = MockPlayers.survivalPlayer(helper);
 		SpawnerBlockEntity spawner = SpawnerGameTests.placeSpawner(helper, SPAWNER_POS, new CompoundTag());
 
 		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
@@ -400,7 +400,7 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:deep_variant_pith_never")
 	public void noDeepVariantDropsPithWhenTheRuleIsZero(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		ServerPlayer killer = MockPlayers.survivalPlayer(helper);
 
 		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
 			Mob deep = gearless(helper.spawnWithNoFreeWill(deepType, MOB_POS));
@@ -418,7 +418,7 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void eachDeepVariantAPlayerKillsDropsPithAboutOneTimeInAHundredByDefault(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		ServerPlayer killer = MockPlayers.survivalPlayer(helper);
 
 		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
 			Mob deep = gearless(helper.spawnWithNoFreeWill(deepType, MOB_POS));
