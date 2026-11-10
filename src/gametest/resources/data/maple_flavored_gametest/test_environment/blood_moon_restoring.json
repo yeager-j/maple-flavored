@@ -1,0 +1,11 @@
+{
+	"type": "minecraft:all_of",
+	"definitions": [
+		"maple_flavored_gametest:normal",
+		{
+			"type": "minecraft:clock_time",
+			"clock": "minecraft:overworld",
+			"time": 0
+		}
+	]
+}

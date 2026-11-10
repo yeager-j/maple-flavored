@@ -2,36 +2,26 @@ package mapleflavored.bloodmoons;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Predicate;
 import mapleflavored.MapleFlavored;
 import mapleflavored.mixin.ServerLevelEntityManagerAccessor;
+import mapleflavored.mobs.GoneForGood;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
-import net.fabricmc.fabric.api.attachment.v1.AttachmentTarget;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -41,9 +31,9 @@ import org.jspecify.annotations.Nullable;
  * Blood Moon Restoring: structures' original mobs return to their original spots after a Blood Moon.
  *
  * <p>As a {@link Restorable} structure generates, each mob it places that it Restores carries a {@link RestoreSpot},
- * which is recorded once the mob is in the world. The spot empties once that mob is gone for good: killed, converted,
- * despawned, or dropped as its save loads, as Peaceful drops hostile mobs. A mob that only wanders off, unloads or
- * changes dimension still holds it. Each Blood Moon makes every empty spot pending, without loading anything, and a
+ * which is recorded once the mob is in the world. The spot empties once that mob is {@linkplain GoneForGood gone for
+ * good}: killed, converted, despawned, or dropped as its save loads, as Peaceful drops hostile mobs. A mob that only
+ * wanders off, unloads or changes dimension still holds it. Each Blood Moon makes every empty spot pending, without loading anything, and a
  * pending spot fills with a new mob of its type when its chunk loads, or on a retry while it's loaded, once the spot is
  * clear, its structure's block is still there and no player is near. Restoring never places a block.
  *
@@ -58,9 +48,6 @@ public final class Restoring {
 	/** How near a player, in blocks, keeps a spot from filling. */
 	public static final double PLAYER_CLEARANCE = 32.0;
 
-	// The key a mob's spot is saved under, among its attachments.
-	private static final String SPOT_KEY = MapleFlavored.id("restore_spot").toString();
-
 	private static final AttachmentType<SpotTag> SPOT = AttachmentRegistry.create(
 		MapleFlavored.id("restore_spot"),
 		builder -> builder.persistent(SpotTag.CODEC)
@@ -69,30 +56,19 @@ public final class Restoring {
 	// Set on a worldgen thread while a Restorable structure builds a chunk, for the mobs it places to pick up.
 	private static final ThreadLocal<@Nullable Restorable> BUILDING = new ThreadLocal<>();
 
-	// Saved mobs holding spots that failed to load, as Peaceful refuses a hostile mob. Their spots empty on the next tick.
-	private static final Queue<Dropped> DROPPED = new ConcurrentLinkedQueue<>();
-
-	// The chunks each level loaded whose pending spots haven't been tried yet. Server thread only.
-	private static final Map<ResourceKey<Level>, LongSet> LOADED_CHUNKS = new HashMap<>();
-
 	private Restoring() {
 	}
 
 	static void register() {
-		// A world opened after another in the same game must never receive the first world's spots.
-		ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-			DROPPED.clear();
-			LOADED_CHUNKS.clear();
-		});
 		ServerLifecycleEvents.BEFORE_SAVE.register((server, flush, force) -> recordOccupantChunks(server));
 		ServerTickEvents.END_SERVER_TICK.register(Restoring::tick);
-		ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> loadedChunksOf(level).add(chunk.getPos().pack()));
-		// A dying mob empties its spot the moment it dies; it's only removed once its death animation ends.
-		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-			if (entity.level() instanceof ServerLevel level) empty(level.getServer(), entity);
+		ServerChunkEvents.CHUNK_LOAD.register((level, chunk, generated) -> {
+			RestoreSpots.ifAny(level).ifPresent(spots -> spots.chunkLoaded(chunk.getPos().pack()));
 		});
+		GoneForGood.EVENT.register(Restoring::empty);
 		ServerEntityEvents.ENTITY_LOAD.register(Restoring::hold);
-		ServerEntityEvents.ENTITY_UNLOAD.register(Restoring::emptyOrRecordChunk);
+		// A mob that's gone for good gives its spot up either way, so recording its chunk as well changes nothing.
+		ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> recordOccupantChunk(level.getServer(), entity));
 		BloodMoons.RISEN.register(Restoring::makeEmptySpotsPending);
 	}
 
@@ -116,6 +92,11 @@ public final class Restoring {
 		}
 	}
 
+	/** Whether this thread is building a chunk of {@code structure} right now. */
+	public static boolean isBuilding(Restorable structure) {
+		return BUILDING.get() == structure;
+	}
+
 	/**
 	 * Tags a mob a structure is placing with its spot, if the structure Restores it. The spot is recorded once the mob is
 	 * in the world, so a mob the level refuses leaves none. Call for every entity added to a level or a worldgen region.
@@ -130,23 +111,11 @@ public final class Restoring {
 
 		RestoreSpot spot = RestoreSpot.occupiedBy(mob.getUUID(), mob.position(), structure, mob.getType(), mob.isPersistenceRequired());
 
-		mob.setAttached(SPOT, new SpotTag(dimension, spot.id(), Optional.of(spot)));
-	}
-
-	/**
-	 * Empties the spot of a saved mob that failed to load, as Peaceful refuses to load a hostile mob: it's gone for good.
-	 * Call for every saved entity that fails to load. Safe to call from any thread.
-	 */
-	public static void dropIfOccupant(ValueInput saved) {
-		Optional<SpotTag> tag = saved.child(AttachmentTarget.NBT_ATTACHMENT_KEY)
-			.flatMap(attachments -> attachments.read(SPOT_KEY, SpotTag.CODEC));
-		Optional<UUID> mob = saved.read("UUID", UUIDUtil.CODEC);
-
-		if (tag.isPresent() && mob.isPresent()) DROPPED.add(new Dropped(tag.get(), mob.get()));
+		mob.setAttached(SPOT, new SpotTag(dimension, spot));
 	}
 
 	/** The spot the entity holds, if it holds one. */
-	public static Optional<RestoreSpot> spotOf(MinecraftServer server, Entity entity) {
+	static Optional<RestoreSpot> spotOf(MinecraftServer server, Entity entity) {
 		SpotTag tag = entity.getAttached(SPOT);
 
 		if (tag == null) return Optional.empty();
@@ -157,37 +126,27 @@ public final class Restoring {
 	}
 
 	private static void tick(MinecraftServer server) {
-		for (Dropped dropped = DROPPED.poll(); dropped != null; dropped = DROPPED.poll()) {
-			empty(server, dropped.spot(), dropped.mob());
-		}
-
 		boolean retrying = server.getTickCount() % RETRY_INTERVAL == 0;
 
 		for (ServerLevel level : server.getAllLevels()) {
-			RestoreSpots spots = level.getDataStorage().get(RestoreSpots.TYPE);
-
-			if (spots == null) {
-				loadedChunksOf(level).clear();
-
-				continue;
-			}
-
-			tryLoadedChunks(level, spots);
-
-			if (retrying) {
-				emptyLost(level, spots);
-				spots.pending().forEach(spot -> tryFillIfLoaded(level, spots, spot));
-			}
-
-			if (spots.takeSaveSoon()) level.getDataStorage().scheduleSave();
+			RestoreSpots.ifAny(level).ifPresent(spots -> tick(level, spots, retrying));
 		}
+	}
+
+	private static void tick(ServerLevel level, RestoreSpots spots, boolean retrying) {
+		tryLoadedChunks(level, spots);
+
+		if (retrying) {
+			emptyLost(level, spots);
+			spots.pending().forEach(spot -> tryFillIfLoaded(level, spots, spot));
+		}
+
+		if (spots.takeSaveSoon()) level.getDataStorage().scheduleSave();
 	}
 
 	// A chunk's entities load after the chunk itself, so a loaded chunk waits here until they have, or until it unloads.
 	private static void tryLoadedChunks(ServerLevel level, RestoreSpots spots) {
-		LongSet chunks = loadedChunksOf(level);
-
-		chunks.removeIf((long chunk) -> {
+		spots.tryLoadedChunks(chunk -> {
 			if (!level.hasChunk(ChunkPos.getX(chunk), ChunkPos.getZ(chunk))) return true;
 
 			if (!level.areEntitiesLoaded(chunk)) return false;
@@ -247,18 +206,11 @@ public final class Restoring {
 	// A new mob of the spot's type, set up as its structure would set it up, holding the spot. Creating it fails, and the
 	// spot waits, where the mob can't spawn now, as a hostile mob can't in Peaceful.
 	private static Optional<Mob> restoredMob(ServerLevel level, RestoreSpot spot) {
-		if (!(spot.type().create(level, EntitySpawnReason.STRUCTURE) instanceof Mob mob)) return Optional.empty();
+		Optional<Mob> mob = StructureMobs.setUp(level, spot.type(), spot.position(), spot.persistent());
 
-		Vec3 position = spot.position();
+		mob.ifPresent(restored -> restored.setAttached(SPOT, new SpotTag(level.dimension(), spot)));
 
-		mob.snapTo(position.x, position.y, position.z, level.getRandom().nextFloat() * 360.0F, 0.0F);
-		mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(position)), EntitySpawnReason.STRUCTURE, null);
-
-		if (spot.persistent()) mob.setPersistenceRequired();
-
-		mob.setAttached(SPOT, new SpotTag(level.dimension(), spot.id(), Optional.of(spot)));
-
-		return Optional.of(mob);
+		return mob;
 	}
 
 	// A living mob that carries a spot holds it, whatever the level's spots say: they're saved at other times than the
@@ -285,19 +237,7 @@ public final class Restoring {
 			return;
 		}
 
-		recorded.or(tag::planned).ifPresent(spot -> spots.update(spot.filledBy(entity.getUUID(), savedChunk(entity, tag.dimension()))));
-	}
-
-	// Removed for good without dying, as by converting, despawning or Peaceful's removal of monsters, or else unloading
-	// to wherever it's saved next.
-	private static void emptyOrRecordChunk(Entity entity, ServerLevel level) {
-		Entity.RemovalReason reason = entity.getRemovalReason();
-
-		if (reason != null && reason.shouldDestroy()) {
-			empty(level.getServer(), entity);
-		} else {
-			recordOccupantChunk(level.getServer(), entity);
-		}
+		spots.update(recorded.orElse(tag.planned()).filledBy(entity.getUUID(), savedChunk(entity, tag.dimension())));
 	}
 
 	// A chunk writes its mobs as it unloads, long before the next autosave writes the spots. So a spot whose occupant
@@ -317,15 +257,13 @@ public final class Restoring {
 	// An autosave writes the spots and then every loaded mob, wherever each has wandered since it loaded.
 	private static void recordOccupantChunks(MinecraftServer server) {
 		for (ServerLevel spotLevel : server.getAllLevels()) {
-			RestoreSpots spots = spotLevel.getDataStorage().get(RestoreSpots.TYPE);
+			RestoreSpots.ifAny(spotLevel).ifPresent(spots -> {
+				for (RestoreSpot spot : spots.occupied()) {
+					Entity occupant = loadedEntity(server, spot.occupant().orElseThrow());
 
-			if (spots == null) continue;
-
-			for (RestoreSpot spot : spots.occupied()) {
-				Entity occupant = loadedEntity(server, spot.occupant().orElseThrow());
-
-				if (occupant != null) recordOccupantChunk(spots, spot, occupant, spotLevel.dimension());
-			}
+					if (occupant != null) recordOccupantChunk(spots, spot, occupant, spotLevel.dimension());
+				}
+			});
 		}
 	}
 
@@ -362,10 +300,9 @@ public final class Restoring {
 		return null;
 	}
 
-	private static void empty(MinecraftServer server, Entity entity) {
-		SpotTag tag = entity.getAttached(SPOT);
-
-		if (tag != null) empty(server, tag, entity.getUUID());
+	// A mob that's gone for good gives up the spot it carried, read from the mob or from its save.
+	private static void empty(MinecraftServer server, GoneForGood.Gone gone) {
+		gone.attached(SPOT).ifPresent(tag -> empty(server, tag, gone.uuid()));
 	}
 
 	// Emptying a spot twice, or one another mob holds now, changes nothing. A spot the level never saved is recorded
@@ -378,7 +315,9 @@ public final class Restoring {
 		RestoreSpots spots = RestoreSpots.of(level);
 
 		Optional<RestoreSpot> recorded = spots.get(tag.spot());
-		Optional<RestoreSpot> held = recorded.isPresent() ? recorded.filter(spot -> spot.occupant().equals(Optional.of(mob))) : tag.planned();
+		Optional<RestoreSpot> held = recorded.isPresent()
+			? recorded.filter(spot -> spot.occupant().equals(Optional.of(mob)))
+			: Optional.of(tag.planned());
 
 		held.ifPresent(spot -> spots.update(spot.emptied()));
 	}
@@ -386,31 +325,29 @@ public final class Restoring {
 	// Pending spots stay pending, so missed Blood Moons don't stack.
 	private static void makeEmptySpotsPending(MinecraftServer server) {
 		for (ServerLevel level : server.getAllLevels()) {
-			RestoreSpots spots = level.getDataStorage().get(RestoreSpots.TYPE);
-
-			if (spots != null) spots.empty().forEach(spot -> spots.update(spot.madePending()));
+			RestoreSpots.ifAny(level).ifPresent(spots -> makeEmptySpotsPending(spots, spot -> true));
 		}
 	}
 
-	private record Dropped(SpotTag spot, UUID mob) {
-	}
-
-	private static LongSet loadedChunksOf(ServerLevel level) {
-		return LOADED_CHUNKS.computeIfAbsent(level.dimension(), dimension -> new LongOpenHashSet());
+	/** A Blood Moon over the spots that are {@code under} it: each of them that's empty becomes pending. */
+	static void makeEmptySpotsPending(RestoreSpots spots, Predicate<RestoreSpot> under) {
+		spots.empty().stream().filter(under).forEach(spot -> spots.update(spot.madePending()));
 	}
 
 	/**
 	 * The spot a mob holds. Saved with the mob.
 	 *
 	 * @param dimension the level its spot is in, which a mob that changed dimension has left
-	 * @param planned the spot as the mob took it, to record if the level's spots lack it. A mob saved before tags carried
-	 *     it has none.
+	 * @param planned the spot as the mob took it, to record if the level's spots lack it
 	 */
-	private record SpotTag(ResourceKey<Level> dimension, UUID spot, Optional<RestoreSpot> planned) {
+	private record SpotTag(ResourceKey<Level> dimension, RestoreSpot planned) {
 		static final Codec<SpotTag> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 			Level.RESOURCE_KEY_CODEC.fieldOf("dimension").forGetter(SpotTag::dimension),
-			UUIDUtil.CODEC.fieldOf("spot").forGetter(SpotTag::spot),
-			RestoreSpot.CODEC.optionalFieldOf("planned").forGetter(SpotTag::planned)
+			RestoreSpot.CODEC.fieldOf("planned").forGetter(SpotTag::planned)
 		).apply(instance, SpotTag::new));
+
+		UUID spot() {
+			return planned.id();
+		}
 	}
 }

@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** ready-for-human (nine of ten boxes closed; box 8 waits on a decision from Jackson)
 
 **Priority:** P2 (Medium)
 
@@ -120,13 +120,28 @@ An empty list means same room, not in a Stronghold, not the same Stronghold, or 
 
 ## Checklist
 
-- [ ] 1. The four enums decode through a codec that returns an error for an unknown name, their saved names don't depend on Java constant names, and a test shows one bad Restore spot loses only that spot.
-- [ ] 2. One place decides a mob is gone for good, including the failed-load case, and `Restoring`, `MobKeepers` and `Subspaces` subscribe to it.
-- [ ] 3. A test builds `FiveCrossing` alone in each facing and fails without the realignment, a test fails when `BloodMoons.rise` stops raising `RISEN`, and Restoring tests can't make each other's spots pending.
-- [ ] 4. Each Stronghold piece type has one row, a check shows the rows cover every piece, and one discriminator says what a Stronghold is.
-- [ ] 5. `route` returns a result that tells its outcomes apart, and an Illager outside a Stronghold does no pathfinding for the route goal.
-- [ ] 6. `RestoreSpot` can't be built or decoded as Occupied without an occupant, or as Empty with one.
-- [ ] 7. One place lists what happens to a fresh entity, and both mixins call it.
+- [x] 1. The four enums decode through a codec that returns an error for an unknown name, their saved names don't depend on Java constant names, and a test shows one bad Restore spot loses only that spot.
+- [x] 2. One place decides a mob is gone for good, including the failed-load case, and `Restoring`, `MobKeepers` and `Subspaces` subscribe to it.
+- [x] 3. A test builds `FiveCrossing` alone in each facing and fails without the realignment, a test fails when `BloodMoons.rise` stops raising `RISEN`, and Restoring tests can't make each other's spots pending.
+- [x] 4. Each Stronghold piece type has one row, a check shows the rows cover every piece, and one discriminator says what a Stronghold is.
+- [x] 5. `route` returns a result that tells its outcomes apart, and an Illager outside a Stronghold does no pathfinding for the route goal.
+- [x] 6. `RestoreSpot` can't be built or decoded as Occupied without an occupant, or as Empty with one.
+- [x] 7. One place lists what happens to a fresh entity, and both mixins call it.
 - [ ] 8. A Restored mob is set up by the same code that set it up at generation, and the Bastion case is checked.
-- [ ] 9. The sky strength travels through `SkyRenderState`, and `LOADED_CHUNKS` tracks only chunks that hold spots.
-- [ ] 10. `Restoring` reaches spots only through `RestoreSpots`, and the test-only members aren't public.
+- [x] 9. The sky strength travels through `SkyRenderState`, and `LOADED_CHUNKS` tracks only chunks that hold spots.
+- [x] 10. `Restoring` reaches spots only through `RestoreSpots`, and the test-only members aren't public.
+
+## Comments
+
+Worked in one pull request. Findings 1 to 7 and 10 held as written against `main` after tickets 02, 08, 09, 11, 13 and 14. Finding 9's list of statics had already lost `PLANNED` to ticket 02. What each box means in the code:
+
+1. `Restorable`, `RestoreSpot.State`, `BookLocks.Kind` and `Subspace.Kind` each carry a saved name of their own and decode through `StringRepresentable.fromEnum`, which returns an error for an unknown name. `Restorable`'s one name is both its saved name and its block tag's name. Saves written before this change hold the old upper-case names and are not read: a spot or lock saved under one is dropped as its level loads. No migration, following the legacy-saves decision in ticket 08.
+2. `mobs/GoneForGood` owns the rule and its three channels: died, removed in a way that destroys, and failed to load. `Restoring`, `MobKeepers` and `Subspaces` listen to its event. The Peaceful sweeps in `BookLocks` and `Subspaces` stay, because Peaceful also never spawns a keeper or boss in the first place.
+3. `StrongholdGameTests` builds a five-way crossing alone in each facing with each of the 16 side-room plans. `BloodMoonGameTests` raises a Blood Moon from the clock and checks an empty spot goes pending. Every other Restoring test raises a Blood Moon over its own test ground only.
+4. `StrongholdRooms` has one row for each of the 13 piece types, and a GameTest checks every `STRONGHOLD_` piece type vanilla declares has one. A Stronghold is the structure `Restorable.STRONGHOLD` names: routes ask that, and the layout and the guards apply only while that structure is being built.
+5. `StrongholdRoutes.route` returns `Doorways` or one of four `NoRoute` reasons, and `StrongholdRouteGoal` asks it before any path search. Not done: each hunter still runs its own route search.
+6. A spot holds an `Occupancy`: `Occupied` with its occupant, or `Vacant.EMPTY` or `Vacant.PENDING` without one. The codec dispatches on `state`.
+7. `FreshEntities.entering` is the list, and both mixins call it.
+8. Open. `StructureMobs.setUp` now sets up both a Stronghold's guards as they generate and every Restored mob. The Bastion case was checked against vanilla's templates and is a real mismatch: they save each Piglin with a crossbow or golden sword and `CannotHunt`, and each Hoglin with `CannotBeHunted`, none of which `finalizeSpawn` gives a mob spawned for a structure. So a Restored Bastion Piglin is unarmed and hunts Hoglins. Fixing it means a spot must record more than the mob's type, which is Jackson's call.
+9. The strength is stored in `SkyRenderState` when the sky is extracted and read back from the state being drawn. A level's loaded-chunk set lives on its `RestoreSpots` and takes only chunks that hold spots.
+10. `RestoreSpots.ifAny` and `RestoreSpots.of` are the only ways to a level's spots. `TYPE`, `all` and `Restoring.spotOf` are package-private, and the tests reach them through `RestoringAccess` in the tests' source set.

@@ -1,7 +1,9 @@
 package mapleflavored.client.bloodmoons;
 
 import mapleflavored.bloodmoons.BloodMoons;
+import net.fabricmc.fabric.api.client.rendering.v1.RenderStateDataKey;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.state.level.SkyRenderState;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.attribute.EnvironmentAttributeSystem;
@@ -22,6 +24,9 @@ public final class BloodMoonSky {
 	private static final Vector3fc SUNSET = ARGB.vector3fFromRGB24(0xD01A10);
 	private static final Vector3fc MOON = ARGB.vector3fFromRGB24(0xFF4030);
 
+	// The Blood Moon's strength in the level a sky's render state was extracted from.
+	private static final RenderStateDataKey<Float> STRENGTH = RenderStateDataKey.create(() -> "Blood Moon strength");
+
 	private BloodMoonSky() {
 	}
 
@@ -36,6 +41,16 @@ public final class BloodMoonSky {
 
 			return ARGB.srgbLerp(BloodMoons.strength(level), base, redSunset);
 		});
+	}
+
+	/** Records the Blood Moon's strength in a sky's render state, as the state is extracted from its level. */
+	public static void extractStrength(SkyRenderState state, float strength) {
+		state.setData(STRENGTH, strength);
+	}
+
+	/** The Blood Moon's strength the sky's render state was extracted with: 0 if it was extracted with none. */
+	public static float strengthIn(SkyRenderState state) {
+		return state.getDataOrDefault(STRENGTH, 0.0F);
 	}
 
 	/** Turns the moon's draw colour red by the Blood Moon's strength, keeping its alpha. */

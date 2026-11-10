@@ -17,6 +17,7 @@ import mapleflavored.loot.LootDiamonds;
 import mapleflavored.loot.LootEnchantments;
 import mapleflavored.loot.LootSubstitutions;
 import mapleflavored.loot.StructureChestRolls;
+import mapleflavored.mobs.GoneForGood;
 import mapleflavored.mobs.RaidWaves;
 import mapleflavored.reinforcement.Reinforcement;
 import mapleflavored.remnants.Remnants;
@@ -43,6 +44,7 @@ public class MapleFlavored implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		MapleGameRules.register();
+		GoneForGood.register();
 		MapleTriggers.register();
 		Hearts.register();
 		MapleItems.register();

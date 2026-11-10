@@ -8,11 +8,13 @@ import java.util.function.Predicate;
 import mapleflavored.MapleFlavored;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.LevelReader;
@@ -25,36 +27,38 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * A structure whose mobs Blood Moons Restore: which mobs, and the block that must still be there for one to return to
- * its spot. Each block family is a block tag, {@code maple_flavored:<structure>_restore_blocks}.
+ * its spot. Each has one name of its own, which its spots are saved under and which names its block family, the block tag
+ * {@code maple_flavored:<name>_restore_blocks}.
  */
-public enum Restorable {
+public enum Restorable implements StringRepresentable {
 	/** Piglins, Brutes and Hoglins, standing on the blackstone or basalt family. */
 	BASTION(
+		"bastion",
 		BuiltinStructures.BASTION_REMNANT,
 		Set.of(EntityTypes.PIGLIN, EntityTypes.PIGLIN_BRUTE, EntityTypes.HOGLIN),
-		"bastion",
 		Footing.STANDING
 	),
 	/** Elder Guardians, in water over the prismarine family. */
-	OCEAN_MONUMENT(BuiltinStructures.OCEAN_MONUMENT, Set.of(EntityTypes.ELDER_GUARDIAN), "ocean_monument", Footing.SWIMMING),
+	OCEAN_MONUMENT("ocean_monument", BuiltinStructures.OCEAN_MONUMENT, Set.of(EntityTypes.ELDER_GUARDIAN), Footing.SWIMMING),
 	/** Shulkers, facing the purpur family or end stone bricks on some side. */
-	END_CITY(BuiltinStructures.END_CITY, Set.of(EntityTypes.SHULKER), "end_city", Footing.ATTACHED),
+	END_CITY("end_city", BuiltinStructures.END_CITY, Set.of(EntityTypes.SHULKER), Footing.ATTACHED),
 	/** Vindicators and Evokers, standing on birch planks, cobblestone or a smooth stone slab. Allays never return. */
 	WOODLAND_MANSION(
+		"woodland_mansion",
 		BuiltinStructures.WOODLAND_MANSION,
 		Set.of(EntityTypes.VINDICATOR, EntityTypes.EVOKER),
-		"woodland_mansion",
 		Footing.STANDING
 	),
 	/** Vindicators, Pillagers and Evokers, standing on the stone bricks family, infested or not, or a library's oak planks. */
 	STRONGHOLD(
+		"stronghold",
 		BuiltinStructures.STRONGHOLD,
 		Set.of(EntityTypes.VINDICATOR, EntityTypes.PILLAGER, EntityTypes.EVOKER),
-		"stronghold",
 		Footing.STANDING
 	);
 
-	static final Codec<Restorable> CODEC = Codec.STRING.xmap(Restorable::valueOf, Restorable::name);
+	/** Saves a Restorable by its name. An unknown name is an error, never an exception. */
+	static final Codec<Restorable> CODEC = StringRepresentable.fromEnum(Restorable::values);
 
 	// How far each footing looks for its block. A structure doesn't always place its mobs against it: a Bastion places
 	// them a block over the floor, an Ocean Monument a few blocks up in the water, and an End City's Sentries float in
@@ -64,12 +68,14 @@ public enum Restorable {
 	private static final int MAX_REACH = 24;
 	private static final double FEET_DEPTH = 0.01;
 
+	private final String name;
 	private final ResourceKey<Structure> structure;
 	private final Set<EntityType<?>> mobs;
 	private final TagKey<Block> blocks;
 	private final Footing footing;
 
-	Restorable(ResourceKey<Structure> structure, Set<EntityType<?>> mobs, String name, Footing footing) {
+	Restorable(String name, ResourceKey<Structure> structure, Set<EntityType<?>> mobs, Footing footing) {
+		this.name = name;
 		this.structure = structure;
 		this.mobs = mobs;
 		this.blocks = TagKey.create(Registries.BLOCK, MapleFlavored.id(name + "_restore_blocks"));
@@ -81,6 +87,17 @@ public enum Restorable {
 		return registries.lookupOrThrow(Registries.STRUCTURE)
 			.getResourceKey(structure)
 			.flatMap(key -> Arrays.stream(values()).filter(restorable -> restorable.structure.equals(key)).findFirst());
+	}
+
+	/** Whether the structure is this one. */
+	public boolean is(Holder<Structure> structure) {
+		return structure.is(this.structure);
+	}
+
+	/** The name its spots are saved under. It must never change once worlds hold spots. */
+	@Override
+	public String getSerializedName() {
+		return name;
 	}
 
 	/** Whether Blood Moons Restore this kind of mob in the structure. */
