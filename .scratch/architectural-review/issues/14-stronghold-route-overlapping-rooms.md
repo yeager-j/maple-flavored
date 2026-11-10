@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P3 (Low)
 
@@ -23,5 +23,11 @@ Not verified: whether a hunter standing in an overlap changes its route between 
 
 ## Checklist
 
-- [ ] A spot inside two overlapping rooms always reads as the same room.
-- [ ] The route test checks every waypoint again.
+- [x] A spot inside two overlapping rooms always reads as the same room.
+- [x] The route test checks every waypoint again.
+
+## Outcome
+
+A spot inside several rooms now reads as the one the Stronghold planned first. The opposite rule, the room planned last, fails the route test at the overlap named above every time: the corridor is planned after the room, and a route from the corridor is six doorways where the room's is four.
+
+Not fixed: two overlapping rooms are not joined in the route. Only rooms whose walls touch are. A spot in that corridor outside the room still routes the long way round, though the corridor opens straight into the room.
