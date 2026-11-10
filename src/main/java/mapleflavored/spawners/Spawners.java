@@ -1,7 +1,9 @@
 package mapleflavored.spawners;
 
+import com.mojang.serialization.MapCodec;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import mapleflavored.MapleFlavored;
 import mapleflavored.access.BaseSpawnerAccessor;
 import mapleflavored.advancements.MapleTriggers;
@@ -16,11 +18,14 @@ import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.entity.ConversionParams;
 import net.minecraft.world.entity.ConversionType;
 import net.minecraft.world.entity.Entity;
@@ -40,6 +45,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
@@ -51,6 +57,9 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>Trial spawners and spawner minecarts are left vanilla. Each spawner's state is a {@link SpawnerClearing} on its
  * block entity, and clients see a {@link SpawnerView} of it.
+ *
+ * <p>Loot tables tell a spawner's mobs apart with the {@code maple_flavored:spawned_by_spawner} condition, which passes
+ * when a spawner block made the entity being looted, so a spawner farm's Deep variants drop no Pith.
  */
 public final class Spawners {
 	private static final ResourceKey<LootTable> SPAWNER_LOOT = Blocks.SPAWNER.getLootTable().orElseThrow();
@@ -76,8 +85,12 @@ public final class Spawners {
 	private Spawners() {
 	}
 
-	/** Registers the death counting and the Cleared drops. Call once from mod init. */
+	/**
+	 * Registers the death counting, the Cleared drops and the {@code maple_flavored:spawned_by_spawner} loot condition.
+	 * Call once from mod init.
+	 */
 	public static void register() {
+		Registry.register(BuiltInRegistries.LOOT_CONDITION_TYPE, MapleFlavored.id("spawned_by_spawner"), SpawnedBySpawner.MAP_CODEC);
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> countDeath(entity));
 		ServerLivingEntityEvents.MOB_CONVERSION.register(Spawners::keepSpawnerThroughConversion);
 		LootTableEvents.MODIFY_DROPS.register(Spawners::addClearedDrops);
@@ -258,6 +271,27 @@ public final class Spawners {
 
 	private static SpawnerClearing clearingOf(SpawnerBlockEntity spawner) {
 		return ((ClearableSpawner) spawner).maple_flavored$clearing();
+	}
+
+	private static final class SpawnedBySpawner implements LootItemCondition {
+		static final MapCodec<SpawnedBySpawner> MAP_CODEC = MapCodec.unit(new SpawnedBySpawner());
+
+		@Override
+		public MapCodec<SpawnedBySpawner> codec() {
+			return MAP_CODEC;
+		}
+
+		@Override
+		public Set<ContextKey<?>> getReferencedContextParams() {
+			return Set.of(LootContextParams.THIS_ENTITY);
+		}
+
+		@Override
+		public boolean test(LootContext context) {
+			Entity looted = context.getOptional(LootContextParams.THIS_ENTITY);
+
+			return looted != null && spawnedBy(looted).isPresent();
+		}
 	}
 
 	/** Listens for a spawner becoming Cleared. */

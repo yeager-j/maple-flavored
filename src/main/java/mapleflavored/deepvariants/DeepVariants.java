@@ -44,7 +44,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The Deep variants module: stronger forms of common mobs that take their place in natural Overworld spawns below Y 0.
- * Each is built on its base mob's class, is in every entity tag its base mob is in, and drops its base mob's loot.
+ * Each is built on its base mob's class, is in every entity tag its base mob is in, and drops its base mob's loot,
+ * with a small chance of Pith when a player kills one that no spawner made.
  * Spawners, spawn eggs, commands, structures, conversions and Blood Moon Restores still make the base mob.
  */
 public final class DeepVariants {
@@ -107,8 +108,9 @@ public final class DeepVariants {
 	private DeepVariants() {
 	}
 
-	/** Adds the spawn eggs to the creative menu. Call once from mod init. */
+	/** Adds the spawn eggs to the creative menu and registers the Pith drop's loot condition. Call once from mod init. */
 	public static void register() {
+		Registry.register(BuiltInRegistries.LOOT_CONDITION_TYPE, MapleFlavored.id("deep_variant_pith_roll"), PithRoll.MAP_CODEC);
 		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.SPAWN_EGGS)
 			.register(output -> {
 				output.insertAfter(Items.ZOMBIE_SPAWN_EGG, DEEP_ZOMBIE_SPAWN_EGG);

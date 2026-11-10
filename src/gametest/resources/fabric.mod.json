@@ -68,7 +68,8 @@
 			"mapleflavored.gametest.client.ReinforcementClientGameTest",
 			"mapleflavored.gametest.client.LockedLooksClientGameTest",
 			"mapleflavored.gametest.client.WitheredHeartsClientGameTest",
-			"mapleflavored.gametest.client.SyncedGameRuleClientGameTest"
+			"mapleflavored.gametest.client.SyncedGameRuleClientGameTest",
+			"mapleflavored.gametest.client.DeepVariantLooksClientGameTest"
 		]
 	},
 	"mixins": [

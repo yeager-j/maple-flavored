@@ -8,12 +8,14 @@ import net.minecraft.client.renderer.entity.SkeletonRenderer;
 import net.minecraft.client.renderer.entity.state.SkeletonRenderState;
 import net.minecraft.resources.Identifier;
 
-/** Draws a Deep Skeleton as a skeleton with its own deepslate texture. */
+/** Draws a Deep Skeleton as a skeleton with its own deepslate texture and glowing pale eyes. */
 public class DeepSkeletonRenderer extends SkeletonRenderer {
 	private static final Identifier TEXTURE = MapleFlavored.id("textures/entity/deep_skeleton.png");
+	private static final Identifier EYES = MapleFlavored.id("textures/entity/deep_skeleton_eyes.png");
 
 	private DeepSkeletonRenderer(EntityRendererProvider.Context context) {
 		super(context);
+		this.addLayer(new DeepEyesLayer<>(this, EYES));
 	}
 
 	/** Registers the renderer. Call once from client init. */

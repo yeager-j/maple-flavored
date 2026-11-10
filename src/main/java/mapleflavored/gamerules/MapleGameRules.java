@@ -11,7 +11,8 @@ import net.minecraft.world.level.gamerules.GameRuleCategory;
  * except the Wither's leash and its Subspace's light level, which apply at once; how near a Warden a player must be to
  * survive it; how far a held Echo Shard hears shriekers; Shakudo's and Adamant's mining, which apply at once; how
  * long an Illager stays angry at an Orichalcum wearer who attacks it; how long the Orichalcum set's save takes to
- * recharge; and Deep variants' health and damage, which apply to Deep variants that spawn after a change.
+ * recharge; Deep variants' health and damage, which apply to Deep variants that spawn after a change; and how often a
+ * Deep variant drops Pith, which applies at once.
  */
 public final class MapleGameRules {
 	/** When on, death costs no Max Hearts. Off by default. */
@@ -134,6 +135,15 @@ public final class MapleGameRules {
 		.range(0, 1000)
 		.category(GameRuleCategory.MOBS)
 		.buildAndRegister(MapleFlavored.id("deep_variant_damage_percent"));
+
+	/**
+	 * The chance, as a percentage, that a Deep variant no spawner made drops 1 Pith when a player kills it. Applies at
+	 * once.
+	 */
+	public static final GameRule<Double> DEEP_VARIANT_PITH_DROP_PERCENT = GameRuleBuilder.forDouble(1.0)
+		.range(0.0, 100.0)
+		.category(GameRuleCategory.MOBS)
+		.buildAndRegister(MapleFlavored.id("deep_variant_pith_drop_percent"));
 
 	private MapleGameRules() {
 	}
