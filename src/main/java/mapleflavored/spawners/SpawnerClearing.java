@@ -6,12 +6,8 @@ import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import net.minecraft.core.Holder;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -31,9 +27,7 @@ public final class SpawnerClearing {
 		Codec.INT.optionalFieldOf("deaths", 0).forGetter(clearing -> clearing.deaths),
 		UUIDUtil.CODEC_LINKED_SET.optionalFieldOf("players", Set.of()).forGetter(clearing -> clearing.players),
 		Codec.BOOL.optionalFieldOf("cleared", false).forGetter(clearing -> clearing.cleared),
-		ItemStack.CODEC.optionalFieldOf("drop").forGetter(SpawnerClearing::heldDrop),
-		// Read only: saves from before the drop was any item named the enchantment of a level I book.
-		Enchantment.CODEC.optionalFieldOf("book").forGetter(clearing -> Optional.empty())
+		ItemStack.CODEC.optionalFieldOf("drop").forGetter(SpawnerClearing::heldDrop)
 	).apply(instance, SpawnerClearing::new));
 
 	private int deaths;
@@ -43,17 +37,15 @@ public final class SpawnerClearing {
 
 	/** A spawner's Clearing before anything has counted. */
 	public static SpawnerClearing unstarted() {
-		return new SpawnerClearing(0, Set.of(), false, Optional.empty(), Optional.empty());
+		return new SpawnerClearing(0, Set.of(), false, Optional.empty());
 	}
 
-	private SpawnerClearing(int deaths, Set<UUID> players, boolean cleared, Optional<ItemStack> heldDrop, Optional<Holder<Enchantment>> legacyBook) {
+	private SpawnerClearing(int deaths, Set<UUID> players, boolean cleared, Optional<ItemStack> heldDrop) {
 		this.deaths = deaths;
 		this.players = new LinkedHashSet<>(players);
 		// A save whose deaths already meet the requirement is Cleared, whatever it recorded.
 		this.cleared = cleared || deaths >= requirement();
-		this.heldDrop = heldDrop
-			.or(() -> legacyBook.map(enchantment -> EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, 1))))
-			.orElse(null);
+		this.heldDrop = heldDrop.orElse(null);
 	}
 
 	/** The deaths of this spawner's mobs counted so far. */
