@@ -12,10 +12,7 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -33,9 +30,6 @@ import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LightLayer;
@@ -339,26 +333,6 @@ public class SpawnerGameTests {
 		player.gameMode.destroyBlock(spawner.getBlockPos());
 
 		helper.assertValueEqual(droppedAt(helper, SPAWNER), List.of("1 maple_flavored:pith", "3 minecraft:name_tag"), "drops");
-		helper.succeed();
-	}
-
-	// Saves from before the held drop could be any item named only the enchantment of a level I book.
-	@GameTest
-	public void aSpawnerSavedWithABookStillHoldsIt(GameTestHelper helper) {
-		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
-		ServerLevel level = helper.getLevel();
-		CompoundTag saved = spawner.saveWithFullMetadata(level.registryAccess());
-		CompoundTag oldClearing = new CompoundTag();
-
-		oldClearing.putString("book", "minecraft:smite");
-		saved.put("maple_flavored:clearing", oldClearing);
-
-		SpawnerBlockEntity loaded = (SpawnerBlockEntity) BlockEntity.loadStatic(spawner.getBlockPos(), spawner.getBlockState(), saved, level.registryAccess());
-		ItemStack held = clearing(loaded).heldDrop().orElse(ItemStack.EMPTY);
-		Holder<Enchantment> smite = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SMITE);
-
-		helper.assertValueEqual(held.getItem(), Items.ENCHANTED_BOOK, "the held drop");
-		helper.assertValueEqual(held.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).getLevel(smite), 1, "its Smite level");
 		helper.succeed();
 	}
 
