@@ -88,19 +88,19 @@ public class SubspaceGameTests {
 
 		helper.startSequence()
 			// The second Warden's Subspace opens once its chunk, outside the test's own, has loaded.
-			.thenWaitUntil(() -> helper.assertValueEqual(bossesAround(level, player), List.of(first.getUUID(), second.getUUID()), "the Subspaces around the player"))
+			.thenWaitUntil(() -> helper.assertValueEqual(bossesAround(level, player.position()), List.of(first.getUUID(), second.getUUID()), "the Subspaces around the player"))
 			.thenExecuteAfter(1, () -> {
 				List<Subspace> around = Subspaces.containing(level, player.position());
 
 				helper.assertFalse(around.get(0).id().equals(around.get(1).id()), "Two Subspaces share an id");
 				helper.assertValueEqual(player.getEffect(Grounded.EFFECT).getAmplifier(), 0, "Grounded's amplifier inside both");
 				first.kill(level);
-				helper.assertValueEqual(bossesAround(level, player), List.of(second.getUUID()), "the Subspaces once the first Warden dies");
+				helper.assertValueEqual(bossesAround(level, player.position()), List.of(second.getUUID()), "the Subspaces once the first Warden dies");
 			})
 			.thenExecuteFor(WEAR_OFF_TICKS, () -> assertEffectsNeverRunningOut(helper, player, "a player still inside the second Subspace"))
 			.thenExecute(() -> {
 				second.kill(level);
-				helper.assertValueEqual(bossesAround(level, player), List.of(), "the Subspaces once both Wardens die");
+				helper.assertValueEqual(bossesAround(level, player.position()), List.of(), "the Subspaces once both Wardens die");
 			})
 			.thenExecuteAfter(WEAR_OFF_TICKS, () -> {
 				assertSubspaceEffects(helper, player, false, "a player once both Subspaces end");
@@ -285,10 +285,6 @@ public class SubspaceGameTests {
 		assertSubspaceEffects(helper, player, true, who);
 		helper.assertFalse(player.getEffect(MobEffects.DARKNESS).endsWithin(DARKNESS_FADE_TICKS), "whether the Darkness of " + who + " is fading");
 		helper.assertFalse(player.getEffect(Grounded.EFFECT).endsWithin(DARKNESS_FADE_TICKS), "whether " + who + " is about to stop being Grounded");
-	}
-
-	private static List<UUID> bossesAround(ServerLevel level, ServerPlayer player) {
-		return bossesAround(level, player.position());
 	}
 
 	private static List<UUID> bossesAround(ServerLevel level, Vec3 position) {

@@ -37,14 +37,14 @@ public final class Subspaces {
 			.syncWith(Subspace.STREAM_CODEC.apply(ByteBufCodecs.list()), AttachmentSyncPredicate.all())
 	);
 
-	/** Fires once for each Subspace, as its boss opens it. */
+	/** Fires once for each Subspace, as its boss opens it, with the Subspace already among its level's. */
 	public static final Event<Started> STARTED = EventFactory.createArrayBacked(Started.class, listeners -> (level, subspace) -> {
 		for (Started listener : listeners) {
 			listener.onStarted(level, subspace);
 		}
 	});
 
-	/** Fires once for each Subspace, as it ends, with what ended it. */
+	/** Fires once for each Subspace, as it ends, with what ended it. The Subspace is already gone from its level's. */
 	public static final Event<Ended> ENDED = EventFactory.createArrayBacked(Ended.class, listeners -> (level, subspace, cause) -> {
 		for (Ended listener : listeners) {
 			listener.onEnded(level, subspace, cause);
@@ -96,14 +96,14 @@ public final class Subspaces {
 		return inLevel(level).stream().filter(subspace -> subspace.boss().equals(boss)).findFirst();
 	}
 
-	/** Calls the listener as each Subspace of one kind starts. */
+	/** Calls the listener as each Subspace of one kind starts, as {@link #STARTED} does. Register once, at mod init. */
 	public static void whenStarted(Subspace.Kind kind, Started listener) {
 		STARTED.register((level, subspace) -> {
 			if (subspace.kind() == kind) listener.onStarted(level, subspace);
 		});
 	}
 
-	/** Calls the listener as each Subspace of one kind ends. */
+	/** Calls the listener as each Subspace of one kind ends, as {@link #ENDED} does. Register once, at mod init. */
 	public static void whenEnded(Subspace.Kind kind, Ended listener) {
 		ENDED.register((level, subspace, cause) -> {
 			if (subspace.kind() == kind) listener.onEnded(level, subspace, cause);
