@@ -3,9 +3,9 @@ package mapleflavored.mobs;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import mapleflavored.deepvariants.DeepVariants;
+import mapleflavored.deepvariants.OverworldDepths;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Difficulty;
@@ -15,18 +15,15 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.gamerules.GameRules;
 
 /**
  * Common mobs are faster and more fragile: each listed type gets attribute base values by difficulty when it spawns,
  * converts or generates with a structure. Unlisted mobs, adult zombie villagers and Peaceful stay vanilla. In the
  * Overworld, a mob that spawns below Y 63 keeps vanilla health unless its row's health applies at any height, so caving
- * stays harder than the surface. A Deep variant takes its base mob's row, with its own health and damage instead.
+ * stays harder than the surface. A Deep variant starts from its base mob's row, which {@link DeepVariants} changes.
  */
 public final class CommonMobs {
 	private static final Map<Holder<Attribute>, Double> VANILLA = Map.of();
-	private static final int LOWEST_SURFACE_Y = 63;
 
 	private static final List<Row> TABLE = List.of(
 		new Row(
@@ -112,6 +109,15 @@ public final class CommonMobs {
 				Attributes.FOLLOW_RANGE, 60.0,
 				Attributes.KNOCKBACK_RESISTANCE, 1.0
 			)
+		),
+		// Down from vanilla's 4, since the Netherite sword it spawns with adds 7 where the stone sword added 4.
+		new Row(
+			Set.of(EntityTypes.WITHER_SKELETON),
+			Age.ANY,
+			HealthReach.SURFACE,
+			Map.of(Attributes.ATTACK_DAMAGE, 3.0),
+			Map.of(Attributes.ATTACK_DAMAGE, 3.0),
+			Map.of(Attributes.ATTACK_DAMAGE, 3.0)
 		)
 	);
 
@@ -133,29 +139,17 @@ public final class CommonMobs {
 	// Sets the mob's base values to its row for the level's current difficulty and its height, with full health if the
 	// row sets max health there.
 	private static void applyRow(Mob mob) {
-		boolean underground = mob.level().dimension() == Level.OVERWORLD && mob.getBlockY() < LOWEST_SURFACE_Y;
-		Optional<EntityType<? extends Mob>> deepBase = DeepVariants.baseOf(mob.getType());
-		Map<Holder<Attribute>, Double> stats = deepBase.isPresent()
-			? deepVariantStats(mob, deepBase.get(), underground)
-			: statsFor(mob.getType(), mob.isBaby(), mob.level().getDifficulty(), underground);
+		boolean underground = OverworldDepths.isUnderground(mob.level(), mob.getBlockY());
+		Difficulty difficulty = mob.level().getDifficulty();
+		Map<Holder<Attribute>, Double> stats = DeepVariants.baseOf(mob.getType())
+			.map(base -> DeepVariants.spawnStats(base, statsFor(base, mob.isBaby(), difficulty, underground), ((ServerLevel) mob.level()).getGameRules()))
+			.orElseGet(() -> statsFor(mob.getType(), mob.isBaby(), difficulty, underground));
 
 		stats.forEach((attribute, value) -> mob.getAttribute(attribute).setBaseValue(value));
 
 		if (stats.containsKey(Attributes.MAX_HEALTH)) {
 			mob.setHealth(mob.getMaxHealth());
 		}
-	}
-
-	// A Deep variant takes its base mob's row, except that its health and damage come from the Deep variant rules.
-	private static Map<Holder<Attribute>, Double> deepVariantStats(Mob mob, EntityType<? extends Mob> base, boolean underground) {
-		Map<Holder<Attribute>, Double> stats = new HashMap<>(statsFor(base, mob.isBaby(), mob.level().getDifficulty(), underground));
-		GameRules rules = ((ServerLevel) mob.level()).getGameRules();
-
-		stats.remove(Attributes.MAX_HEALTH);
-		stats.remove(Attributes.ATTACK_DAMAGE);
-		stats.putAll(DeepVariants.spawnStats(base, rules));
-
-		return stats;
 	}
 
 	private static Map<Holder<Attribute>, Double> statsFor(EntityType<?> type, boolean baby, Difficulty difficulty, boolean underground) {

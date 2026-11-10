@@ -9,20 +9,16 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.context.ContextKeySet;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
-import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-import net.minecraft.world.phys.Vec3;
 
 /**
- * Dangerous structures' chests roll for Crystal Hearts and Pith, each its own chance of one item, and the ominous vault
+ * Some structures' chests roll for Crystal Hearts and Pith, each its own chance of one item, and the ominous vault
  * rolls for Pith once per opening. No other chest or vault table gives either.
  */
 public class StructureChestGameTests {
@@ -49,7 +45,7 @@ public class StructureChestGameTests {
 	private static final double RATE_TOLERANCE = 4.0;
 
 	@GameTest(maxTicks = 400)
-	public void eachDangerousChestRollsForCrystalHeartsAndPithAtItsOwnRate(GameTestHelper helper) {
+	public void eachListedChestRollsForCrystalHeartsAndPithAtItsOwnRate(GameTestHelper helper) {
 		for (Odds odds : ODDS) {
 			String name = odds.table().identifier().toString();
 			List<List<ItemStack>> rolls = rollMany(helper, odds.table(), ROLLS);
@@ -93,17 +89,11 @@ public class StructureChestGameTests {
 
 	/** Each roll's drops, from rolling the table many times with a seed of its own. */
 	private static List<List<ItemStack>> rollMany(GameTestHelper helper, ResourceKey<LootTable> key, int count) {
-		ServerLevel level = helper.getLevel();
-		LootTable table = level.getServer().reloadableRegistries().getLootTable(key);
-		ContextKeySet type = table.getParamSet();
-		LootParams params = new LootParams.Builder(level)
-			.withParameter(LootContextParams.ORIGIN, helper.absoluteVec(Vec3.ZERO))
-			.create(type);
 		RandomSource random = RandomSource.create(key.identifier().hashCode());
 		List<List<ItemStack>> rolls = new ArrayList<>();
 
 		for (int i = 0; i < count; i++) {
-			rolls.add(table.getRandomItems(params, random));
+			rolls.add(LootRolls.roll(helper, key, random));
 		}
 
 		return rolls;

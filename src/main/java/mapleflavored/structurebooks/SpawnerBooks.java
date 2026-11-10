@@ -40,6 +40,6 @@ public final class SpawnerBooks {
 	public static void give(WorldGenLevel level, SpawnerBlockEntity spawner, EntityType<?> mob, RandomSource random) {
 		var enchantment = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(forMob(mob, random));
 
-		Spawners.holdBook(spawner, enchantment);
+		Spawners.holdDrop(spawner, StructureBooks.levelOneBook(enchantment));
 	}
 }

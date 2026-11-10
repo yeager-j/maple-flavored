@@ -59,7 +59,7 @@ public final class SpawnerHeatRenderer implements BlockEntityRenderer<SpawnerBlo
 		ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress
 	) {
 		vanilla.extractRenderState(spawner, state, partialTicks, cameraPosition, breakProgress);
-		state.remainingShare = ((ClearableSpawner) spawner).maple_flavored$clearing().remainingShare();
+		state.remainingShare = ((ClearableSpawner) spawner).maple_flavored$view().remainingShare();
 	}
 
 	@Override
