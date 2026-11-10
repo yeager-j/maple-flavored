@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P2 (Medium)
 
@@ -107,11 +107,24 @@ Both are defensible given what mixins allow, and the comments label the copies. 
 
 ## Checklist
 
-- [ ] 1. `Grounded` decides who is exempt, and one top-up helper serves both Grounded and Darkness.
-- [ ] 2. `ENDED` says why a Subspace ended, or one module credits every boss kill. The spectator rule is decided once, and no behaviour depends on listener registration order.
-- [ ] 3. The mesher reads one immutable snapshot published from the client tick, and the redraw logic compares against the same snapshot.
-- [ ] 4. `Subspaces` offers kind-typed queries and one open-if-new call, and consumers no longer filter by kind.
-- [ ] 5. `Subspaces` can end orphaned Subspaces and fires `ENDED` when it does, tests use that, and the attachment isn't public.
-- [ ] 6. `WardenTerritory` returns the Ancient City at a position, both callers use it, and Grounding doesn't query structures every tick.
-- [ ] 7. Tests pin the copied 16 and 48, or `warn` reuses vanilla's method.
-- [ ] 8. The two Remnant and respawn tests are removed or given a production link that can break them, and the sculk growth tests run under rules that make growth certain.
+- [x] 1. `Grounded` decides who is exempt, and one top-up helper serves both Grounded and Darkness.
+- [x] 2. `ENDED` says why a Subspace ended, or one module credits every boss kill. The spectator rule is decided once, and no behaviour depends on listener registration order.
+- [x] 3. The mesher reads one immutable snapshot published from the client tick, and the redraw logic compares against the same snapshot.
+- [x] 4. `Subspaces` offers kind-typed queries and one open-if-new call, and consumers no longer filter by kind.
+- [x] 5. `Subspaces` can end orphaned Subspaces and fires `ENDED` when it does, tests use that, and the attachment isn't public.
+- [x] 6. `WardenTerritory` returns the Ancient City at a position, both callers use it, and Grounding doesn't query structures every tick.
+- [x] 7. Tests pin the copied 16 and 48, or `warn` reuses vanilla's method.
+- [x] 8. The two Remnant and respawn tests are removed or given a production link that can break them, and the sculk growth tests run under rules that make growth certain.
+
+## Comments
+
+Closed in one pull request. What each box means in the code:
+
+1. `Grounded.keepGrounded` skips dead, creative and spectator players itself, and `Grounded.keepAffected` gives a second effect on the same terms, which a Warden's Subspace uses for Darkness.
+2. `Subspaces.ENDED` carries an `EndCause`. `BossKillCredit` credits the Wither's kill from it and holds the only spectator loop.
+3. `WitherSubspaceLight` publishes one immutable `Dimmed` record each client tick; the mesher and the redraw logic both read it. Not checked in game: the race can't be shown in a server GameTest.
+4. `Subspaces` has `containing` and `inLevel` by kind, `whenStarted` and `whenEnded` by kind, and `openIfNew`.
+5. `Subspaces.endAbandoned(level)` ends the Subspaces whose boss isn't loaded and fires `ENDED`. Only the tests call it; nothing in the game does yet.
+6. `WardenTerritory.ancientCityAt` is the one lookup. `AncientCityGrounding` looks each player's city up every 10 ticks.
+7. Two GameTests pin the 16-block radius and the 48-block box.
+8. The Remnant and respawn tests are removed. The two shrieker tests run with a patch radius of 16 and a charge of 4000.

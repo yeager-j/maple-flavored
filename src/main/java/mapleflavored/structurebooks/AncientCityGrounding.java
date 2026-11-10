@@ -2,26 +2,29 @@ package mapleflavored.structurebooks;
 
 import java.util.List;
 import mapleflavored.grounded.Grounded;
+import mapleflavored.wardensummoning.WardenTerritory;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
-import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
-import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 /**
  * An Ancient City keeps players inside its bounds Grounded while its book is in place, so nobody can glide in, take it
  * and glide out. Once the book is gone, however it went, the city Grounds nobody. A city without a book never Grounds
- * anyone. Creative and spectator players are left alone, as a Warden's Subspace leaves them.
+ * anyone. Grounded itself leaves creative and spectator players alone.
  */
 final class AncientCityGrounding {
+	// How often each player's city is looked up, in ticks. Grounded asks to be kept at least every second, and a player
+	// who has just crossed a city's bounds is still far from its book.
+	private static final int LOOKUP_INTERVAL = 10;
+
 	private AncientCityGrounding() {
 	}
 
 	static void register() {
 		ServerTickEvents.END_LEVEL_TICK.register(level -> {
+			if (level.getGameTime() % LOOKUP_INTERVAL != 0) return;
+
 			for (ServerPlayer player : level.players()) {
 				if (isGroundedByCity(level, player)) Grounded.keepGrounded(player);
 			}
@@ -29,16 +32,9 @@ final class AncientCityGrounding {
 	}
 
 	private static boolean isGroundedByCity(ServerLevel level, ServerPlayer player) {
-		if (!player.isAlive() || player.isCreative() || player.isSpectator()) return false;
-
-		Structure ancientCity = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getValue(BuiltinStructures.ANCIENT_CITY);
-
-		if (ancientCity == null) return false;
-
-		// The whole bounding box, gaps between buildings included, as for Warden Territory.
-		StructureStart city = level.structureManager().getStructureAt(player.blockPosition(), ancientCity);
-
-		return city.isValid() && hasBookInPlace(level, city.getPieces());
+		return WardenTerritory.ancientCityAt(level, player.blockPosition())
+			.filter(city -> hasBookInPlace(level, city.getPieces()))
+			.isPresent();
 	}
 
 	private static boolean hasBookInPlace(ServerLevel level, List<StructurePiece> pieces) {

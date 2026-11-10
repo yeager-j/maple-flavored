@@ -28,6 +28,10 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>Each test runs alone in its batch, in a {@link SubspaceArena} whose Wardens stay put and never dig down, over stone
  * floors laid where sculk should grow.
+ *
+ * <p>Sculk grows a shrieker one time in eleven, and a default patch rarely grows anything. The tests that need a
+ * shrieker run under game rules for a patch wide and charged enough to grow dozens of things, so one of them is a
+ * shrieker all but every time.
  */
 public class SubspaceSculkGameTests {
 	// How far a patch's own cursors may go by default, plus the √5 blocks further a vein can wrap around a block they
@@ -37,6 +41,15 @@ public class SubspaceSculkGameTests {
 	private static final int FLOOR_REACH = 10;
 	// How long a test lets a patch spread before checking where it hasn't gone, longer than any patch spreads for.
 	private static final int SETTLING_TICKS = 400;
+	// How far past a patch's cursors a floor reaches: the √5 blocks a vein can wrap, rounded up.
+	private static final int VEIN_REACH = 3;
+	// How long a patch under the growth tests' game rules is left to grow a shrieker. Measured over 4 such patches: by
+	// 800 ticks each had grown 24 to 36 things, at least 3 of them shriekers.
+	private static final int GROWING_TICKS = 1200;
+	// Room for a patch that grew no shrieker to be started over a few times.
+	private static final int GROWTH_TEST_TICKS = 8000;
+	// Where the unloading test's patch grows, along the arena's x axis.
+	private static final double FAR_FROM_THE_TEST = 100.0;
 
 	@GameTest(environment = "maple_flavored_gametest:subspace_sculk_limits", maxTicks = 600)
 	public void aPatchSpreadsAroundTheWardensSpawnOverReplaceableBlocksOnly(GameTestHelper helper) {
@@ -119,17 +132,20 @@ public class SubspaceSculkGameTests {
 	}
 
 	// The two patches are too far apart to touch, so each shrieker belongs to the Warden it grew beside, while each
-	// Subspace covers both.
-	@GameTest(environment = "maple_flavored_gametest:subspace_sculk_overlap", maxTicks = 20000)
+	// Subspace, as wide as the environment's game rule sets it, covers both.
+	@GameTest(environment = "maple_flavored_gametest:subspace_sculk_overlap", maxTicks = GROWTH_TEST_TICKS)
 	public void endingASubspaceSilencesOnlyTheShriekersItGrew(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.clearedWithoutRunway(helper);
 		ServerLevel level = arena.level();
+		int reach = ShriekerGrowth.floorReach(level);
+		int apart = 2 * reach + 2;
 		ShriekerGrowth first = new ShriekerGrowth(arena, Vec3.ZERO);
-		ShriekerGrowth second = new ShriekerGrowth(arena, new Vec3(3 * FLOOR_REACH, 0.0, 0.0));
-		BlockPos placed = arena.blockAt(FLOOR_REACH * 3 / 2, 0, FLOOR_REACH * 3 / 2);
+		ShriekerGrowth second = new ShriekerGrowth(arena, new Vec3(apart, 0.0, 0.0));
+		BlockPos placed = arena.blockAt(apart / 2, 0, reach + 4);
 
 		// On a floor of its own, beyond both patches, so teardown clears it.
-		arena.sculkFloor(FLOOR_REACH * 3 / 2, FLOOR_REACH * 3 / 2, FLOOR_REACH * 3 / 2, FLOOR_REACH * 3 / 2);
+		arena.sculkFloor(apart / 2, reach + 4, apart / 2, reach + 4);
+		helper.assertTrue(level.getGameRules().get(MapleGameRules.WARDEN_SUBSPACE_RADIUS) >= apart + reach, "Each Subspace doesn't cover both patches");
 		level.setBlock(placed, Blocks.SCULK_SHRIEKER.defaultBlockState().setValue(SculkShriekerBlock.CAN_SUMMON, true), 3);
 		helper.onEachTick(() -> {
 			first.tick(helper);
@@ -159,11 +175,11 @@ public class SubspaceSculkGameTests {
 	// The test's own chunks always stay loaded, so the Warden opens its Subspace far from them and then waits in them,
 	// where its Subspace lasts. Its patch is then over three chunks from every chunk kept loaded, so releasing the
 	// patch's chunks lets them unload for real.
-	@GameTest(environment = "maple_flavored_gametest:subspace_sculk_unloaded_shrieker", maxTicks = 20000)
+	@GameTest(environment = "maple_flavored_gametest:subspace_sculk_unloaded_shrieker", maxTicks = GROWTH_TEST_TICKS)
 	public void aShriekerUnloadedWhenItsSubspaceEndsIsSilencedWhenItLoads(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.clearedWithoutRunway(helper);
 		ServerLevel level = arena.level();
-		ShriekerGrowth growth = new ShriekerGrowth(arena, new Vec3(100.0, 0.0, 0.0));
+		ShriekerGrowth growth = new ShriekerGrowth(arena, new Vec3(FAR_FROM_THE_TEST, 0.0, 0.0));
 
 		helper.onEachTick(() -> growth.tick(helper));
 
@@ -228,8 +244,9 @@ public class SubspaceSculkGameTests {
 	}
 
 	/**
-	 * Grows a shrieker in a Warden's patch at one spot. Only some patches grow one, so until one does, each tick checks
-	 * the current patch and, once it has had time to spread, kills its Warden and starts over with a fresh floor.
+	 * Grows a shrieker in a Warden's patch at one spot, under the game rules of the test's environment. The rare patch
+	 * that grows none is started over: each tick checks the current patch and, once it has had time to spread, kills its
+	 * Warden and lays a fresh floor.
 	 */
 	private static final class ShriekerGrowth {
 		private final SubspaceArena arena;
@@ -241,15 +258,21 @@ public class SubspaceSculkGameTests {
 
 		ShriekerGrowth(SubspaceArena arena, Vec3 spot) {
 			BlockPos fromCentre = BlockPos.containing(spot);
+			int reach = floorReach(arena.level());
 
 			this.arena = arena;
 			this.spot = spot;
 			this.floor = arena.sculkFloor(
-				fromCentre.getX() - FLOOR_REACH,
-				fromCentre.getZ() - FLOOR_REACH,
-				fromCentre.getX() + FLOOR_REACH,
-				fromCentre.getZ() + FLOOR_REACH
+				fromCentre.getX() - reach,
+				fromCentre.getZ() - reach,
+				fromCentre.getX() + reach,
+				fromCentre.getZ() + reach
 			);
+		}
+
+		/** How far a floor reaches from its Warden: past everything a patch spreads under the level's game rules. */
+		static int floorReach(ServerLevel level) {
+			return level.getGameRules().get(MapleGameRules.WARDEN_SCULK_PATCH_RADIUS) + VEIN_REACH;
 		}
 
 		void tick(GameTestHelper helper) {
@@ -258,7 +281,7 @@ public class SubspaceSculkGameTests {
 			if (warden != null) {
 				shrieker = grownShrieker().orElse(null);
 
-				if (shrieker != null || helper.getTick() - startedAt < SETTLING_TICKS) return;
+				if (shrieker != null || helper.getTick() - startedAt < GROWING_TICKS) return;
 
 				warden.kill(arena.level());
 			}

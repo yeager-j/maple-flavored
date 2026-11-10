@@ -235,6 +235,54 @@ public class WardenSummoningGameTests {
 			.thenSucceed();
 	}
 
+	// Vanilla's radius, which Warden summoning copies: 16 blocks from the shrieker's middle, half a block above where a
+	// player beside it stands.
+	@GameTest(environment = "maple_flavored_gametest:warden_summoning_counted_radius", maxTicks = 20)
+	public void aShriekCountsForThePlayersWithin16BlocksOfTheShrieker(GameTestHelper helper) {
+		SubspaceArena arena = SubspaceArena.cleared(helper);
+		Vec3 causeOffset = new Vec3(2.0, 0.0, 0.0);
+		Vec3 withinOffset = new Vec3(15.9, 0.0, 0.0);
+		Vec3 beyondOffset = new Vec3(-16.1, 0.0, 0.0);
+		ServerPlayer cause = arena.player(causeOffset, GameType.SURVIVAL);
+		ServerPlayer within = arena.player(withinOffset, GameType.SURVIVAL);
+		ServerPlayer beyond = arena.player(beyondOffset, GameType.SURVIVAL);
+		SculkShriekerBlockEntity shrieker = shrieker(arena, Vec3.ZERO);
+
+		for (Vec3 offset : List.of(causeOffset, withinOffset, beyondOffset)) {
+			arena.deepDark(offset);
+		}
+
+		shrieker.tryShriek(arena.level(), cause);
+
+		assertWarning(helper, cause, 1, true, "the cause");
+		assertWarning(helper, within, 1, true, "a player 15.9 blocks across from the shrieker");
+		assertWarning(helper, beyond, 0, false, "a player 16.1 blocks across from the shrieker");
+		helper.succeed();
+	}
+
+	// Vanilla's box, which Warden summoning copies: 48 blocks wide around the shrieker's middle, so it reaches 24 blocks
+	// across. A Warden's hitbox reaches 0.45 blocks from where it stands.
+	@GameTest(environment = "maple_flavored_gametest:warden_summoning_nearby_warden", maxTicks = 20)
+	public void aWardenWithin24BlocksOfTheShriekerKeepsItFromWarning(GameTestHelper helper) {
+		SubspaceArena arena = SubspaceArena.cleared(helper);
+		Vec3 causeOffset = new Vec3(2.0, 0.0, 0.0);
+		Vec3 insideTheBox = arena.at(new Vec3(24.4, 0.0, 0.0));
+		Vec3 outsideTheBox = arena.at(new Vec3(24.6, 0.0, 0.0));
+		ServerPlayer cause = arena.player(causeOffset, GameType.SURVIVAL);
+		SculkShriekerBlockEntity shrieker = shrieker(arena, Vec3.ZERO);
+		Warden warden = arena.stillWarden(new Vec3(24.4, 0.0, 0.0));
+
+		arena.deepDark(causeOffset);
+		warden.snapTo(insideTheBox.x, insideTheBox.y, insideTheBox.z);
+		shrieker.tryShriek(arena.level(), cause);
+		assertWarning(helper, cause, 0, false, "the cause with a Warden 24.4 blocks across from the shrieker");
+
+		warden.snapTo(outsideTheBox.x, outsideTheBox.y, outsideTheBox.z);
+		shrieker.tryShriek(arena.level(), cause);
+		assertWarning(helper, cause, 1, true, "the cause with the Warden 24.6 blocks across from the shrieker");
+		helper.succeed();
+	}
+
 	@GameTest(environment = "maple_flavored_gametest:warden_summoning_search_alone", maxTicks = 20)
 	public void theSearchAloneIgnoresWarningLevelsAndNearbyWardens(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);

@@ -52,10 +52,10 @@ public final class SubspaceShellRenderer {
 		double renderDistance = Minecraft.getInstance().options.getEffectiveRenderDistance() * 16.0;
 		float drift = (float) (Util.getMillis() % DRIFT_MILLIS) / DRIFT_MILLIS;
 
-		for (Subspace subspace : Subspaces.inLevel(level)) {
+		for (Subspace subspace : Subspaces.inLevel(level, Subspace.Kind.WARDEN)) {
 			boolean isInRange = subspace.centre().distanceTo(camera) - subspace.radius() <= renderDistance;
 
-			if (subspace.kind() == Subspace.Kind.WARDEN && isInRange) submit(context, subspace, camera, drift);
+			if (isInRange) submit(context, subspace, camera, drift);
 		}
 	}
 

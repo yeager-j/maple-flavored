@@ -85,7 +85,8 @@ public class AncientCityBookGameTests {
 	private static final double SUBSPACE_RADIUS = SubspaceArena.RADIUS;
 	// Past the Grounded the city last topped up, which lasts 60 ticks.
 	private static final int GROUNDED_WEARS_OFF = 70;
-	private static final int GROUNDING_TICKS = 2;
+	// A city looks up the players inside it every 10 ticks.
+	private static final int GROUNDING_TICKS = 12;
 	private static final double WARDENS_SEARCHED = 120.0;
 
 	private static final Set<BlockPos> TAKEN = ConcurrentHashMap.newKeySet();

@@ -7,12 +7,9 @@ import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.grounded.Grounded;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Unit;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,11 +27,6 @@ import net.minecraft.world.phys.AABB;
  * outside vanilla's awareness box, never keeps it from digging back down.
  */
 public final class WardenSubspaces {
-	// Playtest values. Long enough to bridge top-ups, short enough to wear off soon after a player leaves. Topping up
-	// above Darkness's 22-tick fade keeps it from flickering.
-	private static final int EFFECT_TICKS = 60;
-	private static final int TOP_UP_TICKS = 40;
-
 	private WardenSubspaces() {
 	}
 
@@ -87,36 +79,19 @@ public final class WardenSubspaces {
 		brain.setMemoryWithExpiry(MemoryModuleType.DIG_COOLDOWN, Unit.INSTANCE, ticksUntilDigging);
 	}
 
-	// Every way a Warden appears adds it to a level. One that already has a Subspace is only loading again, perhaps after
-	// carrying its UUID through a portal, and a dying one, saved mid-animation, no longer has a Subspace to open.
+	// Every way a Warden appears adds it to a level. A dying one, saved mid-animation, no longer has a Subspace to open.
 	private static void openIfNew(Entity entity, ServerLevel level) {
 		if (!(entity instanceof Warden warden) || !warden.isAlive()) return;
-		if (Subspaces.ownsAny(level.getServer(), warden.getUUID())) return;
 
-		Subspaces.open(level, warden, Subspace.Kind.WARDEN, level.getGameRules().get(MapleGameRules.WARDEN_SUBSPACE_RADIUS));
+		Subspaces.openIfNew(level, warden, Subspace.Kind.WARDEN, level.getGameRules().get(MapleGameRules.WARDEN_SUBSPACE_RADIUS));
 	}
 
-	// Vanilla's Warden Darkness skips creative and spectator players too.
+	// A longer Darkness is left alone, such as the one a Warden gives nearby players.
 	private static void applyEffects(ServerLevel level, ServerPlayer player) {
-		if (!player.isAlive() || player.isCreative() || player.isSpectator()) return;
-		if (!isInsideWardenSubspace(level, player)) return;
+		if (Subspaces.containing(level, player.position(), Subspace.Kind.WARDEN).isEmpty()) return;
 
-		topUp(player, MobEffects.DARKNESS);
+		Grounded.keepAffected(player, MobEffects.DARKNESS);
 		Grounded.keepGrounded(player);
-	}
-
-	private static boolean isInsideWardenSubspace(ServerLevel level, ServerPlayer player) {
-		return Subspaces.containing(level, player.position()).stream()
-			.anyMatch(subspace -> subspace.kind() == Subspace.Kind.WARDEN);
-	}
-
-	// Leaves a longer effect alone, such as the Darkness a Warden gives nearby players.
-	private static void topUp(ServerPlayer player, Holder<MobEffect> effect) {
-		MobEffectInstance current = player.getEffect(effect);
-
-		if (current != null && !current.endsWithin(TOP_UP_TICKS - 1)) return;
-
-		player.addEffect(new MobEffectInstance(effect, EFFECT_TICKS, 0, false, false));
 	}
 
 	private static List<LivingEntity> livingEntitiesInside(ServerLevel level, Subspace subspace, Warden warden) {

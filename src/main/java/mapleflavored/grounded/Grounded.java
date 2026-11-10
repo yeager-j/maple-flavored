@@ -32,8 +32,8 @@ public final class Grounded {
 		new GroundedEffect()
 	);
 
-	// Long enough to bridge top-ups, short enough to wear off soon after the player leaves what Grounds them. Topping up
-	// before it runs low keeps it from flickering.
+	// Playtest values. Long enough to bridge top-ups, short enough to wear off soon after the player leaves what Grounds
+	// them. Topping up above the 22 ticks Darkness fades out over keeps an effect kept alongside it from flickering.
 	private static final int EFFECT_TICKS = 60;
 	private static final int TOP_UP_TICKS = 40;
 
@@ -58,15 +58,26 @@ public final class Grounded {
 	}
 
 	/**
-	 * Keeps the player Grounded a few seconds longer. Call every tick something should keep them Grounded; it wears off
-	 * soon after the calls stop. A longer Grounded is left alone.
+	 * Keeps the player Grounded a few seconds longer. Call every tick something should keep them Grounded, or at least
+	 * every second; it wears off soon after the calls stop. A longer Grounded is left alone. Dead, creative and spectator
+	 * players are never Grounded this way, as vanilla's Warden Darkness skips them.
 	 */
 	public static void keepGrounded(ServerPlayer player) {
-		MobEffectInstance current = player.getEffect(EFFECT);
+		keepAffected(player, EFFECT);
+	}
+
+	/**
+	 * Keeps the player under another effect on Grounded's terms: the same players are exempt and it lasts as long. For
+	 * what gives a second effect along with Grounded, such as a Warden's Subspace's Darkness.
+	 */
+	public static void keepAffected(ServerPlayer player, Holder<MobEffect> effect) {
+		if (!player.isAlive() || player.isCreative() || player.isSpectator()) return;
+
+		MobEffectInstance current = player.getEffect(effect);
 
 		if (current != null && !current.endsWithin(TOP_UP_TICKS - 1)) return;
 
-		player.addEffect(new MobEffectInstance(EFFECT, EFFECT_TICKS, 0, false, false));
+		player.addEffect(new MobEffectInstance(effect, EFFECT_TICKS, 0, false, false));
 	}
 
 	/** Whether the entity is Grounded. */

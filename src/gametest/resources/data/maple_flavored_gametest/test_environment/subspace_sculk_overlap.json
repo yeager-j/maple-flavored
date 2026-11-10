@@ -1,6 +1,14 @@
 {
 	"type": "minecraft:all_of",
 	"definitions": [
-		"maple_flavored_gametest:normal"
+		"maple_flavored_gametest:normal",
+		{
+			"type": "minecraft:game_rules",
+			"rules": {
+				"maple_flavored:warden_subspace_radius": 64,
+				"maple_flavored:warden_sculk_patch_radius": 16,
+				"maple_flavored:warden_sculk_patch_charge": 4000
+			}
+		}
 	]
 }

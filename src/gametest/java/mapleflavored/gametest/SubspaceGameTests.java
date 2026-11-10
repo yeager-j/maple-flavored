@@ -1,18 +1,14 @@
 package mapleflavored.gametest;
 
-import static mapleflavored.gametest.MockPlayers.dieAndRespawn;
-
 import com.mojang.serialization.Codec;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import mapleflavored.grounded.Grounded;
-import mapleflavored.remnants.Remnants;
 import mapleflavored.subspaces.Subspace;
 import mapleflavored.subspaces.Subspaces;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -28,15 +24,13 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.storage.LevelData;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * Warden Subspaces: every Warden opens a fixed 50-block Subspace where it appears, which darkens and Grounds the
- * players inside, outlasts its Warden unloading and ends when its Warden dies or digs down. The Warden is aware of
- * everything inside, but only targets inside vanilla's awareness box keep it from digging down.
+ * players inside, outlasts its Warden unloading and ends when its Warden dies or digs down, each end saying what caused
+ * it. The Warden is aware of everything inside, but only targets inside vanilla's awareness box keep it from digging
+ * down.
  *
  * <p>A Subspace reaches far past the few blocks between tests, so each test runs alone, in its own environment's batch,
  * in a {@link SubspaceArena} high above the test grid that it first clears of whatever earlier batches left there.
@@ -51,15 +45,14 @@ public class SubspaceGameTests {
 	private static final int DIG_COOLDOWN_TICKS = 600;
 	// How long a Warden's digging animation lasts before it's removed.
 	private static final int DIGGING_TICKS = 100;
-	private static final int STARTING_EXPERIENCE = 100;
 	private static final int DARKNESS_FADE_TICKS = 22;
 
 	private static final List<UUID> STARTED = new CopyOnWriteArrayList<>();
-	private static final List<UUID> ENDED = new CopyOnWriteArrayList<>();
+	private static final List<End> ENDED = new CopyOnWriteArrayList<>();
 
 	static {
 		Subspaces.STARTED.register((level, subspace) -> STARTED.add(subspace.boss()));
-		Subspaces.ENDED.register((level, subspace) -> ENDED.add(subspace.boss()));
+		Subspaces.ENDED.register((level, subspace, cause) -> ENDED.add(new End(subspace.boss(), cause)));
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:subspace_entering", maxTicks = 100)
@@ -114,7 +107,7 @@ public class SubspaceGameTests {
 
 				for (Warden warden : List.of(first, second)) {
 					helper.assertValueEqual(Collections.frequency(STARTED, warden.getUUID()), 1, "starts of a Warden's Subspace");
-					helper.assertValueEqual(Collections.frequency(ENDED, warden.getUUID()), 1, "ends of a Warden's Subspace");
+					helper.assertValueEqual(endsOf(warden), List.of(Subspaces.EndCause.BOSS_DIED), "what ended a killed Warden's Subspace");
 				}
 			})
 			.thenSucceed();
@@ -140,9 +133,7 @@ public class SubspaceGameTests {
 			.thenExecuteFor(WEAR_OFF_TICKS, () -> assertEffectsNeverRunningOut(helper, player, "a player inside while the Warden is unloaded"))
 			.thenExecute(() -> {
 				helper.assertValueEqual(Subspaces.containing(level, arena.centre()), List.of(opened), "the Subspace while its Warden is unloaded");
-
-				reloadSubspaces(level);
-				helper.assertValueEqual(Subspaces.containing(level, arena.centre()), List.of(opened), "the Subspace once it's reloaded");
+				helper.assertValueEqual(savedAndLoaded(level), List.of(opened), "the level's Subspaces once saved and loaded");
 
 				Entity reloaded = arena.track(SubspaceArena.load(helper, savedWarden));
 
@@ -151,6 +142,7 @@ public class SubspaceGameTests {
 				// How a Warden is removed as it digs back down.
 				reloaded.remove(Entity.RemovalReason.DISCARDED);
 				helper.assertValueEqual(Subspaces.containing(level, arena.centre()), List.of(), "the Subspaces once it digs down");
+				helper.assertValueEqual(endsOf(reloaded), List.of(Subspaces.EndCause.BOSS_REMOVED), "what ended the Subspace of a Warden that dug down");
 			})
 			.thenSucceed();
 	}
@@ -174,58 +166,28 @@ public class SubspaceGameTests {
 		helper.startSequence()
 			.thenExecuteAfter(WEAR_OFF_TICKS, () -> {
 				helper.assertValueEqual(Subspaces.containing(level, arena.centre()), List.of(), "the Subspaces in Peaceful");
+				helper.assertValueEqual(endsOf(warden), List.of(Subspaces.EndCause.PEACEFUL), "what ended the Subspace in Peaceful");
 				assertSubspaceEffects(helper, player, false, "a player inside in Peaceful");
 			})
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:subspace_remnants", maxTicks = 100)
-	public void aRemnantInsideStaysWhereItsOwnerDiedUnlessItCantBeCollectedThere(GameTestHelper helper) {
+	// A boss that will never load again leaves its Subspace open, and nothing but Peaceful ends it on its own.
+	@GameTest(environment = "maple_flavored_gametest:subspace_abandoned", maxTicks = 20)
+	public void endingAbandonedSubspacesEndsOnlyThoseWhoseBossIsntLoaded(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
-		ServerPlayer onTheFloor = arena.player(new Vec3(10.0, 0.0, 0.0), GameType.SURVIVAL);
-		ServerPlayer inLava = arena.player(new Vec3(10.0, 0.0, 6.0), GameType.SURVIVAL);
-		BlockPos floorSpot = arena.blockAt(10, 0, 0);
-		BlockPos solidGround = arena.blockAt(10, 0, 6);
-		BlockPos lavaSpot = arena.blockAt(13, 0, 6);
+		Warden unloaded = arena.stillWarden(Vec3.ZERO);
+		Warden loaded = arena.stillWarden(new Vec3(4.0, 0.0, 0.0));
 
-		arena.warden(Vec3.ZERO);
-		onTheFloor.giveExperiencePoints(STARTING_EXPERIENCE);
-		inLava.giveExperiencePoints(STARTING_EXPERIENCE);
-		standAt(level, onTheFloor, floorSpot);
-		standAt(level, inLava, solidGround);
+		SubspaceArena.unload(helper, unloaded);
+		helper.assertValueEqual(bossesAround(level, arena.centre()), List.of(unloaded.getUUID(), loaded.getUUID()), "the Subspaces before any is ended");
 
-		helper.startSequence()
-			// Lets the last solid ground be recorded.
-			.thenIdle(1)
-			.thenExecute(() -> {
-				arena.track(dieAndRespawn(helper, onTheFloor));
-				helper.assertValueEqual(remnantsAt(level, floorSpot), 1, "the Remnants where the player died on the floor");
+		Subspaces.endAbandoned(level);
 
-				level.setBlock(lavaSpot, Blocks.LAVA.defaultBlockState(), 3);
-				standAt(level, inLava, lavaSpot);
-				arena.track(dieAndRespawn(helper, inLava));
-				helper.assertValueEqual(remnantsAt(level, lavaSpot), 0, "the Remnants in the lava");
-				helper.assertValueEqual(remnantsAt(level, solidGround), 1, "the Remnants on the last solid ground");
-			})
-			.thenSucceed();
-	}
-
-	@GameTest(environment = "maple_flavored_gametest:subspace_respawn")
-	public void deathInsideRespawnsAtARespawnPointInside(GameTestHelper helper) {
-		ServerLevel level = helper.getLevel();
-		SubspaceArena arena = SubspaceArena.cleared(helper);
-		ServerPlayer player = arena.player(new Vec3(20.0, 0.0, 0.0), GameType.SURVIVAL);
-		BlockPos respawnPoint = arena.blockAt(5, 0, 0);
-		var respawnData = LevelData.RespawnData.of(level.dimension(), respawnPoint, 0.0F, 0.0F);
-
-		arena.warden(Vec3.ZERO);
-		player.setRespawnPosition(new ServerPlayer.RespawnConfig(respawnData, true), false);
-
-		ServerPlayer respawned = arena.track(dieAndRespawn(helper, player));
-
-		helper.assertValueEqual(respawned.blockPosition(), respawnPoint, "where the player respawns");
-		helper.assertValueEqual(Subspaces.containing(level, respawned.position()).size(), 1, "the Subspaces around the respawned player");
+		helper.assertValueEqual(bossesAround(level, arena.centre()), List.of(loaded.getUUID()), "the Subspaces once the abandoned ones are ended");
+		helper.assertValueEqual(endsOf(unloaded), List.of(Subspaces.EndCause.ABANDONED), "what ended the unloaded Warden's Subspace");
+		helper.assertValueEqual(endsOf(loaded), List.of(), "what ended the loaded Warden's Subspace");
 		helper.succeed();
 	}
 
@@ -326,30 +288,30 @@ public class SubspaceGameTests {
 	}
 
 	private static List<UUID> bossesAround(ServerLevel level, ServerPlayer player) {
-		return Subspaces.containing(level, player.position()).stream().map(Subspace::boss).toList();
+		return bossesAround(level, player.position());
+	}
+
+	private static List<UUID> bossesAround(ServerLevel level, Vec3 position) {
+		return Subspaces.containing(level, position).stream().map(Subspace::boss).toList();
+	}
+
+	private static List<Subspaces.EndCause> endsOf(Entity boss) {
+		return ENDED.stream().filter(end -> end.boss().equals(boss.getUUID())).map(End::cause).toList();
 	}
 
 	private static void shortenDigCooldown(Warden warden) {
 		warden.getBrain().setMemoryWithExpiry(MemoryModuleType.DIG_COOLDOWN, Unit.INSTANCE, DIG_COOLDOWN_TICKS);
 	}
 
-	// Saves the level's Subspaces as the world does and reads them back, as reopening the world would.
-	private static void reloadSubspaces(ServerLevel level) {
-		Codec<List<Subspace>> codec = Subspaces.ATTACHMENT.persistenceCodec();
+	// The level's Subspaces, saved as the world saves them and read back as reopening the world would.
+	private static List<Subspace> savedAndLoaded(ServerLevel level) {
+		Codec<List<Subspace>> codec = Subspace.CODEC.listOf();
 		RegistryOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-		Tag saved = codec.encodeStart(ops, level.getAttachedOrElse(Subspaces.ATTACHMENT, List.of())).getOrThrow();
+		Tag saved = codec.encodeStart(ops, Subspaces.inLevel(level)).getOrThrow();
 
-		level.setAttached(Subspaces.ATTACHMENT, codec.parse(ops, saved).getOrThrow());
+		return codec.parse(ops, saved).getOrThrow();
 	}
 
-	// The server takes a player's on-ground flag from their client's movement, which a mock player never sends.
-	private static void standAt(ServerLevel level, ServerPlayer player, BlockPos spot) {
-		level.setBlock(spot.below(), SubspaceArena.FLOOR.defaultBlockState(), 3);
-		SubspaceArena.teleport(player, Vec3.atBottomCenterOf(spot));
-		player.setOnGround(true);
-	}
-
-	private static int remnantsAt(ServerLevel level, BlockPos spot) {
-		return level.getEntities(Remnants.REMNANT, new AABB(spot), Entity::isAlive).size();
+	private record End(UUID boss, Subspaces.EndCause cause) {
 	}
 }
