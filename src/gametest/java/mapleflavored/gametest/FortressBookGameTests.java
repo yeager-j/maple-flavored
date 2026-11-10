@@ -13,7 +13,6 @@ import mapleflavored.structurebooks.StructureBookBlockEntity;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.StructureBooks;
-import mapleflavored.structurebooks.TerrainPreview;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -39,15 +38,9 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
-import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.RandomState;
-import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
-import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
-import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
-import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.structures.NetherFortressPieces;
 import org.jspecify.annotations.Nullable;
 
@@ -107,7 +100,7 @@ public class FortressBookGameTests {
 		List<BlockPos> books = Structures.books(level, planned);
 
 		helper.assertValueEqual(books, List.of(expectedBook), "the fortress's books");
-		helper.assertValueEqual(bookEnchantment(level, expectedBook), Enchantments.FIRE_PROTECTION, "the book's enchantment");
+		helper.assertValueEqual(Books.enchantmentAt(level, expectedBook), Enchantments.FIRE_PROTECTION, "the book's enchantment");
 		helper.assertValueEqual(level.getBlockState(expectedBook.below()).isAir(), true, "the book floats over open air above the well");
 		helper.assertValueEqual(lockedSpawners(level, expectedBook), spawners, "the spawners locking the book");
 
@@ -138,25 +131,11 @@ public class FortressBookGameTests {
 			.filter(piece -> !(piece instanceof NetherFortressPieces.CastleEntrance) && !(piece instanceof StructureBookPiece))
 			.toList();
 		StructurePiece startCrossing = withoutEntrance.getFirst();
-		ChunkGenerator generator = level.getChunkSource().getGenerator();
-		RandomState randomState = level.getChunkSource().randomState();
-		TerrainPreview terrain = TerrainPreview.of(
-			generator, generator.getBiomeSource(), randomState.createClimateSampler(SamplerContext.EMPTY_UNCACHED), randomState, level
-		);
-		Holder.Reference<Structure> fortress = level.registryAccess().lookupOrThrow(Registries.STRUCTURE).getOrThrow(BuiltinStructures.FORTRESS);
-		PiecesContainer withBook = StructureBookRules.withBook(
-			fortress,
-			new PiecesContainer(withoutEntrance),
-			level.getSeed(),
-			planned.getChunkPos(),
-			terrain,
-			level.getStructureTemplateManager()
-		);
-		StructureStart replanned = new StructureStart(fortress.value(), planned.getChunkPos(), 0, withBook);
+		StructureStart replanned = Books.planWithBook(level, BuiltinStructures.FORTRESS, planned.getChunkPos(), withoutEntrance);
 
 		helper.assertTrue(startCrossing instanceof NetherFortressPieces.StartPiece, "the first piece is the start crossing");
-		helper.assertValueEqual(bookPiece(replanned).spot(), worldPos(startCrossing, START_CROSSING_BOOK), "the book's spot");
-		helper.assertValueEqual(BookLocks.lockAt(level, bookPiece(replanned).spot()), Optional.empty(), "the lock of a book that was only added to its pieces");
+		helper.assertValueEqual(Books.piece(replanned).spot(), worldPos(startCrossing, START_CROSSING_BOOK), "the book's spot");
+		helper.assertValueEqual(BookLocks.lockAt(level, Books.piece(replanned).spot()), Optional.empty(), "the lock of a book that was only added to its pieces");
 		helper.succeed();
 	}
 
@@ -166,10 +145,10 @@ public class FortressBookGameTests {
 		StructureStart planned = planFortress(
 			level,
 			TestSites.of(helper),
-			start -> blazeSpawners(start).stream().noneMatch(spawner -> sameChunk(spawner, bookPiece(start).spot())),
+			start -> blazeSpawners(start).stream().noneMatch(spawner -> sameChunk(spawner, Books.piece(start).spot())),
 			"a fortress whose book's chunk holds no Blaze spawner"
 		);
-		BlockPos book = bookPiece(planned).spot();
+		BlockPos book = Books.piece(planned).spot();
 		ChunkPos bookChunk = ChunkPos.containing(book);
 		List<BlockPos> spawners = blazeSpawners(planned);
 
@@ -215,7 +194,7 @@ public class FortressBookGameTests {
 	public void aBuiltBookIsSentLessOfItsLockAsEachSpawnerIsCleared(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = planFortress(level, TestSites.of(helper), start -> true, "any fortress");
-		BlockPos book = bookPiece(planned).spot();
+		BlockPos book = Books.piece(planned).spot();
 		List<BlockPos> spawners = blazeSpawners(planned);
 
 		Structures.chunks(planned).forEach(chunk -> Structures.build(level, planned, chunk));
@@ -239,7 +218,7 @@ public class FortressBookGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = planFortress(level, TestSites.of(helper), start -> true, "any fortress");
 		StructureStart loaded = Structures.saveAndLoad(level, planned);
-		BlockPos book = bookPiece(planned).spot();
+		BlockPos book = Books.piece(planned).spot();
 
 		Structures.chunks(loaded).forEach(chunk -> Structures.build(level, loaded, chunk));
 
@@ -252,7 +231,7 @@ public class FortressBookGameTests {
 	public void aLockPlannedJustBeforeASaveIsSavedWithIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = Structures.plan(level, BuiltinStructures.FORTRESS, TestSites.of(helper).chunk(0));
-		BlockPos book = bookPiece(planned).spot();
+		BlockPos book = Books.piece(planned).spot();
 
 		// As at shutdown, when the last chunks are planned after the last tick: nothing reads the locks before the save.
 		ServerLifecycleEvents.BEFORE_SAVE.invoker().onBeforeSave(level.getServer(), false, false);
@@ -266,7 +245,7 @@ public class FortressBookGameTests {
 	public void aLockPlannedDuringASaveIsRecordedAfterIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = Structures.plan(level, BuiltinStructures.FORTRESS, TestSites.of(helper).chunk(0));
-		BlockPos book = bookPiece(planned).spot();
+		BlockPos book = Books.piece(planned).spot();
 
 		ServerLifecycleEvents.AFTER_SAVE.invoker().onAfterSave(level.getServer(), true, false);
 
@@ -278,30 +257,14 @@ public class FortressBookGameTests {
 	public void aSavedBookPieceKeepsItsWholeLock(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = planFortress(level, TestSites.of(helper), start -> true, "any fortress");
-		StructureBookPiece book = bookPiece(planned);
-		StructureBookPiece loaded = bookPiece(Structures.saveAndLoad(level, planned));
+		StructureBookPiece book = Books.piece(planned);
+		StructureBookPiece loaded = Books.piece(Structures.saveAndLoad(level, planned));
 		List<BlockPos> spawners = blazeSpawners(planned);
 
 		helper.assertValueEqual(book.lock(), new BookLocks.Keys(BookLocks.Kind.SPAWNERS, spawners), "the lock the planned piece carries");
 		helper.assertValueEqual(loaded.lock(), book.lock(), "the lock the loaded piece carries");
 		helper.assertValueEqual(loaded.keepers(), List.of(), "the keepers of a book that spawners lock");
 
-		// Saved before the piece saved its lock: a keeper lock's keys alone, which must still place its keepers.
-		StructurePieceSerializationContext context = StructurePieceSerializationContext.fromLevel(level);
-		CompoundTag legacy = book.createTag(context);
-
-		legacy.remove("Lock");
-		legacy.store("Keepers", BlockPos.CODEC.listOf(), spawners);
-
-		StructureBookPiece old = new StructureBookPiece(legacy);
-
-		helper.assertValueEqual(old.keepers(), spawners, "the keepers of a piece saved before locks");
-		helper.assertValueEqual(old.lock(), BookLocks.Keys.NONE, "the lock of a piece saved before locks");
-		helper.assertValueEqual(
-			old.createTag(context).read("Keepers", BlockPos.CODEC.listOf()),
-			Optional.of(spawners),
-			"the keepers saved again"
-		);
 		helper.succeed();
 	}
 
@@ -310,7 +273,7 @@ public class FortressBookGameTests {
 	public void aLockMissingFromTheSavedLocksIsPlannedAgainFromItsSavedFortress(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = planFortress(level, TestSites.of(helper), start -> true, "any fortress");
-		BlockPos book = bookPiece(planned).spot();
+		BlockPos book = Books.piece(planned).spot();
 		BookLocks.Lock lock = BookLocks.lockAt(level, book).orElseThrow();
 
 		Structures.chunks(planned).forEach(chunk -> Structures.build(level, planned, chunk));
@@ -335,7 +298,7 @@ public class FortressBookGameTests {
 	public void aTakeCountsTheSpawnersTheLockMissedBeingClearedOrRemoved(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = planFortress(level, TestSites.of(helper), start -> blazeSpawners(start).size() == 2, "a fortress with two Blaze spawners");
-		BlockPos book = bookPiece(planned).spot();
+		BlockPos book = Books.piece(planned).spot();
 		List<BlockPos> spawners = blazeSpawners(planned);
 		BlockPos standing = spawners.get(0);
 		BlockPos removed = spawners.get(1);
@@ -411,14 +374,6 @@ public class FortressBookGameTests {
 			.toList();
 	}
 
-	private static StructureBookPiece bookPiece(StructureStart start) {
-		return start.getPieces().stream()
-			.filter(StructureBookPiece.class::isInstance)
-			.map(StructureBookPiece.class::cast)
-			.findFirst()
-			.orElseThrow();
-	}
-
 	private static BlockPos worldPos(StructurePiece piece, BlockPos local) {
 		StructurePieceInvoker world = (StructurePieceInvoker) piece;
 
@@ -491,10 +446,6 @@ public class FortressBookGameTests {
 	// The share of the book's lock still on, as clients are sent it to draw the book's cage.
 	private static float sentLockRemaining(ServerLevel level, BlockPos book) {
 		return level.getBlockEntity(book).getUpdateTag(level.registryAccess()).getFloatOr("lock_remaining", 0.0F);
-	}
-
-	private static ResourceKey<Enchantment> bookEnchantment(ServerLevel level, BlockPos book) {
-		return ((StructureBookBlockEntity) level.getBlockEntity(book)).enchantment().orElseThrow().unwrapKey().orElseThrow();
 	}
 
 	private static Map<ResourceKey<Enchantment>, Integer> storedEnchantments(ServerPlayer player) {

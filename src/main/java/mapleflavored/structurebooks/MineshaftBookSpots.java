@@ -16,7 +16,7 @@ import net.minecraft.world.level.levelgen.structure.structures.MineshaftPieces;
 
 /**
  * Where a Mineshaft's book goes: floating at head height in a hallway, at the support in the middle of a random
- * corridor, between its two oak fence posts and above its rail line.
+ * corridor, between its two oak fence posts and above its rail line, in a pocket carved around it.
  *
  * <p>Vanilla skips building a corridor wherever it touches water or lava, or the Deep Dark. Chunks are built
  * independently and in any order, so the corridor is checked against the terrain preview when the Mineshaft is
@@ -48,7 +48,7 @@ public final class MineshaftBookSpots {
 			.filter(corridor -> isBuilt(corridor, terrain))
 			.findFirst()
 			.or(() -> tries.stream().findFirst())
-			.map(corridor -> new BookSpot(corridor, middleSupport(corridor)));
+			.map(corridor -> new BookSpot(corridor, middleSupport(corridor), BookSpot.Placement.POCKET));
 	}
 
 	private static List<StructurePiece> corridorsToTry(List<StructurePiece> pieces) {
@@ -60,8 +60,8 @@ public final class MineshaftBookSpots {
 		return new ArrayList<>(openCorridors.isEmpty() ? corridors : openCorridors);
 	}
 
-	/** At head height in the corridor's middle, at the support nearest its centre. */
-	public static BlockPos middleSupport(StructurePiece corridor) {
+	// At head height in the corridor's middle, at the support nearest its centre.
+	private static BlockPos middleSupport(StructurePiece corridor) {
 		BoundingBox box = corridor.getBoundingBox();
 		boolean alongZ = corridor.getOrientation() != null && corridor.getOrientation().getAxis() == Direction.Axis.Z;
 		int length = alongZ ? box.getZSpan() : box.getXSpan();

@@ -17,6 +17,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.entity.EntityTypeTest;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import org.jspecify.annotations.Nullable;
 
@@ -25,6 +26,9 @@ import org.jspecify.annotations.Nullable;
  * Each is tagged as its piece places it, and counted once it's gone for good, however it goes: killed by anything,
  * converted, or removed as Peaceful removes monsters. A keeper that only unloads or changes dimension still counts as
  * alive.
+ *
+ * <p>Code that spawns a keeper itself asks {@link #keeperPlacedBy} which keeper its piece places and tags the mob with
+ * the answer. A keeper the game spawns from a template, as a Bastion's Brutes are, is tagged through {@link #build}.
  */
 public final class MobKeepers {
 	private static final AttachmentType<Keeper> KEEPER = AttachmentRegistry.create(
@@ -32,7 +36,7 @@ public final class MobKeepers {
 		builder -> builder.persistent(Keeper.CODEC)
 	);
 
-	// Set on a worldgen thread while a keeper's piece is built, for the keeper it places to pick up.
+	// Set on a worldgen thread while a keeper's piece is built, for a keeper the game spawns from it to pick up.
 	private static final ThreadLocal<@Nullable Keeper> PLACING = new ThreadLocal<>();
 
 	private MobKeepers() {
@@ -47,10 +51,10 @@ public final class MobKeepers {
 	}
 
 	/**
-	 * Builds a structure's piece, so the keeper it places is tagged when the piece places one of the book's. Call around
-	 * every piece's build.
+	 * Builds a structure's piece, so a keeper the game spawns from it is tagged by {@link #tagIfPlacing} when the piece
+	 * places one of the book's. Call around every piece's build.
 	 *
-	 * @param pieces the structure's pieces, its book last if it has one
+	 * @param pieces the structure's pieces
 	 * @param dimension where the structure is being built
 	 */
 	public static void build(StructurePiece piece, List<StructurePiece> pieces, ResourceKey<Level> dimension, Runnable buildPiece) {
@@ -71,21 +75,33 @@ public final class MobKeepers {
 		}
 	}
 
-	/** Tags a keeper a structure's piece is placing, if the piece places one. */
+	/** Tags a keeper the game is spawning from the piece being built, if that piece places one. */
 	public static void tagIfPlacing(Mob keeper) {
 		Keeper placing = PLACING.get();
 
-		if (placing != null) keeper.setAttached(KEEPER, placing);
+		if (placing != null) placing.tag(keeper);
 	}
 
 	/**
-	 * Unlocks the key of the keeper the piece being built couldn't place, as where a cave left it no floor, so the book
-	 * can still be taken. Safe to call from any thread.
+	 * The keeper the piece places, if it places one of its structure's book's keeper mobs.
+	 *
+	 * @param pieces the structure's pieces
+	 * @param dimension where the structure is being built
 	 */
-	public static void forgiveIfPlacing() {
-		Keeper placing = PLACING.get();
+	public static Optional<Keeper> keeperPlacedBy(StructurePiece piece, List<StructurePiece> pieces, ResourceKey<Level> dimension) {
+		return StructureBookPiece.among(pieces).flatMap(book -> book.keeperMobPlacedBy(piece)
+			.map(key -> new Keeper(GlobalPos.of(dimension, book.plannedSpot()), key))
+		);
+	}
 
-		if (placing != null) BookLocks.forgiveKeeper(placing.book(), placing.key());
+	/**
+	 * The key of a keeper mob that this mod spawns in a room of its structure, as a Stronghold's Evokers are: the room's
+	 * origin, the lowest corner of its box.
+	 */
+	public static BlockPos roomKey(StructurePiece room) {
+		BoundingBox box = room.getBoundingBox();
+
+		return new BlockPos(box.minX(), box.minY(), box.minZ());
 	}
 
 	/** The loaded keepers of the book at {@code book} in its level that are still alive there. */
@@ -104,12 +120,6 @@ public final class MobKeepers {
 	/** The key in its book's lock of the keeper, if the mob is one. */
 	public static Optional<BlockPos> keyOf(Mob mob) {
 		return Optional.ofNullable(mob.getAttached(KEEPER)).map(Keeper::key);
-	}
-
-	private static Optional<Keeper> keeperPlacedBy(StructurePiece piece, List<StructurePiece> pieces, ResourceKey<Level> dimension) {
-		if (pieces.isEmpty() || !(pieces.getLast() instanceof StructureBookPiece book)) return Optional.empty();
-
-		return StructureBookSpots.keeperKey(piece, book.keepers()).map(key -> new Keeper(GlobalPos.of(dimension, book.spot()), key));
 	}
 
 	// Removed without dying, as by converting or Peaceful's removal of monsters. Counting a keeper twice changes nothing.
@@ -132,13 +142,26 @@ public final class MobKeepers {
 	/**
 	 * A keeper's place in its book's lock. Saved with the keeper.
 	 *
-	 * @param book where its book is
-	 * @param key its key in the book's lock: the origin of the piece that placed it
+	 * @param book where its book was planned
+	 * @param key its key in the book's lock, which the piece that places it gives it
 	 */
-	private record Keeper(GlobalPos book, BlockPos key) {
+	public record Keeper(GlobalPos book, BlockPos key) {
 		static final Codec<Keeper> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 			GlobalPos.CODEC.fieldOf("book").forGetter(Keeper::book),
 			BlockPos.CODEC.fieldOf("key").forGetter(Keeper::key)
 		).apply(instance, Keeper::new));
+
+		/** Makes the mob this keeper, so its book unlocks this key once the mob is gone for good. */
+		public void tag(Mob mob) {
+			mob.setAttached(KEEPER, this);
+		}
+
+		/**
+		 * Unlocks this key because its piece couldn't place the keeper, as where a cave left it no floor, so the book can
+		 * still be taken. Safe to call from any thread.
+		 */
+		public void forgive() {
+			BookLocks.forgiveKeeper(book, key);
+		}
 	}
 }

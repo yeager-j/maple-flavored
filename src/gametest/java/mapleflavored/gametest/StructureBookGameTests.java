@@ -1,13 +1,14 @@
 package mapleflavored.gametest;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiPredicate;
+import java.util.stream.IntStream;
 import mapleflavored.structurebooks.BookSpot;
 import mapleflavored.structurebooks.MineshaftBookSpots;
 import mapleflavored.structurebooks.StructureBookPiece;
@@ -20,7 +21,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -51,7 +51,6 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
-import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.structures.MineshaftPieces;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -66,6 +65,9 @@ import net.minecraft.world.phys.Vec3;
  */
 public class StructureBookGameTests {
 	private static final BlockPos BOOK_POS = new BlockPos(3, 2, 3);
+	// How long a section of a Mineshaft corridor is, and how far into each its support stands.
+	private static final int CORRIDOR_SECTION = 5;
+	private static final int CORRIDOR_SUPPORT = 2;
 	private static final int MAIN_INVENTORY_SLOTS = Inventory.INVENTORY_SIZE;
 
 	// Fabric events can't be unregistered, so one listener records every take for the tests, by absolute position.
@@ -87,13 +89,13 @@ public class StructureBookGameTests {
 		for (int i = 0; i < mineshafts.size(); i++) {
 			String name = mineshafts.get(i).identifier() + " " + i;
 			StructureStart start = Structures.place(level, mineshafts.get(i), TestSites.of(helper).chunk(i));
-			BlockPos book = onlyBook(helper, start);
+			BlockPos book = Books.only(helper, start);
 			long openSides = Direction.Plane.HORIZONTAL.stream().filter(side -> level.getBlockState(book.relative(side)).isAir()).count();
 
-			helper.assertTrue(
-				corridors(start.getPieces()).stream().anyMatch(corridor -> MineshaftBookSpots.middleSupport(corridor).equals(book)),
-				"the book in " + name + " floats at a corridor's middle support"
-			);
+			List<StructurePiece> hallways = corridors(start.getPieces()).stream().filter(corridor -> corridor.getBoundingBox().isInside(book)).toList();
+
+			helper.assertFalse(hallways.isEmpty(), "the book in " + name + " is in a corridor");
+			helper.assertTrue(hallways.stream().anyMatch(hallway -> isAtMiddleSupport(hallway, book)), "the book in " + name + " floats at its corridor's middle support");
 			helper.assertTrue(openSides >= 2, "the book in " + name + " is open along its hallway");
 		}
 
@@ -103,10 +105,9 @@ public class StructureBookGameTests {
 	@GameTest
 	public void theTerrainPreviewSteersTheBookAwayFromAWetHallway(GameTestHelper helper) {
 		List<StructurePiece> pieces = Structures.plan(helper.getLevel(), BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)).getPieces();
-		List<BlockPos> corridorSpots = corridors(pieces).stream().map(MineshaftBookSpots::middleSupport).toList();
 		BlockPos dryChoice = chooseSpot(pieces, previewWithLiquid((x, z) -> false), "an all-dry preview");
 		BoundingBox firstHallway = corridors(pieces).stream()
-			.filter(corridor -> MineshaftBookSpots.middleSupport(corridor).equals(dryChoice))
+			.filter(corridor -> isAtMiddleSupport(corridor, dryChoice))
 			.findFirst()
 			.orElseThrow()
 			.getBoundingBox()
@@ -118,8 +119,7 @@ public class StructureBookGameTests {
 		BlockPos wetChoice = chooseSpot(pieces, wetAroundFirstChoice, "a preview wet around the first choice");
 		BlockPos allWetChoice = chooseSpot(pieces, previewWithLiquid((x, z) -> true), "an all-wet preview");
 
-		helper.assertTrue(corridorSpots.contains(dryChoice), "the dry choice is a corridor's middle support");
-		helper.assertTrue(corridorSpots.contains(wetChoice), "the next choice is a corridor's middle support");
+		helper.assertTrue(corridors(pieces).stream().anyMatch(corridor -> isAtMiddleSupport(corridor, wetChoice)), "the next choice is a corridor's middle support");
 		helper.assertTrue(!wetChoice.equals(dryChoice), "a wet hallway is passed over");
 		helper.assertValueEqual(allWetChoice, dryChoice, "with no dry hallway, the first one tried");
 		helper.succeed();
@@ -141,7 +141,7 @@ public class StructureBookGameTests {
 			.forEach(pos -> level.setBlock(pos, Blocks.WATER.defaultBlockState(), Block.UPDATE_CLIENTS));
 		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
 
-		BlockPos book = onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		ChunkPos chunk = ChunkPos.containing(book);
 		BoundingBox bookChunk = new BoundingBox(
 			chunk.getMinBlockX(), level.getMinY(), chunk.getMinBlockZ(), chunk.getMaxBlockX(), level.getMaxY(), chunk.getMaxBlockZ()
@@ -170,7 +170,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void takingAMineshaftBookGivesEfficiencyOne(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos book = onlyBook(helper, Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)));
+		BlockPos book = Books.only(helper, Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)));
 		ServerPlayer player = survivalPlayer(helper);
 
 		use(player, book);
@@ -184,7 +184,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void aFullInventoryRefusesTheBook(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos book = onlyBook(helper, Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)));
+		BlockPos book = Books.only(helper, Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)));
 		ServerPlayer player = survivalPlayer(helper);
 		Inventory inventory = player.getInventory();
 
@@ -231,7 +231,7 @@ public class StructureBookGameTests {
 			books = booksNow;
 		}
 
-		BlockPos book = onlyBook(helper, saved);
+		BlockPos book = Books.only(helper, saved);
 
 		helper.assertValueEqual(chunksThatAddedABook, List.of(ChunkPos.containing(book)), "chunks whose building added a book");
 
@@ -247,7 +247,7 @@ public class StructureBookGameTests {
 	public void anOverlappingStructureCantEraseTheBook(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0));
-		BlockPos book = onlyBook(helper, start);
+		BlockPos book = Books.only(helper, start);
 		// The same Mineshaft without its book, so its central room carves through the book's spot.
 		List<StructurePiece> piecesWithoutBook = start.getPieces().stream()
 			.filter(piece -> !(piece instanceof StructureBookPiece))
@@ -388,6 +388,23 @@ public class StructureBookGameTests {
 		return pieces.stream().filter(MineshaftPieces.MineShaftCorridor.class::isInstance).toList();
 	}
 
+	// A corridor is three blocks wide and runs in sections of five, each with a support across its third block. The
+	// middle support is the one nearest the corridor's centre, the farther of the two when two are as near. The book
+	// floats on the corridor's centre line there, a block over the floor.
+	private static boolean isAtMiddleSupport(StructurePiece corridor, BlockPos book) {
+		BoundingBox box = corridor.getBoundingBox();
+		boolean alongZ = box.getZSpan() > box.getXSpan();
+		int length = alongZ ? box.getZSpan() : box.getXSpan();
+		int along = alongZ ? book.getZ() - box.minZ() : book.getX() - box.minX();
+		int across = alongZ ? book.getX() - box.minX() : book.getZ() - box.minZ();
+		List<Integer> supports = IntStream.range(0, length).filter(block -> block % CORRIDOR_SECTION == CORRIDOR_SUPPORT).boxed().toList();
+		int middle = supports.stream()
+			.min(Comparator.<Integer>comparingInt(support -> Math.abs(2 * support - (length - 1))).thenComparing(Comparator.reverseOrder()))
+			.orElseThrow();
+
+		return box.isInside(book) && across == 1 && book.getY() == box.minY() + 1 && along == middle;
+	}
+
 	// Seeded the same way each call, so every choice tries the corridors in the same order.
 	private static BlockPos chooseSpot(List<StructurePiece> pieces, TerrainPreview terrain, String preview) {
 		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
@@ -412,52 +429,21 @@ public class StructureBookGameTests {
 		};
 	}
 
+	// Set by command with no data, the only way a book comes to hold no enchantment.
 	@GameTest
-	public void aBookSavedBeforePlacementsKeepsItsPocketRule(GameTestHelper helper) {
+	public void aBlankBookCrumblesWhenAPlayerTriesToTakeIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructurePieceSerializationContext context = StructurePieceSerializationContext.fromLevel(level);
-		StructureBookPiece planned = Structures.plan(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)).getPieces().stream()
-			.filter(StructureBookPiece.class::isInstance)
-			.map(StructureBookPiece.class::cast)
-			.findFirst()
-			.orElseThrow();
-		CompoundTag current = planned.createTag(context);
-		// The old format's Pocket flag: true, false, and a book saved before it existed, which carved a pocket.
-		List<Optional<Boolean>> pockets = List.of(Optional.of(true), Optional.of(false), Optional.empty());
+		BlockPos book = helper.absolutePos(BOOK_POS);
+		ServerPlayer player = survivalPlayer(helper);
 
-		for (int i = 0; i < pockets.size(); i++) {
-			Optional<Boolean> pocket = pockets.get(i);
-			boolean carves = pocket.orElse(true);
-			BlockPos spot = helper.absolutePos(new BlockPos(2 + 4 * i, 2, 2));
-			CompoundTag legacy = current.copy();
+		MockPlayers.runCommand(helper, player, "setblock %d %d %d maple_flavored:structure_book".formatted(book.getX(), book.getY(), book.getZ()));
+		helper.assertBlockPresent(StructureBooks.BLOCK, BOOK_POS);
 
-			legacy.remove("Placement");
-			legacy.remove("Anchor");
-			pocket.ifPresent(value -> legacy.putBoolean("Pocket", value));
-			legacy.putIntArray("BB", new int[] {spot.getX(), spot.getY(), spot.getZ(), spot.getX(), spot.getY(), spot.getZ()});
-			BlockPos.betweenClosed(spot.offset(-1, -1, -1), spot.offset(1, 1, 1)).forEach(pos -> level.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState()));
-
-			StructureBookPiece loaded = new StructureBookPiece(legacy);
-			BoundingBox chunkBox = new BoundingBox(spot).inflatedBy(2);
-
-			loaded.postProcess(level, level.structureManager(), level.getChunkSource().getGenerator(), level.getRandom(), chunkBox, ChunkPos.containing(spot), spot);
-
-			String saved = loaded.createTag(context).getStringOr("Placement", "");
-
-			helper.assertTrue(level.getBlockState(spot).is(StructureBooks.BLOCK), "Pocket " + pocket + ": the book is placed");
-			helper.assertValueEqual(level.getBlockState(spot.east()).isAir(), carves, "Pocket " + pocket + ": carved a pocket");
-			helper.assertValueEqual(saved, carves ? "POCKET" : "OPEN", "Pocket " + pocket + ": saved again as");
-		}
-
+		helper.assertFalse(StructureBooks.take(player, book), "A blank book was taken");
+		helper.assertBlockPresent(Blocks.AIR, BOOK_POS);
+		helper.assertValueEqual(booksIn(player), List.of(), "the books a blank book gave");
+		helper.assertValueEqual(takenEnchantments(book), List.of(), "the takes a blank book fired");
 		helper.succeed();
-	}
-
-	private static BlockPos onlyBook(GameTestHelper helper, StructureStart start) {
-		List<BlockPos> books = Structures.books(helper.getLevel(), start);
-
-		helper.assertValueEqual(books.size(), 1, "structure books at " + books + " in " + start.getChunkPos());
-
-		return books.getFirst();
 	}
 
 	// Set by command, so the block entity loads its enchantment from saved data.

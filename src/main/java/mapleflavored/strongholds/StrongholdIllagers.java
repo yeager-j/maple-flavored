@@ -11,7 +11,7 @@ import java.util.function.Function;
 import mapleflavored.bloodmoons.Restorable;
 import mapleflavored.mixin.StructurePieceInvoker;
 import mapleflavored.structurebooks.MobKeepers;
-import mapleflavored.structurebooks.StructureBookPiece;
+import mapleflavored.structurebooks.StructureBookRules;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
@@ -35,7 +35,7 @@ import net.minecraft.world.phys.Vec3;
  * space, inside its piece's walls, so never in a doorway. A library's Evoker keeps to its upper walkway, or to the back
  * of a library without one, and a prison hall's guard to the hall, outside the cells.
  *
- * <p>The Evokers of three keeper rooms keep the Stronghold's book, each keyed by the origin of its room: the portal room,
+ * <p>The Evokers of three keeper rooms keep the Stronghold's book: the portal room,
  * and two big rooms, libraries, room crossings or prison halls, chosen when the Stronghold is planned to draw the player
  * out to its edges. Each is the big room the most rooms away from the portal room and the keeper rooms already chosen.
  * Every library has an Evoker, a keeper or not; a room crossing or prison hall has one only as a keeper room.
@@ -103,11 +103,16 @@ public final class StrongholdIllagers {
 	private StrongholdIllagers() {
 	}
 
+	/** Has every Stronghold's book locked by the Evokers of its keeper rooms. Call once from mod init. */
+	public static void register() {
+		StructureBookRules.chooseStrongholdKeeperRoomsWith(StrongholdIllagers::keeperRooms);
+	}
+
 	/**
-	 * The keys of the Evokers that keep the Stronghold's book: the origins of its keeper rooms, the portal room first.
-	 * None for a Stronghold without a portal room. Ties between equally far rooms are drawn from {@code random}.
+	 * The rooms whose Evokers keep the Stronghold's book, the portal room first. None for a Stronghold without a portal
+	 * room. Ties between equally far rooms are drawn from {@code random}.
 	 */
-	public static List<BlockPos> keeperKeys(List<StructurePiece> pieces, RandomSource random) {
+	static List<StructurePiece> keeperRooms(List<StructurePiece> pieces, RandomSource random) {
 		Optional<StructurePiece> portalRoom = pieces.stream().filter(piece -> piece.getType() == StructurePieceType.STRONGHOLD_PORTAL_ROOM).findFirst();
 
 		if (portalRoom.isEmpty()) return List.of();
@@ -115,44 +120,36 @@ public final class StrongholdIllagers {
 		List<StructurePiece> rooms = pieces.stream().filter(StrongholdLayout::isStrongholdPiece).toList();
 		List<StructurePiece> bigRooms = new ArrayList<>(rooms.stream().filter(room -> KEEPER_EVOKER_AREAS.containsKey(room.getType())).toList());
 		List<Map<StructurePiece, Integer>> roomsFromKeepers = new ArrayList<>(List.of(StrongholdRoutes.roomsApart(rooms, portalRoom.get())));
-		List<BlockPos> keys = new ArrayList<>(List.of(origin(portalRoom.get())));
+		List<StructurePiece> keepers = new ArrayList<>(List.of(portalRoom.get()));
 
 		Util.shuffle(bigRooms, random);
 
 		for (int keeper = 0; keeper < FAR_KEEPERS; keeper++) {
 			Optional<StructurePiece> farthest = bigRooms.stream()
-				.filter(room -> !keys.contains(origin(room)))
+				.filter(room -> !keepers.contains(room))
 				.filter(room -> roomsFromKeepers.stream().allMatch(apart -> apart.containsKey(room)))
 				.max(Comparator.comparingInt(room -> roomsFromKeepers.stream().mapToInt(apart -> apart.get(room)).min().orElseThrow()));
 
 			if (farthest.isEmpty()) break;
 
-			keys.add(origin(farthest.get()));
+			keepers.add(farthest.get());
 			roomsFromKeepers.add(StrongholdRoutes.roomsApart(rooms, farthest.get()));
 		}
 
-		return List.copyOf(keys);
-	}
-
-	/** The key of the Evoker the piece places, if it's a room that can be a keeper room. */
-	public static Optional<BlockPos> keeperKey(StructurePiece piece) {
-		boolean canKeep = piece.getType() == StructurePieceType.STRONGHOLD_PORTAL_ROOM || KEEPER_EVOKER_AREAS.containsKey(piece.getType());
-
-		return canKeep ? Optional.of(origin(piece)) : Optional.empty();
+		return List.copyOf(keepers);
 	}
 
 	/**
-	 * Places the guards of a Stronghold piece that stand in the chunk being built, tagging a keeper room's Evoker. Call inside
-	 * {@code MobKeepers.build}, after the piece is built in each chunk; it does nothing for any other piece, including the
-	 * Stronghold's starting staircase. A keeper Evoker with no room has its key unlocked.
+	 * Places the guards of a Stronghold piece that stand in the chunk being built, tagging a keeper room's Evoker as the
+	 * keeper the book names for that room. Call after the piece is built in each chunk; it does nothing for any other
+	 * piece, including the Stronghold's starting staircase. A keeper Evoker with no room has its key unlocked.
 	 *
-	 * @param pieces the Stronghold's pieces, its book last if it has one, which names its keeper rooms
+	 * @param pieces the Stronghold's pieces, whose book names its keeper rooms
 	 * @param chunkBox the part of the world the chunk build may change
 	 */
 	public static void placeGuards(StructurePiece piece, List<StructurePiece> pieces, WorldGenLevel level, BoundingBox chunkBox) {
-		boolean keeperRoom = !pieces.isEmpty()
-			&& pieces.getLast() instanceof StructureBookPiece book
-			&& book.keepers().contains(origin(piece));
+		Optional<MobKeepers.Keeper> roomsKeeper = MobKeepers.keeperPlacedBy(piece, pieces, level.getLevel().dimension());
+		boolean keeperRoom = roomsKeeper.isPresent();
 		Set<BlockPos> taken = new HashSet<>();
 
 		for (PlannedGuard guard : plan(piece, keeperRoom, level.getSeed())) {
@@ -164,10 +161,10 @@ public final class StrongholdIllagers {
 				.flatMap(column -> standingSpot(level, piece.getBoundingBox(), column, lowestFeet).stream())
 				.filter(open -> !taken.contains(open))
 				.findFirst();
-			boolean keeper = keeperRoom && guard.type() == EntityTypes.EVOKER;
+			Optional<MobKeepers.Keeper> keeper = roomsKeeper.filter(unused -> guard.type() == EntityTypes.EVOKER);
 
 			if (spot.isEmpty()) {
-				if (keeper) MobKeepers.forgiveIfPlacing();
+				keeper.ifPresent(MobKeepers.Keeper::forgive);
 
 				continue;
 			}
@@ -223,12 +220,6 @@ public final class StrongholdIllagers {
 		boolean tall = library.getBoundingBox().getYSpan() > SHORT_LIBRARY_HEIGHT;
 
 		return tall ? LIBRARY_UPPER_WALKWAY : LIBRARY_BACK;
-	}
-
-	private static BlockPos origin(StructurePiece piece) {
-		BoundingBox box = piece.getBoundingBox();
-
-		return new BlockPos(box.minX(), box.minY(), box.minZ());
 	}
 
 	// The guard's first choice, then every other column in the same chunk, in shuffled order.
@@ -304,16 +295,16 @@ public final class StrongholdIllagers {
 	}
 
 	// Set up as a Woodland Mansion sets up its Illagers.
-	private static void spawn(WorldGenLevel level, EntityType<? extends Mob> type, BlockPos feet, boolean keeper) {
+	private static void spawn(WorldGenLevel level, EntityType<? extends Mob> type, BlockPos feet, Optional<MobKeepers.Keeper> keeper) {
 		Mob mob = type.create(level.getLevel(), EntitySpawnReason.STRUCTURE);
 
 		if (mob == null) {
-			if (keeper) MobKeepers.forgiveIfPlacing();
+			keeper.ifPresent(MobKeepers.Keeper::forgive);
 
 			return;
 		}
 
-		if (keeper) MobKeepers.tagIfPlacing(mob);
+		keeper.ifPresent(tag -> tag.tag(mob));
 
 		mob.setPersistenceRequired();
 		mob.snapTo(Vec3.atBottomCenterOf(feet), 0.0F, 0.0F);

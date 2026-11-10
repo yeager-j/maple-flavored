@@ -2,9 +2,9 @@ package mapleflavored.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import mapleflavored.structurebooks.FortressBlazeSpawners;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
-import net.minecraft.world.level.levelgen.structure.structures.NetherFortressPieces;
 import net.minecraft.world.level.levelgen.structure.structures.NetherFortressStructure;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -27,12 +27,7 @@ public abstract class NetherFortressStructureMixin {
 
 			original.call(builder, context);
 
-			if (hasBlazeSpawner(builder)) return;
+			if (FortressBlazeSpawners.hasRoom(builder.build().pieces())) return;
 		}
-	}
-
-	@Unique
-	private static boolean hasBlazeSpawner(StructurePiecesBuilder builder) {
-		return builder.build().pieces().stream().anyMatch(NetherFortressPieces.MonsterThrone.class::isInstance);
 	}
 }

@@ -26,13 +26,15 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 
 /**
  * Loot never skips the Library: chest books became diamonds, every book left is one enchantment at level I and comes
- * from fishing or the ominous vault, gear from chests, vaults, fishing and bartering is plain, and bartering lost its
+ * from fishing, the ominous vault or Buried Treasure's own structure book, gear from chests, vaults, fishing and bartering is plain, and bartering lost its
  * Soul Speed books and iron boots.
  */
 public class BookLootGameTests {
 	private static final Set<ResourceKey<Enchantment>> FISHING_BOOKS = Set.of(Enchantments.LUCK_OF_THE_SEA, Enchantments.LURE);
 	private static final Set<ResourceKey<Enchantment>> OMINOUS_VAULT_BOOKS = Set.of(Enchantments.BREACH, Enchantments.DENSITY, Enchantments.WIND_BURST);
-	// Chest and barter tables hand out no enchanted books at all.
+	// The one chest table with a structure book of its own.
+	private static final Set<ResourceKey<Enchantment>> BURIED_TREASURE_BOOKS = Set.of(Enchantments.AQUA_AFFINITY, Enchantments.RESPIRATION);
+	// Other chest tables, and barter tables, hand out no enchanted books at all.
 	private static final Map<ContextKeySet, Set<ResourceKey<Enchantment>>> BOOKS_BY_TABLE_TYPE = Map.of(
 		LootContextParamSets.CHEST, Set.of(),
 		LootContextParamSets.PIGLIN_BARTER, Set.of(),
@@ -53,9 +55,7 @@ public class BookLootGameTests {
 		int swept = 0;
 
 		for (Holder.Reference<LootTable> table : tables) {
-			Set<ResourceKey<Enchantment>> allowedBooks = OMINOUS_VAULT_TABLES.contains(table.key())
-				? OMINOUS_VAULT_BOOKS
-				: BOOKS_BY_TABLE_TYPE.get(table.value().getParamSet());
+			Set<ResourceKey<Enchantment>> allowedBooks = allowedBooks(table);
 
 			if (allowedBooks == null) continue;
 
@@ -80,6 +80,13 @@ public class BookLootGameTests {
 		// Every vanilla chest table, the vault's among them, plus the fishing and barter tables.
 		helper.assertTrue(swept > 60, "swept " + swept + " tables");
 		helper.succeed();
+	}
+
+	private static Set<ResourceKey<Enchantment>> allowedBooks(Holder.Reference<LootTable> table) {
+		if (OMINOUS_VAULT_TABLES.contains(table.key())) return OMINOUS_VAULT_BOOKS;
+		if (table.key().equals(BuiltInLootTables.BURIED_TREASURE)) return BURIED_TREASURE_BOOKS;
+
+		return BOOKS_BY_TABLE_TYPE.get(table.value().getParamSet());
 	}
 
 	@GameTest
