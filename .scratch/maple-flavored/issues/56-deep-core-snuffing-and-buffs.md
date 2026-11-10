@@ -4,7 +4,7 @@
 
 **Blocked by:** 55 (Deep Core generation)
 
-**Status:** ready-for-agent
+**Status:** wontfix
 
 Spec: the Maple Flavored spec in this folder, user stories 193b–193f, the Deep Cores module's Zone, Snuffing and Buffs bullets, the Deep Core game rules, and the snuffing and overlap bullets under Spec defaults.
 
@@ -28,3 +28,8 @@ Spec: the Maple Flavored spec in this folder, user stories 193b–193f, the Deep
 
 - One hook on block state changes in loaded chunks is the likely seam: check the new state's light emission and the loaded-core index. Keep the check cheap, since block changes are a hot path.
 - Vanilla's Creaking Heart trail is the reference for the trail particle.
+
+## Comments
+
+
+Closed on 2026-11-10: Deep Cores were dropped before they were built. Diamond scarcity (ticket 61) takes their place. The reasons are in the last comment of `.scratch/maple-flavored-design/issues/21-deep-caves.md`.

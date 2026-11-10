@@ -56,7 +56,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Every Woodland Mansion holds a level I Looting book in the fake End portal of its portal room. Taking it sets every
+ * Every Woodland Mansion holds a level I Fortune book in the fake End portal of its portal room. Taking it sets every
  * Illager in the mansion hunting the player, Orichalcum or not.
  */
 public class MansionBookGameTests {
@@ -83,8 +83,8 @@ public class MansionBookGameTests {
 	private static final int FULL_RESISTANCE = 4;
 
 	@GameTest
-	public void theMansionsBookIsLooting(GameTestHelper helper) {
-		helper.assertValueEqual(StructureBookRules.enchantmentsFor(BuiltinStructures.WOODLAND_MANSION), List.of(Enchantments.LOOTING), "the mansion's books");
+	public void theMansionsBookIsFortune(GameTestHelper helper) {
+		helper.assertValueEqual(StructureBookRules.enchantmentsFor(BuiltinStructures.WOODLAND_MANSION), List.of(Enchantments.FORTUNE), "the mansion's books");
 		helper.succeed();
 	}
 
@@ -98,7 +98,7 @@ public class MansionBookGameTests {
 			List<StructureBookPiece> books = BastionBookGameTests.bookPieces(start);
 
 			helper.assertValueEqual(books.size(), 1, "books planned in the mansion at " + start.getChunkPos());
-			helper.assertValueEqual(books.getFirst().enchantment(), Enchantments.LOOTING, "the book planned at " + start.getChunkPos());
+			helper.assertValueEqual(books.getFirst().enchantment(), Enchantments.FORTUNE, "the book planned at " + start.getChunkPos());
 
 			BlockPos spot = books.getFirst().spot();
 			boolean inThePortalRoom = templatePieces(start, portalRoom).stream().anyMatch(room -> room.getBoundingBox().isInside(spot));
@@ -116,7 +116,7 @@ public class MansionBookGameTests {
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		ServerPlayer player = orichalcumWearer(helper);
 
-		helper.assertValueEqual(BastionBookGameTests.enchantmentAt(level, book), Enchantments.LOOTING, "the book's enchantment");
+		helper.assertValueEqual(BastionBookGameTests.enchantmentAt(level, book), Enchantments.FORTUNE, "the book's enchantment");
 		helper.assertTrue(level.getBlockState(book.below(2)).is(Blocks.WOOL.orange()), "the book floats over the fake portal's orange wool");
 
 		BoundingBox box = start.getBoundingBox();
@@ -220,9 +220,9 @@ public class MansionBookGameTests {
 		helper.setBlock(HAND_SET_BOOK, StructureBooks.BLOCK);
 
 		BlockPos book = helper.absolutePos(HAND_SET_BOOK);
-		Holder<Enchantment> looting = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.LOOTING);
+		Holder<Enchantment> fortune = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
 
-		((StructureBookBlockEntity) level.getBlockEntity(book)).setEnchantment(looting);
+		((StructureBookBlockEntity) level.getBlockEntity(book)).setEnchantment(fortune);
 
 		Vindicator vindicator = spawnVindicator(level, book.east());
 		ServerPlayer player = orichalcumWearer(helper);

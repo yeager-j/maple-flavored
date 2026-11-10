@@ -99,10 +99,6 @@ _Avoid_: Warden zone
 A stronger form of an adult zombie, skeleton, creeper or spider that takes the place of every natural spawn of that mob below Y 0: the Deep Zombie, Deep Skeleton, Deep Creeper and Deep Spider.
 _Avoid_: Elite, deep mob
 
-**Deep Core**:
-A block at the heart of a large cave below Y 0 that snuffs placed light and strengthens hostile mobs around it, until players defeat its waves.
-_Avoid_: Core, Gloom, Lightroot, Umbral Core
-
 ### Enchanting
 
 **Keeper**:

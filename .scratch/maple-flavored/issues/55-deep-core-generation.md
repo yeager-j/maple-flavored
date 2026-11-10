@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (GameTest harness)
 
-**Status:** ready-for-agent
+**Status:** wontfix
 
 Spec: the Maple Flavored spec in this folder, user stories 193a, 193f and 193m, and the Deep Cores module's Placement, Level and block bullets and its command.
 
@@ -37,3 +37,8 @@ Spec: the Maple Flavored spec in this folder, user stories 193a, 193f and 193m, 
 - `/place structure` never records starts and never passes the cave check in a flat world, so tests need a way to build a core at a given position without the check.
 - The neighbour spacing check must stay deterministic and thread-safe, using only `context.random()` and no shared state. Cache per cell if a neighbour check would otherwise rescan.
 - Jackson's template is in `src/main/resources/data/maple_flavored/structure/deep_core.nbt`. It's 3 × 7 × 3, with an uncharged respawn anchor at its top centre (1, 5, 1) standing in for the Deep Core block. Place it as the structure's piece, through a `TemplateStructurePiece` or a one-piece jigsaw pool (research section 5), and replace the anchor with the Deep Core block as it's placed, for example with a structure processor. Its y 0 base goes on the cave floor. Where the floor slopes, fill deepslate down under the base until it reaches solid ground, a few blocks at most. The block's textures are still ticket 58, so use a placeholder for those.
+
+## Comments
+
+
+Closed on 2026-11-10: Deep Cores were dropped before they were built. Diamond scarcity (ticket 61) takes their place. The reasons are in the last comment of `.scratch/maple-flavored-design/issues/21-deep-caves.md`.

@@ -50,9 +50,9 @@ Details: [Enchanting](../.scratch/maple-flavored-design/issues/10-enchanting.md)
 
 ### Finding books
 
-Most books float in fixed, visible places in existing structures, with one guaranteed book per structure per world. Specialized enchantments arrive early: Dungeons offer Smite or Bane of Arthropods, Desert Pyramids Blast Protection, and Pillager Outposts Projectile Protection. General enchantments come later, and the enchantments with the most levels sit in structures that demand travel: Unbreaking III needs four Strongholds and Looting III four Woodland Mansions.
+Most books float in fixed, visible places in existing structures, with one guaranteed book per structure per world. Specialized enchantments arrive early: Dungeons offer Smite or Bane of Arthropods, Desert Pyramids Blast Protection, and Pillager Outposts Projectile Protection. General enchantments come later, and the enchantments with the most levels sit in structures that demand travel: Unbreaking III needs four Strongholds and Fortune III four Woodland Mansions.
 
-Some books are chance drops from Illagers, such as Sharpness from Vindicators and Protection from Evokers. Strongholds are filled with Illagers, with the strongest guard and the Unbreaking book in the portal room, so reaching the End Portal is a fight. Raid-spawned Illagers drop no books, so raid farms give none.
+Some books are chance drops from Illagers, such as Sharpness from Vindicators and Protection from Evokers. Strongholds are filled with Illagers, with the strongest guard and the Unbreaking book in the portal room, so reaching the End Portal is a fight. Raid-spawned Illagers drop no books apart from raid-only rewards like the Ravager's Knockback.
 
 Some rewards demand more than finding the building:
 

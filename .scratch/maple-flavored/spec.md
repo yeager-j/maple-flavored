@@ -18,7 +18,7 @@ Maple Flavored is a Fabric mod for Minecraft 26.3 that starts from vanilla and a
 - Netherite needs Pith. Five Alloys improve on Netherite in different ways, so no gear is strictly best and every storage block has an endgame use.
 - Spawners must be Cleared before they break. Blood Moons Restore structure mobs, so rare materials renew slowly without changing the world for good.
 - Bosses open Subspaces that close their cheapest escape. Common mobs are faster, and more fragile on the surface.
-- Below Y 0, stronger Deep variants take the place of common mobs, and Deep Cores keep the biggest caves dark until players win their raid, so a day-one player thinks twice about deep caving.
+- Below Y 0, stronger Deep variants take the place of common mobs, so a day-one player thinks twice about deep caving.
 - New advancements in vanilla's tabs teach every system.
 
 Every rule below is fixed. Every number is a starting value that playtesting can change.
@@ -95,8 +95,8 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 60. As a player, I want to combine two matching books of the same level into the next level, so that many finds build up to strong enchantments.
 61. As a player, I want specialized enchantments (Smite, Bane of Arthropods, Blast and Projectile Protection) to come from early structures, so that a narrow enchantment is the best I have for a while.
 62. As a player, I want Strongholds full of Illagers, so that the path to the End Portal is a fight and Illager books have a home outside raids.
-63. As a player, I want Vindicators, Pillager Captains and Evokers to drop some books by chance, so that Illager fights pay.
-64. As a player, I want raid-spawned Illagers to drop no books, so that raid farms don't flood the Library.
+63. As a player, I want Vindicators, Pillager Captains, Evokers and Ravagers to drop some books by chance, so that Illager fights pay.
+64. As a player, I want raid-spawned Illagers to drop no books except raid-only rewards like Ravager Knockback, so that raid farms don't flood the Library.
 65. As a player, I want the Ender Dragon to drop a Zephyr book and the Wither a Blight book every kill, so that repeating those fights stays worthwhile.
 66. As a player who fishes, I want fishing to give only Luck of the Sea and Lure books, so that fishing books come from fishing.
 67. As a player, I want ominous vaults to give the Mace's books, so that Trial Chambers stay worth raiding.
@@ -106,7 +106,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 71. As a player, I want gear a mob picked up from me to drop unchanged, so that I get my own gear back.
 72. As a player, I want every Novice Librarian to buy any enchanted book for 4 emeralds, 10 villager XP and 50 XP points per find it holds, instead of selling books, so that my surplus finds have a use.
 73. As a player, I want bartering to drop Soul Speed books and iron boots, so that bartering doesn't hand out books.
-74. As an explorer, I want Unbreaking III to need four Stronghold books, Looting III four Mansions and Fortune III four Deep Cores, so that I explore past the first ring.
+74. As an explorer, I want Unbreaking III to need four Stronghold books and Fortune III four Mansions, so that I explore past the first ring.
 
 ### The Library and the table
 
@@ -268,28 +268,12 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 192. As an explorer, I want End City chests to roll for Pith and a Crystal Heart, so that End Cities make up for lost enchanted gear.
 193. As an explorer, I want End Cities to keep their buildings, Shulkers, ships and guaranteed Elytra, so that the End stays familiar.
 
-### Deep Cores
-
-193a. As a caver, I want a Deep Core at the heart of most big, loot-rich caves below Y 0, so that a cave full of exposed diamonds isn't free.
-193b. As a caver, I want light I place near a Deep Core to fizzle out and pop off, fire included, so that I can't torch my way through its cave.
-193c. As a caver, I want a snuffed light to send a trail toward its Deep Core, so that I can find what's keeping the cave dark.
-193d. As a caver, I want light already in the cave, and lava I pour, to keep working, so that the cave keeps its character and a risky answer stays open.
-193e. As a player, I want hostile mobs near a Deep Core to be buffed by its level, so that its cave is dangerous even before I fight it.
-193f. As a player, I want a Deep Core's level to rise with depth and be shown on the block, so that I can judge it before I commit.
-193g. As a player, I want to start a Deep Core's raid by hitting it, so that I choose when to fight.
-193h. As a player, I want the raid to come in waves of Deep variants with a boss bar, like a Raid, with more waves on harder difficulties and at higher levels, so that the fight is a familiar shape.
-193i. As a member of a group, I want waves to grow with the number of players there when the raid starts, so that a group can't steamroll it.
-193j. As a player, I want the last few mobs of a wave to glow after a while, so that a stuck mob can't stall the raid.
-193k. As a player, I want a beaten Deep Core to break and drop a Fortune book and Pith, more Pith at higher levels, and its cave to take light again, so that winning claims the cave.
-193l. As a player, I want a lost raid to leave the Deep Core at full health, ready to try again, so that losing costs time and hearts but never locks the cave.
-193m. As a player, I want a Deep Core to be unbreakable, blast-proof and immovable until its raid is won, so that no pickaxe or TNT skips the fight.
-193n. As a player, I want a beaten Deep Core never to return, so that a cave I claim stays mine.
 
 ### Blood Moons
 
 194. As a player, I want a Blood Moon every 32 in-game days to Restore selected structure mobs, so that Ancient Embers, Pith and Illager books renew slowly.
 195. As a player, I want each mob to return only at its original spot, as the mob that spot first rolled, when the spot is clear and the right block is still there, so that I control whether a structure renews.
-196. As a player, I want blocks, chests, books, Allays, broken spawners and beaten Deep Cores never to return, so that the world never undoes my work.
+196. As a player, I want blocks, chests, books, Allays and broken spawners never to return, so that the world never undoes my work.
 197. As a player, I want no mob to be Restored within 32 blocks of an online player, so that a Blood Moon never ambushes me.
 198. As a player, I want missed Blood Moons not to stack and far chunks not to load for them, so that the server stays light.
 199. As a player living in a Bastion, I want my intact Bastion base to still get visitors, so that living there stays lively.
@@ -360,15 +344,15 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Decay must reach Remnants in unloaded chunks and other dimensions, so it is worked out lazily. Each player has a persistent death count. Each Remnant stores its starting points and its owner's death count when it was made. Whenever a Remnant loads, is collected or is checked, its points are reduced once for every later death: each time, the points become 80% of the current points, rounded down. A death counts even at 0 XP. The death that makes a Remnant does not cut that Remnant. A Remnant whose points reach 0 is removed.
 - The Recovery Compass stays vanilla and points to the player's recorded last death location. When a Remnant is moved to safe ground, that recorded location is set to the Remnant's spot, so the compass leads to it.
 
-**Milestones and advancements.** Advancement data for the 26 new advancements, the Enchanted Books tab, the reparented vanilla ones and the changed criteria.
+**Milestones and advancements.** Advancement data for the 25 new advancements, the Enchanted Books tab, the reparented vanilla ones and the changed criteria.
 - Milestones are seven advancements: Acquire Hardware, Diamonds!, We Need to Go Deeper and The End?, plus new ones for a copper ingot, a Netherite Ingot and an Eye of Ender. Each description starts with a red broken heart icon, as in Matcha Flavoured, and the chat message when one lowers the floor begins "[Milestone]". The Hearts module reads which Milestones a player holds.
-- New advancements, parents, frames and rewards follow the table in the Advancements decision. Custom criteria triggers cover: shelving a book in a Library, a Full Library, making an enchanted golden apple, Reinforcing a piece, getting an Ancient Ember, smelting an Alloy ingot, wearing each full Alloy set at any time, getting a Withered Heart back, an all-Alloy level 4 beacon, getting an Armored Elytra, breaking bedrock, breaking a Cleared spawner (to the breaker), consuming a Crystal Heart, being saved by one, reaching 30 Max Hearts, killing the Wither (every player inside its Subspace), a Wither passing through bedrock or obsidian (every player inside its Subspace), killing an Elder Guardian (every player within 64 blocks), surviving the Warden (every player within the Warden survival range of it when it digs back down or dies), collecting your own Remnant, being in the Overworld when a Blood Moon rises, and beating a Deep Core (every player in its zone when it breaks). The Deep Core's advancement is a task, Lights Out ("Win a Deep Core's raid"), under Diamonds! in Story, with no reward.
+- New advancements, parents, frames and rewards follow the table in the Advancements decision. Custom criteria triggers cover: shelving a book in a Library, a Full Library, making an enchanted golden apple, Reinforcing a piece, getting an Ancient Ember, smelting an Alloy ingot, wearing each full Alloy set at any time, getting a Withered Heart back, an all-Alloy level 4 beacon, getting an Armored Elytra, breaking bedrock, breaking a Cleared spawner (to the breaker), consuming a Crystal Heart, being saved by one, reaching 30 Max Hearts, killing the Wither (every player inside its Subspace), a Wither passing through bedrock or obsidian (every player inside its Subspace), killing an Elder Guardian (every player within 64 blocks), surviving the Warden (every player within the Warden survival range of it when it digs back down or dies), collecting your own Remnant, and being in the Overworld when a Blood Moon rises.
 - Crystal Hearts come only from Kill the Wither, Kill an Elder Guardian, Sneak 100 (which becomes Survive the Warden) and Free the End, as advancement reward loot. New challenges give 100 XP. Only But why?, Nice Try and Switching Sides are hidden. Switching Sides is a task in the Adventure tab under Voluntary Exile, with no reward, granted by a custom trigger on a player's first finished Illager barter.
 - The Enchanted Books tab (`maple_flavored:enchanted_books/`) is the one new tab, and the one collect-everything list. This changes the Advancements decision's rule that vanilla's five tabs stay with no guide tab.
   - Its root is Shelve an enchanted book in a Library (Shelf Life), moved from Story. Full Library (Well Read) moves to it as a goal under the root, so the capstone is visible from the start. Enchanter, which hung under the shelve advancement, goes back under Diamonds! in Story. The enchanted golden apple stays in Story, with Zombie Doctor under it. Moving an advancement changes its id, which is fine for a mod meant for new worlds.
   - One task per enchantment the Library counts, Mending excluded (42, Zephyr and Blight included). Each is earned by an `inventory_changed` criterion for an enchanted book whose stored enchantments include it at any level, so any way of getting the book counts, combining and teammates' hand-offs included. No custom trigger.
   - Each shows a toast, doesn't announce in chat, isn't hidden and gives no reward. The icon is an enchanted book. The title is the enchantment's name. The description names places and mobs, never chances: "Found in Desert Pyramids", "Dropped by Vindicators", "Fished up", "From ominous vaults", "Dropped by the Ender Dragon".
-  - The tree is laid out by source. Each branch hangs from the root and is a chain, ordered roughly by when a player reaches each source, so vanilla's rule of showing locked advancements two steps below an earned one reveals the next sources as a player progresses. A source with several enchantments puts them side by side under the same parent. Branches: early Overworld structures (Dungeon, Mineshaft, Desert Pyramid, Jungle Temple, Igloo, Shipwreck, Buried Treasure, Ocean Ruins, Trail Ruins, Abandoned Camp, Pillager Outpost); Illagers and their strongholds (Vindicator, Pillager Captain, Evoker, Woodland Mansion, Stronghold); the Nether (Nether Fortress, the Bastion's four layouts); the depths (Deep Core, Trial Chamber ominous vaults, Ancient City); fishing; and bosses and the End (Wither, End City, Ender Dragon). The exact order within each branch is chosen at build time.
+  - The tree is laid out by source. Each branch hangs from the root and is a chain, ordered roughly by when a player reaches each source, so vanilla's rule of showing locked advancements two steps below an earned one reveals the next sources as a player progresses. A source with several enchantments puts them side by side under the same parent. Branches: early Overworld structures (Dungeon, Mineshaft, Desert Pyramid, Jungle Temple, Igloo, Shipwreck, Buried Treasure, Ocean Ruins, Trail Ruins, Abandoned Camp, Pillager Outpost); Illagers and their strongholds (Vindicator, Pillager Captain, Evoker, Ravager, Woodland Mansion, Stronghold); the Nether (Nether Fortress, the Bastion's four layouts); the depths (Trial Chamber ominous vaults, Ancient City); fishing; and bosses and the End (Wither, End City, Ender Dragon). The exact order within each branch is chosen at build time.
   - The tab's advancements are generated by datagen from the same source table the structure books and loot data use, or a GameTest checks that every enchantment the Library counts has exactly one advancement and that its description matches its sources, so the two can't drift.
 - Vanilla changes: Getting an Upgrade asks for a copper pickaxe. A Balanced Diet no longer asks for rotten flesh, which mobs no longer drop. Stone Age keeps its criterion, so the stone tool materials tag stays. Postmortal still counts only a Totem. Enchanter still fires on vanilla's enchanted item trigger. Getting an Upgrade, Enchanter, Zombie Doctor, Eye Spy and Cover Me in Debris move under their new parents. Subspace Bubble and Respecting the Remnants keep their titles.
 
@@ -393,7 +377,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 **Enchantments.** Zephyr and Blight are registered as data-driven enchantments. Blight uses vanilla's effect components to apply Wither I for 4 seconds per level on hit, with 2 levels, on Fire Aspect's weapons, exclusive with Fire Aspect. Zephyr (boots, 3 levels) needs code: a double jump that goes higher per level and needs client input with server checks; it does not reset fall distance, takes the regained height off again, and Clutches by cutting the distance fallen so far by 10%, 15% or 25%. Curse of Binding and Curse of Vanishing are removed from every source and are not counted in the Library.
 
 **Structure books.** A registered block with a block entity that shows a floating level I book and holds its enchantment.
-- One per structure per world, placed at generation in a fixed, visible spot. The exceptions are spawner books, where every Dungeon spawner and every Mineshaft cave spider spawner holds a book of its own, besides the Mineshaft's Efficiency book, and Deep Cores, which hold their Fortune book until their raid is won (see Deep Cores). Structures with several possible enchantments choose one at generation.
+- One per structure per world, placed at generation in a fixed, visible spot. The exception is spawner books: every Dungeon spawner and every Mineshaft cave spider spawner holds a book of its own, besides the Mineshaft's Efficiency book. Structures with several possible enchantments choose one at generation.
 - Starting approach, open to experiment during the build: no vanilla template is edited. When a structure's pieces are planned, a small rule for that structure picks the book's spot from its pieces (for example, the Stronghold's portal room or the Bastion's treasure piece). The spot and the enchantment are saved with the structure, and the book is placed when the chunk holding that spot is built. This needs one mixin on structure placement, since Fabric has no event for it. Dungeons are placed features, not structures, so the dungeon room's own placement gives the book to its spawner, which drops it with its Pith once Cleared and broken. The same saved structure data can also hold the Fortress's Blaze spawner record and the Blood Moon mob spots. Hand-edited templates stay an option where exact placement matters most.
 - The block can't be mined, blown up, pushed by pistons or replaced. Using it is the only way to take the book.
 - Taking the book is one server action. It is refused, with nothing changed and no wake event, while the book is locked or when the player's inventory has no room for the book. Otherwise the player gets the level I book, the block is removed, and the structure's wake event fires: every Piglin in the structure angered for a Bastion; every Illager in the structure set hunting the player, ignoring Orichalcum neutrality, for a Stronghold or Woodland Mansion. A Stronghold's book is locked until the Evokers of its keeper rooms are dead, so a player clears the portal room and two far keeper rooms before the rest of the garrison hunts them; a keeper Evoker the Stronghold couldn't place doesn't lock it, and Peaceful opens the lock. A Stronghold's hunting Vindicators and Pillagers that have no path to the player find their way room by room, along the fewest doorways to the player's room, until they do. Other structures, the Ancient City included, have no wake event.
@@ -406,7 +390,7 @@ Each module below hides its rules behind a small interface. Other modules call t
   - Each keeper's origin and whether it is broken are saved in the city's record, as the Fortress's spawners are. When the chunk holding a keeper's origin is built, its patch generates as in vanilla, then a sculk shrieker with `can_summon: true` is placed at the origin, or on top of the catalyst when the patch placed one there. Any block already there is replaced.
   - A keeper is broken once its spot no longer holds a sculk shrieker, by any means, and stays counted if a shrieker is put back. Trying to take the locked book says how many keepers are broken and sends trails from the book to each keeper still standing. A standing keeper gives off sculk charge bubbles twice a second, seen within vanilla's 32-block particle range, so it can be found. The operator command `/keepers` lists the keepers of the nearest Ancient City book, for debugging.
   - While the book is in place, every player inside the city's bounds (its whole bounding box, as for Warden Territory) is Grounded. Once it's taken, the city's Grounded ends for everyone. Grounded from a Warden Subspace is separate and keeps applying.
-- Source list: Abandoned Camp Lunge; Ancient City Swift Sneak; Bastion treasure room Fire Aspect, bridge Soul Speed, housing units Flame, hoglin stables Knockback; Buried Treasure Aqua Affinity or Respiration; Deep Core Fortune; Desert Pyramid Blast Protection; Dungeon Smite for a zombie or skeleton dungeon and Bane of Arthropods for a spider dungeon (read from the mobs those enchantments hit harder, with equal weight for any other mob); End City Feather Falling; Igloo Frost Walker; Jungle Temple Thorns; Mineshaft Efficiency, plus Bane of Arthropods held by each cave spider spawner; Nether Fortress Fire Protection; Ocean Ruins Channeling, Impaling, Loyalty or Riptide; Pillager Outpost Multishot, Piercing, Projectile Protection or Quick Charge; Shipwreck Depth Strider; Stronghold Unbreaking; Trail Ruins Silk Touch; Woodland Mansion Looting.
+- Source list: Abandoned Camp Lunge; Ancient City Swift Sneak; Bastion treasure room Fire Aspect, bridge Soul Speed, housing units Flame, hoglin stables Thorns; Buried Treasure Aqua Affinity or Respiration; Desert Pyramid Blast Protection; Dungeon Smite for a zombie or skeleton dungeon and Bane of Arthropods for a spider dungeon (read from the mobs those enchantments hit harder, with equal weight for any other mob); End City Feather Falling; Igloo Frost Walker; Jungle Temple Looting; Mineshaft Efficiency, plus Bane of Arthropods held by each cave spider spawner; Nether Fortress Fire Protection; Ocean Ruins Channeling, Impaling, Loyalty or Riptide; Pillager Outpost Multishot, Piercing, Projectile Protection or Quick Charge; Shipwreck Depth Strider; Stronghold Unbreaking; Trail Ruins Silk Touch; Woodland Mansion Fortune.
 
 **Spawners.** Normal spawners (not trial spawners) gain per-block state: a death count of mobs they spawned, the set of players who entered their 16-block activation range since counting began, and a Cleared flag.
 - They spawn regardless of light. Until Cleared they spawn twice as fast, waiting half the delay vanilla chooses; once Cleared they wait as long as vanilla.
@@ -448,7 +432,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Creepers never spawn naturally at Y 63 or above in the Overworld. Spawners are not affected.
 - Mobs remember which gear they spawned with. That gear keeps vanilla's drop chance and drops with enchantments removed. Picked-up gear drops exactly as it was.
 - Wither Skeletons spawn holding a Netherite sword in place of the stone one, with a base attack of 3 instead of 4, so they hit for 10 on Normal instead of 8. The sword they spawn with never drops.
-- Drops, in loot data: Pith from Elder Guardians (2, always), Evokers (1 at 25%) and Piglin Brutes (1 at 10%); Ancient Embers from Piglin Brutes (25% plus 5% per Looting level, killed by a player, a separate roll). Book drops, each its own roll, only when killed by a player: Vindicator Sharpness 10% and Sweeping Edge 2.5%; Pillager Captain Power 20%, Punch 5% and Infinity 5%; Evoker Protection 15%, one roll. Each Looting level adds 20% of the base chance, and the Orichalcum bonus doesn't apply. Plain Pillagers and Ravagers drop no books. Illagers spawned by a raid wave drop no books; every other Illager does, including Blood Moon Restores and Illagers that later join a raid. The Ender Dragon drops a level I Zephyr book every kill.
+- Drops, in loot data: Pith from Elder Guardians (2, always), Evokers (1 at 25%) and Piglin Brutes (1 at 10%); Ancient Embers from Piglin Brutes (25% plus 5% per Looting level, killed by a player, a separate roll). Book drops, each its own roll, only when killed by a player: Vindicator Sharpness 10% and Sweeping Edge 2.5%; Pillager Captain Power 20%, Punch 5% and Infinity 5%; Evoker Protection 15%, one roll; Ravager Knockback 10%. Each Looting level adds 20% of the base chance, and the Orichalcum bonus doesn't apply. Plain Pillagers drop no books. Illagers spawned by a raid wave drop no books; every other Illager does, including Blood Moon Restores and Illagers that later join a raid. Every Ravager can drop Knockback. The Ender Dragon drops a level I Zephyr book every kill.
 
 **Deep variants.** Four registered entity types, each built on its base mob's class with its own texture: Deep Zombie, Deep Skeleton, Deep Creeper and Deep Spider. Each is in every entity tag its base mob is in, so Smite, Bane of Arthropods, cats, wolves and other vanilla rules treat it as its base mob.
 - In the Overworld, when natural spawning picks an adult zombie, skeleton, creeper or spider at a spot below Y 0, the Deep variant spawns instead. A zombie that rolls baby stays a baby zombie. Spawners, spawn eggs, commands, structures, conversions and Blood Moon Restores are unaffected, except that a dungeon below Y 0 holds a Deep variant spawner (see Loot and worldgen data). A Deep Zombie's reinforcements are Deep Zombies, and a spider jockey that spawns below Y 0 is a Deep Skeleton riding a Deep Spider.
@@ -464,30 +448,6 @@ Each module below hides its rules behind a small interface. Other modules call t
 - The Mobs table's rows for adult zombies and spiders apply to Deep Zombies and Deep Spiders, except their health and the Hard zombie's damage, so a Deep Zombie gets zombie speed, step-up and Hard's jump.
 - Each drops its base mob's loot table and twice its vanilla XP.
 - The health and damage multipliers are playtest game rules in `MapleGameRules`.
-
-**Deep Cores.** A registered structure type, block and block entity. The research in `docs/research/vanilla-cave-structure-placement.md` gives the code facts this rests on.
-- Placement: the `maple_flavored:deep_core` structure, in a structure set with `random_spread` spacing 8 and a salt of its own. Each placement attempt scans its whole 8 × 8 chunk cell: the centre column of every chunk, at X and Z multiples of 4, read with `getBaseColumn`. A column qualifies with an air run at least 14 tall on a solid floor between Y −52 and −4, where water and lava break a run. A candidate is confirmed when at least 3 of 4 probes at ±12 blocks have air from floor + 2 to floor + 4 and a floor within 10 blocks of its own. The cell keeps the confirmed candidate with the tallest run. It can keep a second one more than 35 blocks above or below the first. No Deep Core is placed within 25 blocks of another, measured in 3D, including across neighbouring cells. Candidates are declined in or near the Deep Dark (the core's biome, and four points 40 blocks out at its height) and near a potential Ancient City site whose biome is `deep_dark`. The biome tag lists every Overworld biome except `deep_dark`. Terrain adaptation is `none` and the step is `top_layer_modification`. When the piece is built, it checks the real floor again and moves up to a few blocks to find it. These thresholds live in the structure and structure set data.
-- Level: I to V, from the core's Y: I from −4 to −13, II from −14 to −23, III from −24 to −33, IV from −34 to −43 and V from −44 to −52. The bands are structure data. The level is saved on the block entity and shown by the block's state.
-- The block can't be mined, blown up, pushed by pistons or replaced, and gives no light. A loaded-core index, keyed by chunk, is kept from block entity load and unload, and answers which zones contain a position without loading chunks.
-- Zone: a box 100 blocks wide, 100 long and 70 high, centred on the core. A position in several zones takes the highest level's buffs, and snuffed light points to the nearest core.
-- Snuffing: in a fully generated chunk, any block state that emits light and appears inside a zone is snuffed, however it got there: placed, lit, grown, spread or powered. A block with a `lit` property turns unlit. Fire is removed. Anything else breaks and drops as an item. Each snuff plays smoke and an extinguish sound and sends a trail like a hit Creaking's from the block to its Deep Core. Lava and lava cauldrons are exempt. Light that was there when the core's chunks finished generating stays.
-- Buffs: every hostile mob inside a zone has these effects, refreshed while it stays inside, with particles: Speed I from level I, Strength I from level II, Resistance I from level III, Strength II from level IV and Regeneration I at level V. The level each effect starts at is a playtest game rule.
-- Raid: a survival or adventure player hitting the block starts its raid, if none is running. It follows vanilla's Raid code where it can: a boss bar named "Deep Core" and its level, showing the current wave's remaining health and refilling between waves with vanilla's Raid delay. There are 3 waves on Easy, 5 on Normal and 7 on Hard, plus an extra wave at level II and above. On Peaceful, the first hit wins at once.
-
-  | Mob | W1 | W2 | W3 | W4 | W5 | W6 | W7 | Extra |
-  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-  | Deep Zombie | 2-3 | 2-3 | 2-4 | 3-4 | 3-5 | 4-5 | 5-6 | 5-6 |
-  | Deep Skeleton | 1-2 | 1-2 | 2-3 | 2-3 | 3-4 | 3-4 | 3-4 | 4-5 |
-  | Deep Spider | | 1 | 1-2 | 1-3 | 2-3 | 2-3 | 3-4 | 3-4 |
-
-  - Each count is multiplied by 1 + 0.25 per extra player inside the zone when the raid starts, rounded randomly.
-  - A wave spawns all at once at random valid spots 8 to 24 blocks from the core, inside the zone, preferring spots at least 8 blocks from every player. Wave mobs are persistent, and any death counts.
-  - When a wave has 2 or fewer mobs left after 600 ticks, they glow.
-  - Win: when the last wave's mobs are dead, the block breaks and drops a level I Fortune book and Pith (1 at levels I and II, 2 at III and IV, 3 at V). Snuffing and buffs end, the zone is gone, and Lights Out goes to every player inside it.
-  - Loss: the raid ends when no player has been inside the zone for 600 ticks, or every player who was inside when it started has died since. The core is then ready to start again. Wave mobs already spawned stay, as ordinary mobs.
-- Blood Moons never restore a Deep Core. A Deep Core's book isn't one of the structure book block's floating books.
-- An operator command, `/deepcores [count] [radius]`, lists the nearest Deep Cores with clickable teleports and the cores per km² in that radius, for checking placement.
-- The zone size, the multiplayer scaling, the loss timer and the buff levels are playtest game rules in `MapleGameRules`.
 
 **Materials and Alloys.** Registered items and blocks: Ancient Ember; five Alloy ingots (Steel from iron, Electrum from gold, Shakudo from copper, Adamant from diamond, Orichalcum from emerald); five Alloy blocks (9 ingots each way, in the beacon base blocks tag); an Alloy version of every item that has a Netherite version in 26.3; and an Armored Elytra for each Alloy.
 - The Netherite Ingot recipe becomes 4 Netherite Scrap and 4 Pith.
@@ -564,13 +524,6 @@ Two more hold Deep variant playtest values. They apply to Deep variants that spa
 - **Deep variant health percent** (default 150): a Deep variant's health as a percentage of its base mob's vanilla health. Deep Creepers ignore it.
 - **Deep variant damage percent** (default 200): a Deep variant's damage, arrows included, as a percentage of its base mob's vanilla damage.
 
-Nine more hold Deep Core playtest values, and apply at once:
-- **Deep Core zone half width** (default 50): how many blocks a zone reaches from its core along X and Z.
-- **Deep Core zone half height** (default 35): how many blocks a zone reaches above and below its core.
-- **Deep Core player scaling percent** (default 25): how much each extra player in the zone at the start adds to every wave count.
-- **Deep Core loss time** (default 600): how many ticks with no player in the zone end a raid as lost.
-- **Deep Core Speed level**, **Strength level**, **Resistance level**, **Strength II level** and **Regeneration level** (defaults 1, 2, 3, 4 and 5): the lowest Deep Core level whose zone gives that buff. 0 turns it off.
-
 ## Testing Decisions
 
 ### The seam
@@ -579,7 +532,7 @@ There is one automated test seam: Fabric's server GameTest framework. Tests run 
 
 The client decides some things, and a headless server can't see them. These are checked by hand in a development client, not automated:
 
-- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced chainmail and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, the Wither Subspace's dim light, the Blood Moon sky and spores, the Deep variants' textures, the Deep Core's level look, the snuff smoke and trail, and the Deep Core boss bar.
+- Visuals: darkened Withered Hearts, the Max Hearts line on the death screen, the Remnant glow, the Reinforced chainmail and tooltip, the enchanting table checklist and Library Progress bar, the locked Fortress book, spawner progress feedback, the sculk sky and Subspace shell, the Wither Subspace's dim light, the Blood Moon sky and spores, and the Deep variants' textures.
 - Player movement and input: Zephyr's double jump and Clutch, Grounded ending a glide, the Armored Elytra's glide and Firework Rocket penalties, Riptide being blocked, and Shakudo's movement speed.
 - Sync: that the client shows the server's Max Hearts, Withered Hearts, Remnants, Subspaces and Blood Moon.
 
@@ -595,11 +548,10 @@ Server GameTests still cover the server side of these: the Zephyr request's chec
 - Chance rules roll many times with a fixed seed and check the rate falls within a tolerance band.
 - Rules tied to the calendar set the world's day count to the right night instead of waiting.
 - Worldgen frequency (village spacing and separation, dungeon attempts) is checked against the game's loaded worldgen data, since sampling real worlds is slow and flaky. A fresh world is also checked by hand.
-- The Deep Core's cave finder is a pure function over terrain columns, tested with made-up columns. The flat test world has no caves, so tests place a Deep Core directly, without the cave check.
 
 ### Modules tested
 
-Every module above: Hearts, Crystal Heart and Pith, Remnants, Milestones and advancements, Enchanting and Library, Material units, anvil, grindstone and smithing rules, Enchantments, Structure books, Spawners, Subspaces, Grounded, Warden summoning, Wither changes, Mobs, Deep variants, Deep Cores, Materials and Alloys, Early tiers, Reinforcement, Villages and villagers, Trades and bartering, Loot and worldgen data, Blood Moons, Potions and brewing, and Game rules.
+Every module above: Hearts, Crystal Heart and Pith, Remnants, Milestones and advancements, Enchanting and Library, Material units, anvil, grindstone and smithing rules, Enchantments, Structure books, Spawners, Subspaces, Grounded, Warden summoning, Wither changes, Mobs, Deep variants, Materials and Alloys, Early tiers, Reinforcement, Villages and villagers, Trades and bartering, Loot and worldgen data, Blood Moons, Potions and brewing, and Game rules.
 
 ### Prior art
 
@@ -612,7 +564,7 @@ The repo has no tests yet; it is a scaffold. The first build ticket sets up the 
 - Translations beyond English.
 - Fishing as a progression track. Fishing only changes its enchanted-book entry.
 - Deeper End changes, which belong to a separate End Update mod that requires this one: vault-based End City chests guarded by trial spawners, the Elytra from an ominous vault on the End Ship, End City keys, and End spawners for Endermen, Endermites and Phantoms.
-- New structures beyond the Deep Core.
+- New structures. Maple adds none.
 - Storage changes. Bundles, Ender Chests, shulker boxes and shulker farms stay vanilla.
 - A new healing or food system. Hunger, saturation, natural regeneration and food values stay vanilla until a better design turns up.
 - Subspaces for the Elder Guardian and Ender Dragon, unless playtesting finds a cheap way to avoid their fights.
@@ -657,11 +609,6 @@ The design left these small points open. This spec picks a default for each, and
 - Tattered Leather is a new item rather than Matcha's renamed rabbit hide, so rabbit hide stays vanilla, and it drops at rotten flesh's counts and conditions rather than Matcha's 1–2 on player kills only. Mobs no longer drop rotten flesh, but chests, fishing and cats still give it.
 - The Y 63 health split applies in the Overworld only. Other dimensions keep the whole Mobs table, so Nether Fortress skeletons stay frail.
 - Deep variant edge cases: a Deep Zombie's reinforcements are Deep Zombies, a spider jockey below Y 0 is a Deep Skeleton on a Deep Spider, a charged Deep Creeper doubles its power to 8 as vanilla doubles a creeper's, and a Deep Spider's Blindness lasts 60 ticks.
-- A Deep Core raid on Peaceful is won by the first hit, so Peaceful players can still claim caves and Fortune, as Peaceful opens Bastion keeper locks.
-- Lava cauldrons count as lava and aren't snuffed. Snuffing only acts in fully generated chunks, so features from neighbouring chunks that decorate after a Deep Core is placed keep their light.
-- Overlapping zones give the highest level's buffs, and a snuff's trail goes to the nearest Deep Core.
-- A Deep Core raid is lost once every player who was in the zone at its start has died since, even if others are still in the zone.
-- The Deep Core advancement is Lights Out, a task under Diamonds! in Story, granted to every player in the zone when the core breaks.
 - Starting tuning values: Zephyr's second jump reaches 1.5, 2.25 and 3 blocks at levels I to III; Steel weapons add 0.5 attack knockback; Steel armor adds 0.1 knockback resistance per piece on top of Netherite's; the spawner forcefield's starting distance and colour.
 
 ### Values left to playtesting or build time
@@ -671,13 +618,12 @@ The design left these small points open. This spec picks a default for each, and
 - The Wither Subspace's radius and light level, and the Wither's leash, set by playtest game rules.
 - The Ancient City keeper ring: the 30-block minimum distance from the book and the 30° windows.
 - The exact book spot in each structure other than the Stronghold, whose book floats over the End portal in the portal room, chosen in that structure's build ticket by the manifesto's rule: the structure's most important spot, fixed and visible. Buried Treasure, Trail Ruins, Abandoned Camps and Shipwrecks need a spot chosen with care.
-- Deep Core placement: spacing, the cave thresholds, the 25-block spacing and the depth bands. A prototype world gave about 20 Deep Cores per km², with about 70% of big caves getting one, and how many caves sit at each depth wasn't measured.
-- The Deep Core wave table, buffs and multiplayer scaling, and the Deep variant numbers, tuned against the full-iron balance target.
+- The Deep variant numbers, tuned against the full-iron balance target.
 - The Warden spawn search: the tickets say it widens "within the Subspace", which doesn't exist until the Warden spawns. This spec reads it as up to 50 blocks from the player.
 
 ### Unverified facts
 
-Several tickets say their numbers were never tested in a world, and Brewing's vanilla durations came from memory, not the 26.3 jar. The first ticket in each area should confirm the vanilla facts it relies on. For deep caves, that's a stray arrow's Slowness, an axe's 100-tick shield disable, vanilla's Raid delay between waves and its boss bar behaviour.
+Several tickets say their numbers were never tested in a world, and Brewing's vanilla durations came from memory, not the 26.3 jar. The first ticket in each area should confirm the vanilla facts it relies on. For deep caves, that's a stray arrow's Slowness and an axe's 100-tick shield disable.
 
 ### Glossary gaps
 

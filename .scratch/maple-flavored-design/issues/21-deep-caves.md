@@ -10,6 +10,8 @@ How do we make deep caving dangerous for a day-one player without making the sur
 
 ## Answer
 
+**Changed on 2026-11-10:** Deep Cores are dropped, and the book moves under Books are undone. The three tiers and the Deep variants stand. The sections on Deep Cores, the raid and Books below are kept as a record only. See the last comment.
+
 Danger rises in three tiers by height. Surface mobs stay weak, underground mobs are about vanilla strength, and below Y 0 every common hostile is a much stronger Deep variant. The big, loot-rich caves get a Deep Core, which keeps them dark and strengthens their mobs until players beat its raid. Deep variants make all of deepslate dangerous, tunnels included, while Deep Cores shut down the jackpot rooms, so neither works alone. Terms are in `GLOSSARY.md`. Numbers are starting values that playtesting can change. The rules are fixed.
 
 The balance target is a player in full iron with an iron sword and a shield. They can beat one of each Deep variant and survive two or three with care. A player in leather or copper with a copper sword loses to two.
@@ -187,3 +189,18 @@ Grilling round 3 (2026-11-07):
 - Beaten Deep Cores stay gone. Blood Moons don't restore them.
 - One new advancement for beating your first Deep Core. It isn't a Milestone.
 - Playtest game rules: zone size, buffs per level, multiplayer scaling, Deep variant health and damage, and the 30-second loss timer. World-generation data: placement, the 25-block spacing and the depth bands.
+
+Reversal (2026-11-10):
+
+- Deep variants stay. In playtesting, Jackson was more hesitant to go into a massive cave for diamonds on day one, which was the aim.
+- Deep Cores are dropped before any of them was built.
+  - They only covered big caves, which hold about 10% of exposed diamonds.
+  - Jackson wasn't happy with how they generated.
+  - A mob switch turns off their passive effects.
+- Ideas considered and set aside:
+  - Intense Darkness: light sources below Y 0 reach only 1 to 2 blocks until a Deep Core is beaten.
+  - Deep Cores on an even grid, each owning the territory nearest to it, like Lightroots.
+  - Beating a core permanently changes a region, which sits badly with design rule 3.
+- Diamond scarcity replaces them: an ore drops a piece, and 4 craft 1 diamond, as Netherite scrap does. It slows every route to diamonds, branch mining included. It's ticket 61 in the build tracker.
+- The book moves are undone, since Fortune leaving the Woodland Mansion was their only cause. Fortune is back in Woodland Mansions, Looting in Jungle Temples, Thorns in the Bastion's hoglin stables and Knockback on Ravagers. "What Raids give in place of Knockback" is no longer open.
+- Jackson's Deep Core template is still in `src/main/resources/data/maple_flavored/structure/deep_core.nbt`, unused.
