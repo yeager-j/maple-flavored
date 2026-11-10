@@ -31,11 +31,14 @@ import net.minecraft.world.phys.Vec3;
  * {@code maple_flavored:<name>_restore_blocks}.
  */
 public enum Restorable implements StringRepresentable {
-	/** Piglins, Brutes and Hoglins, standing on the blackstone or basalt family. */
+	/**
+	 * Piglin Brutes, standing on the blackstone or basalt family. A Bastion's Piglins and Hoglins never return: the
+	 * Nether spawns more of them.
+	 */
 	BASTION(
 		"bastion",
 		BuiltinStructures.BASTION_REMNANT,
-		Set.of(EntityTypes.PIGLIN, EntityTypes.PIGLIN_BRUTE, EntityTypes.HOGLIN),
+		Set.of(EntityTypes.PIGLIN_BRUTE),
 		Footing.STANDING
 	),
 	/** Elder Guardians, in water over the prismarine family. */

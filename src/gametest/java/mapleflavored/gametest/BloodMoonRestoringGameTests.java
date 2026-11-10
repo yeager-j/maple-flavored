@@ -153,7 +153,7 @@ public class BloodMoonRestoringGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aConvertedMobEmptiesItsSpotAndReturnsAsTheOriginal(GameTestHelper helper) {
 		Site site = Site.build(helper, 0, Blocks.POLISHED_BLACKSTONE_BRICKS);
-		Mob original = site.placeOriginal(Restorable.BASTION, EntityTypes.PIGLIN);
+		Mob original = site.placeOriginal(Restorable.BASTION, EntityTypes.PIGLIN_BRUTE);
 		RestoreSpot spot = Spots.of(helper, original);
 
 		helper.startSequence()
@@ -162,13 +162,13 @@ public class BloodMoonRestoringGameTests {
 			.thenExecute(() -> {
 				Mob zombified = original.convertTo(EntityTypes.ZOMBIFIED_PIGLIN, ConversionParams.single(original, true, true), converted -> {});
 
-				helper.assertValueEqual(stateOf(helper, spot), RestoreSpot.State.EMPTY, "the spot once its Piglin converted");
+				helper.assertValueEqual(stateOf(helper, spot), RestoreSpot.State.EMPTY, "the spot once its Brute converted");
 				zombified.discard();
 				Spots.riseBloodMoon(helper);
 			})
 			.thenWaitUntil(() -> site.assertMobs(helper, 1, "Restored mobs"))
 			.thenExecute(() -> {
-				helper.assertValueEqual(site.mobs().getFirst().getType(), EntityTypes.PIGLIN, "the Restored mob");
+				helper.assertValueEqual(site.mobs().getFirst().getType(), EntityTypes.PIGLIN_BRUTE, "the Restored mob");
 				site.release();
 			})
 			.thenSucceed();
@@ -568,11 +568,9 @@ public class BloodMoonRestoringGameTests {
 
 	// Its own environment, since it changes the difficulty.
 	@GameTest(environment = "maple_flavored_gametest:restoring_peaceful", maxTicks = SITE_TICKS)
-	public void peacefulRestoresOnlyMobsItAllowsAndDropsTheRest(GameTestHelper helper) {
-		Site piglinSite = Site.build(helper, 0, Blocks.POLISHED_BLACKSTONE_BRICKS);
+	public void peacefulRestoresNoMobItRefusesAndDropsTheOnesItLoads(GameTestHelper helper) {
 		Site bruteSite = Site.build(helper, 1, Blocks.POLISHED_BLACKSTONE_BRICKS);
 		Site vindicatorSite = Site.build(helper, 2, Blocks.COBBLESTONE);
-		Mob piglin = piglinSite.placeOriginal(Restorable.BASTION, EntityTypes.PIGLIN);
 		Mob brute = bruteSite.placeOriginal(Restorable.BASTION, EntityTypes.PIGLIN_BRUTE);
 		Mob vindicator = vindicatorSite.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot bruteSpot = Spots.of(helper, brute);
@@ -580,10 +578,8 @@ public class BloodMoonRestoringGameTests {
 		ValueInput savedVindicator = saved(vindicatorSite.level(), vindicator);
 		MinecraftServer server = helper.getLevel().getServer();
 
-		helper.assertTrue(EntityTypes.PIGLIN.isAllowedInPeaceful(), "Piglins are allowed in Peaceful");
 		helper.assertFalse(EntityTypes.PIGLIN_BRUTE.isAllowedInPeaceful(), "Brutes are allowed in Peaceful");
 
-		piglin.kill(piglinSite.level());
 		brute.kill(bruteSite.level());
 		vindicator.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
 		server.setDifficulty(Difficulty.PEACEFUL, true);
@@ -595,7 +591,6 @@ public class BloodMoonRestoringGameTests {
 		helper.assertTrue(loaded.isEmpty(), "Peaceful loads a saved Vindicator");
 
 		helper.startSequence()
-			.thenWaitUntil(() -> piglinSite.assertMobs(helper, 1, "Piglins Restored in Peaceful"))
 			.thenWaitUntil(() -> bruteSite.assertReady(helper))
 			.thenExecuteAfter(RETRY_WAIT, () -> {
 				bruteSite.assertMobs(helper, 0, "Brutes Restored in Peaceful");
@@ -604,16 +599,25 @@ public class BloodMoonRestoringGameTests {
 				server.setDifficulty(Difficulty.NORMAL, true);
 			})
 			.thenWaitUntil(() -> bruteSite.assertMobs(helper, 1, "Brutes Restored back on Normal"))
-			.thenExecute(() -> List.of(piglinSite, bruteSite, vindicatorSite).forEach(Site::release))
+			.thenExecute(() -> List.of(bruteSite, vindicatorSite).forEach(Site::release))
 			.thenSucceed();
 	}
 
 	@GameTest(maxTicks = 200)
-	public void aBastionGivesItsPiglinsBrutesAndHoglinsSpots(GameTestHelper helper) {
+	public void aBastionGivesItsBrutesSpotsButNotItsPiglinsOrHoglins(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructureStart bastion = Structures.place(level, BuiltinStructures.BASTION_REMNANT, TestSites.of(helper).chunk(0));
+		List<Mob> others = level.getEntitiesOfClass(
+			Mob.class, AABB.of(bastion.getBoundingBox()), mob -> mob.getType() == EntityTypes.PIGLIN || mob.getType() == EntityTypes.HOGLIN
+		);
 
 		assertMobsHoldSpots(helper, level, bastion, Restorable.BASTION);
+		helper.assertFalse(others.isEmpty(), "the Bastion placed Piglins or Hoglins");
+
+		for (Mob other : others) {
+			helper.assertTrue(RestoringAccess.spotOf(level.getServer(), other).isEmpty(), "a " + other.getType().toShortString() + " holds a spot");
+		}
+
 		helper.succeed();
 	}
 
@@ -844,7 +848,7 @@ public class BloodMoonRestoringGameTests {
 			Site site = new Site(helper, helper.getLevel(), TestSites.of(helper).chunk(index).getMiddleBlockPosition(FLOOR_Y));
 
 			// Until the chunk ticks entities, the mobs a test places would sit untracked: the cow that should block a spot
-			// would go unseen, and a converted Piglin would leave without emptying its spot.
+			// would go unseen, and a converted Brute would leave without emptying its spot.
 			site.keepLoaded();
 
 			for (BlockPos pos : BlockPos.betweenClosed(site.floor.offset(-3, 0, -3), site.floor.offset(3, 3, 3))) {

@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** ready-for-human (nine of ten boxes closed; box 8 waits on a decision from Jackson)
+**Status:** done
 
 **Priority:** P2 (Medium)
 
@@ -127,7 +127,7 @@ An empty list means same room, not in a Stronghold, not the same Stronghold, or 
 - [x] 5. `route` returns a result that tells its outcomes apart, and an Illager outside a Stronghold does no pathfinding for the route goal.
 - [x] 6. `RestoreSpot` can't be built or decoded as Occupied without an occupant, or as Empty with one.
 - [x] 7. One place lists what happens to a fresh entity, and both mixins call it.
-- [ ] 8. A Restored mob is set up by the same code that set it up at generation, and the Bastion case is checked.
+- [x] 8. A Restored mob is set up by the same code that set it up at generation, and the Bastion case is checked.
 - [x] 9. The sky strength travels through `SkyRenderState`, and `LOADED_CHUNKS` tracks only chunks that hold spots.
 - [x] 10. `Restoring` reaches spots only through `RestoreSpots`, and the test-only members aren't public.
 
@@ -142,6 +142,6 @@ Worked in one pull request. Findings 1 to 7 and 10 held as written against `main
 5. `StrongholdRoutes.route` returns `Doorways` or one of four `NoRoute` reasons, and `StrongholdRouteGoal` asks it before any path search. Not done: each hunter still runs its own route search.
 6. A spot holds an `Occupancy`: `Occupied` with its occupant, or `Vacant.EMPTY` or `Vacant.PENDING` without one. The codec dispatches on `state`.
 7. `FreshEntities.entering` is the list, and both mixins call it.
-8. Open. `StructureMobs.setUp` now sets up both a Stronghold's guards as they generate and every Restored mob. The Bastion case was checked against vanilla's templates and is a real mismatch: they save each Piglin with a crossbow or golden sword and `CannotHunt`, and each Hoglin with `CannotBeHunted`, none of which `finalizeSpawn` gives a mob spawned for a structure. So a Restored Bastion Piglin is unarmed and hunts Hoglins. Fixing it means a spot must record more than the mob's type, which is Jackson's call.
+8. `StructureMobs.setUp` sets up both a Stronghold's guards as they generate and every Restored mob. The Bastion case was checked against vanilla's templates and was a real mismatch: they save each Piglin with a crossbow or golden sword and `CannotHunt`, and each Hoglin with `CannotBeHunted`, none of which `finalizeSpawn` gives a mob spawned for a structure. Jackson decided on 2026-11-10 that Bastions Restore only Piglin Brutes, which the templates add nothing to: a Brute never hunts and arms itself.
 9. The strength is stored in `SkyRenderState` when the sky is extracted and read back from the state being drawn. A level's loaded-chunk set lives on its `RestoreSpots` and takes only chunks that hold spots.
 10. `RestoreSpots.ifAny` and `RestoreSpots.of` are the only ways to a level's spots. `TYPE`, `all` and `Restoring.spotOf` are package-private, and the tests reach them through `RestoringAccess` in the tests' source set.

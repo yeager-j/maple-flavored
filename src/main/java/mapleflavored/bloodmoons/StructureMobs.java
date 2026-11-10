@@ -12,8 +12,9 @@ import net.minecraft.world.phys.Vec3;
  * How this mod sets up a mob that belongs to a structure, the way a Woodland Mansion sets up its Illagers. The mobs it
  * places as a structure generates and the mobs a Blood Moon Restores are set up here, so they can't come to differ.
  *
- * <p>A structure that places its own mobs, as vanilla's do, sets them up itself. Whatever it adds beyond this, as a
- * Bastion's templates arm its Piglins, a Restored mob doesn't have.
+ * <p>A structure that places its own mobs, as vanilla's do, sets them up itself. Whatever it adds beyond this a
+ * Restored mob doesn't have, as a Bastion's templates arm its Piglins and keep them from hunting its Hoglins. So a
+ * structure Restores only mobs it adds nothing to.
  */
 public final class StructureMobs {
 	private StructureMobs() {
