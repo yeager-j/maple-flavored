@@ -1,6 +1,9 @@
 package mapleflavored.gametest;
 
 import static mapleflavored.gametest.EnchantingTables.UPPER_RING;
+import static mapleflavored.gametest.EnchantingTables.apple;
+import static mapleflavored.gametest.EnchantingTables.assertRefuses;
+import static mapleflavored.gametest.EnchantingTables.assertSaves;
 import static mapleflavored.gametest.EnchantingTables.book;
 import static mapleflavored.gametest.EnchantingTables.enchantment;
 import static mapleflavored.gametest.EnchantingTables.fill;
@@ -12,6 +15,7 @@ import static mapleflavored.gametest.EnchantingTables.placeTable;
 import static mapleflavored.gametest.EnchantingTables.shelves;
 import static mapleflavored.gametest.EnchantingTables.survivalPlayer;
 import static mapleflavored.gametest.EnchantingTables.table;
+import static mapleflavored.gametest.EnchantingTables.toggle;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -105,10 +109,16 @@ public class GoldenAppleGameTests {
 	public void aTableBelowFifteenBookshelvesOffersNoAppleEffects(GameTestHelper helper) {
 		placeTable(helper, List.of(), shelves(fullLibraryBooks(helper)));
 
-		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
+		ServerPlayer player = survivalPlayer(helper, 30);
+		EnchantingTableMenu table = table(helper, player);
 
-		helper.assertTrue(table.progress().isFull(), "the Library is Full");
-		helper.assertValueEqual(table.appleChecklist().offered(), Set.of(), "apple offers with 7 shelves");
+		helper.assertTrue(table.library().progress().isFull(), "the Library is Full");
+		helper.assertValueEqual(table.appleOffers(), Set.of(), "apple offers with 7 shelves");
+
+		fill(table, new ItemStack(Items.GOLDEN_APPLE), 1, new ItemStack(Items.GOLD_BLOCK));
+
+		helper.assertValueEqual(table.checklist().rows(), List.of(), "an apple's rows with 7 shelves");
+		assertRefuses(helper, table, player, new Checklist.NeedsBookshelves(7), "an apple with 7 shelves");
 		helper.succeed();
 	}
 
@@ -144,7 +154,7 @@ public class GoldenAppleGameTests {
 
 		helper.assertValueEqual(apple.getItem(), Items.ENCHANTED_GOLDEN_APPLE, "the saved apple");
 		helper.assertValueEqual(AppleEffect.on(apple), EnumSet.of(AppleEffect.REGENERATION, AppleEffect.FIRE_RESISTANCE), "its effects");
-		helper.assertTrue(ItemStack.matches(EnchantingDeposit.refund(apple), new ItemStack(Items.GOLD_BLOCK)), "the deposit is a block of gold");
+		helper.assertTrue(ItemStack.matches(EnchantingDeposit.held(apple), new ItemStack(Items.GOLD_BLOCK)), "the deposit is a block of gold");
 		helper.assertTrue(table.getSlot(EnchantingTableMenu.LAPIS_SLOT).getItem().isEmpty(), "both lapis are spent");
 		helper.assertTrue(table.getSlot(EnchantingTableMenu.MATERIAL_SLOT).getItem().isEmpty(), "the block of gold is spent");
 
@@ -155,7 +165,7 @@ public class GoldenAppleGameTests {
 		apple = table.getSlot(EnchantingTableMenu.ITEM_SLOT).getItem();
 
 		helper.assertValueEqual(AppleEffect.on(apple).size(), 3, "effects after the second save");
-		helper.assertTrue(ItemStack.matches(EnchantingDeposit.refund(apple), new ItemStack(Items.GOLD_BLOCK)), "the deposit is still one block");
+		helper.assertTrue(ItemStack.matches(EnchantingDeposit.held(apple), new ItemStack(Items.GOLD_BLOCK)), "the deposit is still one block");
 		helper.assertTrue(table.getSlot(EnchantingTableMenu.LAPIS_SLOT).getItem().isEmpty(), "a lapis per effect is spent");
 		helper.succeed();
 	}
@@ -173,7 +183,7 @@ public class GoldenAppleGameTests {
 
 		fill(table, resistanceApple, 1, ItemStack.EMPTY);
 
-		helper.assertValueEqual(table.appleChecklist().chosen(), Set.of(AppleEffect.RESISTANCE), "Resistance starts chosen");
+		helper.assertValueEqual(apple(helper, table).chosen(), Set.of(AppleEffect.RESISTANCE), "Resistance starts chosen");
 		assertRefuses(helper, table, player, new AppleChecklist.NotOffered(AppleEffect.RESISTANCE), "Resistance at 20 levels");
 
 		toggle(helper, table, player, AppleEffect.RESISTANCE);
@@ -212,6 +222,44 @@ public class GoldenAppleGameTests {
 		helper.assertValueEqual(eater.getActiveEffects().size(), 2, "effects from a Fire Resistance and Absorption apple");
 		assertEffect(helper, eater, MobEffects.FIRE_RESISTANCE, 6000, 0);
 		assertEffect(helper, eater, MobEffects.ABSORPTION, 2400, 3);
+		helper.succeed();
+	}
+
+	@GameTest
+	public void aCarriedEffectSavesAsTheAppleStoresIt(GameTestHelper helper) {
+		placeLibraryWorth(helper, 130);
+
+		ServerPlayer player = survivalPlayer(helper, 60);
+		EnchantingTableMenu table = table(helper, player);
+		MobEffectInstance weakRegeneration = new MobEffectInstance(MobEffects.REGENERATION, 100, 0);
+		ItemStack oldApple = AppleEffect.enchant(new ItemStack(Items.GOLDEN_APPLE), List.of(weakRegeneration));
+
+		fill(table, oldApple, 2, ItemStack.EMPTY);
+
+		helper.assertValueEqual(apple(helper, table).state(AppleEffect.REGENERATION), Checklist.State.CARRIED, "Regeneration on insertion");
+		helper.assertValueEqual(
+			apple(helper, table).rows().getFirst().name(), AppleEffect.describe(weakRegeneration), "the row names the stored Regeneration"
+		);
+
+		toggle(helper, table, player, AppleEffect.FIRE_RESISTANCE);
+		assertSaves(helper, table, player, "Fire Resistance added to an old apple");
+
+		ItemStack saved = table.getSlot(EnchantingTableMenu.ITEM_SLOT).getItem();
+
+		helper.assertValueEqual(
+			AppleEffect.stored(saved), List.of(weakRegeneration, AppleEffect.FIRE_RESISTANCE.instance()), "the stored effects after saving"
+		);
+
+		table.getSlot(EnchantingTableMenu.LAPIS_SLOT).set(new ItemStack(Items.LAPIS_LAZULI, 2));
+		toggle(helper, table, player, AppleEffect.REGENERATION);
+		toggle(helper, table, player, AppleEffect.REGENERATION);
+		assertSaves(helper, table, player, "Regeneration ticked afresh");
+
+		saved = table.getSlot(EnchantingTableMenu.ITEM_SLOT).getItem();
+
+		helper.assertValueEqual(
+			AppleEffect.REGENERATION.storedOn(saved), Optional.of(AppleEffect.REGENERATION.instance()), "Regeneration ticked afresh"
+		);
 		helper.succeed();
 	}
 
@@ -326,9 +374,7 @@ public class GoldenAppleGameTests {
 
 		makeApple(helper, appleMaker, AppleEffect.REGENERATION);
 		fill(table, new ItemStack(Items.IRON_SWORD), 1, new ItemStack(Items.IRON_INGOT));
-		boolean toggled = table.clickMenuButton(swordMaker, EnchantingTableMenu.toggleButton(sharpness, table.enchantments()));
-
-		helper.assertTrue(toggled, "Sharpness toggles");
+		toggle(helper, table, swordMaker, sharpness);
 		assertSaves(helper, table, swordMaker, "a sword");
 
 		var advancements = helper.getLevel().getServer().getAdvancements();
@@ -368,8 +414,8 @@ public class GoldenAppleGameTests {
 
 		EnchantingTableMenu table = table(helper, survivalPlayer(helper, 0));
 
-		helper.assertValueEqual(table.progress().levels(), levels, "Library Progress");
-		helper.assertValueEqual(table.appleChecklist().offered(), expected, "apple offers at " + levels + " levels");
+		helper.assertValueEqual(table.library().progress().levels(), levels, "Library Progress");
+		helper.assertValueEqual(table.appleOffers(), expected, "apple offers at " + levels + " levels");
 	}
 
 	/** Saves an apple with {@code effects} at {@code level}, failing unless it saves exactly when they fit the {@code slots}. */
@@ -401,33 +447,6 @@ public class GoldenAppleGameTests {
 		assertSaves(helper, table, player, List.of(effects) + " apple");
 
 		return table.getSlot(EnchantingTableMenu.ITEM_SLOT).getItem().copy();
-	}
-
-	private static void toggle(GameTestHelper helper, EnchantingTableMenu table, ServerPlayer player, AppleEffect effect) {
-		helper.assertTrue(table.clickMenuButton(player, EnchantingTableMenu.toggleButton(effect)), effect + " toggles");
-	}
-
-	private static void assertSaves(GameTestHelper helper, EnchantingTableMenu table, ServerPlayer player, String label) {
-		helper.assertTrue(table.clickMenuButton(player, EnchantingTableMenu.SAVE_BUTTON), label + " saves");
-	}
-
-	/** Saves, failing unless the save is refused for {@code problem} and nothing in the table changes. */
-	private static void assertRefuses(
-		GameTestHelper helper, EnchantingTableMenu table, ServerPlayer player, Checklist.Problem problem, String label
-	) {
-		List<ItemStack> slotsBefore = tableSlots(table);
-		Set<AppleEffect> chosenBefore = table.appleChecklist().chosen();
-
-		helper.assertTrue(table.problems(player).contains(problem), label + ": problems " + table.problems(player) + " lack " + problem);
-		helper.assertFalse(table.clickMenuButton(player, EnchantingTableMenu.SAVE_BUTTON), label + " saves");
-		helper.assertTrue(ItemStack.listMatches(slotsBefore, tableSlots(table)), label + ": the table's slots are unchanged");
-		helper.assertValueEqual(table.appleChecklist().chosen(), chosenBefore, label + ": the choices");
-	}
-
-	private static List<ItemStack> tableSlots(EnchantingTableMenu table) {
-		return List.of(EnchantingTableMenu.ITEM_SLOT, EnchantingTableMenu.LAPIS_SLOT, EnchantingTableMenu.MATERIAL_SLOT).stream()
-			.map(slot -> table.getSlot(slot).getItem().copy())
-			.toList();
 	}
 
 	private static void assertEffect(GameTestHelper helper, ServerPlayer player, Holder<MobEffect> effect, int duration, int amplifier) {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import mapleflavored.materialunits.MaterialUnits;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -20,33 +21,21 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
  *
  * @param item the item in the table
  * @param offers the Library's offers, as {@link Library#offers()} gives them
- * @param states each enchantment's state; enchantments left out are {@link State#UNSELECTED}
- * @param enchantments the enchantment registry, which orders the rows
+ * @param states each enchantment's state; enchantments left out are {@link State#UNSELECTED}. A {@link State#CARRIED}
+ *     one saves at the Library's level when that is at least the item's, and keeps the item's level otherwise, which
+ *     blocks the save until the player unticks it.
+ * @param enchantments the enchantment registry, which orders and numbers the rows
+ * @param library the table's bookshelves and Library Progress
+ * @param saver who is saving, and what they pay with
  */
 public record EnchantmentChecklist(
 	ItemStack item,
 	Map<Holder<Enchantment>, Integer> offers,
-	Map<Holder<Enchantment>, State> states,
-	Registry<Enchantment> enchantments
+	Map<Holder<Enchantment>, Checklist.State> states,
+	Registry<Enchantment> enchantments,
+	Library.Status library,
+	Checklist.Saver saver
 ) implements Checklist {
-	/** Whether an enchantment on the checklist is chosen, and so where its level comes from. */
-	public enum State {
-		/** Not chosen. */
-		UNSELECTED,
-		/** Chosen by the player, at the level the Library offers. */
-		SELECTED,
-		/**
-		 * Already on the item when it went in. Saves at the Library's level when that is at least the item's, and keeps
-		 * the item's level otherwise, which blocks the save until the player unticks it.
-		 */
-		CARRIED;
-
-		/** The state after the player clicks the row: chosen rows untick, and an unticked row picks the Library's level. */
-		public State toggled() {
-			return this == UNSELECTED ? SELECTED : UNSELECTED;
-		}
-	}
-
 	/** A reason the table refuses to save that is about one enchantment's row. */
 	public interface EnchantmentProblem extends Problem {
 		/** Whether the reason is about this enchantment's row. */
@@ -112,18 +101,10 @@ public record EnchantmentChecklist(
 		return enchantments.stream().anyMatch(enchantment -> enchantment.canEnchant(item));
 	}
 
-	/** The states for an item just put in the table: everything on it is {@link State#CARRIED}. */
-	public static Map<Holder<Enchantment>, State> preselected(ItemStack item) {
-		Map<Holder<Enchantment>, State> states = new HashMap<>();
-
-		item.getEnchantments().keySet().forEach(enchantment -> states.put(enchantment, State.CARRIED));
-
-		return states;
-	}
-
 	/**
-	 * The enchantments listed, in tooltip order: the Library's offers the item can take, the item's own enchantments,
-	 * and anything chosen, so a choice whose book was taken away can still be unticked.
+	 * The enchantments listed, in tooltip order with any that order leaves out last: the Library's offers the item can
+	 * take, the item's own enchantments, and anything chosen, so a choice whose book was taken away can still be
+	 * unticked.
 	 */
 	public List<Holder<Enchantment>> listed() {
 		List<Holder<Enchantment>> listed = new ArrayList<>();
@@ -142,8 +123,6 @@ public record EnchantmentChecklist(
 
 	/** Whether the enchantment is listed, so the player can toggle it. */
 	public boolean isListed(Holder<Enchantment> enchantment) {
-		if (item.isEmpty()) return false;
-
 		boolean offeredForItem = offer(enchantment) > 0 && enchantment.value().canEnchant(item);
 
 		return offeredForItem || itemLevel(enchantment) > 0 || state(enchantment) != State.UNSELECTED;
@@ -194,35 +173,77 @@ public record EnchantmentChecklist(
 		return chosen().size();
 	}
 
+	/** The number of the enchantment's row: its id in the enchantment registry. */
+	public int row(Holder<Enchantment> enchantment) {
+		return enchantments.asHolderIdMap().getId(enchantment);
+	}
+
 	@Override
-	public List<Row> rows(List<Problem> problems) {
+	public List<Row> rows() {
+		List<Problem> problems = choiceProblems();
+
 		return listed().stream()
 			.map(enchantment -> new Row(
+				row(enchantment),
 				Enchantment.getFullname(enchantment, shownLevel(enchantment)),
 				state(enchantment) != State.UNSELECTED,
-				EnchantingTableMenu.toggleButton(enchantment, enchantments),
 				problems.stream().filter(problem -> problem instanceof EnchantmentProblem about && about.concerns(enchantment)).toList()
 			))
 			.toList();
 	}
 
-	/** The deposit is due on the first save of an unenchanted item. */
 	@Override
-	public Cost cost(boolean infiniteMaterials) {
-		if (infiniteMaterials) return new Cost(0, false);
+	public State state(int row) {
+		Holder<Enchantment> enchantment = enchantments.asHolderIdMap().byId(row);
 
-		return new Cost(chosenCount(), !item.isEnchanted());
+		return enchantment == null ? State.UNSELECTED : state(enchantment);
 	}
 
 	@Override
-	public List<Problem> problems(int playerLevel, ItemStack lapis, ItemStack material, boolean infiniteMaterials) {
+	public Optional<Checklist> toggled(int row) {
+		Holder<Enchantment> enchantment = enchantments.asHolderIdMap().byId(row);
+
+		if (enchantment == null || !isListed(enchantment)) return Optional.empty();
+
+		Map<Holder<Enchantment>, State> toggled = new HashMap<>(states);
+
+		toggled.put(enchantment, state(enchantment).toggled());
+
+		return Optional.of(withStates(toggled));
+	}
+
+	@Override
+	public Checklist preselected() {
+		Map<Holder<Enchantment>, State> carried = new HashMap<>();
+
+		item.getEnchantments().keySet().forEach(enchantment -> carried.put(enchantment, State.CARRIED));
+
+		return withStates(carried);
+	}
+
+	@Override
+	public List<Problem> choiceProblems() {
 		List<Holder<Enchantment>> chosen = chosen();
 		List<Problem> problems = new ArrayList<>();
 
 		if (chosen.isEmpty()) problems.add(new NothingSelected());
 
-		problems.addAll(choiceProblems(chosen));
-		problems.addAll(slotAndPaymentProblems(playerLevel, lapis, material, infiniteMaterials));
+		for (Holder<Enchantment> enchantment : chosen) {
+			int offered = offer(enchantment);
+			boolean missing = offered == 0 || offered < level(enchantment);
+
+			if (!enchantment.value().canEnchant(item)) problems.add(new NotForItem(enchantment));
+			// An unpowered table offers nothing, which is the one problem to report, not one per enchantment.
+			if (missing && library.isPowered()) problems.add(new NotInLibrary(enchantment, shownLevel(enchantment), offered));
+		}
+
+		for (int first = 0; first < chosen.size(); first++) {
+			for (int second = first + 1; second < chosen.size(); second++) {
+				if (!Enchantment.areCompatible(chosen.get(first), chosen.get(second))) {
+					problems.add(new Incompatible(chosen.get(first), chosen.get(second)));
+				}
+			}
+		}
 
 		return problems;
 	}
@@ -236,25 +257,8 @@ public record EnchantmentChecklist(
 		return saved;
 	}
 
-	private List<Problem> choiceProblems(List<Holder<Enchantment>> chosen) {
-		List<Problem> problems = new ArrayList<>();
-
-		for (Holder<Enchantment> enchantment : chosen) {
-			int offered = offer(enchantment);
-
-			if (!enchantment.value().canEnchant(item)) problems.add(new NotForItem(enchantment));
-			if (offered == 0 || offered < level(enchantment)) problems.add(new NotInLibrary(enchantment, shownLevel(enchantment), offered));
-		}
-
-		for (int first = 0; first < chosen.size(); first++) {
-			for (int second = first + 1; second < chosen.size(); second++) {
-				if (!Enchantment.areCompatible(chosen.get(first), chosen.get(second))) {
-					problems.add(new Incompatible(chosen.get(first), chosen.get(second)));
-				}
-			}
-		}
-
-		return problems;
+	private EnchantmentChecklist withStates(Map<Holder<Enchantment>, State> newStates) {
+		return new EnchantmentChecklist(item, offers, Map.copyOf(newStates), enchantments, library, saver);
 	}
 
 	private int offer(Holder<Enchantment> enchantment) {

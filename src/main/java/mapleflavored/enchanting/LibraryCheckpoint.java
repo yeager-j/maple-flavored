@@ -12,8 +12,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 
 /**
- * A reward a Library unlocks once its {@link Library.Progress} reaches a share of a Full Library. The server gates the
- * reward with {@link Library.Progress#reached}, and the table's screen marks it on the progress bar.
+ * A reward a Library unlocks once its table is powered and its Library Progress reaches a share of a Full
+ * Library. {@link Library.Status#unlocked} is that gate, for the server's offers and for the table's screen, which marks
+ * the reward on the progress bar.
  *
  * @param percent the share of a Full Library's levels needed, from 1 to 100
  * @param icon what the progress bar shows for the reward
@@ -22,7 +23,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
 public record LibraryCheckpoint(int percent, ItemStackTemplate icon, Component reward) {
 	/** Mending, offered only by a Full Library. */
 	public static final LibraryCheckpoint MENDING = new LibraryCheckpoint(
-		100, new ItemStackTemplate(Items.ENCHANTED_BOOK), Component.translatable("enchantment.minecraft.mending")
+		Library.Progress.FULL_PERCENT, new ItemStackTemplate(Items.ENCHANTED_BOOK), Component.translatable("enchantment.minecraft.mending")
 	);
 
 	/** Every checkpoint, by rising percent: the golden apple effects, then Mending. */
@@ -31,6 +32,11 @@ public record LibraryCheckpoint(int percent, ItemStackTemplate icon, Component r
 		Stream.of(MENDING)
 	).toList();
 
+	/** Whether only a Full Library reaches this checkpoint. */
+	public boolean needsFullLibrary() {
+		return percent == Library.Progress.FULL_PERCENT;
+	}
+
 	/** The checkpoint for a golden apple effect, shown as a bottle in the effect's color. */
 	public static LibraryCheckpoint of(AppleEffect effect) {
 		PotionContents tint = new PotionContents(Optional.empty(), Optional.of(effect.color()), List.of(), Optional.empty());
@@ -38,7 +44,7 @@ public record LibraryCheckpoint(int percent, ItemStackTemplate icon, Component r
 		ItemStackTemplate icon = new ItemStackTemplate(Items.POTION, tinted);
 
 		return new LibraryCheckpoint(
-			effect.percent(), icon, Component.translatable("container.maple_flavored.enchanting_table.apple_reward", effect.describe())
+			effect.percent(), icon, Component.translatable(Checklist.KEY_PREFIX + "apple_reward", effect.describe())
 		);
 	}
 }

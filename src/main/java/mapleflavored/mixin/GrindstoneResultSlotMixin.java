@@ -1,7 +1,6 @@
 package mapleflavored.mixin;
 
-import mapleflavored.enchanting.EnchantingDeposit;
-import net.minecraft.util.Prediction;
+import mapleflavored.enchanting.Grinding;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.item.ItemStack;
@@ -32,15 +31,14 @@ public abstract class GrindstoneResultSlotMixin {
 		callback.setReturnValue(0);
 	}
 
-	// Reads the deposit before vanilla clears the inputs. The client runs onTake too, as a prediction, and gives nothing.
+	// Runs before vanilla clears the inputs. The client runs onTake too, as a prediction, and gives nothing.
 	@Inject(method = "onTake", at = @At("HEAD"))
 	private void refundDeposit(Player player, ItemStack carried, CallbackInfo callback) {
 		if (player.level().isClientSide()) return;
 
 		ItemStack input = this$0.getSlot(GrindstoneMenu.INPUT_SLOT).getItem();
-		ItemStack ground = input.isEmpty() ? this$0.getSlot(GrindstoneMenu.ADDITIONAL_SLOT).getItem() : input;
-		ItemStack deposit = EnchantingDeposit.refund(ground);
+		ItemStack additional = this$0.getSlot(GrindstoneMenu.ADDITIONAL_SLOT).getItem();
 
-		if (!deposit.isEmpty()) player.getInventory().placeItemBackInInventory(deposit, Prediction.SERVER_ONLY);
+		Grinding.handBackDeposit(player, input, additional);
 	}
 }

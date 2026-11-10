@@ -82,6 +82,7 @@
 		"StructurePieceInvoker",
 		"StructurePieceMixin",
 		"StructureTemplateMixin",
+		"TagLoaderMixin",
 		"ThrowableProjectileMixin",
 		"ThrownEnderpearlMixin",
 		"TridentItemMixin",

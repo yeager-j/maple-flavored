@@ -3,6 +3,7 @@ package mapleflavored.enchanting;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Holder;
@@ -42,21 +43,28 @@ public enum AppleEffect {
 		this.percent = percent;
 	}
 
-	/** The effects an enchanted golden apple gives when eaten, or none for any other item. */
-	public static Set<AppleEffect> on(ItemStack apple) {
-		Set<AppleEffect> effects = EnumSet.noneOf(AppleEffect.class);
-
-		if (!apple.is(Items.ENCHANTED_GOLDEN_APPLE)) return effects;
-
+	/**
+	 * The effects stored on an enchanted golden apple, exactly as eating it applies them, or none for any other item.
+	 * These are the authority on what the apple does; an effect's current strength and duration here are only what a
+	 * new save stores.
+	 */
+	public static List<MobEffectInstance> stored(ItemStack apple) {
 		Consumable consumable = apple.get(DataComponents.CONSUMABLE);
 
-		if (consumable == null) return effects;
+		if (!apple.is(Items.ENCHANTED_GOLDEN_APPLE) || consumable == null) return List.of();
 
-		consumable.onConsumeEffects().stream()
+		return consumable.onConsumeEffects().stream()
 			.filter(ApplyStatusEffectsConsumeEffect.class::isInstance)
 			.map(ApplyStatusEffectsConsumeEffect.class::cast)
 			.flatMap(applied -> applied.effects().stream())
-			.forEach(instance -> Arrays.stream(values()).filter(effect -> instance.is(effect.effect)).forEach(effects::add));
+			.toList();
+	}
+
+	/** Which of the table's effects an enchanted golden apple stores, at any strength, or none for any other item. */
+	public static Set<AppleEffect> on(ItemStack apple) {
+		Set<AppleEffect> effects = EnumSet.noneOf(AppleEffect.class);
+
+		Arrays.stream(values()).filter(effect -> effect.storedOn(apple).isPresent()).forEach(effects::add);
 
 		return effects;
 	}
@@ -65,11 +73,10 @@ public enum AppleEffect {
 	 * A copy of the golden apple, plain or enchanted, as one enchanted golden apple giving exactly {@code effects}. It
 	 * keeps the apple's other components, such as a name or a deposit.
 	 */
-	public static ItemStack enchant(ItemStack apple, Set<AppleEffect> effects) {
-		List<MobEffectInstance> instances = Arrays.stream(values()).filter(effects::contains).map(AppleEffect::instance).toList();
+	public static ItemStack enchant(ItemStack apple, List<MobEffectInstance> effects) {
 		ItemStack enchanted = apple.transmuteCopy(Items.ENCHANTED_GOLDEN_APPLE, 1);
 
-		enchanted.set(DataComponents.CONSUMABLE, Consumables.defaultFood().onConsume(new ApplyStatusEffectsConsumeEffect(instances)).build());
+		enchanted.set(DataComponents.CONSUMABLE, Consumables.defaultFood().onConsume(new ApplyStatusEffectsConsumeEffect(effects)).build());
 
 		return enchanted;
 	}
@@ -89,18 +96,26 @@ public enum AppleEffect {
 		return percent;
 	}
 
-	/** A new instance of the effect, at the strength and duration the apple gives. */
+	/** A new instance of the effect, at the strength and duration a new save stores. */
 	public MobEffectInstance instance() {
 		return new MobEffectInstance(effect, seconds * SharedConstants.TICKS_PER_SECOND, amplifier);
 	}
 
-	/** The effect's name with its strength and duration, such as "Regeneration II (0:20)". */
-	public Component describe() {
-		MobEffectInstance instance = instance();
+	/** This effect as the apple stores it, or empty if the apple doesn't store it. */
+	public Optional<MobEffectInstance> storedOn(ItemStack apple) {
+		return stored(apple).stream().filter(instance -> instance.is(effect)).findFirst();
+	}
 
+	/** The effect's name with the strength and duration a new save stores, such as "Regeneration II (0:20)". */
+	public Component describe() {
+		return describe(instance());
+	}
+
+	/** A stored effect's name with its strength and duration, such as "Regeneration II (0:20)". */
+	public static Component describe(MobEffectInstance instance) {
 		return Component.translatable(
 			"potion.withDuration",
-			PotionContents.getPotionDescription(effect, amplifier),
+			PotionContents.getPotionDescription(instance.getEffect(), instance.getAmplifier()),
 			MobEffectUtil.formatDuration(instance, 1.0F, SharedConstants.TICKS_PER_SECOND)
 		);
 	}
