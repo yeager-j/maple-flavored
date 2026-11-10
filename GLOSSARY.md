@@ -26,7 +26,7 @@ A heart made temporarily unusable by the Wither effect. It doesn't reduce Max He
 _Avoid_: Broken heart, gloom
 
 **Pith**:
-A rare material used to craft Crystal Hearts and Netherite Ingots.
+Vitality that has hardened: the part of a creature that makes it more than its kind. Whatever holds it is the strong form of something weaker, such as a Piglin Brute, an Elder Guardian, an Evoker, the Wither or a Deep variant, and a spawner makes its mobs from one. It is a rare material that crafts Crystal Hearts and Netherite Ingots.
 _Avoid_: Divine Fragment
 
 ### Materials
@@ -100,7 +100,7 @@ _Avoid_: Warden zone
 ### Deep caves
 
 **Deep variant**:
-A stronger form of an adult zombie, skeleton, creeper or spider that takes the place of every natural spawn of that mob below Y 0: the Deep Zombie, Deep Skeleton, Deep Creeper and Deep Spider.
+A stronger form of an adult zombie, skeleton, creeper or spider that takes the place of every natural spawn of that mob below Y 0: the Deep Zombie, Deep Skeleton, Deep Creeper and Deep Spider. Pith is the source of its strength and shows in its pale eyes, and one that no spawner made rarely drops a Pith when a player kills it.
 _Avoid_: Elite, deep mob
 
 ### Enchanting

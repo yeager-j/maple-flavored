@@ -213,8 +213,8 @@ Look and Pith drop (2026-11-10):
 - A Deep variant drops 1 Pith at 1% when a player kills it, with no Looting bonus. The chance is a playtest game rule.
 - A dark-room farm below Y 0 is slow without a perimeter, since unlit caves share the mob cap. A deep dungeon's spawner would have been the cheap route once ticket 59 is built, at an estimated 3 to 5 Pith an hour.
 - So a Deep variant a spawner made never rolls for Pith. The spawner's own Pith comes from breaking it.
+- Pith is vitality that has hardened, the part of a creature that makes it more than its kind. Jackson asked for it in `GLOSSARY.md` on 2026-11-10.
 
 Left open:
 
-- What Pith is. Proposed and not yet settled: vitality that has hardened, the part of a creature that makes it more than its kind. `GLOSSARY.md` still gives only its uses.
 - An un-Cleared spawner glows hot orange, not Pith white, so "powered by Pith" would have two looks.
