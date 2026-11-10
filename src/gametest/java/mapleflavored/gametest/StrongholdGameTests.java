@@ -582,7 +582,7 @@ public class StrongholdGameTests {
 		BlockPos origin = new BlockPos(box.minX(), box.minY(), box.minZ());
 		BlockPos aboveTheRoom = new BlockPos(box.getCenter().getX(), box.maxY() + 3, box.getCenter().getZ());
 
-		return buildAlone(level, List.of(room, StructureBookPiece.floating(aboveTheRoom, Enchantments.UNBREAKING, 0, room, List.of(origin))));
+		return buildAlone(level, List.of(room, StructureBookPiece.floating(aboveTheRoom, Enchantments.UNBREAKING, 0, room, new BookLocks.Keys(BookLocks.Kind.EVOKERS, List.of(origin)))));
 	}
 
 	private static List<AbstractIllager> buildAlone(ServerLevel level, List<StructurePiece> pieces) {

@@ -148,6 +148,8 @@ public class BastionLockGameTests {
 
 		((PiglinBrute) moved).kill(nether);
 		helper.assertValueEqual(BookLocks.remainingKeys(level, book).size(), KEEPERS - 1, "keepers left after one dies in another dimension");
+		// Only the locks know a keeper is gone, so they don't wait for the next autosave to be written.
+		helper.assertFalse(level.getDataStorage().computeIfAbsent(BookLocks.TYPE).isDirty(), "The locks are still unsaved after a keeper dies");
 
 		keepers.get(1).hurtServer(level, level.damageSources().lava(), LAVA_DAMAGE);
 		helper.assertValueEqual(BookLocks.remainingKeys(level, book).size(), KEEPERS - 2, "keepers left after one burns in lava");
@@ -197,6 +199,24 @@ public class BastionLockGameTests {
 
 		keepers.get(1).kill(level);
 		helper.assertValueEqual(BookLocks.remainingKeys(level, book.spot()).size(), KEEPERS - 2, "keepers left after another dies");
+		helper.succeed();
+	}
+
+	// A keeper that isn't where it spawned may have wandered off, so only its death counts.
+	@GameTest(maxTicks = 400)
+	public void checkingALockNeverCountsAKeeperThatIsntThere(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart planned = BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, 34);
+		BlockPos book = BastionBookGameTests.bookPieces(planned).getFirst().spot();
+		List<BlockPos> keys = BookLocks.remainingKeys(level, book);
+
+		helper.assertValueEqual(keys.size(), KEEPERS, "the book's keepers");
+		keys.forEach(level::getChunk);
+		helper.assertValueEqual(
+			BookLocks.lockCheckedAgainstWorld(level, book).map(BookLocks.Lock::remainingKeys),
+			Optional.of(keys),
+			"keepers left once the lock is checked with their chunks loaded and empty"
+		);
 		helper.succeed();
 	}
 

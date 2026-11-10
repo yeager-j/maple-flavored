@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P1 (High)
 
@@ -34,16 +34,22 @@ One authority with explicit derivations (Hunt and Thomas). A projection must not
 
 Not verified: a structure planned during the server's final flush may queue its lock after saved data is written. The comment at `sb/BookLocks.java:49-51` covers only worldgen that finishes before `BEFORE_SAVE`. This is inferred from the save order, not observed.
 
-## Open decisions
+## Decisions
 
-- **What counts as evidence that a keeper mob is gone.** A block key can be checked against the world: the shrieker is there or it isn't. A keeper mob that is absent from its chunk may only have wandered or unloaded. The reviewer's suggestion is to keep `BookLocks` as the authority for `done` only where the world can no longer answer (a dead mob, a Cleared spawner since broken), and to derive everything else.
+- **What counts as evidence that a keeper mob is gone: only its death or removal.** A keeper mob that is absent may have wandered, unloaded or changed dimension, so a lock is never healed from a missing mob. `BookLocks` stays the authority for a mob key. So that it can't fall far behind the keeper's own chunk, a mob key that becomes done schedules a save of the locks at once (`SavedDataStorage.scheduleSave`, which writes off-thread) and no longer waits for the next autosave. Peaceful is still the escape for a crash before that write lands. Claude made this call following the reviewer's suggestion; Jackson has not reviewed it.
+- **A spawner key that is gone is done.** A survival player can't break a spawner that isn't Cleared, so a missing spawner was Cleared first or removed by a command or creative player. This follows the checklist.
+- **Block keys heal on every take, not only a refused one.** The lock is checked against the world before the take is decided, so the take that finds every key done goes through.
+- **A missing lock is planned again when the book is next read**, from the structure start in the book's chunk references. Each book with no lock is looked up once a session. The lookup can load the structure's start chunk from disk on the server thread; the GameTests cover it only with that chunk already loaded.
+- **A key is only checked in a chunk that is loaded and fully generated** (`getChunkNow`). A structure's pieces are all placed by then, so a missing shrieker or spawner there is gone, not pending.
+- **The final flush.** At shutdown the server drains worldgen, saves every chunk, then closes each level, which saves saved data once more (`ServerChunkCache.close`). `BookLocks` now also records its queues on `AFTER_SAVE`, so a lock or a forgiven keeper queued during the chunk save reaches that last write. A lock that still misses the file is planned again from its piece. Whether worldgen really queues during the flush was not observed.
+- **Structures saved before this change are not covered.** Their pieces carry only `Keepers`, with no kind, and a Fortress's carries no keys at all. They still place their keepers, but their lock can't be planned again from them, so the crash window stays open for them. Dropping that path waits on ticket 08 finding 9.
 
 ## Checklist
 
-- [ ] The book piece saves the full lock, kind and keys, including a Fortress's spawner keys.
-- [ ] A saved structure whose book has no entry in `BookLocks` gets its lock planned again from the piece, so a book is never left unlocked by a crash.
-- [ ] When a take is refused, the remaining block keys in loaded chunks are checked against the world, and a key whose shrieker or spawner is gone is marked done.
-- [ ] A keeper shrieker removed during worldgen is counted, or its key is forgiven.
-- [ ] The decision above for keeper mobs is made and recorded here.
-- [ ] The final-flush case is either shown not to happen or handled.
-- [ ] GameTests: a lock missing from saved data is rebuilt from its structure, and a lock whose `done` is behind the world heals on a refused take.
+- [x] The book piece saves the full lock, kind and keys, including a Fortress's spawner keys.
+- [x] A saved structure whose book has no entry in `BookLocks` gets its lock planned again from the piece, so a book is never left unlocked by a crash.
+- [x] When a take is refused, the remaining block keys in loaded chunks are checked against the world, and a key whose shrieker or spawner is gone is marked done.
+- [x] A keeper shrieker removed during worldgen is counted, or its key is forgiven.
+- [x] The decision above for keeper mobs is made and recorded here.
+- [x] The final-flush case is either shown not to happen or handled.
+- [x] GameTests: a lock missing from saved data is rebuilt from its structure, and a lock whose `done` is behind the world heals on a refused take.

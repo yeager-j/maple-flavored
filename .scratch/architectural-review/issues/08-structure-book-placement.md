@@ -121,7 +121,7 @@ The mod is at `0.1.0` (`gradle.properties:16`) and is intended for new worlds. `
 
 ## Checklist
 
-- [ ] 1. The book piece saves the lock's kind, one `StructureBookPiece` lookup over a piece list replaces every `getLast()` check, the Stronghold tags its keeper Evoker with an explicit call, and `structurebooks` no longer imports `strongholds`.
+- [ ] 1. (The book piece saves the lock's kind, and `StructureBookPiece.among` is the lookup: done with ticket 01. The rest is open.) The book piece saves the lock's kind, one `StructureBookPiece` lookup over a piece list replaces every `getLast()` check, the Stronghold tags its keeper Evoker with an explicit call, and `structurebooks` no longer imports `strongholds`.
 - [ ] 2. A book has an identity that doesn't move, or `withBook` refuses a lock rule on an anchor that settles and `spot()` documents when it is valid. The Igloo reload case is checked.
 - [ ] 3. An Ancient City stops Grounding when its book is gone for any reason, including one that was never placed.
 - [ ] 4. One predicate says what a Blaze spawner room is, and the Fortress mixin and the lock's key list both use it.

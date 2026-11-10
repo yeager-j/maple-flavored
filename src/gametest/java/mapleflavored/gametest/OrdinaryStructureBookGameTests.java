@@ -361,7 +361,7 @@ public class OrdinaryStructureBookGameTests {
 			generator, generator.getBiomeSource(), randomState.createClimateSampler(SamplerContext.EMPTY_UNCACHED), randomState, level
 		);
 		PiecesContainer withBook = StructureBookRules.withBook(
-			structure, new PiecesContainer(pieces), level.getSeed(), chunk, level.dimension(), terrain, level.getStructureTemplateManager()
+			structure, new PiecesContainer(pieces), level.getSeed(), chunk, terrain, level.getStructureTemplateManager()
 		);
 
 		return new StructureStart(structure.value(), chunk, 0, withBook);

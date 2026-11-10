@@ -14,7 +14,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
@@ -118,12 +117,11 @@ public final class StructureBookRules {
 
 	/**
 	 * The structure's planned pieces with its book piece added last, or the same pieces when the structure holds no
-	 * book, its rule finds no spot, or the pieces are empty (a structure that failed to generate). A book its rule locks
-	 * is planned into {@link BookLocks} too.
+	 * book, its rule finds no spot, or the pieces are empty (a structure that failed to generate). The book piece
+	 * carries what its rule locks it with; {@link BookLocks#plan} locks it.
 	 *
 	 * @param seed the world seed
 	 * @param chunkPos the chunk the structure starts in
-	 * @param dimension the dimension the structure is planned in
 	 * @param terrain the terrain the structure is planned into
 	 * @param templates the templates the structure's pieces are built from
 	 */
@@ -132,7 +130,6 @@ public final class StructureBookRules {
 		PiecesContainer pieces,
 		long seed,
 		ChunkPos chunkPos,
-		ResourceKey<Level> dimension,
 		TerrainPreview terrain,
 		StructureTemplateManager templates
 	) {
@@ -157,10 +154,8 @@ public final class StructureBookRules {
 			anchorIndex,
 			spot.get().anchor(),
 			rule.get().placement(),
-			keys.kind().isKeeper() ? keys.positions() : List.of()
+			keys
 		);
-
-		BookLocks.plan(dimension, spot.get().pos(), keys);
 
 		return new PiecesContainer(Stream.concat(pieces.pieces().stream(), Stream.of(book)).toList());
 	}

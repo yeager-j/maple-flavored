@@ -257,7 +257,6 @@ public class MansionBookGameTests {
 			new PiecesContainer(List.copyOf(pieces)),
 			level.getSeed(),
 			chunk,
-			level.dimension(),
 			terrain,
 			level.getStructureTemplateManager()
 		);
