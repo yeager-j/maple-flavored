@@ -363,8 +363,7 @@ public class RemnantsGameTests {
 	@GameTest(maxTicks = 1200)
 	public void aRemnantBoundForAnUnloadedChunkSurvivesItsOwnerLoggingOut(GameTestHelper helper) {
 		ServerPlayer player = playerWithXp(helper, 100);
-		BlockPos testOrigin = helper.absolutePos(BlockPos.ZERO);
-		BlockPos farRespawnPoint = new BlockPos(testOrigin.getX() + 20_000, helper.getLevel().getMaxY() - 10, testOrigin.getZ());
+		BlockPos farRespawnPoint = TestSites.of(helper).chunk(0).getMiddleBlockPosition(helper.getLevel().getMaxY() - 10);
 
 		setRespawnPoint(player, farRespawnPoint);
 		fallIntoTheVoid(helper, player);

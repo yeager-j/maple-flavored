@@ -34,7 +34,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.block.Blocks;
@@ -59,9 +58,6 @@ import net.minecraft.world.phys.Vec3;
  * player wears. {@link BastionLockGameTests} covers the keepers.
  */
 public class BastionBookGameTests {
-	// Far from every other test's area. Each test plans along its own row, so no two share a Bastion.
-	private static final int FAR_CHUNK = 6000;
-	private static final int CHUNKS_APART = 40;
 	private static final int SCAN_ATTEMPTS = 60;
 	private static final int PLANS = 80;
 	// Beyond a Piglin's 16-block targeting range, which vanilla's anger is limited to.
@@ -104,7 +100,7 @@ public class BastionBookGameTests {
 		ServerLevel level = helper.getLevel();
 
 		for (int i = 0; i < PLANS; i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.BASTION_REMNANT, farChunk(0, i));
+			StructureStart start = Structures.plan(level, BuiltinStructures.BASTION_REMNANT, TestSites.of(helper).chunk(i));
 			Layout layout = layoutOf(start).orElseThrow(() -> new IllegalStateException("an unknown Bastion layout at " + start.getChunkPos()));
 			List<StructureBookPiece> books = bookPieces(start);
 
@@ -117,28 +113,28 @@ public class BastionBookGameTests {
 
 	@GameTest(maxTicks = 400)
 	public void takingTheTreasureRoomsBookAngersTheBastion(GameTestHelper helper) {
-		placeTakeAndCheckAnger(helper, TREASURE_ROOM, 1);
+		placeTakeAndCheckAnger(helper, TREASURE_ROOM);
 	}
 
 	@GameTest(maxTicks = 400)
 	public void takingTheBridgesBookAngersTheBastion(GameTestHelper helper) {
-		placeTakeAndCheckAnger(helper, BRIDGE, 2);
+		placeTakeAndCheckAnger(helper, BRIDGE);
 	}
 
 	@GameTest(maxTicks = 400)
 	public void takingTheHousingUnitsBookAngersTheBastion(GameTestHelper helper) {
-		placeTakeAndCheckAnger(helper, HOUSING_UNITS, 3);
+		placeTakeAndCheckAnger(helper, HOUSING_UNITS);
 	}
 
 	@GameTest(maxTicks = 400)
 	public void takingTheHoglinStablesBookAngersTheBastion(GameTestHelper helper) {
-		placeTakeAndCheckAnger(helper, HOGLIN_STABLES, 4);
+		placeTakeAndCheckAnger(helper, HOGLIN_STABLES);
 	}
 
 	@GameTest(maxTicks = 400)
 	public void anAngeredPiglinAttacksAPlayerWearingGold(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, 6));
+		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
 		BlockPos book = onlyBook(helper, start);
 		AbstractPiglin piglin = spawn(level, EntityTypes.PIGLIN, book.east());
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
@@ -158,7 +154,7 @@ public class BastionBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void piglinsAcrossTheBastionHuntThePlayerUntilTheirAngerEnds(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, 8));
+		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
 		BlockPos book = onlyBook(helper, start);
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
 
@@ -232,7 +228,7 @@ public class BastionBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aDeathTheHuntersNeverSawEndsTheHunt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, 9));
+		StructureStart start = placeUnlocked(helper, planLayout(level, HOUSING_UNITS, TestSites.of(helper)));
 		BlockPos book = onlyBook(helper, start);
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
 
@@ -268,7 +264,7 @@ public class BastionBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void hoglinStablesWithoutAStableChestHoldTheBookAboveTheBaseWallsChest(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = planLayout(level, HOGLIN_STABLES, 7);
+		StructureStart planned = planLayout(level, HOGLIN_STABLES, TestSites.of(helper));
 		List<StructurePiece> withoutStableChests = planned.getPieces().stream()
 			.filter(piece -> !(piece instanceof StructureBookPiece))
 			.filter(piece -> templateOf(piece).filter(STABLES_WITH_A_CHEST::contains).isEmpty())
@@ -304,7 +300,7 @@ public class BastionBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aRefusedBookAngersNoPiglin(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = placeUnlocked(helper, planLayout(level, TREASURE_ROOM, 5));
+		StructureStart start = placeUnlocked(helper, planLayout(level, TREASURE_ROOM, TestSites.of(helper)));
 		BlockPos book = onlyBook(helper, start);
 		AbstractPiglin piglin = spawn(level, EntityTypes.PIGLIN, book);
 		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.DIRT);
@@ -340,9 +336,9 @@ public class BastionBookGameTests {
 
 	// Places a Bastion of the layout, adds a far Piglin and a Brute inside it and a Piglin outside it, then takes the book
 	// as a player wearing gold.
-	private static void placeTakeAndCheckAnger(GameTestHelper helper, Layout layout, int row) {
+	private static void placeTakeAndCheckAnger(GameTestHelper helper, Layout layout) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = placeUnlocked(helper, planLayout(level, layout, row));
+		StructureStart start = placeUnlocked(helper, planLayout(level, layout, TestSites.of(helper)));
 		BlockPos book = onlyBook(helper, start);
 
 		helper.assertValueEqual(enchantmentAt(level, book), layout.enchantment(), "the book's enchantment");
@@ -379,9 +375,9 @@ public class BastionBookGameTests {
 		helper.succeed();
 	}
 
-	static StructureStart planLayout(ServerLevel level, Layout layout, int row) {
+	static StructureStart planLayout(ServerLevel level, Layout layout, TestSites sites) {
 		for (int i = 0; i < SCAN_ATTEMPTS; i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.BASTION_REMNANT, farChunk(row, i));
+			StructureStart start = Structures.plan(level, BuiltinStructures.BASTION_REMNANT, sites.chunk(i));
 
 			if (layoutOf(start).equals(Optional.of(layout))) return start;
 		}
@@ -485,10 +481,6 @@ public class BastionBookGameTests {
 
 	static Optional<UUID> angryAt(AbstractPiglin piglin) {
 		return piglin.getBrain().getMemory(MemoryModuleType.ANGRY_AT);
-	}
-
-	private static ChunkPos farChunk(int row, int attempt) {
-		return new ChunkPos(FAR_CHUNK + attempt * CHUNKS_APART, -FAR_CHUNK - row * CHUNKS_APART);
 	}
 
 	record Layout(Identifier start, ResourceKey<Enchantment> enchantment) {

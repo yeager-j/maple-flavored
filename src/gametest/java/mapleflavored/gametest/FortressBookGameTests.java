@@ -57,9 +57,6 @@ import org.jspecify.annotations.Nullable;
  * is, and a Cleared spawner stays counted once broken.
  */
 public class FortressBookGameTests {
-	// Far from every other test's area. Each test plans along its own row, so no two share a fortress or its lock.
-	private static final int FAR_CHUNK = 4000;
-	private static final int CHUNKS_APART = 40;
 	private static final int SCAN_ATTEMPTS = 40;
 	private static final int GUARANTEE_PLANS = 200;
 	private static final int DEATHS_TO_CLEAR = 12;
@@ -84,13 +81,13 @@ public class FortressBookGameTests {
 		ServerLevel level = helper.getLevel();
 
 		for (int i = 0; i < GUARANTEE_PLANS; i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.FORTRESS, farChunk(0, i));
+			StructureStart start = Structures.plan(level, BuiltinStructures.FORTRESS, TestSites.of(helper).chunk(i));
 
 			helper.assertTrue(!blazeSpawners(start).isEmpty(), "the fortress planned at " + start.getChunkPos() + " has a Blaze spawner");
 		}
 
-		List<String> first = layout(Structures.plan(level, BuiltinStructures.FORTRESS, farChunk(0, 0)));
-		List<String> second = layout(Structures.plan(level, BuiltinStructures.FORTRESS, farChunk(0, 0)));
+		List<String> first = layout(Structures.plan(level, BuiltinStructures.FORTRESS, TestSites.of(helper).chunk(0)));
+		List<String> second = layout(Structures.plan(level, BuiltinStructures.FORTRESS, TestSites.of(helper).chunk(0)));
 
 		helper.assertValueEqual(second, first, "the same fortress planned twice");
 		helper.succeed();
@@ -99,7 +96,7 @@ public class FortressBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void theBookFloatsLockedAboveTheLavaWell(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = planFortress(level, 1, start -> castleEntrance(start) != null, "a fortress with a Castle Entrance");
+		StructureStart planned = planFortress(level, TestSites.of(helper), start -> castleEntrance(start) != null, "a fortress with a Castle Entrance");
 		List<BlockPos> spawners = blazeSpawners(planned);
 		BlockPos expectedBook = worldPos(castleEntrance(planned), LAVA_WELL_BOOK);
 
@@ -136,7 +133,7 @@ public class FortressBookGameTests {
 	@GameTest
 	public void withoutACastleEntranceTheBookFloatsAtTheStartCrossing(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = planFortress(level, 2, start -> castleEntrance(start) != null, "a fortress with a Castle Entrance");
+		StructureStart planned = planFortress(level, TestSites.of(helper), start -> castleEntrance(start) != null, "a fortress with a Castle Entrance");
 		List<StructurePiece> withoutEntrance = planned.getPieces().stream()
 			.filter(piece -> !(piece instanceof NetherFortressPieces.CastleEntrance) && !(piece instanceof StructureBookPiece))
 			.toList();
@@ -168,7 +165,7 @@ public class FortressBookGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureStart planned = planFortress(
 			level,
-			3,
+			TestSites.of(helper),
 			start -> blazeSpawners(start).stream().noneMatch(spawner -> sameChunk(spawner, bookPiece(start).spot())),
 			"a fortress whose book's chunk holds no Blaze spawner"
 		);
@@ -217,7 +214,7 @@ public class FortressBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aBuiltBookUnlocksAsItsLastSpawnerIsCleared(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = planFortress(level, 4, start -> true, "any fortress");
+		StructureStart planned = planFortress(level, TestSites.of(helper), start -> true, "any fortress");
 		BlockPos book = bookPiece(planned).spot();
 
 		Structures.chunks(planned).forEach(chunk -> Structures.build(level, planned, chunk));
@@ -233,7 +230,7 @@ public class FortressBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aSavedFortressBuildsItsBookWhereItsLockIs(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = planFortress(level, 5, start -> true, "any fortress");
+		StructureStart planned = planFortress(level, TestSites.of(helper), start -> true, "any fortress");
 		StructureStart loaded = Structures.saveAndLoad(level, planned);
 		BlockPos book = bookPiece(planned).spot();
 
@@ -247,7 +244,7 @@ public class FortressBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aLockPlannedJustBeforeASaveIsSavedWithIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = Structures.plan(level, BuiltinStructures.FORTRESS, farChunk(6, 0));
+		StructureStart planned = Structures.plan(level, BuiltinStructures.FORTRESS, TestSites.of(helper).chunk(0));
 		BlockPos book = bookPiece(planned).spot();
 
 		// As at shutdown, when the last chunks are planned after the last tick: nothing reads the locks before the save.
@@ -261,7 +258,7 @@ public class FortressBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aLockPlannedDuringASaveIsRecordedAfterIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = Structures.plan(level, BuiltinStructures.FORTRESS, farChunk(7, 0));
+		StructureStart planned = Structures.plan(level, BuiltinStructures.FORTRESS, TestSites.of(helper).chunk(0));
 		BlockPos book = bookPiece(planned).spot();
 
 		ServerLifecycleEvents.AFTER_SAVE.invoker().onAfterSave(level.getServer(), true, false);
@@ -273,7 +270,7 @@ public class FortressBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aSavedBookPieceKeepsItsWholeLock(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = planFortress(level, 8, start -> true, "any fortress");
+		StructureStart planned = planFortress(level, TestSites.of(helper), start -> true, "any fortress");
 		StructureBookPiece book = bookPiece(planned);
 		StructureBookPiece loaded = bookPiece(Structures.saveAndLoad(level, planned));
 		List<BlockPos> spawners = blazeSpawners(planned);
@@ -305,7 +302,7 @@ public class FortressBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aLockMissingFromTheSavedLocksIsPlannedAgainFromItsSavedFortress(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = planFortress(level, 9, start -> true, "any fortress");
+		StructureStart planned = planFortress(level, TestSites.of(helper), start -> true, "any fortress");
 		BlockPos book = bookPiece(planned).spot();
 		BookLocks.Lock lock = BookLocks.lockAt(level, book).orElseThrow();
 
@@ -330,7 +327,7 @@ public class FortressBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aTakeCountsTheSpawnersTheLockMissedBeingClearedOrRemoved(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = planFortress(level, 10, start -> blazeSpawners(start).size() == 2, "a fortress with two Blaze spawners");
+		StructureStart planned = planFortress(level, TestSites.of(helper), start -> blazeSpawners(start).size() == 2, "a fortress with two Blaze spawners");
 		BlockPos book = bookPiece(planned).spot();
 		List<BlockPos> spawners = blazeSpawners(planned);
 		BlockPos standing = spawners.get(0);
@@ -381,19 +378,15 @@ public class FortressBookGameTests {
 		helper.succeed();
 	}
 
-	// Plans fortresses along the test's own row until one is what the test needs.
-	private static StructureStart planFortress(ServerLevel level, int row, Predicate<StructureStart> wanted, String what) {
+	// Plans a fortress at each of the test's sites until one is what the test needs.
+	private static StructureStart planFortress(ServerLevel level, TestSites sites, Predicate<StructureStart> wanted, String what) {
 		for (int attempt = 0; attempt < SCAN_ATTEMPTS; attempt++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.FORTRESS, farChunk(row, attempt));
+			StructureStart start = Structures.plan(level, BuiltinStructures.FORTRESS, sites.chunk(attempt));
 
 			if (wanted.test(start)) return start;
 		}
 
 		throw new IllegalStateException("no " + what + " in " + SCAN_ATTEMPTS + " plans");
-	}
-
-	private static ChunkPos farChunk(int row, int attempt) {
-		return new ChunkPos(-FAR_CHUNK + attempt * CHUNKS_APART, FAR_CHUNK + row * CHUNKS_APART);
 	}
 
 	private static NetherFortressPieces.@Nullable CastleEntrance castleEntrance(StructureStart start) {

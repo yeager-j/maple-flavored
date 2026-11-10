@@ -15,7 +15,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.monster.warden.WardenSpawnTracker;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SculkShriekerBlock;
@@ -40,8 +39,6 @@ public class WardenSummoningGameTests {
 	private static final int SHRIEK_TICKS = 100;
 	// Far above the arena's own floor and what earlier batches left on it, out of reach of the search's vertical scans.
 	private static final int ABOVE_THE_ARENA = 30;
-	// An Ancient City planned far from the test grid, so it never makes a test's players Warden Territory.
-	private static final ChunkPos ANCIENT_CITY_CHUNK = new ChunkPos(-400, 400);
 	// Vanilla's cooldown after a warning.
 	private static final int COOLDOWN_TICKS = 200;
 
@@ -49,7 +46,7 @@ public class WardenSummoningGameTests {
 	public void wardenTerritoryIsTheDeepDarkAndAncientCityBounds(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerLevel level = arena.level();
-		StructureStart city = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, ANCIENT_CITY_CHUNK);
+		StructureStart city = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, TestSites.of(helper).chunk(0));
 		BoundingBox bounds = city.getBoundingBox();
 		BlockPos inAPiece = city.getPieces().getFirst().getBoundingBox().getCenter();
 		BlockPos betweenPieces = cornerOutsideEveryPiece(level, city);

@@ -65,9 +65,6 @@ import net.minecraft.world.phys.Vec3;
  * inventory, and the book can't be mined, blown up, pushed or replaced.
  */
 public class StructureBookGameTests {
-	// Far from every test's own area, and far enough apart that no two Mineshafts overlap.
-	private static final int FAR_CHUNK = 2000;
-	private static final int CHUNKS_APART = 40;
 	private static final BlockPos BOOK_POS = new BlockPos(3, 2, 3);
 	private static final int MAIN_INVENTORY_SLOTS = Inventory.INVENTORY_SIZE;
 
@@ -89,7 +86,7 @@ public class StructureBookGameTests {
 
 		for (int i = 0; i < mineshafts.size(); i++) {
 			String name = mineshafts.get(i).identifier() + " " + i;
-			StructureStart start = Structures.place(level, mineshafts.get(i), farChunk(i));
+			StructureStart start = Structures.place(level, mineshafts.get(i), TestSites.of(helper).chunk(i));
 			BlockPos book = onlyBook(helper, start);
 			long openSides = Direction.Plane.HORIZONTAL.stream().filter(side -> level.getBlockState(book.relative(side)).isAir()).count();
 
@@ -105,7 +102,7 @@ public class StructureBookGameTests {
 
 	@GameTest
 	public void theTerrainPreviewSteersTheBookAwayFromAWetHallway(GameTestHelper helper) {
-		List<StructurePiece> pieces = Structures.plan(helper.getLevel(), BuiltinStructures.MINESHAFT, farChunk(9)).getPieces();
+		List<StructurePiece> pieces = Structures.plan(helper.getLevel(), BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)).getPieces();
 		List<BlockPos> corridorSpots = corridors(pieces).stream().map(MineshaftBookSpots::middleSupport).toList();
 		BlockPos dryChoice = chooseSpot(pieces, previewWithLiquid((x, z) -> false), "an all-dry preview");
 		BoundingBox firstHallway = corridors(pieces).stream()
@@ -131,7 +128,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void aBookWhoseHallwayIsntBuiltGetsADryPocket(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.plan(level, BuiltinStructures.MINESHAFT, farChunk(8));
+		StructureStart start = Structures.plan(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0));
 		BlockPos spot = start.getPieces().stream()
 			.filter(StructureBookPiece.class::isInstance)
 			.findFirst()
@@ -173,7 +170,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void takingAMineshaftBookGivesEfficiencyOne(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos book = onlyBook(helper, Structures.place(level, BuiltinStructures.MINESHAFT, farChunk(4)));
+		BlockPos book = onlyBook(helper, Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)));
 		ServerPlayer player = survivalPlayer(helper);
 
 		use(player, book);
@@ -187,7 +184,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void aFullInventoryRefusesTheBook(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos book = onlyBook(helper, Structures.place(level, BuiltinStructures.MINESHAFT, farChunk(5)));
+		BlockPos book = onlyBook(helper, Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)));
 		ServerPlayer player = survivalPlayer(helper);
 		Inventory inventory = player.getInventory();
 
@@ -218,7 +215,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void aSavedMineshaftPlacesItsBookWithTheChunkThatHoldsIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart saved = Structures.saveAndLoad(level, Structures.plan(level, BuiltinStructures.MINESHAFT, farChunk(6)));
+		StructureStart saved = Structures.saveAndLoad(level, Structures.plan(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)));
 		List<ChunkPos> chunksThatAddedABook = new ArrayList<>();
 		int books = Structures.books(level, saved).size();
 
@@ -249,7 +246,7 @@ public class StructureBookGameTests {
 	@GameTest
 	public void anOverlappingStructureCantEraseTheBook(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.place(level, BuiltinStructures.MINESHAFT, farChunk(7));
+		StructureStart start = Structures.place(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0));
 		BlockPos book = onlyBook(helper, start);
 		// The same Mineshaft without its book, so its central room carves through the book's spot.
 		List<StructurePiece> piecesWithoutBook = start.getPieces().stream()
@@ -419,7 +416,7 @@ public class StructureBookGameTests {
 	public void aBookSavedBeforePlacementsKeepsItsPocketRule(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		StructurePieceSerializationContext context = StructurePieceSerializationContext.fromLevel(level);
-		StructureBookPiece planned = Structures.plan(level, BuiltinStructures.MINESHAFT, farChunk(10)).getPieces().stream()
+		StructureBookPiece planned = Structures.plan(level, BuiltinStructures.MINESHAFT, TestSites.of(helper).chunk(0)).getPieces().stream()
 			.filter(StructureBookPiece.class::isInstance)
 			.map(StructureBookPiece.class::cast)
 			.findFirst()
@@ -453,10 +450,6 @@ public class StructureBookGameTests {
 		}
 
 		helper.succeed();
-	}
-
-	private static ChunkPos farChunk(int index) {
-		return new ChunkPos(FAR_CHUNK, FAR_CHUNK + index * CHUNKS_APART);
 	}
 
 	private static BlockPos onlyBook(GameTestHelper helper, StructureStart start) {

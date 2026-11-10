@@ -1,6 +1,9 @@
 package mapleflavored.gametest;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
 import mapleflavored.structurebooks.StructureBookBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -51,6 +54,14 @@ final class Structures {
 		if (!start.isValid()) throw new IllegalStateException(key.identifier() + " failed to generate at " + chunkPos);
 
 		return start;
+	}
+
+	/** The first site in the row where the structure plans the way the test wants, if it does at any. */
+	static Optional<ChunkPos> firstSiteWhere(ServerLevel level, ResourceKey<Structure> key, TestSites sites, int row, Predicate<StructureStart> wanted) {
+		return IntStream.range(0, TestSites.COLUMNS)
+			.mapToObj(index -> sites.chunk(row, index))
+			.filter(chunk -> wanted.test(plan(level, key, chunk)))
+			.findFirst();
 	}
 
 	/** Plans the structure and builds every chunk it covers. */

@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P1 (High)
 
@@ -38,8 +38,18 @@ Not verified: that vanilla's GameTest runner releases forced chunks at batch end
 
 ## Checklist
 
-- [ ] One harness type hands out non-overlapping off-grid sites, so no test names a far coordinate.
-- [ ] That type forces the site's chunks, waits until entities tick there, and releases them on success and on failure.
-- [ ] `CHUNKS_APART`, `FAR_CHUNK` and `farChunk` no longer appear in test classes.
-- [ ] The Bastion and Woodland Mansion in `BloodMoonRestoringGameTests` no longer share a site.
-- [ ] Whether the runner releases forced chunks at batch end is checked against the 26.3 sources, and the answer is written into the harness type's Javadoc.
+- [x] One harness type hands out non-overlapping off-grid sites, so no test names a far coordinate.
+- [x] That type forces the site's chunks, waits until entities tick there, and releases them on success and on failure.
+- [x] `CHUNKS_APART`, `FAR_CHUNK` and `farChunk` no longer appear in test classes.
+- [x] The Bastion and Woodland Mansion in `BloodMoonRestoringGameTests` no longer share a site.
+- [x] Whether the runner releases forced chunks at batch end is checked against the 26.3 sources, and the answer is written into the harness type's Javadoc.
+
+## Comments
+
+Closed by the `test-site-allocation` branch.
+
+- `TestSites` hands each test a region of sites derived from its test id. `ForcedChunks` is the only test code that forces a chunk: it forces, waits, and lets a test's site chunks go when the test passes or fails.
+- The runner question is answered in `ForcedChunks`' Javadoc. In 26.3 `GameTestRunner` unforces every forced chunk in the batch's level as the batch's last test finishes, pass or fail, and only in that level.
+- Chunks forced on the test grid are still left to the runner, because neighbouring tests share them.
+- Two more shared sites turned up: `BloodMoonRestoringGameTests.checkingASpotsBlockLoadsNoChunks` expected block (-48,000, -48,000) to be unloaded, where `DungeonGameTests` built its rooms.
+- Moving every site exposed ticket 14.

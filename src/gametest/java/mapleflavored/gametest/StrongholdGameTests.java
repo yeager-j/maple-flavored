@@ -64,13 +64,7 @@ import net.minecraft.world.phys.Vec3;
  * over the End portal, and taking it sets every Illager in the Stronghold hunting the player, Orichalcum or not.
  */
 public class StrongholdGameTests {
-	// Far from every other test's area. Each test places its own Stronghold, which reaches 112 blocks from its start.
-	private static final int FAR_CHUNK = -9000;
-	private static final int CHUNKS_APART = 40;
-	private static final int LONE_ROOMS_X = -150_000;
-	private static final int LONE_ROOMS_Z = 150_000;
 	private static final int LONE_ROOMS_Y = 100;
-	private static final int LONE_ROOMS_APART = 48;
 	private static final int LONE_ROOMS = 48;
 	// A south-facing portal room from here has a chunk corner holding only one lava trough: the box's west wall and the
 	// trough's three columns, where nothing can stand.
@@ -85,15 +79,12 @@ public class StrongholdGameTests {
 	private static final int CLOSED_IN_DOORWAYS = 2;
 	// Resistance V takes all damage.
 	private static final int FULL_RESISTANCE = 4;
-	private static final int LIBRARY_ROW = 100;
 	private static final int KEEPER_PLANS = 8;
-	private static final int KEEPER_PLANS_ROW = 10;
 	private static final Set<StructurePieceType> BIG_ROOMS = Set.of(
 		StructurePieceType.STRONGHOLD_LIBRARY,
 		StructurePieceType.STRONGHOLD_ROOM_CROSSING,
 		StructurePieceType.STRONGHOLD_PRISON_HALL
 	);
-	private static final int PRISON_ROW = 200;
 	private static final List<Direction> FACINGS = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
 	// Where a tall library's upper walkway puts a guard's feet, and where the back of a short library starts.
 	private static final int LIBRARY_WALKWAY_FEET = 6;
@@ -121,7 +112,7 @@ public class StrongholdGameTests {
 		ServerLevel level = helper.getLevel();
 		// The flat test world is open air above its few layers, as a huge cave would be. Vanilla would build only the
 		// parts of each piece inside those layers.
-		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, farChunk(0));
+		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0));
 		List<StructurePiece> solidCornered = start.getPieces().stream().filter(piece -> SOLID_CORNERED.contains(piece.getType())).toList();
 
 		helper.assertFalse(solidCornered.isEmpty(), "the Stronghold has pieces to check");
@@ -143,7 +134,7 @@ public class StrongholdGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void aStrongholdIsGuardedByIllagersOnSpotsABloodMoonRestores(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, farChunk(1));
+		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0));
 		List<AbstractIllager> guards = illagersIn(level, start);
 		StructurePiece portalRoom = onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM);
 		StructurePiece staircase = onlyPiece(start, StructurePieceType.STRONGHOLD_START);
@@ -200,7 +191,7 @@ public class StrongholdGameTests {
 
 		// Each room's own randomness comes from where it is, so many rooms try many first choices of column.
 		for (int room = 0; room < LONE_ROOMS; room++) {
-			BlockPos foot = new BlockPos(LONE_ROOMS_X + room * LONE_ROOMS_APART + LAVA_CORNER_FOOT_X, LONE_ROOMS_Y, LONE_ROOMS_Z + LAVA_CORNER_FOOT_Z);
+			BlockPos foot = TestSites.of(helper).chunk(room).getBlockAt(LAVA_CORNER_FOOT_X, LONE_ROOMS_Y, LAVA_CORNER_FOOT_Z);
 			BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -4, -1, 0, 11, 8, 16, Direction.SOUTH);
 			StructurePiece portalRoom = new StrongholdPieces.PortalRoom(0, box, Direction.SOUTH);
 			StructureStart start = new StructureStart(stronghold, ChunkPos.containing(box.getCenter()), 0, new PiecesContainer(List.of(portalRoom)));
@@ -224,7 +215,7 @@ public class StrongholdGameTests {
 			boolean tall = room % 2 == 0;
 			boolean keeperRoom = room % 4 < 2;
 			Direction facing = FACINGS.get(room / 4 % FACINGS.size());
-			BlockPos foot = new BlockPos(LONE_ROOMS_X + room * LONE_ROOMS_APART, LONE_ROOMS_Y, LONE_ROOMS_Z + LIBRARY_ROW);
+			BlockPos foot = TestSites.of(helper).chunk(room).getBlockAt(0, LONE_ROOMS_Y, 0);
 			BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -4, -1, 0, 14, tall ? 11 : 6, 15, facing);
 			StructurePiece library = new StrongholdPieces.Library(0, RandomSource.create(room), box, facing);
 			List<AbstractIllager> guards = keeperRoom ? buildAloneAsKeeperRoom(level, library) : buildAlone(level, library);
@@ -253,7 +244,7 @@ public class StrongholdGameTests {
 
 		for (int room = 0; room < LONE_ROOMS; room++) {
 			Direction facing = FACINGS.get(room % FACINGS.size());
-			BlockPos foot = new BlockPos(LONE_ROOMS_X + room * LONE_ROOMS_APART, LONE_ROOMS_Y, LONE_ROOMS_Z + PRISON_ROW);
+			BlockPos foot = TestSites.of(helper).chunk(room).getBlockAt(0, LONE_ROOMS_Y, 0);
 			BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -1, -1, 0, 9, 5, 11, facing);
 			StructurePiece prison = new StrongholdPieces.PrisonHall(0, RandomSource.create(room), box, facing);
 			List<AbstractIllager> guards = buildAlone(level, prison);
@@ -270,7 +261,7 @@ public class StrongholdGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void aStrongholdHasNoDoors(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, farChunk(4));
+		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0));
 
 		for (StructurePiece piece : start.getPieces()) {
 			List<BlockPos> doorways = doorwayBlocks(level, piece.getBoundingBox());
@@ -284,12 +275,10 @@ public class StrongholdGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void everyRoomHasARouteToThePortalRoomOneDoorwayAtATime(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(5)));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0)));
 		BlockPos portalRoom = onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM).getBoundingBox().getCenter();
-		List<StructurePiece> rooms = start.getPieces().stream()
-			.filter(StrongholdLayout::isStrongholdPiece)
-			.filter(piece -> piece.getType() != StructurePieceType.STRONGHOLD_PORTAL_ROOM)
-			.toList();
+		List<StructurePiece> strongholdPieces = start.getPieces().stream().filter(StrongholdLayout::isStrongholdPiece).toList();
+		List<StructurePiece> rooms = strongholdPieces.stream().filter(piece -> piece.getType() != StructurePieceType.STRONGHOLD_PORTAL_ROOM).toList();
 
 		for (StructurePiece room : rooms) {
 			BlockPos from = room.getBoundingBox().getCenter();
@@ -300,7 +289,12 @@ public class StrongholdGameTests {
 			helper.assertTrue(onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM).getBoundingBox().isInside(route.getLast()), which + " ends in the portal room");
 
 			for (int step = 0; step < route.size() - 1; step++) {
-				int left = StrongholdRoutes.route(level, route.get(step), portalRoom).size();
+				BlockPos waypoint = route.get(step);
+
+				// Vanilla's rooms can overlap, and a spot inside two of them is routed from either one.
+				if (strongholdPieces.stream().filter(piece -> piece.getBoundingBox().isInside(waypoint)).count() > 1) continue;
+
+				int left = StrongholdRoutes.route(level, waypoint, portalRoom).size();
 
 				helper.assertValueEqual(left, route.size() - step - 1, "doorways left after step " + step + " of " + which);
 			}
@@ -313,7 +307,7 @@ public class StrongholdGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = CHASE_TICKS + 200)
 	public void huntersAcrossTheStrongholdCloseInRoomByRoom(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(6)));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0)));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		StructurePieceInvoker portalRoom = (StructurePieceInvoker) onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM);
 		BlockPos byTheDoor = new BlockPos(portalRoom.worldX(5, 2), portalRoom.worldY(1), portalRoom.worldZ(5, 2));
@@ -335,7 +329,7 @@ public class StrongholdGameTests {
 		helper.assertTrue(farHunters.size() >= 2, "the Stronghold has hunters " + FAR_HUNTER_DOORWAYS + " or more doorways away, " + farHunters.size());
 
 		// Vanilla's movement goals pace themselves by game time, so the hunters must tick with the world.
-		Structures.chunks(start).forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), true));
+		ForcedChunks.keepLoaded(helper, level, Structures.chunks(start));
 
 		helper.startSequence()
 			.thenIdle(HEADING_CHECK_TICKS)
@@ -358,7 +352,6 @@ public class StrongholdGameTests {
 					})
 					.count();
 
-				Structures.chunks(start).forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), false));
 				helper.assertTrue(closedIn * 4 >= farHunters.size() * 3, closedIn + " of " + farHunters.size() + " far hunters came " + CLOSED_IN_DOORWAYS + " doorways closer");
 			})
 			.thenSucceed();
@@ -367,7 +360,7 @@ public class StrongholdGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void theBookIsLockedUntilEveryEvokerIsDead(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(7)));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0)));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		List<BlockPos> keys = BookLocks.lockAt(level, book).map(BookLocks.Lock::keys).orElse(List.of());
 		List<Mob> keepers = MobKeepers.liveKeepers(level, book);
@@ -400,8 +393,8 @@ public class StrongholdGameTests {
 	public void theFarKeepersAreTheBigRoomsFarthestFromThePortalRoomAndEachOther(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 
-		for (int row = 0; row < KEEPER_PLANS; row++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(KEEPER_PLANS_ROW + row));
+		for (int plan = 0; plan < KEEPER_PLANS; plan++) {
+			StructureStart start = Structures.plan(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(plan));
 			List<StructurePiece> rooms = start.getPieces().stream().filter(StrongholdLayout::isStrongholdPiece).toList();
 			List<StructurePiece> bigRooms = rooms.stream().filter(room -> BIG_ROOMS.contains(room.getType())).toList();
 			List<BlockPos> keys = ((StructureBookPiece) start.getPieces().getLast()).keepers();
@@ -434,7 +427,7 @@ public class StrongholdGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void takingTheBookTurnsEveryIllagerInTheStrongholdOnAnOrichalcumWearer(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, farChunk(2)));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0)));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		StructurePiece portalRoom = onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM);
 		ServerPlayer player = MockPlayers.survivalPlayer(helper);
@@ -467,13 +460,12 @@ public class StrongholdGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 2000)
 	public void aKilledStrongholdIllagerReturnsAfterABloodMoon(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, farChunk(3));
+		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0));
 		AbstractIllager guard = illagersIn(level, start).getFirst();
 		RestoreSpot spot = Restoring.spotOf(level.getServer(), guard).orElseThrow();
 		ChunkPos chunk = ChunkPos.containing(guard.blockPosition());
 
-		level.setChunkForced(chunk.x(), chunk.z(), true);
-		ForcedChunks.awaitEntityTicking(helper, level, List.of(chunk), guard.blockPosition().getY());
+		ForcedChunks.keepLoaded(helper, level, List.of(chunk));
 		guard.kill(level);
 		BloodMoons.RISEN.invoker().onRisen(level.getServer());
 
@@ -490,7 +482,6 @@ public class StrongholdGameTests {
 
 				helper.assertValueEqual(restored.getType(), spot.type(), "the Restored mob");
 				helper.assertTrue(restored.isPersistenceRequired(), "the Restored mob is persistent");
-				level.setChunkForced(chunk.x(), chunk.z(), false);
 			})
 			.thenSucceed();
 	}
@@ -613,10 +604,6 @@ public class StrongholdGameTests {
 			.filter(pos -> level.getBlockState(pos).getBlock() instanceof DoorBlock || level.getBlockState(pos).getBlock() instanceof ButtonBlock)
 			.map(BlockPos::immutable)
 			.toList();
-	}
-
-	private static ChunkPos farChunk(int row) {
-		return new ChunkPos(FAR_CHUNK, FAR_CHUNK + row * CHUNKS_APART);
 	}
 
 	private static StructurePiece onlyPiece(StructureStart start, StructurePieceType type) {

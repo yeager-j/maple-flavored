@@ -54,15 +54,13 @@ import net.minecraft.world.level.material.Fluids;
  * with equal weight.
  */
 public class OrdinaryStructureBookGameTests {
-	// Away from the Mineshaft tests' area, and far enough apart that no two structures overlap.
-	private static final int FAR_CHUNK = -2000;
-	private static final int CHUNKS_APART = 40;
-	private static final int PLANNING_TRIES = 64;
+	private static final int END_CITY_PLANS = 64;
 	private static final int CHOICE_PLANS = 200;
 	// A seeded count must land within this many binomial standard deviations of the expected count.
 	private static final double RATE_TOLERANCE = 4.0;
 	private static final int END_CITY_HEIGHT = 100;
 	private static final int FLOOD_TOP = 120;
+	private static final int FLOODED_RUINS = 8;
 
 	private static final List<ResourceKey<Structure>> PLACED = List.of(
 		BuiltinStructures.DESERT_PYRAMID,
@@ -88,7 +86,7 @@ public class OrdinaryStructureBookGameTests {
 
 		for (int i = 0; i < PLACED.size(); i++) {
 			ResourceKey<Structure> key = PLACED.get(i);
-			StructureStart start = Structures.place(level, key, farChunk(i));
+			StructureStart start = Structures.place(level, key, TestSites.of(helper).chunk(i));
 			BlockPos book = onlyBook(helper, start, key);
 			ResourceKey<Enchantment> enchantment = enchantmentAt(level, book);
 
@@ -110,7 +108,7 @@ public class OrdinaryStructureBookGameTests {
 
 		for (int i = 0; i < SETTLING.size(); i++) {
 			ResourceKey<Structure> key = SETTLING.get(i);
-			StructureStart start = Structures.plan(level, key, farChunk(20 + i));
+			StructureStart start = Structures.plan(level, key, TestSites.of(helper).chunk(i));
 			int plannedY = bookPiece(start).spot().getY();
 
 			Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
@@ -130,8 +128,8 @@ public class OrdinaryStructureBookGameTests {
 
 		for (int i = 0; i < SETTLING.size(); i++) {
 			ResourceKey<Structure> key = SETTLING.get(i);
-			BlockPos bookChunkFirst = buildInOrder(helper, Structures.plan(level, key, farChunk(30 + 2 * i)), true, key);
-			BlockPos bookChunkLast = buildInOrder(helper, Structures.plan(level, key, farChunk(31 + 2 * i)), false, key);
+			BlockPos bookChunkFirst = buildInOrder(helper, Structures.plan(level, key, TestSites.of(helper).chunk(2 * i)), true, key);
+			BlockPos bookChunkLast = buildInOrder(helper, Structures.plan(level, key, TestSites.of(helper).chunk(2 * i + 1)), false, key);
 
 			helper.assertTrue(isAtLandmark(level, key, bookChunkFirst), key.identifier() + " book built first sits at its landmark");
 			helper.assertTrue(isAtLandmark(level, key, bookChunkLast), key.identifier() + " book built last, after a reload, sits at its landmark");
@@ -145,8 +143,8 @@ public class OrdinaryStructureBookGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureTemplateManager templates = level.getStructureTemplateManager();
 		// An igloo with a basement has its lab and ladder pieces besides the igloo and the book.
-		Optional<ChunkPos> withBasement = firstChunkWhere(level, BuiltinStructures.IGLOO, farChunk(60), start -> start.getPieces().size() > 2);
-		Optional<ChunkPos> withoutBasement = firstChunkWhere(level, BuiltinStructures.IGLOO, farChunk(61), start -> start.getPieces().size() == 2);
+		Optional<ChunkPos> withBasement = Structures.firstSiteWhere(level, BuiltinStructures.IGLOO, TestSites.of(helper), 0, start -> start.getPieces().size() > 2);
+		Optional<ChunkPos> withoutBasement = Structures.firstSiteWhere(level, BuiltinStructures.IGLOO, TestSites.of(helper), 1, start -> start.getPieces().size() == 2);
 
 		helper.assertTrue(withBasement.isPresent() && withoutBasement.isPresent(), "found igloos with and without a basement");
 
@@ -167,7 +165,7 @@ public class OrdinaryStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aJungleTempleBookFloatsAboveItsHiddenChest(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.place(level, BuiltinStructures.JUNGLE_TEMPLE, farChunk(40));
+		StructureStart start = Structures.place(level, BuiltinStructures.JUNGLE_TEMPLE, TestSites.of(helper).chunk(0));
 		BlockPos book = onlyBook(helper, start, BuiltinStructures.JUNGLE_TEMPLE);
 
 		helper.assertTrue(start.getPieces().getFirst() instanceof JungleTemplePiece, "a jungle temple");
@@ -178,7 +176,7 @@ public class OrdinaryStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aDesertPyramidBookFloatsAboveTheTrap(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.place(level, BuiltinStructures.DESERT_PYRAMID, farChunk(41));
+		StructureStart start = Structures.place(level, BuiltinStructures.DESERT_PYRAMID, TestSites.of(helper).chunk(0));
 		BlockPos book = onlyBook(helper, start, BuiltinStructures.DESERT_PYRAMID);
 
 		helper.assertTrue(level.getBlockState(book.below()).is(Blocks.STONE_PRESSURE_PLATE), "the pressure plate is under the book");
@@ -191,7 +189,7 @@ public class OrdinaryStructureBookGameTests {
 		List<ResourceKey<Structure>> keys = List.of(BuiltinStructures.SHIPWRECK, BuiltinStructures.OCEAN_RUIN_COLD, BuiltinStructures.OCEAN_RUIN_WARM);
 
 		for (int i = 0; i < keys.size(); i++) {
-			StructureStart start = Structures.place(level, keys.get(i), farChunk(42 + i));
+			StructureStart start = Structures.place(level, keys.get(i), TestSites.of(helper).chunk(i));
 			BlockPos book = onlyBook(helper, start, keys.get(i));
 
 			helper.assertTrue(level.getBlockState(book.below()).is(Blocks.CHEST), keys.get(i).identifier() + " chest under the book");
@@ -203,9 +201,9 @@ public class OrdinaryStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void outpostAndCampBooksFloatAtTheirLandmark(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart outpost = Structures.place(level, BuiltinStructures.PILLAGER_OUTPOST, farChunk(45));
+		StructureStart outpost = Structures.place(level, BuiltinStructures.PILLAGER_OUTPOST, TestSites.of(helper).chunk(0));
 		BlockPos outpostBook = onlyBook(helper, outpost, BuiltinStructures.PILLAGER_OUTPOST);
-		StructureStart camp = Structures.place(level, BuiltinStructures.ABANDONED_CAMP_FOREST, farChunk(46));
+		StructureStart camp = Structures.place(level, BuiltinStructures.ABANDONED_CAMP_FOREST, TestSites.of(helper).chunk(1));
 		BlockPos campBook = onlyBook(helper, camp, BuiltinStructures.ABANDONED_CAMP_FOREST);
 
 		helper.assertTrue(level.getBlockState(campBook.below()).is(Blocks.CAMPFIRE), "the camp's book floats above its campfire");
@@ -216,19 +214,18 @@ public class OrdinaryStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void underwaterBooksAreWaterloggedAndLeaveWaterWhenTaken(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.plan(level, BuiltinStructures.OCEAN_RUIN_WARM, farChunk(47));
-		BoundingBox flooded = start.getBoundingBox().inflatedBy(2);
-		// Flood the ruin's area up past any ground it could settle on, so it's built under water as in the ocean.
-		Structures.chunks(start).forEach(chunk -> level.getChunk(chunk.x(), chunk.z()));
-		BlockPos.betweenClosedStream(flooded.minX(), level.getMinY(), flooded.minZ(), flooded.maxX(), FLOOD_TOP, flooded.maxZ())
-			.filter(pos -> level.getBlockState(pos).isAir())
-			.forEach(pos -> level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2));
-		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
+		TestSites sites = TestSites.of(helper);
+		// A ruin's book takes the place of whatever the ruin puts over its chest, often sand, so only some stand in water.
+		Optional<BlockPos> inWater = IntStream.range(0, FLOODED_RUINS)
+			.mapToObj(index -> buildFlooded(level, Structures.plan(level, BuiltinStructures.OCEAN_RUIN_WARM, sites.chunk(index))))
+			.map(ruin -> onlyBook(helper, ruin, BuiltinStructures.OCEAN_RUIN_WARM))
+			.filter(built -> level.getBlockState(built).getValue(StructureBookBlock.WATERLOGGED))
+			.findFirst();
 
-		BlockPos book = onlyBook(helper, start, BuiltinStructures.OCEAN_RUIN_WARM);
-		BlockState state = level.getBlockState(book);
+		helper.assertTrue(inWater.isPresent(), "a book in " + FLOODED_RUINS + " flooded ruins is waterlogged");
 
-		helper.assertTrue(state.getValue(StructureBookBlock.WATERLOGGED), "the underwater book is waterlogged");
+		BlockPos book = inWater.orElseThrow();
+
 		helper.assertTrue(StructureBooks.take(helper.makeMockServerPlayerInLevel(), book), "the book can be taken");
 		helper.assertTrue(level.getFluidState(book).is(Fluids.WATER), "taking it leaves water");
 		helper.succeed();
@@ -243,7 +240,7 @@ public class OrdinaryStructureBookGameTests {
 			Map<ResourceKey<Enchantment>, Integer> counts = new HashMap<>();
 
 			for (int i = 0; i < CHOICE_PLANS; i++) {
-				ResourceKey<Enchantment> chosen = bookPiece(Structures.plan(level, key, new ChunkPos(i * 3, -5000))).enchantment();
+				ResourceKey<Enchantment> chosen = bookPiece(Structures.plan(level, key, TestSites.of(helper).chunk(i))).enchantment();
 
 				counts.merge(chosen, 1, Integer::sum);
 			}
@@ -271,9 +268,9 @@ public class OrdinaryStructureBookGameTests {
 			return !lootRooms.isEmpty() && highest(lootRooms) != lootRooms.getFirst();
 		};
 		Predicate<StructureStart> hasNoLootRoom = city -> piecesOf(city, templates, lootRoom).isEmpty();
-		// Planned in different areas, so the two cities don't overlap.
-		Optional<StructureStart> withLootRooms = firstEndCityWhere(level, farChunk(50), hasAHigherLaterLootRoom);
-		Optional<StructureStart> withoutLootRoom = firstEndCityWhere(level, farChunk(52), hasNoLootRoom);
+		// Planned at different sites, so the two cities don't overlap.
+		Optional<StructureStart> withLootRooms = firstEndCityWhere(level, TestSites.of(helper).chunk(0), hasAHigherLaterLootRoom);
+		Optional<StructureStart> withoutLootRoom = firstEndCityWhere(level, TestSites.of(helper).chunk(1), hasNoLootRoom);
 
 		helper.assertTrue(withLootRooms.isPresent() && withoutLootRoom.isPresent(), "planned a city whose highest loot room isn't its first, and one with none");
 
@@ -296,7 +293,7 @@ public class OrdinaryStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aBookAddsNoTerrainAdaptation(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart camp = Structures.plan(level, BuiltinStructures.ABANDONED_CAMP_FOREST, farChunk(55));
+		StructureStart camp = Structures.plan(level, BuiltinStructures.ABANDONED_CAMP_FOREST, TestSites.of(helper).chunk(0));
 		BlockPos book = bookPiece(camp).spot();
 		List<StructurePiece> piecesWithoutBook = camp.getPieces().stream().filter(piece -> !(piece instanceof StructureBookPiece)).toList();
 		StructureStart campWithoutBook = new StructureStart(camp.getStructure(), camp.getChunkPos(), 0, new PiecesContainer(piecesWithoutBook));
@@ -341,8 +338,22 @@ public class OrdinaryStructureBookGameTests {
 		return onlyBook(helper, reloaded, key);
 	}
 
+	// Floods the ruin's area up past any ground it could settle on, then builds it, so it's built under water as in the
+	// ocean.
+	private static StructureStart buildFlooded(ServerLevel level, StructureStart ruin) {
+		BoundingBox flooded = ruin.getBoundingBox().inflatedBy(2);
+
+		Structures.chunks(ruin).forEach(chunk -> level.getChunk(chunk.x(), chunk.z()));
+		BlockPos.betweenClosedStream(flooded.minX(), level.getMinY(), flooded.minZ(), flooded.maxX(), FLOOD_TOP, flooded.maxZ())
+			.filter(pos -> level.getBlockState(pos).isAir())
+			.forEach(pos -> level.setBlock(pos, Blocks.WATER.defaultBlockState(), 2));
+		Structures.chunks(ruin).forEach(chunk -> Structures.build(level, ruin, chunk));
+
+		return ruin;
+	}
+
 	private static Optional<StructureStart> firstEndCityWhere(ServerLevel level, ChunkPos chunk, Predicate<StructureStart> wanted) {
-		return IntStream.range(0, PLANNING_TRIES).mapToObj(seed -> planEndCity(level, seed, chunk)).filter(wanted).findFirst();
+		return IntStream.range(0, END_CITY_PLANS).mapToObj(seed -> planEndCity(level, seed, chunk)).filter(wanted).findFirst();
 	}
 
 	// The test world is flat, where End Cities never find ground high enough, so the city's pieces are planned
@@ -365,14 +376,6 @@ public class OrdinaryStructureBookGameTests {
 		);
 
 		return new StructureStart(structure.value(), chunk, 0, withBook);
-	}
-
-	// Searches a line of chunks running away from the other tests' areas.
-	private static Optional<ChunkPos> firstChunkWhere(ServerLevel level, ResourceKey<Structure> key, ChunkPos first, Predicate<StructureStart> wanted) {
-		return IntStream.range(0, PLANNING_TRIES)
-			.mapToObj(i -> new ChunkPos(first.x(), first.z() - i * CHUNKS_APART))
-			.filter(chunk -> wanted.test(Structures.plan(level, key, chunk)))
-			.findFirst();
 	}
 
 	// Checks the book against the structure's own blocks, independent of how the book finds its spot.
@@ -448,9 +451,5 @@ public class OrdinaryStructureBookGameTests {
 		double band = RATE_TOLERANCE * Math.sqrt(trials * expected * (1.0 - expected));
 
 		helper.assertTrue(Math.abs(count - mean) <= band, what + ": " + count + " of " + trials + ", expected about " + Math.round(mean));
-	}
-
-	private static ChunkPos farChunk(int index) {
-		return new ChunkPos(FAR_CHUNK - index * CHUNKS_APART, FAR_CHUNK);
 	}
 }

@@ -173,19 +173,19 @@ public class SubspaceSculkGameTests {
 				Vec3 centre = arena.centre();
 
 				growth.warden().snapTo(centre.x, centre.y, centre.z);
-				setForced(level, growth.floor(), false);
+				ForcedChunks.letUnload(helper, level, chunksOf(growth.floor()));
 			})
 			.thenWaitUntil(() -> helper.assertFalse(isLoaded(level, growth.shrieker()), "The shrieker's chunk is still loaded"))
-			.thenExecute(() -> setForced(level, growth.floor(), true))
+			.thenExecute(() -> ForcedChunks.keepLoaded(helper, level, chunksOf(growth.floor())))
 			.thenWaitUntil(() -> helper.assertTrue(isLoaded(level, growth.shrieker()), "The shrieker's chunk hasn't loaded again"))
 			.thenExecuteAfter(2, () -> {
 				assertSummoning(helper, level, growth.shrieker(), true, "a shrieker reloaded while its Subspace lasts");
-				setForced(level, growth.floor(), false);
+				ForcedChunks.letUnload(helper, level, chunksOf(growth.floor()));
 			})
 			.thenWaitUntil(() -> helper.assertFalse(isLoaded(level, growth.shrieker()), "The shrieker's chunk is still loaded"))
 			.thenExecute(() -> {
 				growth.warden().kill(level);
-				setForced(level, growth.floor(), true);
+				ForcedChunks.keepLoaded(helper, level, chunksOf(growth.floor()));
 			})
 			.thenWaitUntil(() -> {
 				helper.assertTrue(isLoaded(level, growth.shrieker()), "The shrieker's chunk hasn't loaded again");
@@ -220,11 +220,11 @@ public class SubspaceSculkGameTests {
 		return level.getChunkSource().getChunkNow(SectionPos.blockToSectionCoord(position.getX()), SectionPos.blockToSectionCoord(position.getZ())) != null;
 	}
 
-	private static void setForced(ServerLevel level, BoundingBox volume, boolean forced) {
-		ChunkPos.rangeClosed(
+	private static List<ChunkPos> chunksOf(BoundingBox volume) {
+		return ChunkPos.rangeClosed(
 			new ChunkPos(SectionPos.blockToSectionCoord(volume.minX()), SectionPos.blockToSectionCoord(volume.minZ())),
 			new ChunkPos(SectionPos.blockToSectionCoord(volume.maxX()), SectionPos.blockToSectionCoord(volume.maxZ()))
-		).forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), forced));
+		).toList();
 	}
 
 	/**

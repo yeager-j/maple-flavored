@@ -56,16 +56,13 @@ import net.minecraft.world.phys.Vec3;
  * of Arthropods too. The book drops with the spawner's Pith once the spawner is Cleared and broken.
  */
 public class DungeonGameTests {
-	// Far from every test's own area and from the other far-away tests, high in the air of the flat test world.
-	private static final BlockPos ROOM_ORIGIN = new BlockPos(-48_000, 120, -48_000);
+	// High in the air of the flat test world.
+	private static final int ROOM_Y = 120;
 	private static final int ROOM_SEEDS = 8;
-	private static final int ROOMS_APART = 32;
 	private static final int ZOMBIE_HEIGHT = 20;
-	// Clear of the other far-away tests' chunks. Not every Mineshaft has a spider corridor, so several are planned.
-	private static final ChunkPos MINESHAFT_CHUNK = new ChunkPos(-3000, 3000);
+	// Not every Mineshaft has a spider corridor, so several are planned.
 	private static final int MINESHAFT_PLANS = 40;
-	private static final int MINESHAFTS_APART = 40;
-	private static final BlockPos CORRIDOR_SITE = new BlockPos(-48_000, 100, 40_000);
+	private static final int CORRIDOR_Y = 100;
 	private static final long CORRIDOR_SEED = 21L;
 	private static final int BOOK_ROLLS = 200;
 	private static final long BOOK_SEED = 21L;
@@ -77,7 +74,7 @@ public class DungeonGameTests {
 		Set<ResourceKey<Enchantment>> booksSeen = new HashSet<>();
 
 		for (int seed = 0; seed < ROOM_SEEDS; seed++) {
-			BlockPos origin = ROOM_ORIGIN.east(seed * ROOMS_APART);
+			BlockPos origin = TestSites.of(helper).chunk(seed).getMiddleBlockPosition(ROOM_Y);
 
 			buildRoomShell(level, origin);
 			helper.assertTrue(
@@ -118,10 +115,12 @@ public class DungeonGameTests {
 	@GameTest(maxTicks = 400)
 	public void aMineshaftCaveSpiderSpawnerHoldsBaneOfArthropods(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructurePiece corridor = firstSpiderCorridor(level);
+		TestSites sites = TestSites.of(helper);
+		StructurePiece corridor = firstSpiderCorridor(level, sites);
 		BoundingBox planned = corridor.getBoundingBox();
+		BlockPos corner = sites.chunk(0).getMiddleBlockPosition(CORRIDOR_Y);
 
-		corridor.move(CORRIDOR_SITE.getX() - planned.minX(), CORRIDOR_SITE.getY() - planned.minY(), CORRIDOR_SITE.getZ() - planned.minZ());
+		corridor.move(corner.getX() - planned.minX(), corner.getY() - planned.minY(), corner.getZ() - planned.minZ());
 
 		BoundingBox site = corridor.getBoundingBox();
 
@@ -212,10 +211,9 @@ public class DungeonGameTests {
 		helper.assertValueEqual(encode(heights.getFirst().height()), encode(height), key.identifier() + " height range");
 	}
 
-	private static StructurePiece firstSpiderCorridor(ServerLevel level) {
+	private static StructurePiece firstSpiderCorridor(ServerLevel level, TestSites sites) {
 		for (int i = 0; i < MINESHAFT_PLANS; i++) {
-			ChunkPos chunk = new ChunkPos(MINESHAFT_CHUNK.x(), MINESHAFT_CHUNK.z() + i * MINESHAFTS_APART);
-			Optional<StructurePiece> corridor = Structures.plan(level, BuiltinStructures.MINESHAFT, chunk).getPieces().stream()
+			Optional<StructurePiece> corridor = Structures.plan(level, BuiltinStructures.MINESHAFT, sites.chunk(i)).getPieces().stream()
 				.filter(piece -> piece instanceof MineshaftPieces.MineShaftCorridor && ((MineShaftCorridorAccessor) piece).isSpiderCorridor())
 				.findFirst();
 

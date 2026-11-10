@@ -2,16 +2,17 @@ package mapleflavored.gametest;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 import mapleflavored.echoshard.ShriekerPulses;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -41,10 +42,7 @@ public class ShriekerPulseGameTests {
 		List<BlockPos> shriekers = List.of(near, middling, tooFar);
 
 		// A shrieker in a chunk that isn't loaded can't be heard, and setting a block loads its chunk only for a moment.
-		// The runner releases forced chunks as the batch ends.
-		for (BlockPos pos : List.of(feet, near, middling, tooFar)) {
-			level.setChunkForced(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), true);
-		}
+		ForcedChunks.keepLoaded(helper, level, Stream.of(feet, near, middling, tooFar).map(ChunkPos::containing).toList());
 
 		for (BlockPos shrieker : shriekers) {
 			level.setBlock(shrieker, Blocks.SCULK_SHRIEKER.defaultBlockState(), Block.UPDATE_ALL);

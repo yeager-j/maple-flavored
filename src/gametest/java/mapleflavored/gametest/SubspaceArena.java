@@ -407,19 +407,8 @@ final class SubspaceArena {
 		int toChunkZ = SectionPos.blockToSectionCoord(centreBlock.getZ() + toZ);
 
 		// Only the test's own chunks are kept loaded for it. An entity anywhere else wouldn't tick, and neither a
-		// Warden's sensor nor its Subspace could find it. The runner releases every forced chunk as each batch ends, just
-		// before it forces the next batch's, so the arena never releases them itself: that would unload the next test's
-		// chunks.
-		List<ChunkPos> chunks = new ArrayList<>();
-
-		for (int x = fromChunkX; x <= toChunkX; x++) {
-			for (int z = fromChunkZ; z <= toChunkZ; z++) {
-				level.setChunkForced(x, z, true);
-				chunks.add(new ChunkPos(x, z));
-			}
-		}
-
-		ForcedChunks.awaitEntityTicking(helper, level, chunks, centreBlock.getY());
+		// Warden's sensor nor its Subspace could find it.
+		ForcedChunks.keepLoaded(helper, level, ChunkPos.rangeClosed(new ChunkPos(fromChunkX, fromChunkZ), new ChunkPos(toChunkX, toChunkZ)).toList());
 	}
 
 	private void cleanUpWhenDone() {
