@@ -6,7 +6,7 @@
 
 Maple Flavored is a slow-paced progression overhaul for Minecraft 26.3, built as a Fabric mod. Enchantments are found in the world and shared through a Library. Villagers and farms become rewards to work towards, equipment offers lasting choices, and death risks health and experience while keeping your items safe.
 
-The mod supports single player and shared multiplayer worlds, requires installation on both client and server, and is intended for new worlds. It stands alone without required content mods. Inspired by Matcha Flavoured and Raspberry Flavoured, it uses CC BY-NC-SA 4.0 and credits reused work in [CREDITS.md](../CREDITS.md).
+The mod supports single player and shared multiplayer worlds, requires installation on both client and server, and is intended for new worlds. It stands alone without required content mods. It doesn't support vanilla's Villager Trade Rebalance experiment, whose trades name an enchantment the mod removes; a world with it turned on fails to load. Inspired by Matcha Flavoured and Raspberry Flavoured, it uses CC BY-NC-SA 4.0 and credits reused work in [CREDITS.md](../CREDITS.md).
 
 This describes the intended design; balance values remain subject to playtesting. The [design map and resolved tickets](../.scratch/maple-flavored-design/map.md) hold the detailed rules.
 

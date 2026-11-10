@@ -9,7 +9,8 @@
 		"GameTestHelperAccessor",
 		"GameTestServerHardcoreMixin",
 		"GameTestServerMixin",
-		"LivingEntityAccessor"
+		"LivingEntityAccessor",
+		"TestMethodMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
