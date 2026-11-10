@@ -196,6 +196,9 @@ final class EnchantingTables {
 
 	/** Saves, failing unless the save is refused for {@code problem} and nothing in the table changes. */
 	static void assertRefuses(GameTestHelper helper, EnchantingTableMenu table, ServerPlayer player, Checklist.Problem problem, String label) {
+		// Reads the Library afresh, as each server tick does for an open table.
+		table.broadcastChanges();
+
 		List<ItemStack> slotsBefore = tableSlots(table);
 		List<Checklist.Row> rowsBefore = table.checklist().rows();
 		List<Checklist.Problem> problems = table.checklist().problems();
