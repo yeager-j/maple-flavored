@@ -54,7 +54,7 @@ public final class GrownShriekers {
 	}
 
 	static void register() {
-		Subspaces.ENDED.register(GrownShriekers::silenceLoaded);
+		Subspaces.ENDED.register((level, subspace, cause) -> silenceLoaded(level, subspace));
 		// A chunk can stop being loaded and load again while it's still held in memory, which neither re-adds its block
 		// entities nor counts as a chunk load, so this watches chunks becoming accessible.
 		ServerChunkEvents.FULL_CHUNK_STATUS_CHANGE.register((level, chunk, from, to) -> {

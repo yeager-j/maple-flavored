@@ -58,7 +58,8 @@ import net.minecraft.world.phys.Vec3;
  *
  * <p>Its floors are smooth stone, which sculk can't grow over, so a Warden's Subspace spreads no sculk unless a test
  * lays a {@linkplain #sculkFloor sculk floor}. Whether the test passes or fails, the arena discards its Wardens, logs out
- * its players, removes its sculk floors and ends every Subspace in the level, so nothing it opened reaches a later batch.
+ * its players, removes its sculk floors and ends the Subspaces of the bosses it unloaded, so nothing it opened reaches a
+ * later batch.
  *
  * <p>A mock player's connection never ticks it, so the arena ticks its own players, letting their effects run out as a
  * client's would.
@@ -139,7 +140,7 @@ final class SubspaceArena {
 			AABB.ofSize(arena.centre(), CLEARED_RADIUS * 2.0, CLEARED_RADIUS * 2.0, CLEARED_RADIUS * 2.0),
 			entity -> !(entity instanceof ServerPlayer)
 		).forEach(Entity::discard);
-		arena.level.setAttached(Subspaces.ATTACHMENT, List.of());
+		Subspaces.endAbandoned(arena.level);
 
 		return arena;
 	}
@@ -453,6 +454,7 @@ final class SubspaceArena {
 		// Best effort: a chunk unloaded by now keeps the Deep Dark, which only a shriek there would notice.
 		replacedBiomes.forEach(this::restoreBiome);
 
-		level.setAttached(Subspaces.ATTACHMENT, List.of());
+		// A boss the test unloaded and never loaded again left its Subspace open.
+		Subspaces.endAbandoned(level);
 	}
 }

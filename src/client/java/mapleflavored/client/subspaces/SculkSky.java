@@ -39,8 +39,7 @@ public final class SculkSky {
 
 	// 0 outside every Warden Subspace, rising to 1 once the position is BLEND_BLOCKS inside one's edge.
 	private static float depthInside(ClientLevel level, Vec3 position) {
-		double deepest = Subspaces.containing(level, position).stream()
-			.filter(subspace -> subspace.kind() == Subspace.Kind.WARDEN)
+		double deepest = Subspaces.containing(level, position, Subspace.Kind.WARDEN).stream()
 			.mapToDouble(subspace -> subspace.radius() - subspace.centre().distanceTo(position))
 			.max()
 			.orElse(0.0);

@@ -39,7 +39,7 @@ public final class WardenSculk {
 	}
 
 	static void register() {
-		Subspaces.STARTED.register(WardenSculk::seed);
+		Subspaces.whenStarted(Subspace.Kind.WARDEN, WardenSculk::seed);
 		ServerTickEvents.END_LEVEL_TICK.register(WardenSculk::spreadAll);
 	}
 
@@ -57,7 +57,7 @@ public final class WardenSculk {
 	private static void seed(ServerLevel level, Subspace subspace) {
 		int charge = level.getGameRules().get(MapleGameRules.WARDEN_SCULK_PATCH_CHARGE);
 
-		if (subspace.kind() != Subspace.Kind.WARDEN || charge == 0) return;
+		if (charge == 0) return;
 
 		// The patch keeps inside its Subspace, however the two radii are set, so its shriekers stay where the Subspace's
 		// cleanup looks for them.

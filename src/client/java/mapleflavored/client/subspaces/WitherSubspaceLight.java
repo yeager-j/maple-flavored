@@ -1,13 +1,11 @@
 package mapleflavored.client.subspaces;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import mapleflavored.subspaces.Subspace;
 import mapleflavored.subspaces.Subspaces;
 import mapleflavored.subspaces.WitherSubspaces;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -17,13 +15,15 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The dim light inside a Wither's Subspace: every block and entity inside is drawn at the light level its game rule
- * sets, from the sky and from blocks alike, so the sphere shows from inside and out. Blocks and entities that glow on their own still glow. It
- * changes only what is drawn; the server's light, and so mob spawning, stays vanilla.
+ * sets, from the sky and from blocks alike, so the sphere shows from inside and out. Blocks and entities that glow on
+ * their own still glow. It changes only what is drawn; the server's light, and so mob spawning, stays vanilla.
+ *
+ * <p>The chunk mesher asks for light from its own threads, where a level's Subspaces can't be read safely while the
+ * client thread updates them. So each client tick publishes what is dim as one unchanging {@link Dimmed}, and everything
+ * drawn reads that.
  */
 public final class WitherSubspaceLight {
-	private static @Nullable ClientLevel litLevel;
-	private static Set<Subspace> lit = Set.of();
-	private static int litLightLevel = -1;
+	private static volatile Dimmed dimmed = Dimmed.NOTHING;
 
 	private WitherSubspaceLight() {
 	}
@@ -33,83 +33,40 @@ public final class WitherSubspaceLight {
 	 * once from client init.
 	 */
 	public static void register() {
-		ClientTickEvents.END_CLIENT_TICK.register(client -> redrawChanged(client.level));
+		ClientTickEvents.END_CLIENT_TICK.register(client -> publish(client.level));
 	}
 
-	/** The packed light to draw at the position: the Subspace's dim light inside a Wither's Subspace, else {@code light}. */
+	/**
+	 * The packed light to draw at the position: the Subspace's dim light inside a Wither's Subspace, else {@code light}.
+	 * Safe on any thread.
+	 */
 	public static int packedLight(BlockPos position, int light) {
-		ClientLevel level = Minecraft.getInstance().level;
+		Dimmed drawn = dimmed;
 
-		if (level == null || !isInside(level, position)) return light;
-
-		int dim = WitherSubspaces.lightLevel(level);
-
-		return LightCoordsUtil.pack(dim, dim);
+		return drawn.contains(position) ? LightCoordsUtil.pack(drawn.lightLevel(), drawn.lightLevel()) : light;
 	}
 
-	/** The light level of one layer to draw at the position: the Subspace's inside a Wither's Subspace, else {@code level}. */
+	/**
+	 * The light level of one layer to draw at the position: the Subspace's inside a Wither's Subspace, else
+	 * {@code light}. Safe on any thread.
+	 */
 	public static int lightLevel(BlockPos position, int light) {
-		ClientLevel level = Minecraft.getInstance().level;
+		Dimmed drawn = dimmed;
 
-		return level != null && isInside(level, position) ? WitherSubspaces.lightLevel(level) : light;
+		return drawn.contains(position) ? drawn.lightLevel() : light;
 	}
 
-	// The chunk mesher calls this from its own threads, for the level being drawn.
-	private static boolean isInside(ClientLevel level, BlockPos position) {
-		List<Subspace> subspaces = Subspaces.inLevel(level);
+	// A section's mesh bakes its light in, so the sections whose light changed are rebuilt. What is dim is published
+	// first, so the rebuilt meshes read it.
+	private static void publish(@Nullable ClientLevel level) {
+		Dimmed previous = dimmed;
+		Dimmed current = level == null ? Dimmed.NOTHING : Dimmed.in(level);
 
-		if (subspaces.isEmpty()) return false;
+		if (current.equals(previous)) return;
 
-		Vec3 centre = Vec3.atCenterOf(position);
+		dimmed = current;
 
-		for (Subspace subspace : subspaces) {
-			if (subspace.kind() == Subspace.Kind.WITHER && subspace.contains(centre)) return true;
-		}
-
-		return false;
-	}
-
-	// A section's mesh bakes its light in, so the sections a Subspace covers are rebuilt when it opens or ends, and every
-	// Subspace's when the light level changes. A new level builds every mesh from scratch.
-	private static void redrawChanged(@Nullable ClientLevel level) {
-		Set<Subspace> current = level == null ? Set.of() : witherSubspaces(level);
-		int lightLevel = level == null ? -1 : WitherSubspaces.lightLevel(level);
-		boolean isSameLevel = level == litLevel;
-		Set<Subspace> changed = lightLevel == litLightLevel ? openedOrEnded(current, lit) : everyOne(current, lit);
-
-		litLevel = level;
-		lit = current;
-		litLightLevel = lightLevel;
-
-		if (isSameLevel) changed.forEach(subspace -> redraw(level, subspace));
-	}
-
-	private static Set<Subspace> witherSubspaces(ClientLevel level) {
-		Set<Subspace> withers = new HashSet<>();
-
-		for (Subspace subspace : Subspaces.inLevel(level)) {
-			if (subspace.kind() == Subspace.Kind.WITHER) withers.add(subspace);
-		}
-
-		return withers;
-	}
-
-	private static Set<Subspace> everyOne(Set<Subspace> current, Set<Subspace> previous) {
-		Set<Subspace> every = new HashSet<>(current);
-
-		every.addAll(previous);
-
-		return every;
-	}
-
-	// The Subspaces in one set but not both.
-	private static Set<Subspace> openedOrEnded(Set<Subspace> current, Set<Subspace> previous) {
-		Set<Subspace> changed = new HashSet<>(current);
-
-		changed.addAll(previous);
-		changed.removeIf(subspace -> current.contains(subspace) && previous.contains(subspace));
-
-		return changed;
+		if (level != null) current.changedSince(previous).forEach(subspace -> redraw(level, subspace));
 	}
 
 	private static void redraw(ClientLevel level, Subspace subspace) {
@@ -125,5 +82,44 @@ public final class WitherSubspaceLight {
 			SectionPos.blockToSectionCoord(centre.y + radius),
 			SectionPos.blockToSectionCoord(centre.z + radius)
 		);
+	}
+
+	/** The Withers' Subspaces in the level being drawn and the light level drawn inside them, as of one client tick. */
+	private record Dimmed(@Nullable ClientLevel level, Set<Subspace> subspaces, int lightLevel) {
+		static final Dimmed NOTHING = new Dimmed(null, Set.of(), -1);
+
+		// Reads the level's attachments, so only the client thread may call this.
+		static Dimmed in(ClientLevel level) {
+			return new Dimmed(level, Set.copyOf(Subspaces.inLevel(level, Subspace.Kind.WITHER)), WitherSubspaces.lightLevel(level));
+		}
+
+		boolean contains(BlockPos position) {
+			if (subspaces.isEmpty()) return false;
+
+			Vec3 centre = Vec3.atCenterOf(position);
+
+			for (Subspace subspace : subspaces) {
+				if (subspace.contains(centre)) return true;
+			}
+
+			return false;
+		}
+
+		/**
+		 * The Subspaces whose light is drawn differently than under {@code previous}: those that opened or ended, or every
+		 * one of both when the light level or the level itself changed. A new level may have meshed sections while the
+		 * last level's Subspaces were still published.
+		 */
+		Set<Subspace> changedSince(Dimmed previous) {
+			Set<Subspace> changed = new HashSet<>(subspaces);
+
+			changed.addAll(previous.subspaces);
+
+			if (level == previous.level && lightLevel == previous.lightLevel) {
+				changed.removeIf(subspace -> subspaces.contains(subspace) && previous.subspaces.contains(subspace));
+			}
+
+			return changed;
+		}
 	}
 }

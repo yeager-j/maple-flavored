@@ -2,7 +2,7 @@ package mapleflavored.wither;
 
 import mapleflavored.MapleFlavored;
 import mapleflavored.advancements.MapleTriggers;
-import mapleflavored.subspaces.WitherSubspaces;
+import mapleflavored.bosses.BossKillCredit;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
@@ -49,7 +49,7 @@ public final class WitherPassage {
 			AABB along = before.move(shift.scale((double) step / steps)).deflate(TOUCHING);
 
 			if (wither.level().getBlockStates(along).anyMatch(state -> state.is(PASSES_THROUGH))) {
-				WitherSubspaces.triggerForPlayersInside(wither, MapleTriggers.WITHER_PASSED_THROUGH);
+				BossKillCredit.creditPlayersInside(wither, MapleTriggers.WITHER_PASSED_THROUGH);
 
 				return;
 			}

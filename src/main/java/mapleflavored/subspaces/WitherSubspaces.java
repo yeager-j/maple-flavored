@@ -3,18 +3,15 @@ package mapleflavored.subspaces;
 import java.util.Objects;
 import java.util.function.Consumer;
 import mapleflavored.MapleFlavored;
-import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.gamerules.MapleGameRules;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
@@ -24,8 +21,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * The Wither's Subspace: every Wither opens one where it appears, as far as a game rule sets, and another game rule sets
  * the light level clients draw inside it. Withered Hearts can't return inside it, and the Wither never moves further from
- * its centre than a third game rule allows, 50 blocks by default, so it can't be lured away. Every player inside when the
- * Wither dies is credited with the kill.
+ * its centre than a third game rule allows, 50 blocks by default, so it can't be lured away.
  */
 public final class WitherSubspaces {
 	/**
@@ -45,7 +41,6 @@ public final class WitherSubspaces {
 
 	static void register() {
 		ServerEntityEvents.ENTITY_LOAD.register(WitherSubspaces::openOrLeash);
-		Subspaces.ENDED.register(WitherSubspaces::creditKill);
 		ServerTickEvents.END_LEVEL_TICK.register(WitherSubspaces::syncLightLevel);
 	}
 
@@ -59,7 +54,7 @@ public final class WitherSubspaces {
 
 	/** Whether the position is inside any Wither's Subspace in the level. Works on both the server and the client. */
 	public static boolean contains(Level level, Vec3 position) {
-		return Subspaces.containing(level, position).stream().anyMatch(subspace -> subspace.kind() == Subspace.Kind.WITHER);
+		return !Subspaces.containing(level, position, Subspace.Kind.WITHER).isEmpty();
 	}
 
 	/**
@@ -108,21 +103,11 @@ public final class WitherSubspaces {
 		if (!Objects.equals(level.getAttached(LIGHT_LEVEL), rule)) level.setAttached(LIGHT_LEVEL, rule);
 	}
 
-	/** Triggers {@code trigger} for every player inside the Wither's Subspace, but spectators. Server only. */
-	public static void triggerForPlayersInside(WitherBoss wither, PlayerTrigger trigger) {
-		if (!(wither.level() instanceof ServerLevel level)) return;
-
-		Subspaces.ownedBy(level, wither.getUUID()).ifPresent(subspace -> trigger(level, subspace, trigger));
-	}
-
-	// Every way a Wither appears adds it to a level, so this catches both building one and /summon. One that already
-	// has a Subspace is only loading again.
+	// Every way a Wither appears adds it to a level, so this catches both building one and /summon.
 	private static void openOrLeash(Entity entity, ServerLevel level) {
 		if (!(entity instanceof WitherBoss wither) || !wither.isAlive()) return;
 
-		if (!Subspaces.ownsAny(level.getServer(), wither.getUUID())) {
-			Subspaces.open(level, wither, Subspace.Kind.WITHER, level.getGameRules().get(MapleGameRules.WITHER_SUBSPACE_RADIUS));
-		}
+		Subspaces.openIfNew(level, wither, Subspace.Kind.WITHER, level.getGameRules().get(MapleGameRules.WITHER_SUBSPACE_RADIUS));
 
 		int leash = level.getGameRules().get(MapleGameRules.WITHER_LEASH_RADIUS);
 
@@ -132,26 +117,5 @@ public final class WitherSubspaces {
 	// The home keeps the Wither's wandering flight picking spots within its leash.
 	private static void leashHome(WitherBoss wither, Subspace subspace, int leash) {
 		wither.setHomeTo(BlockPos.containing(subspace.centre()), leash);
-	}
-
-	// The Subspace ends while its dying Wither is still in the level. A Wither discarded, such as by Peaceful, isn't
-	// dying, so it credits nobody.
-	private static void creditKill(ServerLevel level, Subspace subspace) {
-		if (subspace.kind() == Subspace.Kind.WITHER && isDying(level, subspace)) trigger(level, subspace, MapleTriggers.WITHER_KILLED);
-	}
-
-	private static void trigger(ServerLevel level, Subspace subspace, PlayerTrigger trigger) {
-		for (ServerPlayer player : level.players()) {
-			if (!player.isSpectator() && subspace.contains(player.position())) trigger.trigger(player);
-		}
-	}
-
-	// A Wither can carry its UUID to another level by command, while its Subspace stays where it opened.
-	private static boolean isDying(ServerLevel level, Subspace subspace) {
-		for (ServerLevel candidate : level.getServer().getAllLevels()) {
-			if (candidate.getEntity(subspace.boss()) instanceof WitherBoss wither) return wither.isDeadOrDying();
-		}
-
-		return false;
 	}
 }
