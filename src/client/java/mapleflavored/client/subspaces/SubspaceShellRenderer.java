@@ -39,7 +39,7 @@ public final class SubspaceShellRenderer {
 	}
 
 	/** Draws the shells from now on. Call once from client init. */
-	public static void register() {
+	static void register() {
 		LevelRenderEvents.COLLECT_SUBMITS.register(SubspaceShellRenderer::submitAll);
 	}
 

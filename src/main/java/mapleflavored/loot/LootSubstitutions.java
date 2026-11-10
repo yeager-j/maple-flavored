@@ -26,7 +26,7 @@ public final class LootSubstitutions {
 	}
 
 	/** Applies the substitutions to every loot roll from now on. Call once at mod initialization. */
-	public static void register() {
+	static void register() {
 		LootTableEvents.MODIFY_DROPS.register((table, context, drops) -> drops.replaceAll(LootSubstitutions::substitute));
 	}
 

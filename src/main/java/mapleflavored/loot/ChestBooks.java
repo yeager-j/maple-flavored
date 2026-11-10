@@ -35,7 +35,7 @@ public final class ChestBooks {
 	}
 
 	/** Adds each book to its table on every data load. Call once at mod initialization. */
-	public static void register() {
+	static void register() {
 		// Runs for data pack replacements too, so a replaced table still gives its book.
 		LootTableEvents.MODIFY.register((key, table, source, registries) -> {
 			List<ResourceKey<Enchantment>> enchantments = BOOKS.get(key);

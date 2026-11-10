@@ -28,7 +28,7 @@ public class DeepSpiderRenderer extends SpiderRenderer<DeepSpider> {
 	}
 
 	/** Registers the renderer. Call once from client init. */
-	public static void register() {
+	static void register() {
 		EntityRenderers.register(DeepVariants.DEEP_SPIDER, DeepSpiderRenderer::new);
 	}
 

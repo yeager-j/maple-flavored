@@ -15,7 +15,7 @@ public final class CrystalHeartActivation {
 	}
 
 	/** Registers the payload receiver. Call once from client init. */
-	public static void register() {
+	static void register() {
 		ClientPlayNetworking.registerGlobalReceiver(CrystalHeartUsedPayload.TYPE, (payload, context) -> play(context.client(), context.player()));
 	}
 

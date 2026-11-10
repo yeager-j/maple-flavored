@@ -67,7 +67,7 @@ public final class StructureChestRolls {
 	}
 
 	/** Adds the rolls to their tables on every data load. Call once at mod initialization. */
-	public static void register() {
+	static void register() {
 		LootTableEvents.MODIFY.register((key, table, source, registries) ->
 			ROLLS.getOrDefault(key, List.of()).forEach(roll -> table.withPool(roll.pool()))
 		);
