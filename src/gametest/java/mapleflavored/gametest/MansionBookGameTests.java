@@ -60,9 +60,6 @@ import net.minecraft.world.phys.Vec3;
  * Illager in the mansion hunting the player, Orichalcum or not.
  */
 public class MansionBookGameTests {
-	// Far from every other test's area. Each test plans along its own row, so no two share a mansion.
-	private static final int FAR_CHUNK = 8000;
-	private static final int CHUNKS_APART = 40;
 	// Where vanilla starts a mansion in its chunk.
 	private static final int MANSION_START_IN_CHUNK = 7;
 	// Each plan draws its own layout, and about 1 in 8 has a portal room without re-planning.
@@ -93,8 +90,8 @@ public class MansionBookGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureTemplate portalRoom = level.getStructureTemplateManager().getOrCreate(PORTAL_ROOM);
 
-		for (int row = 0; row < PLANS; row++) {
-			StructureStart start = planMansion(level, row);
+		for (int plan = 0; plan < PLANS; plan++) {
+			StructureStart start = planMansion(level, TestSites.of(helper), plan);
 			List<StructureBookPiece> books = BastionBookGameTests.bookPieces(start);
 
 			helper.assertValueEqual(books.size(), 1, "books planned in the mansion at " + start.getChunkPos());
@@ -112,7 +109,7 @@ public class MansionBookGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void takingTheBookTurnsEveryIllagerInTheMansionOnAnOrichalcumWearer(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, PLANS));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, TestSites.of(helper), PLANS));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		ServerPlayer player = orichalcumWearer(helper);
 
@@ -143,7 +140,7 @@ public class MansionBookGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void huntersAcrossTheMansionCloseInUntilTheirQuarryDies(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, PLANS + 1));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, TestSites.of(helper), PLANS + 1));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		ServerPlayer player = orichalcumWearer(helper);
 
@@ -166,7 +163,7 @@ public class MansionBookGameTests {
 		helper.assertTrue(hunter != null, "the mansion has Vindicators more than " + HUNT_MIN_DISTANCE + " blocks from the player");
 
 		// Vanilla's melee goal paces its path checks by game time, so the hunters must tick with the world.
-		setForced(level, start, true);
+		ForcedChunks.keepLoaded(helper, level, Structures.chunks(start));
 
 		helper.startSequence()
 			.thenIdle(CHASE_TICKS)
@@ -191,7 +188,6 @@ public class MansionBookGameTests {
 				helper.assertTrue(hunter.getTarget() != player, "the hunter still targets its quarry after their death");
 				helper.assertFalse(hunter.getAttribute(Attributes.FOLLOW_RANGE).hasModifier(HUNT_RANGE), "the hunter keeps the hunting range once the hunt ends");
 				helper.assertFalse(hunter.canAttack(player), "the hunter can attack the respawned Orichalcum wearer");
-				setForced(level, start, false);
 			})
 			.thenSucceed();
 	}
@@ -199,7 +195,7 @@ public class MansionBookGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void aRefusedBookAlertsNoIllager(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, PLANS + 2));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, planMansion(level, TestSites.of(helper), PLANS + 2));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		ServerPlayer player = orichalcumWearer(helper);
 		Inventory inventory = player.getInventory();
@@ -233,15 +229,16 @@ public class MansionBookGameTests {
 	}
 
 	/**
-	 * Plans a mansion on the ground in its row's chunk with vanilla's own layout, the mod's portal room, and the mod's book.
+	 * Plans a mansion on the ground at one of the test's sites with the layout vanilla draws for that plan, the mod's
+	 * portal room, and the mod's book.
 	 * The test world is too low for a mansion to start on its own, as one needs ground at y 60.
 	 */
-	private static StructureStart planMansion(ServerLevel level, int row) {
-		ChunkPos chunk = new ChunkPos(FAR_CHUNK, FAR_CHUNK + row * CHUNKS_APART);
+	private static StructureStart planMansion(ServerLevel level, TestSites sites, int plan) {
+		ChunkPos chunk = sites.chunk(plan);
 		int x = chunk.getBlockX(MANSION_START_IN_CHUNK);
 		int z = chunk.getBlockZ(MANSION_START_IN_CHUNK);
 		BlockPos origin = new BlockPos(x, level.getChunk(chunk.x(), chunk.z()).getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z) + 1, z);
-		RandomSource random = RandomSource.create(level.getSeed() + row);
+		RandomSource random = RandomSource.create(level.getSeed() + plan);
 		List<WoodlandMansionPieces.WoodlandMansionPiece> pieces = new ArrayList<>();
 
 		WoodlandMansionPieces.generateMansion(level.getStructureTemplateManager(), origin, Rotation.getRandom(random), pieces, random);
@@ -319,9 +316,5 @@ public class MansionBookGameTests {
 		if (vindicator == null) throw new IllegalStateException("no Vindicator spawned at " + pos);
 
 		return vindicator;
-	}
-
-	private static void setForced(ServerLevel level, StructureStart start, boolean forced) {
-		Structures.chunks(start).forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), forced));
 	}
 }

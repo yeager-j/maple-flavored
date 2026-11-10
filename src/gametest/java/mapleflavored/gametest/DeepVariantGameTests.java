@@ -75,11 +75,9 @@ import net.minecraft.world.phys.Vec3;
  */
 public class DeepVariantGameTests {
 	private static final BlockPos MOB_POS = new BlockPos(2, 2, 2);
-	// Each at the centre of its own chunk, far from every other test and from each other.
-	private static final BlockPos DEEP_ROOM = new BlockPos(54_008, -30, -53_992);
-	private static final BlockPos SHALLOW_ROOM = new BlockPos(54_264, 10, -53_992);
-	private static final BlockPos DEEP_SPAWNER = new BlockPos(54_520, -30, -53_992);
-	private static final BlockPos REINFORCEMENT_ROOM = new BlockPos(54_776, -30, -53_992);
+	// The heights of the rooms built at the tests' sites, below and above Y 0.
+	private static final int DEEP_Y = -30;
+	private static final int SHALLOW_Y = 10;
 	// Natural spawning needs the nearest player more than 24 blocks away.
 	private static final int PLAYER_DISTANCE = 28;
 	private static final int ROOM_HALF_WIDTH = 5;
@@ -110,21 +108,20 @@ public class DeepVariantGameTests {
 	private static final float ARROW_POWER = 1.0F;
 	// The spread of the triangle in AbstractArrow.setBaseDamageFromMob, plus rounding room.
 	private static final double ARROW_DAMAGE_SPREAD = 0.57425 + 1.0E-6;
-	private static final BlockPos CREEPER_CRATER = new BlockPos(55_032, 10, -53_992);
-	private static final BlockPos DEEP_CREEPER_CRATER = new BlockPos(55_288, 10, -53_992);
 	private static final int CRATER_HALF_WIDTH = 6;
 	private static final int LOOT_ROLLS = 200;
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void naturalSpawnsBelowY0AreDeepVariantsButBabyZombiesStayZombies(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
+		BlockPos room = TestSites.of(helper).chunk(0).getMiddleBlockPosition(DEEP_Y);
 
-		prepareRoom(helper, level, DEEP_ROOM);
+		prepareRoom(helper, level, room);
 
 		helper.startSequence()
-			.thenWaitUntil(() -> helper.assertTrue(isPitchDark(level, DEEP_ROOM), "the room below Y 0 is dark"))
+			.thenWaitUntil(() -> helper.assertTrue(isPitchDark(level, room), "the room below Y 0 is dark"))
 			.thenExecute(() -> {
-				List<Mob> mobs = spawnMonstersNaturally(helper, level, DEEP_ROOM);
+				List<Mob> mobs = spawnMonstersNaturally(helper, level, room);
 
 				for (EntityType<? extends Mob> base : BASES) {
 					helper.assertTrue(mobs.stream().anyMatch(mob -> DeepVariants.baseOf(mob.getType()).orElse(null) == base), "natural spawning made a Deep " + base.toShortString() + " below Y 0");
@@ -136,20 +133,20 @@ public class DeepVariantGameTests {
 					helper.assertTrue(deep != mob.isBaby(), "a natural " + describe(mob) + " spawned below Y 0");
 				}
 			})
-			.thenExecute(() -> unforceRoom(level, DEEP_ROOM))
 			.thenSucceed();
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void naturalSpawnsAtOrAboveY0StayVanilla(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
+		BlockPos room = TestSites.of(helper).chunk(0).getMiddleBlockPosition(SHALLOW_Y);
 
-		prepareRoom(helper, level, SHALLOW_ROOM);
+		prepareRoom(helper, level, room);
 
 		helper.startSequence()
-			.thenWaitUntil(() -> helper.assertTrue(isPitchDark(level, SHALLOW_ROOM), "the room above Y 0 is dark"))
+			.thenWaitUntil(() -> helper.assertTrue(isPitchDark(level, room), "the room above Y 0 is dark"))
 			.thenExecute(() -> {
-				List<Mob> mobs = spawnMonstersNaturally(helper, level, SHALLOW_ROOM);
+				List<Mob> mobs = spawnMonstersNaturally(helper, level, room);
 
 				helper.assertTrue(mobs.stream().anyMatch(mob -> mob.getType() == EntityTypes.ZOMBIE && !mob.isBaby()), "an adult zombie spawned above Y 0");
 
@@ -157,7 +154,6 @@ public class DeepVariantGameTests {
 					helper.assertTrue(DeepVariants.baseOf(mob.getType()).isEmpty(), "a natural " + describe(mob) + " spawned above Y 0");
 				}
 			})
-			.thenExecute(() -> unforceRoom(level, SHALLOW_ROOM))
 			.thenSucceed();
 	}
 
@@ -210,8 +206,8 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void aSpawnerBelowY0StillSpawnsZombies(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		SpawnerBlockEntity spawner = prepareSpawner(helper, level, DEEP_SPAWNER);
-		AABB around = new AABB(DEEP_SPAWNER).inflate(6);
+		SpawnerBlockEntity spawner = prepareSpawner(helper, level, TestSites.of(helper).chunk(0).getMiddleBlockPosition(DEEP_Y));
+		AABB around = new AABB(spawner.getBlockPos()).inflate(6);
 
 		helper.startSequence()
 			.thenWaitUntil(() -> helper.assertFalse(level.getEntitiesOfClass(Zombie.class, around).isEmpty(), "the spawner spawned a zombie"))
@@ -224,7 +220,6 @@ public class DeepVariantGameTests {
 
 				zombies.forEach(Entity::discard);
 				level.removeBlock(spawner.getBlockPos(), false);
-				unforceRoom(level, DEEP_SPAWNER);
 			})
 			.thenSucceed();
 	}
@@ -444,18 +439,19 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void aDeepCreeperBlowsABiggerCraterThanACreeper(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		List<ChunkPos> chunks = List.of(ChunkPos.containing(CREEPER_CRATER), ChunkPos.containing(DEEP_CREEPER_CRATER));
+		TestSites sites = TestSites.of(helper);
+		BlockPos creeperSpot = sites.chunk(0).getMiddleBlockPosition(SHALLOW_Y);
+		BlockPos deepCreeperSpot = sites.chunk(1).getMiddleBlockPosition(SHALLOW_Y);
 
-		forceChunks(helper, level, chunks, CREEPER_CRATER.getY());
+		ForcedChunks.keepLoaded(helper, level, List.of(sites.chunk(0), sites.chunk(1)));
 
 		helper.startSequence()
 			.thenExecute(() -> {
-				int creeperCrater = explodeCreeperAndMeasureCrater(level, EntityTypes.CREEPER, CREEPER_CRATER);
-				int deepCreeperCrater = explodeCreeperAndMeasureCrater(level, DeepVariants.DEEP_CREEPER, DEEP_CREEPER_CRATER);
+				int creeperCrater = explodeCreeperAndMeasureCrater(level, EntityTypes.CREEPER, creeperSpot);
+				int deepCreeperCrater = explodeCreeperAndMeasureCrater(level, DeepVariants.DEEP_CREEPER, deepCreeperSpot);
 
 				helper.assertTrue(creeperCrater > 0, "the creeper blew a crater");
 				helper.assertTrue(deepCreeperCrater > creeperCrater, "the Deep Creeper's crater of " + deepCreeperCrater + " blocks is bigger than the creeper's " + creeperCrater);
-				unforceChunks(level, chunks);
 			})
 			.thenSucceed();
 	}
@@ -521,20 +517,20 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:deep_zombie_reinforcements", maxTicks = 400)
 	public void aDeepZombieCallsDeepZombiesAsReinforcements(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		List<ChunkPos> chunks = chunksAround(REINFORCEMENT_ROOM);
+		BlockPos centre = TestSites.of(helper).chunk(0).getMiddleBlockPosition(DEEP_Y);
 
-		forceChunks(helper, level, chunks, REINFORCEMENT_ROOM.getY());
-		buildRoom(level, REINFORCEMENT_ROOM, REINFORCEMENT_ROOM_HALF_WIDTH);
+		ForcedChunks.keepLoaded(helper, level, ChunkPos.rangeClosed(ChunkPos.containing(centre), 1).toList());
+		buildRoom(level, centre, REINFORCEMENT_ROOM_HALF_WIDTH);
 
 		helper.startSequence()
-			.thenWaitUntil(() -> helper.assertTrue(isPitchDark(level, REINFORCEMENT_ROOM), "the room below Y 0 is dark"))
+			.thenWaitUntil(() -> helper.assertTrue(isPitchDark(level, centre), "the room below Y 0 is dark"))
 			.thenExecute(() -> {
 				ServerPlayer attacker = MockPlayers.survivalPlayer(helper);
-				Zombie caller = spawnDeepZombie(level, REINFORCEMENT_ROOM);
-				AABB room = new AABB(REINFORCEMENT_ROOM).inflate(REINFORCEMENT_ROOM_HALF_WIDTH + 2);
+				Zombie caller = spawnDeepZombie(level, centre);
+				AABB room = new AABB(centre).inflate(REINFORCEMENT_ROOM_HALF_WIDTH + 2);
 				List<Zombie> reinforcements = List.of();
 
-				attacker.snapTo(Vec3.atBottomCenterOf(REINFORCEMENT_ROOM.offset(2, 0, 0)));
+				attacker.snapTo(Vec3.atBottomCenterOf(centre.offset(2, 0, 0)));
 				caller.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE).setBaseValue(1.0);
 
 				// Each hit tries 50 random spots for a reinforcement, most of them inside the walls.
@@ -553,14 +549,13 @@ public class DeepVariantGameTests {
 				}
 
 				level.getEntitiesOfClass(Zombie.class, room).forEach(Entity::discard);
-				unforceChunks(level, chunks);
 			})
 			.thenSucceed();
 	}
 
 	// A sealed dark room in stone, standing on stone, with a survival player far enough away for natural spawning.
 	private static void prepareRoom(GameTestHelper helper, ServerLevel level, BlockPos centre) {
-		forceChunks(helper, level, roomChunks(centre), centre.getY());
+		ForcedChunks.keepLoaded(helper, level, roomChunks(centre));
 		buildRoom(level, centre, ROOM_HALF_WIDTH);
 		MockPlayers.survivalPlayer(helper).snapTo(Vec3.atBottomCenterOf(centre.offset(PLAYER_DISTANCE, 0, 0)));
 	}
@@ -621,7 +616,7 @@ public class DeepVariantGameTests {
 	// An open pocket on a stone floor with a zombie spawner in it that spawns within a second, and a survival player
 	// beside it. The test world is solid at this depth.
 	private static SpawnerBlockEntity prepareSpawner(GameTestHelper helper, ServerLevel level, BlockPos pos) {
-		forceChunks(helper, level, roomChunks(pos), pos.getY());
+		ForcedChunks.keepLoaded(helper, level, roomChunks(pos));
 
 		for (BlockPos block : BlockPos.betweenClosed(pos.offset(-4, -1, -4), pos.offset(4, ROOM_HEIGHT, 4))) {
 			boolean floor = block.getY() < pos.getY();
@@ -646,37 +641,9 @@ public class DeepVariantGameTests {
 		return spawner;
 	}
 
-	// Forces the chunks and waits for them to tick entities.
-	private static void forceChunks(GameTestHelper helper, ServerLevel level, List<ChunkPos> chunks, int y) {
-		chunks.forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), true));
-		ForcedChunks.awaitEntityTicking(helper, level, chunks, y);
-	}
-
-	private static void unforceChunks(ServerLevel level, List<ChunkPos> chunks) {
-		chunks.forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), false));
-	}
-
-	private static void unforceRoom(ServerLevel level, BlockPos centre) {
-		unforceChunks(level, roomChunks(centre));
-	}
-
 	// The room's chunk and the one its natural-spawning player stands in.
 	private static List<ChunkPos> roomChunks(BlockPos centre) {
 		return List.of(ChunkPos.containing(centre), ChunkPos.containing(centre.offset(PLAYER_DISTANCE, 0, 0)));
-	}
-
-	// The chunk holding the centre and the eight around it.
-	private static List<ChunkPos> chunksAround(BlockPos centre) {
-		ChunkPos middle = ChunkPos.containing(centre);
-		List<ChunkPos> chunks = new ArrayList<>();
-
-		for (int x = -1; x <= 1; x++) {
-			for (int z = -1; z <= 1; z++) {
-				chunks.add(new ChunkPos(middle.x() + x, middle.z() + z));
-			}
-		}
-
-		return chunks;
 	}
 
 	// Vanilla marks each reinforcement with a charge on its own reinforcement chance.

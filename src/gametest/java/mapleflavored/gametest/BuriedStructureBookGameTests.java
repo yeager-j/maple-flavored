@@ -22,7 +22,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BrushableBlockEntity;
@@ -39,9 +38,6 @@ import net.minecraft.world.phys.AABB;
  * floating book.
  */
 public class BuriedStructureBookGameTests {
-	// Away from the other structure tests' areas, and far enough apart that no two structures overlap.
-	private static final int FAR_CHUNK = 3000;
-	private static final int CHUNKS_APART = 40;
 	private static final int CHOICE_PLANS = 200;
 	// A seeded count must land within this many binomial standard deviations of the expected count.
 	private static final double RATE_TOLERANCE = 4.0;
@@ -53,7 +49,7 @@ public class BuriedStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void buriedTreasureKeepsOneBookInItsChestThroughASaveAndTheLootRoll(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.plan(level, BuiltinStructures.BURIED_TREASURE, farChunk(0));
+		StructureStart start = Structures.plan(level, BuiltinStructures.BURIED_TREASURE, TestSites.of(helper).chunk(0));
 		BlockPos treasure = plannedTreasure(start);
 
 		layStoneUnder(level, treasure);
@@ -84,7 +80,7 @@ public class BuriedStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void buriedTreasureWithNoStoneToRestOnHasNoChestAndNoBook(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.plan(level, BuiltinStructures.BURIED_TREASURE, farChunk(1));
+		StructureStart start = Structures.plan(level, BuiltinStructures.BURIED_TREASURE, TestSites.of(helper).chunk(0));
 		BlockPos treasure = plannedTreasure(start);
 
 		fillColumnWithDirt(level, treasure);
@@ -101,7 +97,7 @@ public class BuriedStructureBookGameTests {
 		Map<ResourceKey<Enchantment>, Integer> counts = new HashMap<>();
 
 		for (int i = 0; i < CHOICE_PLANS; i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.BURIED_TREASURE, new ChunkPos(FAR_CHUNK + i, -FAR_CHUNK));
+			StructureStart start = Structures.plan(level, BuiltinStructures.BURIED_TREASURE, TestSites.of(helper).chunk(i));
 
 			counts.merge(bookPiece(start).enchantment(), 1, Integer::sum);
 		}
@@ -117,7 +113,7 @@ public class BuriedStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aTrailRuinHidesOneSilkTouchBookInItsTowersGravel(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = Structures.plan(level, BuiltinStructures.TRAIL_RUINS, farChunk(2));
+		StructureStart start = Structures.plan(level, BuiltinStructures.TRAIL_RUINS, TestSites.of(helper).chunk(0));
 
 		liftAboveSurface(level, start);
 		Structures.chunks(start).forEach(chunk -> Structures.build(level, start, chunk));
@@ -153,7 +149,7 @@ public class BuriedStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aTrailRuinsBookIsPlacedFromASavedStructure(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart loaded = Structures.saveAndLoad(level, Structures.plan(level, BuiltinStructures.TRAIL_RUINS, farChunk(3)));
+		StructureStart loaded = Structures.saveAndLoad(level, Structures.plan(level, BuiltinStructures.TRAIL_RUINS, TestSites.of(helper).chunk(0)));
 
 		liftAboveSurface(level, loaded);
 		Structures.chunks(loaded).forEach(chunk -> Structures.build(level, loaded, chunk));
@@ -168,7 +164,7 @@ public class BuriedStructureBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aBuriedTreasureBookIsPlacedFromASavedStructure(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart loaded = Structures.saveAndLoad(level, Structures.plan(level, BuiltinStructures.BURIED_TREASURE, farChunk(4)));
+		StructureStart loaded = Structures.saveAndLoad(level, Structures.plan(level, BuiltinStructures.BURIED_TREASURE, TestSites.of(helper).chunk(0)));
 
 		layStoneUnder(level, plannedTreasure(loaded));
 		Structures.chunks(loaded).forEach(chunk -> Structures.build(level, loaded, chunk));
@@ -295,9 +291,5 @@ public class BuriedStructureBookGameTests {
 		double band = RATE_TOLERANCE * Math.sqrt(trials * expected * (1.0 - expected));
 
 		helper.assertTrue(Math.abs(count - mean) <= band, what + ": " + count + " of " + trials + ", expected about " + Math.round(mean));
-	}
-
-	private static ChunkPos farChunk(int index) {
-		return new ChunkPos(FAR_CHUNK - index * CHUNKS_APART, FAR_CHUNK);
 	}
 }

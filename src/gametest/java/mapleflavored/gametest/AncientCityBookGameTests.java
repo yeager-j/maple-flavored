@@ -57,12 +57,9 @@ import net.minecraft.world.phys.Vec3;
  * are broken, and the city keeps players Grounded until it's taken. Taking it summons nothing.
  *
  * <p>A city's centre is built into terrain that's already generated, so its piece is first cleared, as worldgen's
- * terrain adaptation clears it. Each city is planned at its own far chunk.
+ * terrain adaptation clears it. Each city is planned at one of its test's sites.
  */
 public class AncientCityBookGameTests {
-	// Away from the other structure tests' areas, and far enough apart that no two cities overlap.
-	private static final int FAR_CHUNK = 5000;
-	private static final int CHUNKS_APART = 40;
 	private static final int PLANS = 12;
 	private static final int SCAN_ATTEMPTS = 40;
 	private static final List<Identifier> CENTRES = List.of(
@@ -103,7 +100,7 @@ public class AncientCityBookGameTests {
 		helper.assertValueEqual(StructureBookRules.enchantmentsFor(BuiltinStructures.ANCIENT_CITY), List.of(Enchantments.SWIFT_SNEAK), "the city's books");
 
 		for (int i = 0; i < PLANS; i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, farChunk(0, i));
+			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, TestSites.of(helper).chunk(i));
 			List<StructureBookPiece> books = BastionBookGameTests.bookPieces(start);
 
 			helper.assertValueEqual(books.size(), 1, "books planned in the city at " + start.getChunkPos());
@@ -123,7 +120,7 @@ public class AncientCityBookGameTests {
 		Set<Identifier> seen = new HashSet<>();
 
 		for (int i = 0; i < SCAN_ATTEMPTS && seen.size() < CENTRES.size(); i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, farChunk(1, i));
+			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, TestSites.of(helper).chunk(i));
 			Identifier centre = BastionBookGameTests.templateOf(start.getPieces().getFirst()).orElseThrow();
 
 			if (!seen.add(centre)) continue;
@@ -219,7 +216,7 @@ public class AncientCityBookGameTests {
 		int citiesWithThree = 0;
 
 		for (int i = 0; i < PLANS; i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, farChunk(2, i));
+			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, TestSites.of(helper).chunk(i));
 			StructureBookPiece book = BastionBookGameTests.bookPieces(start).getFirst();
 			List<BlockPos> keepers = book.keepers();
 			List<BlockPos> origins = ShriekerKeepers.origins(start.getPieces());
@@ -249,7 +246,7 @@ public class AncientCityBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aKeeperGoesOnTopOfItsPatchsCatalystOrAtItsOrigin(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = planWithKeepers(level, 3, 2);
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), 2);
 		List<StructurePiece> pieces = start.getPieces();
 		StructureBookPiece book = BastionBookGameTests.bookPieces(start).getFirst();
 		BlockPos withCatalyst = book.keepers().get(0);
@@ -274,7 +271,7 @@ public class AncientCityBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aBuiltKeeperPatchHasItsKeeper(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = planWithKeepers(level, 4, 1);
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), 1);
 		BlockPos keeper = BastionBookGameTests.bookPieces(start).getFirst().keepers().getFirst();
 
 		clearAround(level, keeper);
@@ -289,7 +286,7 @@ public class AncientCityBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void breakingKeepersUnlocksTheBookWhileItsChunkIsUnloaded(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = planWithKeepers(level, 5, MAX_KEEPERS);
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), MAX_KEEPERS);
 		BlockPos book = BastionBookGameTests.bookPieces(start).getFirst().spot();
 		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
 		BlockPos onCatalyst = keepers.get(1);
@@ -329,7 +326,7 @@ public class AncientCityBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void checkingALockCountsTheKeepersMissingFromLoadedChunksOnly(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = planWithKeepers(level, 10, MAX_KEEPERS);
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), MAX_KEEPERS);
 		BlockPos book = BastionBookGameTests.bookPieces(start).getFirst().spot();
 		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
 		BlockPos standing = keepers.get(0);
@@ -350,7 +347,7 @@ public class AncientCityBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void aLockedBookCountsItsBrokenKeepersAndTakingItSummonsNothing(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = planWithKeepers(level, 6, 2);
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), 2);
 		BlockPos book = buildCentre(level, start);
 		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
 		List<Component> overlay = new ArrayList<>();
@@ -381,7 +378,7 @@ public class AncientCityBookGameTests {
 	@GameTest(maxTicks = 400)
 	public void keepersListsTheNearestCitysKeepersAndWhetherEachStands(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = planWithKeepers(level, 9, MAX_KEEPERS);
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), MAX_KEEPERS);
 		BlockPos book = BastionBookGameTests.bookPieces(start).getFirst().spot();
 		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
 		List<Component> output = new ArrayList<>();
@@ -414,7 +411,7 @@ public class AncientCityBookGameTests {
 	public void theCityGroundsPlayersUntilItsBookIsTaken(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerLevel level = helper.getLevel();
-		StructureStart start = planWithKeepers(level, 7, 1);
+		StructureStart start = planWithKeepers(level, TestSites.of(helper), 1);
 		BlockPos book = buildCentre(level, start);
 		BlockPos farInside = farthestCorner(start.getBoundingBox(), book);
 		ServerPlayer nearBook = standingAt(helper, arena, book.east(2), GameType.SURVIVAL);
@@ -452,7 +449,7 @@ public class AncientCityBookGameTests {
 	public void aCityWithoutABookGroundsNobody(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, farChunk(8, 0));
+		StructureStart planned = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, TestSites.of(helper).chunk(0));
 		List<StructurePiece> withoutBook = planned.getPieces().stream().filter(piece -> !(piece instanceof StructureBookPiece)).toList();
 		StructureStart bookless = new StructureStart(planned.getStructure(), planned.getChunkPos(), 0, new PiecesContainer(withoutBook));
 		BlockPos centre = planned.getPieces().getFirst().getBoundingBox().getCenter();
@@ -492,10 +489,10 @@ public class AncientCityBookGameTests {
 		helper.assertTrue(keeper.getValue(SculkShriekerBlock.CAN_SUMMON), "The keeper " + where + " can't summon");
 	}
 
-	// Plans cities along a row of their own until one has at least this many keepers.
-	private static StructureStart planWithKeepers(ServerLevel level, int row, int keepers) {
+	// Plans a city at each of the test's sites until one has at least this many keepers.
+	private static StructureStart planWithKeepers(ServerLevel level, TestSites sites, int keepers) {
 		for (int i = 0; i < SCAN_ATTEMPTS; i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, farChunk(row, i));
+			StructureStart start = Structures.plan(level, BuiltinStructures.ANCIENT_CITY, sites.chunk(i));
 
 			if (BastionBookGameTests.bookPieces(start).getFirst().keepers().size() >= keepers) return start;
 		}
@@ -541,7 +538,7 @@ public class AncientCityBookGameTests {
 		ServerLevel level = helper.getLevel();
 		ServerPlayer player = arena.track(MockPlayers.survivalPlayer(helper));
 
-		level.setChunkForced(feet.getX() >> 4, feet.getZ() >> 4, true);
+		ForcedChunks.keepLoaded(helper, level, List.of(ChunkPos.containing(feet)));
 		level.setBlock(feet.below(), Blocks.SMOOTH_STONE.defaultBlockState(), Block.UPDATE_ALL);
 		level.setBlock(feet, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 		level.setBlock(feet.above(), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
@@ -657,9 +654,5 @@ public class AncientCityBookGameTests {
 		double turn = (((a - b) % 360.0) + 360.0) % 360.0;
 
 		return turn > 180.0 ? 360.0 - turn : turn;
-	}
-
-	private static ChunkPos farChunk(int row, int index) {
-		return new ChunkPos(FAR_CHUNK + index * CHUNKS_APART, FAR_CHUNK + row * CHUNKS_APART);
 	}
 }

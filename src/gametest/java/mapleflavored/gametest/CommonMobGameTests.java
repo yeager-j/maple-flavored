@@ -5,7 +5,6 @@ import java.util.Map;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +23,7 @@ import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Block;
@@ -70,8 +70,7 @@ public class CommonMobGameTests {
 		Attributes.KNOCKBACK_RESISTANCE
 	);
 	private static final List<Holder<Attribute>> SPIDER_STATS = List.of(Attributes.JUMP_STRENGTH, Attributes.FALL_DAMAGE_MULTIPLIER);
-	// Far from every other test, where nothing else builds.
-	private static final BlockPos CREEPER_SITE = new BlockPos(52_000, 58, -52_000);
+	private static final int CREEPER_SITE_Y = 58;
 
 	@GameTest(environment = "maple_flavored_gametest:easy")
 	public void easyMobsTakeTheEasyColumn(GameTestHelper helper) {
@@ -294,15 +293,16 @@ public class CommonMobGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
 	public void creepersSpawnNaturallyOnlyBelowY63InTheOverworldButSpawnersStillWork(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos atY62 = CREEPER_SITE.offset(1, 4, 1);
-		BlockPos atY63 = CREEPER_SITE.offset(3, 5, 1);
-		BlockPos atY64 = CREEPER_SITE.offset(5, 6, 1);
+		BlockPos site = TestSites.of(helper).chunk(0).getBlockAt(0, CREEPER_SITE_Y, 0);
+		BlockPos atY62 = site.offset(1, 4, 1);
+		BlockPos atY63 = site.offset(3, 5, 1);
+		BlockPos atY64 = site.offset(5, 6, 1);
 		List<BlockPos> spots = List.of(atY62, atY63, atY64);
 		ServerLevel nether = level.getServer().getLevel(Level.NETHER);
 
 		helper.assertValueEqual(List.of(atY62.getY(), atY63.getY(), atY64.getY()), List.of(62, 63, 64), "spot heights");
-		buildDarkSpots(level, spots);
-		buildDarkSpots(nether, List.of(atY63));
+		buildDarkSpots(helper, level, site, spots);
+		buildDarkSpots(helper, nether, site, List.of(atY63));
 
 		helper.startSequence()
 			.thenWaitUntil(() -> {
@@ -327,10 +327,6 @@ public class CommonMobGameTests {
 					spawnAllowed(nether, EntityTypes.CREEPER, EntitySpawnReason.NATURAL, atY63),
 					"a creeper spawns naturally at Y 63 outside the Overworld"
 				);
-			})
-			.thenExecute(() -> {
-				forceSiteChunk(level, false);
-				forceSiteChunk(nether, false);
 			})
 			.thenSucceed();
 	}
@@ -454,20 +450,16 @@ public class CommonMobGameTests {
 	}
 
 	// Sealed air pockets in solid stone, each standing on stone, so only the height differs between them.
-	private static void buildDarkSpots(ServerLevel level, List<BlockPos> spots) {
-		forceSiteChunk(level, true);
+	private static void buildDarkSpots(GameTestHelper helper, ServerLevel level, BlockPos site, List<BlockPos> spots) {
+		ForcedChunks.keepLoaded(helper, level, List.of(ChunkPos.containing(site)));
 
-		for (BlockPos pos : BlockPos.betweenClosed(CREEPER_SITE, CREEPER_SITE.offset(6, 10, 2))) {
+		for (BlockPos pos : BlockPos.betweenClosed(site, site.offset(6, 10, 2))) {
 			level.setBlock(pos, Blocks.STONE.defaultBlockState(), Block.UPDATE_CLIENTS);
 		}
 
 		for (BlockPos spot : spots) {
 			level.setBlock(spot, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
 		}
-	}
-
-	private static void forceSiteChunk(ServerLevel level, boolean forced) {
-		level.setChunkForced(SectionPos.blockToSectionCoord(CREEPER_SITE.getX()), SectionPos.blockToSectionCoord(CREEPER_SITE.getZ()), forced);
 	}
 
 	private static boolean isPitchDark(ServerLevel level, BlockPos pos) {

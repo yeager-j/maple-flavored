@@ -30,6 +30,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -357,14 +358,12 @@ public class RemnantsGameTests {
 		helper.succeed();
 	}
 
-	// The far respawn point's chunk has to generate, which takes wall-clock time while the server keeps ticking. It
-	// finishes in about 60 ticks on a desktop but ran past 200 on a GitHub Actions runner. The test ends as soon as the
-	// XP arrives, so this limit only matters on slow machines.
+	// The far respawn point's chunk has to generate, which takes wall-clock time while the server keeps ticking, so the
+	// test waits for the chunk itself once the owner is back.
 	@GameTest(maxTicks = 1200)
 	public void aRemnantBoundForAnUnloadedChunkSurvivesItsOwnerLoggingOut(GameTestHelper helper) {
 		ServerPlayer player = playerWithXp(helper, 100);
-		BlockPos testOrigin = helper.absolutePos(BlockPos.ZERO);
-		BlockPos farRespawnPoint = new BlockPos(testOrigin.getX() + 20_000, helper.getLevel().getMaxY() - 10, testOrigin.getZ());
+		BlockPos farRespawnPoint = TestSites.of(helper).chunk(0).getMiddleBlockPosition(helper.getLevel().getMaxY() - 10);
 
 		setRespawnPoint(player, farRespawnPoint);
 		fallIntoTheVoid(helper, player);
@@ -377,6 +376,8 @@ public class RemnantsGameTests {
 		helper.startSequence()
 			.thenExecuteAfter(WAIT_TICKS, () -> {
 				ServerPlayer loggedIn = logIn(helper, respawned.getGameProfile());
+
+				ForcedChunks.keepLoaded(helper, helper.getLevel(), List.of(ChunkPos.containing(farRespawnPoint)));
 
 				// Back at the respawn point, the owner collects the Remnant as soon as it arrives there.
 				helper.startSequence()

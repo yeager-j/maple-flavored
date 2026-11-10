@@ -69,11 +69,9 @@ import net.minecraft.world.phys.Vec3;
  * by putting back only its own spot as it was saved earlier, or by dropping it.
  */
 public class BloodMoonRestoringGameTests {
-	// Each site sits in the middle of its own chunk, far from everything else.
-	private static final int SITE_X = 40_008;
-	private static final int SITE_Z = -39_992;
-	private static final int SITES_APART = 128;
 	private static final int FLOOR_Y = 250;
+	// In the air of the flat test world, where a test builds or checks at its sites.
+	private static final int SITE_Y = 100;
 	// Loading a site's entities waits on disk, while an idle test server runs through ticks as fast as it can.
 	private static final int SITE_TICKS = 20_000;
 	// Long enough for a retry to come round once the site's entities have loaded.
@@ -106,7 +104,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aMobKilledAfterABloodMoonWaitsForTheNextOne(GameTestHelper helper) {
-		Site site = Site.build(helper, 1, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 
@@ -125,7 +123,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aMobThatWanderedOffStillHoldsItsSpot(GameTestHelper helper) {
-		Site site = Site.build(helper, 2, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 		BlockPos ledge = site.floor().offset(5, 0, 0);
@@ -149,7 +147,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aConvertedMobEmptiesItsSpotAndReturnsAsTheOriginal(GameTestHelper helper) {
-		Site site = Site.build(helper, 3, Blocks.POLISHED_BLACKSTONE_BRICKS);
+		Site site = Site.build(helper, 0, Blocks.POLISHED_BLACKSTONE_BRICKS);
 		Mob original = site.placeOriginal(Restorable.BASTION, EntityTypes.PIGLIN);
 		RestoreSpot spot = spotOf(helper, original);
 
@@ -173,7 +171,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aSpotWhoseBlockIsGoneWaitsUntilItsBack(GameTestHelper helper) {
-		Site site = Site.build(helper, 4, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 
@@ -195,7 +193,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aBlockedSpotWaitsUntilItsClear(GameTestHelper helper) {
-		Site site = Site.build(helper, 5, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 
@@ -216,7 +214,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aMobStandingInTheSpotKeepsItPendingUntilItMoves(GameTestHelper helper) {
-		Site site = Site.build(helper, 15, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 		Mob squatter = EntityTypes.COW.create(site.level(), EntitySpawnReason.COMMAND);
@@ -241,8 +239,8 @@ public class BloodMoonRestoringGameTests {
 	@GameTest
 	public void checkingASpotsBlockLoadsNoChunks(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		// Far from anything any test loads.
-		Vec3 spot = new Vec3(-48_000.5, 100.0, -48_000.5);
+		// A site nothing has loaded.
+		Vec3 spot = Vec3.atCenterOf(TestSites.of(helper).chunk(0).getMiddleBlockPosition(SITE_Y));
 		ChunkPos chunk = ChunkPos.containing(BlockPos.containing(spot));
 
 		for (Restorable structure : Restorable.values()) {
@@ -255,7 +253,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aNearbyPlayerKeepsASpotPendingUntilTheyLeave(GameTestHelper helper) {
-		Site site = Site.build(helper, 6, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -278,7 +276,7 @@ public class BloodMoonRestoringGameTests {
 	// Its own environment, since it moves the clock.
 	@GameTest(environment = "maple_flavored_gametest:restoring_dawn", maxTicks = SITE_TICKS)
 	public void aPendingSpotStillFillsAfterDawn(GameTestHelper helper) {
-		Site site = Site.build(helper, 7, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -304,7 +302,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void missedBloodMoonsDontStack(GameTestHelper helper) {
-		Site site = Site.build(helper, 8, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
@@ -330,7 +328,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aPendingSpotSurvivesAReload(GameTestHelper helper) {
-		Site site = Site.build(helper, 9, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 
@@ -347,7 +345,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aReloadedMobStillHoldsItsSpotAndEmptiesItWhenKilled(GameTestHelper helper) {
-		Site site = Site.build(helper, 10, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 
@@ -376,7 +374,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aPendingSpotLoadsNothingAndFillsWhenItsChunkLoads(GameTestHelper helper) {
-		Site site = Site.build(helper, 11, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 
@@ -400,7 +398,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aSpotACrashLeftOccupiedEmptiesWhenItsChunkLoadsAndIsRestored(GameTestHelper helper) {
-		Site site = Site.build(helper, 16, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 		Tag savedWhileOccupied = savedSpots(site.level()).get(indexOf(site.level(), spot)).copy();
@@ -430,8 +428,8 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aMobSavedInAnotherChunkKeepsItsSpotWhenTheSpotsChunkLoads(GameTestHelper helper) {
-		Site site = Site.build(helper, 17, Blocks.COBBLESTONE);
-		Site elsewhere = Site.build(helper, 18, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
+		Site elsewhere = Site.build(helper, 1, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 
@@ -459,7 +457,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aSavedMobWhoseSpotWasNeverSavedGetsItBack(GameTestHelper helper) {
-		Site site = Site.build(helper, 19, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 		Entity reloaded = reloaded(site.level(), original);
@@ -484,7 +482,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aSavedMobThatFailsToLoadLeavesTheSpotThatWasNeverSavedEmpty(GameTestHelper helper) {
-		Site site = Site.build(helper, 21, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 		ValueInput savedOriginal = saved(site.level(), original);
@@ -510,7 +508,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aRestoredMobKeepsTheSpotACrashLeftWithItsDeadPredecessor(GameTestHelper helper) {
-		Site site = Site.build(helper, 22, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
 		Tag savedWithOriginal = savedSpots(site.level()).get(indexOf(site.level(), spot)).copy();
@@ -545,7 +543,7 @@ public class BloodMoonRestoringGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void aMobTheLevelRefusesLeavesNoSpot(GameTestHelper helper) {
-		Site site = Site.build(helper, 20, Blocks.COBBLESTONE);
+		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		Mob refused = EntityTypes.VINDICATOR.create(site.level(), EntitySpawnReason.STRUCTURE);
 		int spots = RestoreSpots.in(site.level()).size();
@@ -566,9 +564,9 @@ public class BloodMoonRestoringGameTests {
 	// Its own environment, since it changes the difficulty.
 	@GameTest(environment = "maple_flavored_gametest:restoring_peaceful", maxTicks = SITE_TICKS)
 	public void peacefulRestoresOnlyMobsItAllowsAndDropsTheRest(GameTestHelper helper) {
-		Site piglinSite = Site.build(helper, 12, Blocks.POLISHED_BLACKSTONE_BRICKS);
-		Site bruteSite = Site.build(helper, 13, Blocks.POLISHED_BLACKSTONE_BRICKS);
-		Site vindicatorSite = Site.build(helper, 14, Blocks.COBBLESTONE);
+		Site piglinSite = Site.build(helper, 0, Blocks.POLISHED_BLACKSTONE_BRICKS);
+		Site bruteSite = Site.build(helper, 1, Blocks.POLISHED_BLACKSTONE_BRICKS);
+		Site vindicatorSite = Site.build(helper, 2, Blocks.COBBLESTONE);
 		Mob piglin = piglinSite.placeOriginal(Restorable.BASTION, EntityTypes.PIGLIN);
 		Mob brute = bruteSite.placeOriginal(Restorable.BASTION, EntityTypes.PIGLIN_BRUTE);
 		Mob vindicator = vindicatorSite.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
@@ -608,7 +606,7 @@ public class BloodMoonRestoringGameTests {
 	@GameTest(maxTicks = 200)
 	public void aBastionGivesItsPiglinsBrutesAndHoglinsSpots(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart bastion = Structures.place(level, BuiltinStructures.BASTION_REMNANT, new ChunkPos(-2_600, 2_600));
+		StructureStart bastion = Structures.place(level, BuiltinStructures.BASTION_REMNANT, TestSites.of(helper).chunk(0));
 
 		assertMobsHoldSpots(helper, level, bastion, Restorable.BASTION);
 		helper.succeed();
@@ -619,7 +617,7 @@ public class BloodMoonRestoringGameTests {
 		ServerLevel level = helper.getLevel();
 		List<WoodlandMansionPieces.WoodlandMansionPiece> pieces = new ArrayList<>();
 
-		WoodlandMansionPieces.generateMansion(level.getStructureTemplateManager(), new BlockPos(-41_600, 100, 41_600), Rotation.NONE, pieces, level.getRandom());
+		WoodlandMansionPieces.generateMansion(level.getStructureTemplateManager(), TestSites.of(helper).chunk(0).getBlockAt(0, SITE_Y, 0), Rotation.NONE, pieces, level.getRandom());
 
 		StructureStart mansion = placePieces(level, BuiltinStructures.WOODLAND_MANSION, pieces);
 
@@ -635,7 +633,8 @@ public class BloodMoonRestoringGameTests {
 	@GameTest(maxTicks = 200)
 	public void anOceanMonumentGivesItsElderGuardiansSpots(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructurePiece building = new OceanMonumentPieces.MonumentBuilding(level.getRandom(), -43_200, 43_200, Direction.NORTH);
+		ChunkPos chunk = TestSites.of(helper).chunk(0);
+		StructurePiece building = new OceanMonumentPieces.MonumentBuilding(level.getRandom(), chunk.getMinBlockX(), chunk.getMinBlockZ(), Direction.NORTH);
 		StructureStart monument = placePieces(level, BuiltinStructures.OCEAN_MONUMENT, List.of(building));
 
 		// A Monument fills with water only below sea level, which the flat test world sets at its floor.
@@ -652,7 +651,7 @@ public class BloodMoonRestoringGameTests {
 		ServerLevel level = helper.getLevel();
 		List<StructurePiece> pieces = new ArrayList<>();
 
-		EndCityPieces.startHouseTower(level.getStructureTemplateManager(), new BlockPos(-44_800, 100, 44_800), Rotation.NONE, pieces, level.getRandom());
+		EndCityPieces.startHouseTower(level.getStructureTemplateManager(), TestSites.of(helper).chunk(0).getBlockAt(0, SITE_Y, 0), Rotation.NONE, pieces, level.getRandom());
 
 		StructureStart city = placePieces(level, BuiltinStructures.END_CITY, pieces);
 
@@ -765,19 +764,18 @@ public class BloodMoonRestoringGameTests {
 	}
 
 	/**
-	 * A spot's 5×5 floor, walled in so a Restored mob can't wander off and fall, high over a far chunk the test keeps
-	 * loaded.
+	 * A spot's 5×5 floor, walled in so a Restored mob can't wander off and fall, high over one of the test's
+	 * {@linkplain TestSites sites}, in a chunk the test keeps loaded.
 	 *
 	 * @param floor the block under the spot
 	 */
-	private record Site(ServerLevel level, BlockPos floor) {
+	private record Site(GameTestHelper helper, ServerLevel level, BlockPos floor) {
 		static Site build(GameTestHelper helper, int index, Block floorBlock) {
-			Site site = new Site(helper.getLevel(), new BlockPos(SITE_X + index * SITES_APART, FLOOR_Y, SITE_Z));
+			Site site = new Site(helper, helper.getLevel(), TestSites.of(helper).chunk(index).getMiddleBlockPosition(FLOOR_Y));
 
 			// Until the chunk ticks entities, the mobs a test places would sit untracked: the cow that should block a spot
 			// would go unseen, and a converted Piglin would leave without emptying its spot.
 			site.keepLoaded();
-			ForcedChunks.awaitEntityTicking(helper, site.level, List.of(ChunkPos.containing(site.floor)), FLOOR_Y);
 
 			for (BlockPos pos : BlockPos.betweenClosed(site.floor.offset(-3, 0, -3), site.floor.offset(3, 3, 3))) {
 				boolean wall = Math.abs(pos.getX() - site.floor.getX()) == 3 || Math.abs(pos.getZ() - site.floor.getZ()) == 3;
@@ -825,7 +823,7 @@ public class BloodMoonRestoringGameTests {
 		}
 
 		void keepLoaded() {
-			level.setChunkForced(floor.getX() >> 4, floor.getZ() >> 4, true);
+			ForcedChunks.keepLoaded(helper, level, List.of(ChunkPos.containing(floor)));
 		}
 
 		boolean isLoaded() {
@@ -840,7 +838,7 @@ public class BloodMoonRestoringGameTests {
 
 		/** Lets the site's chunk unload with its mobs in it. */
 		void letUnload() {
-			level.setChunkForced(floor.getX() >> 4, floor.getZ() >> 4, false);
+			ForcedChunks.letUnload(helper, level, List.of(ChunkPos.containing(floor)));
 		}
 	}
 }

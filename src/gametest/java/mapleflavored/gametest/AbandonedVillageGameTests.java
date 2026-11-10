@@ -5,8 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.IntStream;
 import mapleflavored.mixin.SinglePoolElementAccessor;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -63,12 +61,7 @@ import net.minecraft.world.phys.Vec3;
  * stay. The igloo basement's villager is a zombie villager too.
  */
 public class AbandonedVillageGameTests {
-	// Clear of every other test's far-away chunks.
-	private static final int FAR_CHUNK = 7000;
-	private static final int CHUNKS_APART = 40;
-	private static final int PLANNING_TRIES = 40;
-	private static final BlockPos TEMPLATE_SITE = new BlockPos(-56_000, 100, 56_000);
-	private static final int TEMPLATES_APART = 48;
+	private static final int TEMPLATE_Y = 100;
 	private static final int LOOT_ROLLS = 2000;
 	// About 4 standard deviations of the mean over LOOT_ROLLS chests, and well under the gap to a table that replaces
 	// the taken loot with other loot.
@@ -144,7 +137,7 @@ public class AbandonedVillageGameTests {
 
 		for (int i = 0; i < VILLAGES.size(); i++) {
 			ResourceKey<Structure> key = VILLAGES.get(i);
-			ChunkPos chunk = new ChunkPos(FAR_CHUNK + i * CHUNKS_APART, FAR_CHUNK);
+			ChunkPos chunk = TestSites.of(helper).chunk(i);
 			StructureStart village = Structures.place(level, key, chunk);
 			AABB box = AABB.of(village.getBoundingBox());
 			List<BlockState> blocks = blocksIn(level, village);
@@ -207,8 +200,8 @@ public class AbandonedVillageGameTests {
 	public void theIglooBasementHoldsTwoZombieVillagersAndKeepsItsLab(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		// An igloo with a basement has its lab and ladder pieces besides the igloo and the book.
-		ChunkPos chunk = firstChunkWhere(level, BuiltinStructures.IGLOO, new ChunkPos(FAR_CHUNK, -FAR_CHUNK), start -> start.getPieces().size() > 2)
-			.orElseThrow(() -> new IllegalStateException("no igloo with a basement in " + PLANNING_TRIES + " plans"));
+		ChunkPos chunk = Structures.firstSiteWhere(level, BuiltinStructures.IGLOO, TestSites.of(helper), 0, start -> start.getPieces().size() > 2)
+			.orElseThrow(() -> new IllegalStateException("no igloo with a basement at any site"));
 		StructureStart igloo = Structures.place(level, BuiltinStructures.IGLOO, chunk);
 		// The igloo settles onto the terrain as it's built, away from its planned height, so its whole column is read.
 		BoundingBox planned = igloo.getBoundingBox();
@@ -239,7 +232,7 @@ public class AbandonedVillageGameTests {
 		StructureTemplateManager templates = level.getStructureTemplateManager();
 		Identifier id = Identifier.withDefaultNamespace(template);
 		SinglePoolElement element = StructurePoolElement.legacy(id.toString()).apply(StructureTemplatePool.Projection.RIGID);
-		BlockPos origin = TEMPLATE_SITE.east(index * TEMPLATES_APART);
+		BlockPos origin = TestSites.of(helper).chunk(index).getMiddleBlockPosition(TEMPLATE_Y);
 		BoundingBox box = element.getBoundingBox(templates, origin, Rotation.NONE);
 		long inTemplate = templates.getOrCreate(id).filterBlocks(BlockPos.ZERO, new StructurePlaceSettings(), block).size();
 
@@ -288,13 +281,6 @@ public class AbandonedVillageGameTests {
 			.flatMap(BlockPos::betweenClosedStream)
 			.map(level::getBlockState)
 			.toList();
-	}
-
-	private static Optional<ChunkPos> firstChunkWhere(ServerLevel level, ResourceKey<Structure> key, ChunkPos first, Predicate<StructureStart> wanted) {
-		return IntStream.range(0, PLANNING_TRIES)
-			.mapToObj(i -> new ChunkPos(first.x(), first.z() + i * CHUNKS_APART))
-			.filter(chunk -> wanted.test(Structures.plan(level, key, chunk)))
-			.findFirst();
 	}
 
 	private static LootParams chestParams(GameTestHelper helper, LootTable table) {

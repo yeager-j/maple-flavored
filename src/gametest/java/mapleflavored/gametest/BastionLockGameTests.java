@@ -31,7 +31,6 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.piglin.PiglinBrute;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
@@ -48,8 +47,6 @@ public class BastionLockGameTests {
 	private static final int KEEPERS = 3;
 	private static final int KEEPER_GLOW_TICKS = 60;
 	private static final float LAVA_DAMAGE = 1000.0F;
-	private static final ChunkPos SWEEP_START = new ChunkPos(-8000, 8000);
-	private static final int CHUNKS_APART = 40;
 	private static final List<Identifier> BRUTE_TEMPLATES = List.of(
 		Identifier.withDefaultNamespace("bastion/mobs/melee_piglin"),
 		Identifier.withDefaultNamespace("bastion/mobs/melee_piglin_always")
@@ -69,7 +66,7 @@ public class BastionLockGameTests {
 		ServerLevel level = helper.getLevel();
 
 		for (int i = 0; i < PLANS; i++) {
-			StructureStart start = Structures.plan(level, BuiltinStructures.BASTION_REMNANT, new ChunkPos(SWEEP_START.x() + i * CHUNKS_APART, SWEEP_START.z()));
+			StructureStart start = Structures.plan(level, BuiltinStructures.BASTION_REMNANT, TestSites.of(helper).chunk(i));
 			StructureBookPiece book = BastionBookGameTests.bookPieces(start).getFirst();
 			List<BlockPos> brutes = start.getPieces().stream()
 				.filter(piece -> BastionBookGameTests.templateOf(piece).filter(BRUTE_TEMPLATES::contains).isPresent())
@@ -90,7 +87,7 @@ public class BastionLockGameTests {
 	@GameTest(maxTicks = 400)
 	public void aPlacedBastionsKeepersLockItsBookAndARefusedTakePointsThemOut(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, 30));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, TestSites.of(helper)));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		List<BlockPos> keys = BookLocks.remainingKeys(level, book);
 		List<Mob> keepers = MobKeepers.liveKeepers(level, book);
@@ -128,7 +125,7 @@ public class BastionLockGameTests {
 	public void onlyTheKeepersDeathsCountHoweverTheyDieAndWhereverTheyGo(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		ServerLevel nether = level.getServer().getLevel(Level.NETHER);
-		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, 31));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, TestSites.of(helper)));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 		List<Mob> keepers = MobKeepers.liveKeepers(level, book);
 		PiglinBrute nonKeeper = BastionBookGameTests.piglinsIn(level, start).stream()
@@ -174,7 +171,7 @@ public class BastionLockGameTests {
 	@GameTest(maxTicks = 400)
 	public void theKeepersAndTheirProgressSurviveSavingAndLoading(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, 32);
+		StructureStart planned = BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, TestSites.of(helper));
 		StructureStart reloaded = Structures.saveAndLoad(level, planned);
 		StructureBookPiece book = BastionBookGameTests.bookPieces(planned).getFirst();
 
@@ -206,7 +203,7 @@ public class BastionLockGameTests {
 	@GameTest(maxTicks = 400)
 	public void checkingALockNeverCountsAKeeperThatIsntThere(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart planned = BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, 34);
+		StructureStart planned = BastionBookGameTests.planLayout(level, BastionBookGameTests.TREASURE_ROOM, TestSites.of(helper));
 		BlockPos book = BastionBookGameTests.bookPieces(planned).getFirst().spot();
 		List<BlockPos> keys = BookLocks.remainingKeys(level, book);
 
@@ -254,7 +251,7 @@ public class BastionLockGameTests {
 	@GameTest(maxTicks = 400, environment = "maple_flavored_gametest:peaceful")
 	public void peacefulOpensABastionsLock(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.HOUSING_UNITS, 33));
+		StructureStart start = BastionBookGameTests.placeRegistered(level, BastionBookGameTests.planLayout(level, BastionBookGameTests.HOUSING_UNITS, TestSites.of(helper)));
 		BlockPos book = BastionBookGameTests.onlyBook(helper, start);
 
 		helper.assertValueEqual(MobKeepers.liveKeepers(level, book), List.of(), "keepers alive in Peaceful");
