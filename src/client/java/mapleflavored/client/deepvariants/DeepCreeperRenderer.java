@@ -17,7 +17,7 @@ public class DeepCreeperRenderer extends CreeperRenderer {
 	}
 
 	/** Registers the renderer. Call once from client init. */
-	public static void register() {
+	static void register() {
 		EntityRenderers.register(DeepVariants.DEEP_CREEPER, DeepCreeperRenderer::new);
 	}
 

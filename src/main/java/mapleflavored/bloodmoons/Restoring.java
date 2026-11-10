@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 import mapleflavored.MapleFlavored;
-import mapleflavored.mixin.ServerLevelEntityManagerAccessor;
+import mapleflavored.access.ServerLevelEntityManagerAccessor;
 import mapleflavored.mobs.GoneForGood;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;

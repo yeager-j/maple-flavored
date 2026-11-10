@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import mapleflavored.hearts.Hearts;
+import java.util.function.Function;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -14,86 +14,60 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ServerboundClientCommandPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.phys.Vec3;
 
-/** Mock players for GameTests, with the steps to give them Max Hearts, run commands as them and kill them. */
+/**
+ * Mock players for GameTests, with the steps to run commands as them, move them, kill them and log them out and in.
+ * Every test player comes from here: vanilla's own mock players always report Creative and never finish loading.
+ */
 public final class MockPlayers {
 	private static boolean inHardcore;
 
 	private MockPlayers() {
 	}
 
-	/** A mock player that has finished loading, so it can take damage, with the given Max Hearts of at least 10. */
-	static ServerPlayer playerWithMaxHearts(GameTestHelper helper, int maxHearts) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+	/**
+	 * A loaded mock player in Survival with 10 Max Hearts: items it uses get used up, damage applies and mobs can target
+	 * it. Use this unless a test needs Creative.
+	 */
+	static ServerPlayer survivalPlayer(GameTestHelper helper) {
+		return join(helper, GameType.SURVIVAL, cookie -> plainPlayer(helper, cookie)).player();
+	}
 
-		finishLoading(player);
+	/** A loaded mock player in Creative with 10 Max Hearts. */
+	static ServerPlayer creativePlayer(GameTestHelper helper) {
+		return join(helper, GameType.CREATIVE, cookie -> plainPlayer(helper, cookie)).player();
+	}
 
-		while (Hearts.maxHearts(player) < maxHearts) {
-			Hearts.addMaxHeart(player);
-		}
+	/** A loaded mock player in Survival with 10 Max Hearts, holding one {@code item} in its main hand. */
+	static ServerPlayer survivalPlayerHolding(GameTestHelper helper, Item item) {
+		ServerPlayer player = survivalPlayer(helper);
+
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(item));
 
 		return player;
 	}
 
-	/** A loaded mock player with 10 Max Hearts that adds each chat message it is sent to {@code chat}. */
-	static ServerPlayer playerReadingChat(GameTestHelper helper, List<Component> chat) {
-		var server = helper.getLevel().getServer();
-		var cookie = newCookie();
-		ServerPlayer player = new ServerPlayer(server, helper.getLevel(), cookie.gameProfile(), cookie.clientInformation()) {
-			@Override
-			public void sendSystemMessage(Component message, boolean overlay) {
-				if (!overlay) chat.add(message);
-
-				super.sendSystemMessage(message, overlay);
-			}
-		};
-
-		place(helper, player, cookie);
-
-		return player;
+	/** A loaded mock player in Survival with 10 Max Hearts that adds each chat message it is sent to {@code chat}. */
+	static ServerPlayer survivalPlayerReadingChat(GameTestHelper helper, List<Component> chat) {
+		return join(helper, GameType.SURVIVAL, cookie -> new MessageReadingPlayer(helper, cookie, false, chat)).player();
 	}
 
 	/** A loaded mock player in Survival with 10 Max Hearts that adds each overlay message it is sent to {@code overlay}. */
 	static ServerPlayer survivalPlayerReadingOverlay(GameTestHelper helper, List<Component> overlay) {
-		var cookie = newCookie();
-		ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation()) {
-			@Override
-			public void sendSystemMessage(Component message, boolean isOverlay) {
-				if (isOverlay) overlay.add(message);
-
-				super.sendSystemMessage(message, isOverlay);
-			}
-		};
-
-		place(helper, player, cookie);
-		player.setGameMode(GameType.SURVIVAL);
-
-		return player;
-	}
-
-	/**
-	 * A loaded mock player in Survival with 10 Max Hearts. Unlike {@link GameTestHelper#makeMockServerPlayerInLevel},
-	 * whose player always reports Creative, mobs can target it.
-	 */
-	static ServerPlayer survivalPlayer(GameTestHelper helper) {
-		var cookie = newCookie();
-		ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-
-		place(helper, player, cookie);
-		player.setGameMode(GameType.SURVIVAL);
-
-		return player;
-	}
-
-	private static CommonListenerCookie newCookie() {
-		return CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-mock-player"), false);
+		return join(helper, GameType.SURVIVAL, cookie -> new MessageReadingPlayer(helper, cookie, true, overlay)).player();
 	}
 
 	/**
@@ -101,13 +75,7 @@ public final class MockPlayers {
 	 * the server sends it can be read.
 	 */
 	static Listening survivalPlayerWithChannel(GameTestHelper helper) {
-		var cookie = newCookie();
-		ServerPlayer player = new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
-		EmbeddedChannel channel = place(helper, player, cookie);
-
-		player.setGameMode(GameType.SURVIVAL);
-
-		return new Listening(player, channel);
+		return join(helper, GameType.SURVIVAL, cookie -> plainPlayer(helper, cookie));
 	}
 
 	/** A mock player and the channel the server's packets to it are written to. */
@@ -124,21 +92,50 @@ public final class MockPlayers {
 		}
 	}
 
-	// Placed the way GameTestHelper.makeMockServerPlayerInLevel places its mock player.
-	private static EmbeddedChannel place(GameTestHelper helper, ServerPlayer player, CommonListenerCookie cookie) {
+	// Placed the way GameTestHelper.makeMockServerPlayerInLevel places its mock player, then loaded and put in the game mode.
+	private static Listening join(GameTestHelper helper, GameType gameType, Function<CommonListenerCookie, ServerPlayer> create) {
+		CommonListenerCookie cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "test-mock-player"), false);
+		ServerPlayer player = create.apply(cookie);
 		Connection connection = new Connection(PacketFlow.SERVERBOUND);
 		EmbeddedChannel channel = new EmbeddedChannel(connection);
 
 		helper.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
 		finishLoading(player);
+		player.setGameMode(gameType);
 
-		return channel;
+		return new Listening(player, channel);
 	}
 
-	/** Fails the test unless the player has these Max Hearts and the max health they give. */
-	static void assertMaxHearts(GameTestHelper helper, ServerPlayer player, int maxHearts) {
-		helper.assertValueEqual(Hearts.maxHearts(player), maxHearts, "Max Hearts");
-		helper.assertValueEqual(player.getMaxHealth(), maxHearts * 2.0F, "max health");
+	private static ServerPlayer plainPlayer(GameTestHelper helper, CommonListenerCookie cookie) {
+		return new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
+	}
+
+	// A player that adds each message it is sent of one kind, chat or overlay, to a list.
+	private static final class MessageReadingPlayer extends ServerPlayer {
+		private final boolean readsOverlay;
+		private final List<Component> messages;
+
+		MessageReadingPlayer(GameTestHelper helper, CommonListenerCookie cookie, boolean readsOverlay, List<Component> messages) {
+			super(helper.getLevel().getServer(), helper.getLevel(), cookie.gameProfile(), cookie.clientInformation());
+			this.readsOverlay = readsOverlay;
+			this.messages = messages;
+		}
+
+		@Override
+		public void sendSystemMessage(Component message, boolean overlay) {
+			if (overlay == readsOverlay) messages.add(message);
+
+			super.sendSystemMessage(message, overlay);
+		}
+	}
+
+	/**
+	 * Moves the player as the server does, so the chunks around them load. A player who has moved is invulnerable until
+	 * their client's first movement arrives, which a mock never sends, so that wait is cleared.
+	 */
+	static void teleport(ServerPlayer player, ServerLevel level, Vec3 position) {
+		player.teleport(new TeleportTransition(level, position, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING));
+		player.hasChangedDimension();
 	}
 
 	/** Runs a command with the server's operator permission, as the given player so {@code @s} targets them. */

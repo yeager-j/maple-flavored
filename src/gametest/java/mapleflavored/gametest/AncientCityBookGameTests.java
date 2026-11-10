@@ -473,7 +473,8 @@ public class AncientCityBookGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:ancient_city_grounding", maxTicks = 400)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void theCityGroundsPlayersUntilItsBookIsTaken(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerLevel level = helper.getLevel();
@@ -512,7 +513,8 @@ public class AncientCityBookGameTests {
 	}
 
 	// A creative player breaks the book without taking it, as a command replacing it would.
-	@GameTest(environment = "maple_flavored_gametest:ancient_city_grounding_broken", maxTicks = 400)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
 	public void theCityStopsGroundingOnceItsBookIsGoneHoweverItWent(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerLevel level = helper.getLevel();
@@ -535,7 +537,8 @@ public class AncientCityBookGameTests {
 	}
 
 	// The book's chunk is loaded and fully generated, but the city's centre was never built there.
-	@GameTest(environment = "maple_flavored_gametest:ancient_city_grounding_unplaced", maxTicks = 200)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
 	public void aCityWhoseBookWasNeverPlacedGroundsNobody(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerLevel level = helper.getLevel();
@@ -592,7 +595,8 @@ public class AncientCityBookGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:ancient_city_grounding_bookless", maxTicks = 200)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 200)
 	public void aCityWithoutABookGroundsNobody(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerLevel level = helper.getLevel();
@@ -703,7 +707,7 @@ public class AncientCityBookGameTests {
 		level.setBlock(feet, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 		level.setBlock(feet.above(), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 		player.setGameMode(gameType);
-		SubspaceArena.teleport(player, Vec3.atBottomCenterOf(feet));
+		MockPlayers.teleport(player, player.level(), Vec3.atBottomCenterOf(feet));
 
 		return player;
 	}

@@ -6,8 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import mapleflavored.access.MineShaftCorridorAccessor;
 import mapleflavored.items.MapleItems;
-import mapleflavored.mixin.MineShaftCorridorAccessor;
 import mapleflavored.spawners.Spawners;
 import mapleflavored.structurebooks.SpawnerBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -24,18 +24,16 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.feature.MonsterRoomFeature;
@@ -44,8 +42,8 @@ import net.minecraft.world.level.levelgen.heightproviders.UniformHeight;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
 import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
-import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.structures.MineshaftPieces;
 import net.minecraft.world.phys.Vec3;
@@ -66,7 +64,6 @@ public class DungeonGameTests {
 	private static final long CORRIDOR_SEED = 21L;
 	private static final int BOOK_ROLLS = 200;
 	private static final long BOOK_SEED = 21L;
-	private static final double STANDARD_DEVIATIONS = 4.0;
 
 	@GameTest(maxTicks = 400)
 	public void aDungeonsClearedSpawnerDropsTheBookForItsMobWithItsPith(GameTestHelper helper) {
@@ -92,10 +89,13 @@ public class DungeonGameTests {
 			helper.assertTrue(book.get().is(expectedBook), "a " + mob + " dungeon holds " + expectedBook.identifier());
 			booksSeen.add(expectedBook);
 
-			killMarkedZombies(level, spawner, 12);
+			// Well above the room, so the zombies' own loot lands away from the spawner's drops.
+			Vec3 aboveRoom = Vec3.atBottomCenterOf(origin.above(ZOMBIE_HEIGHT));
+
+			SpawnerGameTests.killMarkedZombies(level, spawner, aboveRoom, 12);
 			helper.assertTrue(Spawners.isCleared(level, origin), "the dungeon's spawner is Cleared");
 
-			ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.IRON_PICKAXE);
+			ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.IRON_PICKAXE);
 			// Rolled as a pickaxe break rolls them. Item entities can't be found this far out, where no entities load.
 			List<ItemStack> drops = Block.getDrops(level.getBlockState(origin), level, origin, spawner, player, player.getMainHandItem());
 			ItemEnchantments expected = levelOne(book.get());
@@ -180,10 +180,7 @@ public class DungeonGameTests {
 			if (chosen == first) firstCount++;
 		}
 
-		double half = BOOK_ROLLS / 2.0;
-		double tolerance = STANDARD_DEVIATIONS * Math.sqrt(BOOK_ROLLS * 0.25);
-
-		helper.assertTrue(Math.abs(firstCount - half) <= tolerance, first + " was chosen " + firstCount + " of " + BOOK_ROLLS + " times");
+		LootRolls.assertRate(helper, first + " chosen", firstCount, BOOK_ROLLS, 0.5);
 		helper.succeed();
 	}
 
@@ -250,18 +247,6 @@ public class DungeonGameTests {
 
 		for (BlockPos pos : BlockPos.betweenClosed(origin.offset(-4, 0, 0), origin.offset(4, 1, 0))) {
 			level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-		}
-	}
-
-	private static void killMarkedZombies(ServerLevel level, SpawnerBlockEntity spawner, int count) {
-		for (int i = 0; i < count; i++) {
-			Zombie zombie = EntityTypes.ZOMBIE.create(level, EntitySpawnReason.COMMAND);
-
-			// Well above the room, so the zombie's own loot lands away from the spawner's drops.
-			zombie.snapTo(Vec3.atBottomCenterOf(spawner.getBlockPos().above(ZOMBIE_HEIGHT)));
-			level.addFreshEntity(zombie);
-			Spawners.markSpawned(level, spawner.getBlockPos(), spawner.getSpawner(), zombie);
-			zombie.kill(level);
 		}
 	}
 

@@ -51,7 +51,8 @@ public class SubspaceSculkGameTests {
 	// Where the unloading test's patch grows, along the arena's x axis.
 	private static final double FAR_FROM_THE_TEST = 100.0;
 
-	@GameTest(environment = "maple_flavored_gametest:subspace_sculk_limits", maxTicks = 600)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 600)
 	public void aPatchSpreadsAroundTheWardensSpawnOverReplaceableBlocksOnly(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.clearedWithoutRunway(helper);
 		ServerLevel level = arena.level();
@@ -102,7 +103,8 @@ public class SubspaceSculkGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:subspace_sculk_pausing", maxTicks = 1500)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 1500)
 	public void aPatchSpreadsOnlyWhileItsWardenIsLoadedAndItsSubspaceLasts(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.clearedWithoutRunway(helper);
 		ServerLevel level = arena.level();

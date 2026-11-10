@@ -1,8 +1,8 @@
 package mapleflavored.strongholds;
 
+import mapleflavored.access.StructurePieceInvoker;
 import mapleflavored.bloodmoons.Restorable;
 import mapleflavored.bloodmoons.Restoring;
-import mapleflavored.mixin.StructurePieceInvoker;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.WorldGenLevel;

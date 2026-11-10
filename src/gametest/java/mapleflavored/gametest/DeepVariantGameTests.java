@@ -3,51 +3,48 @@ package mapleflavored.gametest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import mapleflavored.access.AbstractArrowAccessor;
 import mapleflavored.deepvariants.DeepVariants;
 import mapleflavored.gamerules.MapleGameRules;
+import mapleflavored.gametest.mixin.CreeperTestAccessor;
 import mapleflavored.gametest.mixin.LivingEntityAccessor;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import mapleflavored.gametest.mixin.CreeperTestAccessor;
-import mapleflavored.mixin.AbstractArrowAccessor;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.SpawnGroupData;
-import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
-import net.minecraft.world.entity.monster.skeleton.Skeleton;
-import net.minecraft.world.entity.monster.spider.Spider;
-import net.minecraft.world.entity.projectile.arrow.Arrow;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.level.storage.TagValueOutput;
-import org.jspecify.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.skeleton.AbstractSkeleton;
+import net.minecraft.world.entity.monster.skeleton.Skeleton;
+import net.minecraft.world.entity.monster.spider.Spider;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
@@ -58,12 +55,14 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Below Y 0 in the Overworld, natural spawning makes Deep Zombies where it would make adult zombies, while babies,
@@ -251,7 +250,8 @@ public class DeepVariantGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:deep_zombie_rule_change")
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:deep_variant_rules")
 	public void theDeepVariantRulesSetHealthAndDamageForLaterSpawnsOnly(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Zombie first = spawnDeepZombie(helper);
@@ -323,7 +323,7 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void eachDeepVariantDropsItsBaseMobsLootAndTwiceItsXp(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		ServerPlayer killer = MockPlayers.survivalPlayer(helper);
 
 		for (EntityType<? extends Mob> deepType : DEEP_TYPES) {
 			EntityType<? extends Mob> baseType = DeepVariants.baseOf(deepType).orElseThrow();
@@ -352,7 +352,7 @@ public class DeepVariantGameTests {
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void aDeepSkeletonWithABowDropsTwiceASkeletonsXp(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer killer = helper.makeMockServerPlayerInLevel();
+		ServerPlayer killer = MockPlayers.survivalPlayer(helper);
 		Mob archer = archer(helper, DeepVariants.DEEP_SKELETON, MOB_POS);
 
 		// A skeleton with a bow gives its 5 XP plus 1 to 3 for the bow.
@@ -418,7 +418,8 @@ public class DeepVariantGameTests {
 		assertArrowDamageMultiplier(helper, 3.0);
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:deep_skeleton_rule_change")
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:deep_variant_rules")
 	public void aDeepSkeletonKeepsItsArrowDamageWhenTheRuleChangesOrItReloads(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Skeleton first = spawnNaturally(helper, DeepVariants.DEEP_SKELETON);

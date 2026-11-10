@@ -138,7 +138,8 @@ public final class MapleGameRules {
 	private MapleGameRules() {
 	}
 
-	/** Registers the game rules. Call once from mod init. */
+	/** Registers the game rules, and the sending of {@linkplain SyncedGameRule synced} ones. Call once from mod init. */
 	public static void register() {
+		SyncedGameRule.register();
 	}
 }

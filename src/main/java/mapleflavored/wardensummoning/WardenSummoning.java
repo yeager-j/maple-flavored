@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
 import mapleflavored.MapleFlavored;
-import mapleflavored.mixin.WardenSpawnTrackerAccessor;
+import mapleflavored.access.WardenSpawnTrackerAccessor;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.core.BlockPos;

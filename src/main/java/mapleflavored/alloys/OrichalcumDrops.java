@@ -3,7 +3,7 @@ package mapleflavored.alloys;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import mapleflavored.MapleFlavored;
-import mapleflavored.mixin.LootItemAccessor;
+import mapleflavored.access.LootItemAccessor;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;

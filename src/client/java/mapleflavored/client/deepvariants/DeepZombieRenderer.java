@@ -19,7 +19,7 @@ public class DeepZombieRenderer extends ZombieRenderer {
 	}
 
 	/** Registers the renderer. Call once from client init. */
-	public static void register() {
+	static void register() {
 		EntityRenderers.register(DeepVariants.DEEP_ZOMBIE, DeepZombieRenderer::new);
 	}
 

@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import mapleflavored.mixin.SinglePoolElementAccessor;
+import mapleflavored.access.SinglePoolElementAccessor;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;

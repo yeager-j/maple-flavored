@@ -1,5 +1,6 @@
 package mapleflavored.zephyr;
 
+import java.util.List;
 import mapleflavored.MapleFlavored;
 import mapleflavored.grounded.Grounded;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -24,8 +25,16 @@ public final class Zephyr {
 	/** The Zephyr enchantment, defined in data. */
 	public static final ResourceKey<Enchantment> ENCHANTMENT = ResourceKey.create(Registries.ENCHANTMENT, MapleFlavored.id("zephyr"));
 
-	private static final double[] JUMP_HEIGHTS = {1.5, 2.25, 3.0};
-	private static final double[] CLUTCH_CUTS = {0.10, 0.15, 0.25};
+	// What each level does, lowest first. The enchantment's max_level in data must equal how many there are, which a
+	// GameTest checks.
+	private static final List<LevelEffect> LEVELS = List.of(
+		new LevelEffect(1.5, 0.10),
+		new LevelEffect(2.25, 0.15),
+		new LevelEffect(3.0, 0.25)
+	);
+
+	/** The highest Zephyr level with behaviour of its own. */
+	public static final int MAX_LEVEL = LEVELS.size();
 
 	// Vanilla's vertical air drag, applied after gravity each tick while airborne.
 	private static final double AIR_DRAG = 0.98;
@@ -68,7 +77,7 @@ public final class Zephyr {
 
 	/** The upward speed, in blocks per tick, that lifts the player their Zephyr level's height. Needs Zephyr. */
 	public static double launchSpeed(Player player) {
-		return launchSpeed(JUMP_HEIGHTS[levelIndex(player)], player.getGravity());
+		return launchSpeed(levelEffect(player).jumpHeight(), player.getGravity());
 	}
 
 	/** Uses up the client player's jump for this air time. The server keeps its own record. */
@@ -112,7 +121,7 @@ public final class Zephyr {
 	private static void acceptJump(ServerPlayer player) {
 		if (!canJump(player)) return;
 
-		double carriedFall = clutched(player.fallDistance, CLUTCH_CUTS[levelIndex(player)]);
+		double carriedFall = clutched(player.fallDistance, levelEffect(player).clutchCut());
 
 		player.setAttached(AIR_JUMP, new AirJump.Rising(player.getY(), carriedFall));
 		ZephyrEffects.showToOthers(player);
@@ -126,8 +135,16 @@ public final class Zephyr {
 			|| player.isPassenger();
 	}
 
-	private static int levelIndex(Player player) {
-		return Math.min(level(player), JUMP_HEIGHTS.length) - 1;
+	// Boots given a level above the enchantment's highest behave as the highest.
+	private static LevelEffect levelEffect(Player player) {
+		return LEVELS.get(Math.min(level(player), MAX_LEVEL) - 1);
+	}
+
+	/**
+	 * @param jumpHeight how high the jump lifts the player, in blocks
+	 * @param clutchCut the share of the distance fallen before the jump that the jump takes off
+	 */
+	private record LevelEffect(double jumpHeight, double clutchCut) {
 	}
 
 	private static double clutched(double fallDistance, double cut) {

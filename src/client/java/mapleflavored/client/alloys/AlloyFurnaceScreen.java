@@ -2,7 +2,9 @@ package mapleflavored.client.alloys;
 
 import mapleflavored.MapleFlavored;
 import mapleflavored.alloys.AlloyFurnaceMenu;
+import mapleflavored.alloys.Alloys;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -26,6 +28,11 @@ public class AlloyFurnaceScreen extends AbstractContainerScreen<AlloyFurnaceMenu
 	private static final int ARROW_Y = 34;
 	private static final int ARROW_WIDTH = 24;
 	private static final int ARROW_HEIGHT = 16;
+
+	/** Registers the screen for the Alloy Furnace's menu. Call once from client init. */
+	public static void register() {
+		MenuScreens.register(Alloys.ALLOY_FURNACE_MENU, AlloyFurnaceScreen::new);
+	}
 
 	public AlloyFurnaceScreen(AlloyFurnaceMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title, IMAGE_WIDTH, IMAGE_HEIGHT);

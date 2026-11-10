@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import mapleflavored.mixin.StructurePieceInvoker;
+import mapleflavored.access.StructurePieceInvoker;
 import mapleflavored.structurebooks.BookLocks;
 import mapleflavored.structurebooks.StructureBookBlockEntity;
 import mapleflavored.structurebooks.StructureBookPiece;
@@ -101,7 +101,7 @@ public class FortressBookGameTests {
 			);
 		}
 
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		helper.assertTrue(!StructureBooks.take(player, expectedBook), "a locked book is refused");
 		helper.assertValueEqual(player.getInventory().countItem(Items.ENCHANTED_BOOK), 0, "books given");
@@ -159,7 +159,7 @@ public class FortressBookGameTests {
 
 		clear(helper, last);
 
-		ServerPlayer breaker = SpawnerGameTests.survivalPlayer(helper, Items.DIAMOND_PICKAXE);
+		ServerPlayer breaker = MockPlayers.survivalPlayerHolding(helper, Items.DIAMOND_PICKAXE);
 
 		breaker.gameMode.destroyBlock(spawners.getFirst());
 		helper.assertValueEqual(level.getBlockState(spawners.getFirst()).isAir(), true, "the broken spawner is gone");
@@ -172,7 +172,7 @@ public class FortressBookGameTests {
 		helper.assertValueEqual(BookLocks.isLocked(level, book), false, "still unlocked after a reload");
 		helper.assertValueEqual(Locks.sentLocked(level, book), false, "the book is sent unlocked");
 
-		ServerPlayer taker = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer taker = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		helper.assertTrue(StructureBooks.take(taker, book), "the unlocked book is taken");
 		helper.assertValueEqual(storedEnchantments(taker), Map.of(Enchantments.FIRE_PROTECTION, 1), "the book taken");
@@ -277,7 +277,7 @@ public class FortressBookGameTests {
 		helper.assertValueEqual(BookLocks.lockAt(level, book), Optional.of(lock), "the lock planned again");
 		helper.assertTrue(Locks.savedBooks(level).contains(book), "the lock planned again is saved");
 
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		helper.assertTrue(!StructureBooks.take(player, book), "the book is refused");
 		helper.succeed();
@@ -292,7 +292,7 @@ public class FortressBookGameTests {
 		List<BlockPos> spawners = blazeSpawners(planned);
 		BlockPos standing = spawners.get(0);
 		BlockPos removed = spawners.get(1);
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		Structures.chunks(planned).forEach(chunk -> Structures.build(level, planned, chunk));
 		Structures.register(level, planned);
@@ -326,7 +326,7 @@ public class FortressBookGameTests {
 
 		helper.assertValueEqual(Locks.sentLocked(level, book), false, "the book is sent unlocked");
 
-		ServerPlayer taker = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer taker = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		helper.assertTrue(StructureBooks.take(taker, book), "the book is taken");
 		helper.assertValueEqual(storedEnchantments(taker), Map.of(Enchantments.FIRE_PROTECTION, 1), "the book taken");

@@ -32,7 +32,7 @@ public final class WitherSubspaceLight {
 	 * Redraws the blocks a Wither's Subspace covers as it opens or ends, and every one when the light level changes. Call
 	 * once from client init.
 	 */
-	public static void register() {
+	static void register() {
 		ClientTickEvents.END_CLIENT_TICK.register(client -> publish(client.level));
 	}
 

@@ -5,6 +5,7 @@ import static mapleflavored.alloys.AlloyFurnaceSlots.BASE;
 import static mapleflavored.alloys.AlloyFurnaceSlots.COUNT;
 import static mapleflavored.alloys.AlloyFurnaceSlots.FUEL;
 import static mapleflavored.alloys.AlloyFurnaceSlots.RESULT;
+import static mapleflavored.gametest.Advancements.isDone;
 import static mapleflavored.gametest.MockPlayers.survivalPlayer;
 
 import java.util.ArrayList;
@@ -430,7 +431,8 @@ public class AlloyGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:alloy_beacon_full", maxTicks = 300)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 300)
 	public void aFullAlloyBeaconGrantsButWhy(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerPlayer player = arena.player(BESIDE_THE_PYRAMID, GameType.SURVIVAL);
@@ -443,7 +445,8 @@ public class AlloyGameTests {
 		});
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:alloy_beacon_upgraded", maxTicks = 500)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 500)
 	public void finishingAnAlloyPyramidUnderALitBeaconGrantsButWhy(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		ServerPlayer player = arena.player(BESIDE_THE_PYRAMID, GameType.SURVIVAL);
@@ -601,14 +604,6 @@ public class AlloyGameTests {
 		player.getInventory().add(new ItemStack(item));
 		// A ticking player sends inventory changes to advancement triggers each tick; a mock player is never ticked.
 		player.inventoryMenu.broadcastChanges();
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, Identifier advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(advancement);
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 
 	private static void assertAdvancement(GameTestHelper helper, Identifier id, String parent, AdvancementType frame, boolean hidden, int experience) {

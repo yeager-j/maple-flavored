@@ -41,7 +41,7 @@ public final class GoneForGood {
 	}
 
 	/** Registers the hooks that notice entities going. Call once from mod init. */
-	public static void register() {
+	static void register() {
 		// A dying entity is gone the moment it dies; it's only removed once its death animation ends.
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity.level() instanceof ServerLevel level) report(level.getServer(), entity, Cause.DIED);

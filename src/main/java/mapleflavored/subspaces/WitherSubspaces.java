@@ -1,15 +1,9 @@
 package mapleflavored.subspaces;
 
-import java.util.Objects;
 import java.util.function.Consumer;
-import mapleflavored.MapleFlavored;
 import mapleflavored.gamerules.MapleGameRules;
-import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
-import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
-import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import mapleflavored.gamerules.SyncedGameRule;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -24,14 +18,7 @@ import net.minecraft.world.phys.Vec3;
  * its centre than a third game rule allows, 50 blocks by default, so it can't be lured away.
  */
 public final class WitherSubspaces {
-	/**
-	 * The light level the Wither Subspace light level game rule sets, synced to every player in the level so their client
-	 * can draw it. Read it through {@link #lightLevel}; only this module writes it.
-	 */
-	private static final AttachmentType<Integer> LIGHT_LEVEL = AttachmentRegistry.create(
-		MapleFlavored.id("wither_subspace_light_level"),
-		builder -> builder.syncWith(ByteBufCodecs.VAR_INT, AttachmentSyncPredicate.all())
-	);
+	private static final SyncedGameRule LIGHT_LEVEL = SyncedGameRule.of(MapleGameRules.WITHER_SUBSPACE_LIGHT_LEVEL);
 
 	// Rounding in a move's arithmetic, so a move ending on the leash's edge isn't undone.
 	private static final double LEASH_TOLERANCE = 1.0E-6;
@@ -41,7 +28,6 @@ public final class WitherSubspaces {
 
 	static void register() {
 		ServerEntityEvents.ENTITY_LOAD.register(WitherSubspaces::openOrLeash);
-		ServerTickEvents.END_LEVEL_TICK.register(WitherSubspaces::syncLightLevel);
 	}
 
 	/**
@@ -49,7 +35,7 @@ public final class WitherSubspaces {
 	 * it. Works on both the server and the client.
 	 */
 	public static int lightLevel(Level level) {
-		return level.getAttachedOrElse(LIGHT_LEVEL, MapleGameRules.WITHER_SUBSPACE_LIGHT_LEVEL.defaultValue());
+		return LIGHT_LEVEL.get(level);
 	}
 
 	/** Whether the position is inside any Wither's Subspace in the level. Works on both the server and the client. */
@@ -94,13 +80,6 @@ public final class WitherSubspaces {
 		if (toCentre.length() <= limit) return delta;
 
 		return toCentre.normalize().scale(limit).subtract(fromCentre);
-	}
-
-	// Game rules stay on the server, so the light level reaches clients as level data, and a change shows at once.
-	private static void syncLightLevel(ServerLevel level) {
-		int rule = level.getGameRules().get(MapleGameRules.WITHER_SUBSPACE_LIGHT_LEVEL);
-
-		if (!Objects.equals(level.getAttached(LIGHT_LEVEL), rule)) level.setAttached(LIGHT_LEVEL, rule);
 	}
 
 	// Every way a Wither appears adds it to a level, so this catches both building one and /summon.

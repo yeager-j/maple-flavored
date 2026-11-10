@@ -1,5 +1,8 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.LootRolls.assertRate;
+import static mapleflavored.gametest.LootRolls.rollMany;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -10,7 +13,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.util.RandomSource;
 import net.minecraft.util.context.ContextKeySet;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -42,8 +44,6 @@ public class StructureChestGameTests {
 	);
 	private static final int ROLLS = 2000;
 	private static final int SWEEP_ROLLS = 100;
-	// A seeded rate must land within this many binomial standard deviations of the expected rate.
-	private static final double RATE_TOLERANCE = 4.0;
 
 	@GameTest(maxTicks = 400)
 	public void eachListedChestRollsForCrystalHeartsAndPithAtItsOwnRate(GameTestHelper helper) {
@@ -52,8 +52,8 @@ public class StructureChestGameTests {
 			List<List<ItemStack>> rolls = rollMany(helper, odds.table(), ROLLS);
 			boolean endCity = odds.table().equals(BuiltInLootTables.END_CITY_TREASURE);
 
-			assertRate(helper, name + " Crystal Hearts", rollsWith(rolls, Hearts.CRYSTAL_HEART), odds.crystalHeart());
-			assertRate(helper, name + " Pith", rollsWith(rolls, MapleItems.PITH), odds.pith());
+			assertRate(helper, name + " Crystal Hearts", rollsWith(rolls, Hearts.CRYSTAL_HEART), ROLLS, odds.crystalHeart());
+			assertRate(helper, name + " Pith", rollsWith(rolls, MapleItems.PITH), ROLLS, odds.pith());
 			assertCounts(helper, name + " Crystal Heart", rolls, Hearts.CRYSTAL_HEART, Set.of(1));
 			// An End City success gives 1 or 2 Pith; every other is one item.
 			assertCounts(helper, name + " Pith", rolls, MapleItems.PITH, endCity ? Set.of(1, 2) : Set.of(1));
@@ -88,18 +88,6 @@ public class StructureChestGameTests {
 		helper.succeed();
 	}
 
-	/** Each roll's drops, from rolling the table many times with a seed of its own. */
-	private static List<List<ItemStack>> rollMany(GameTestHelper helper, ResourceKey<LootTable> key, int count) {
-		RandomSource random = RandomSource.create(key.identifier().hashCode());
-		List<List<ItemStack>> rolls = new ArrayList<>();
-
-		for (int i = 0; i < count; i++) {
-			rolls.add(LootRolls.roll(helper, key, random));
-		}
-
-		return rolls;
-	}
-
 	private static int rollsWith(List<List<ItemStack>> rolls, Item item) {
 		return (int) rolls.stream().filter(roll -> roll.stream().anyMatch(drop -> drop.is(item))).count();
 	}
@@ -114,12 +102,5 @@ public class StructureChestGameTests {
 
 		helper.assertValueEqual(stacks.size(), rollsWith(rolls, item), what + " stacks per roll");
 		helper.assertValueEqual(Set.copyOf(stacks.stream().map(ItemStack::getCount).toList()), expected, what + " counts");
-	}
-
-	private static void assertRate(GameTestHelper helper, String what, int count, double expected) {
-		double mean = ROLLS * expected;
-		double band = RATE_TOLERANCE * Math.sqrt(ROLLS * expected * (1.0 - expected));
-
-		helper.assertTrue(Math.abs(count - mean) <= band, what + ": " + count + " of " + ROLLS + ", expected about " + Math.round(mean));
 	}
 }

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import mapleflavored.MapleFlavored;
-import mapleflavored.mixin.BrushableBlockEntityAccessor;
+import mapleflavored.access.BrushableBlockEntityAccessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;

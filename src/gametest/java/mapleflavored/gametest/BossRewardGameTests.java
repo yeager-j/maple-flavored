@@ -1,11 +1,12 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
+
 import java.util.List;
 import mapleflavored.MapleFlavored;
 import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -41,9 +42,9 @@ import net.minecraft.world.phys.Vec3;
  * {@link SubspaceArena}.
  */
 public class BossRewardGameTests {
-	private static final String ELDER_GUARDIAN_ADVANCEMENT = "maple_flavored:adventure/kill_elder_guardian";
-	private static final String FREE_THE_END = "minecraft:end/kill_dragon";
-	private static final String SNEAK_100 = "minecraft:adventure/avoid_vibration";
+	private static final Identifier ELDER_GUARDIAN_ADVANCEMENT = Identifier.parse("maple_flavored:adventure/kill_elder_guardian");
+	private static final Identifier FREE_THE_END = Identifier.parse("minecraft:end/kill_dragon");
+	private static final Identifier SNEAK_100 = Identifier.parse("minecraft:adventure/avoid_vibration");
 	private static final ResourceKey<Enchantment> ZEPHYR = ResourceKey.create(Registries.ENCHANTMENT, MapleFlavored.id("zephyr"));
 
 	// A dragon fight counts players within 192 blocks of the point 128 blocks above its origin.
@@ -53,7 +54,8 @@ public class BossRewardGameTests {
 	// As in SubspaceGameTests: short enough to watch a Warden dig down, long enough for a sniff to come first.
 	private static final int DIG_COOLDOWN_TICKS = 600;
 
-	@GameTest(environment = "maple_flavored_gametest:boss_rewards_elder_guardian_drops", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void anElderGuardianDropsTwoPith(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -67,7 +69,8 @@ public class BossRewardGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:boss_rewards_elder_guardian_kill", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void anElderGuardiansDeathCreditsEveryPlayerWithin64Blocks(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -89,7 +92,8 @@ public class BossRewardGameTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:boss_rewards_dragon_drops", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void theEnderDragonDropsAZephyrBookEveryKill(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -111,7 +115,8 @@ public class BossRewardGameTests {
 	}
 
 	// Killed by an explosion, so no player has vanilla's kill credit, and only the fight's range shares Free the End.
-	@GameTest(environment = "maple_flavored_gametest:boss_rewards_dragon_kill", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void theEnderDragonsDeathCreditsFreeTheEndToEveryPlayerInItsFight(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -161,7 +166,8 @@ public class BossRewardGameTests {
 
 	// The killed Warden stands 30 blocks from its Subspace's centre, so the credit is measured from the Warden: one player
 	// is near it but outside the Subspace, another inside the Subspace but far from it.
-	@GameTest(environment = "maple_flavored_gametest:boss_rewards_warden_death", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void aWardensDeathCreditsEveryPlayerWithin50BlocksOfIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -212,7 +218,8 @@ public class BossRewardGameTests {
 	}
 
 	// The near player stands past vanilla's awareness box, so the penned Warden digs down.
-	@GameTest(environment = "maple_flavored_gametest:boss_rewards_warden_digging", maxTicks = 1100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 1100)
 	public void aWardenDiggingDownCreditsEveryPlayerWithin50BlocksOfIt(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 
@@ -243,13 +250,5 @@ public class BossRewardGameTests {
 			.stream()
 			.map(ItemEntity::getItem)
 			.toList();
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player, String advancement) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(advancement));
-
-		helper.assertTrue(holder != null, advancement + " exists");
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 }

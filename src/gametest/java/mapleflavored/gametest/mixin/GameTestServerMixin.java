@@ -8,7 +8,8 @@ import org.spongepowered.asm.mixin.injection.At;
 
 /**
  * Leaves the Trade Rebalance experiment out of the test server, which otherwise enables every available pack. Its
- * trades name Curse of Binding, which Maple removes, so a world with it can't load; Maple doesn't support it.
+ * trades name Curse of Binding, which Maple removes, so a world with it can't load. Maple doesn't support it, as the
+ * README's Compatibility section tells players.
  */
 @Mixin(GameTestServer.class)
 public abstract class GameTestServerMixin {

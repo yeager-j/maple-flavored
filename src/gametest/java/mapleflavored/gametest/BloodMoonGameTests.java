@@ -1,6 +1,7 @@
 package mapleflavored.gametest;
 
-import static mapleflavored.gametest.MockPlayers.playerReadingChat;
+import static mapleflavored.gametest.Advancements.isDone;
+import static mapleflavored.gametest.MockPlayers.survivalPlayerReadingChat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,6 @@ import mapleflavored.bloodmoons.Restorable;
 import mapleflavored.bloodmoons.RestoreSpot;
 import mapleflavored.bloodmoons.Restoring;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -21,8 +21,8 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -57,7 +57,7 @@ public class BloodMoonGameTests {
 	private static final int MIDNIGHT = 18_000;
 	private static final int SETTLE_TICKS = 5;
 	private static final String MESSAGE = "chat.maple_flavored.blood_moon_rises";
-	private static final String ADVANCEMENT = "maple_flavored:adventure/blood_moon";
+	private static final Identifier ADVANCEMENT = Identifier.parse("maple_flavored:adventure/blood_moon");
 	// In the air of the flat test world, where no block holds a spot, so a pending spot stays pending.
 	private static final int SPOT_Y = 100;
 	// How many Blood Moons have told their listeners they rose, in any test.
@@ -74,8 +74,8 @@ public class BloodMoonGameTests {
 	public void aBloodMoonRisesOnTheFourthFullMoonWithOneMessageInEveryDimension(GameTestHelper helper) {
 		List<Component> overworldChat = new ArrayList<>();
 		List<Component> netherChat = new ArrayList<>();
-		ServerPlayer overworldPlayer = playerReadingChat(helper, overworldChat);
-		ServerPlayer netherPlayer = playerReadingChat(helper, netherChat);
+		ServerPlayer overworldPlayer = survivalPlayerReadingChat(helper, overworldChat);
+		ServerPlayer netherPlayer = survivalPlayerReadingChat(helper, netherChat);
 		List<Float> earlyDensity = new ArrayList<>();
 
 		moveToNether(helper, netherPlayer);
@@ -89,8 +89,8 @@ public class BloodMoonGameTests {
 			.thenExecuteAfter(SETTLE_TICKS, () -> {
 				helper.assertValueEqual(bloodMoonMessages(overworldChat), 1L, "Blood Moon messages in the Overworld");
 				helper.assertValueEqual(bloodMoonMessages(netherChat), 1L, "Blood Moon messages in the Nether");
-				helper.assertTrue(hasAdvancement(helper, overworldPlayer), "the Overworld player has the advancement");
-				helper.assertFalse(hasAdvancement(helper, netherPlayer), "the Nether player has the advancement");
+				helper.assertTrue(isDone(helper, overworldPlayer, ADVANCEMENT), "the Overworld player has the advancement");
+				helper.assertFalse(isDone(helper, netherPlayer, ADVANCEMENT), "the Nether player has the advancement");
 			})
 			.thenExecuteAfter(20, () -> {
 				helper.assertTrue(BloodMoons.strength(helper.getLevel()) > 0.0F, "the Blood Moon is still up");
@@ -111,7 +111,7 @@ public class BloodMoonGameTests {
 	@GameTest(environment = "maple_flavored_gametest:blood_moon_ordinary_full_moon", maxTicks = 100)
 	public void anEarlierFullMoonIsNoBloodMoon(GameTestHelper helper) {
 		List<Component> chat = new ArrayList<>();
-		ServerPlayer player = playerReadingChat(helper, chat);
+		ServerPlayer player = survivalPlayerReadingChat(helper, chat);
 
 		setTime(helper, 16, EARLY_NIGHT);
 
@@ -120,7 +120,7 @@ public class BloodMoonGameTests {
 				helper.assertValueEqual(BloodMoons.strength(helper.getLevel()), 0.0F, "Blood Moon strength on day 16's night");
 				helper.assertValueEqual(bloodMoonMessages(chat), 0L, "Blood Moon messages on day 16's night");
 				helper.assertValueEqual(sporeDensity(helper), 0.0F, "crimson spore density on day 16's night");
-				helper.assertFalse(hasAdvancement(helper, player), "the player has the advancement");
+				helper.assertFalse(isDone(helper, player, ADVANCEMENT), "the player has the advancement");
 			})
 			.thenSucceed();
 	}
@@ -128,7 +128,7 @@ public class BloodMoonGameTests {
 	@GameTest(environment = "maple_flavored_gametest:blood_moon_back_to_back", maxTicks = 100)
 	public void theNextBloodMoonRises32DaysLaterEvenWhenTimeJumpsStraightToIt(GameTestHelper helper) {
 		List<Component> chat = new ArrayList<>();
-		playerReadingChat(helper, chat);
+		survivalPlayerReadingChat(helper, chat);
 		List<Component> laterChat = new ArrayList<>();
 		List<ServerPlayer> latecomer = new ArrayList<>();
 
@@ -142,13 +142,13 @@ public class BloodMoonGameTests {
 			.thenExecuteAfter(SETTLE_TICKS, () -> {
 				helper.assertValueEqual(bloodMoonMessages(chat), 2L, "Blood Moon messages by the next one");
 				// Joined after the last rising, so only the next one can credit them.
-				latecomer.add(playerReadingChat(helper, laterChat));
-				helper.assertFalse(hasAdvancement(helper, latecomer.getFirst()), "a latecomer has the advancement before a rising");
+				latecomer.add(survivalPlayerReadingChat(helper, laterChat));
+				helper.assertFalse(isDone(helper, latecomer.getFirst(), ADVANCEMENT), "a latecomer has the advancement before a rising");
 				setTime(helper, bloodMoonDay(22), EARLY_NIGHT);
 			})
 			.thenExecuteAfter(SETTLE_TICKS, () -> {
 				helper.assertValueEqual(bloodMoonMessages(laterChat), 1L, "the latecomer's Blood Moon messages by the one after");
-				helper.assertTrue(hasAdvancement(helper, latecomer.getFirst()), "the latecomer has the advancement");
+				helper.assertTrue(isDone(helper, latecomer.getFirst(), ADVANCEMENT), "the latecomer has the advancement");
 			})
 			.thenSucceed();
 	}
@@ -156,7 +156,7 @@ public class BloodMoonGameTests {
 	@GameTest(environment = "maple_flavored_gametest:blood_moon_restart", maxTicks = 100)
 	public void aRestartDuringABloodMoonDoesNotAnnounceItAgain(GameTestHelper helper) {
 		List<Component> chat = new ArrayList<>();
-		playerReadingChat(helper, chat);
+		survivalPlayerReadingChat(helper, chat);
 
 		setTime(helper, bloodMoonDay(10), EARLY_NIGHT);
 
@@ -249,11 +249,5 @@ public class BloodMoonGameTests {
 			.filter(particle -> particle.particle().getType() == ParticleTypes.CRIMSON_SPORE)
 			.mapToDouble(AmbientParticle::probability)
 			.sum();
-	}
-
-	private static boolean hasAdvancement(GameTestHelper helper, ServerPlayer player) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(ADVANCEMENT));
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 }

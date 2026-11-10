@@ -24,7 +24,7 @@ public final class DeathScreenMaxHearts {
 	}
 
 	/** Registers the payload receiver and the death screen line. Call once from client init. */
-	public static void register() {
+	static void register() {
 		ClientPlayNetworking.registerGlobalReceiver(MaxHeartsLostPayload.TYPE, (payload, context) -> {
 			// The combat kill packet that opens the death screen is handled before this payload. With no death screen
 			// open, as with immediate respawn, the number is dropped so it can't show on a later death.

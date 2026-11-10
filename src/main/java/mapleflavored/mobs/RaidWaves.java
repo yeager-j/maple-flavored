@@ -31,7 +31,7 @@ public final class RaidWaves {
 	}
 
 	/** Registers the {@code maple_flavored:spawned_by_raid_wave} loot condition. Call once at mod initialization. */
-	public static void register() {
+	static void register() {
 		Registry.register(BuiltInRegistries.LOOT_CONDITION_TYPE, MapleFlavored.id("spawned_by_raid_wave"), SpawnedByRaidWave.MAP_CODEC);
 	}
 

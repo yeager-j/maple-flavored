@@ -1,5 +1,7 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.Advancements.isDone;
+
 import java.util.List;
 import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyGear;
@@ -33,7 +35,7 @@ import net.minecraft.world.phys.Vec3;
 public class AlloyMiningGameTests {
 	private static final BlockPos BLOCK_POS = new BlockPos(1, 1, 1);
 	private static final Vec3 MINER_POS = new Vec3(1.5, 1.0, 2.5);
-	private static final String BREAKING_THE_RULES = "maple_flavored:nether/break_bedrock";
+	private static final Identifier BREAKING_THE_RULES = Identifier.parse("maple_flavored:nether/break_bedrock");
 
 	@GameTest
 	public void shakudoWithEfficiencyFiveInstaMinesStone(GameTestHelper helper) {
@@ -128,14 +130,14 @@ public class AlloyMiningGameTests {
 			mine(helper, player, ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK);
 			helper.assertBlockNotPresent(Blocks.BEDROCK, BLOCK_POS);
 			helper.assertItemEntityNotPresent(Items.BEDROCK);
-			helper.assertTrue(isDone(helper, player), "breaking bedrock earns Breaking the Rules");
+			helper.assertTrue(isDone(helper, player, BREAKING_THE_RULES), "breaking bedrock earns Breaking the Rules");
 			helper.succeed();
 		});
 	}
 
 	@GameTest
 	public void breakingBedrockInCreativeEarnsNothing(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.creativePlayer(helper);
 
 		besideTheBlock(helper, player);
 
@@ -143,15 +145,14 @@ public class AlloyMiningGameTests {
 		mine(helper, player, ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK);
 
 		helper.assertBlockNotPresent(Blocks.BEDROCK, BLOCK_POS);
-		helper.assertFalse(isDone(helper, player), "breaking bedrock in Creative earns Breaking the Rules");
+		helper.assertFalse(isDone(helper, player, BREAKING_THE_RULES), "breaking bedrock in Creative earns Breaking the Rules");
 		helper.succeed();
 	}
 
 	@GameTest
 	public void breakingTheRulesIsAVisibleNetherChallenge(GameTestHelper helper) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(BREAKING_THE_RULES));
+		AdvancementHolder holder = Advancements.advancement(helper, BREAKING_THE_RULES);
 
-		helper.assertTrue(holder != null, "Breaking the Rules exists");
 		helper.assertValueEqual(holder.value().parent().map(Identifier::toString).orElse(""), "minecraft:nether/create_full_beacon", "its parent");
 		helper.assertValueEqual(holder.value().display().map(DisplayInfo::type).orElse(null), AdvancementType.CHALLENGE, "its frame");
 		helper.assertFalse(holder.value().display().map(DisplayInfo::hidden).orElse(true), "it's hidden");
@@ -227,11 +228,5 @@ public class AlloyMiningGameTests {
 
 	private static void mine(GameTestHelper helper, ServerPlayer player, ServerboundPlayerActionPacket.Action action) {
 		player.gameMode.handleBlockBreakAction(helper.absolutePos(BLOCK_POS), action, Direction.UP, player.level().getMaxY(), 0);
-	}
-
-	private static boolean isDone(GameTestHelper helper, ServerPlayer player) {
-		AdvancementHolder holder = helper.getLevel().getServer().getAdvancements().get(Identifier.parse(BREAKING_THE_RULES));
-
-		return player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 }

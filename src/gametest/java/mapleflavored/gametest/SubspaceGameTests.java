@@ -55,7 +55,8 @@ public class SubspaceGameTests {
 		Subspaces.ENDED.register((level, subspace, cause) -> ENDED.add(new End(subspace.boss(), cause)));
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:subspace_entering", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void playersInsideAreDarkenedAndGroundedUntilTheyLeave(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 		Warden warden = arena.warden(Vec3.ZERO);
@@ -78,7 +79,8 @@ public class SubspaceGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:subspace_overlap", maxTicks = 300)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 300)
 	public void overlappingSubspacesEachEndOnTheirOwnAndNeverStackGrounded(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -113,7 +115,8 @@ public class SubspaceGameTests {
 			.thenSucceed();
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:subspace_unloading", maxTicks = 100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 100)
 	public void aSubspaceOutlastsItsWardenUnloadingAndEndsWhenItDigsDown(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -173,7 +176,8 @@ public class SubspaceGameTests {
 	}
 
 	// A boss that will never load again leaves its Subspace open, and nothing but Peaceful ends it on its own.
-	@GameTest(environment = "maple_flavored_gametest:subspace_abandoned", maxTicks = 20)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 20)
 	public void endingAbandonedSubspacesEndsOnlyThoseWhoseBossIsntLoaded(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		SubspaceArena arena = SubspaceArena.cleared(helper);
@@ -193,7 +197,8 @@ public class SubspaceGameTests {
 
 	// Every target starts outside vanilla's awareness box, about 24 blocks around the Warden, so the Warden can only know
 	// of them through its Subspace. A player comes first even when a mob is closer.
-	@GameTest(environment = "maple_flavored_gametest:subspace_nearest_player", maxTicks = 600)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 600)
 	public void theWardenGoesForTheNearestPlayerAnywhereInItsSubspace(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 
@@ -214,7 +219,8 @@ public class SubspaceGameTests {
 		});
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:subspace_non_players", maxTicks = 600)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 600)
 	public void theWardenIsAwareOfMobsAnywhereInItsSubspace(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 
@@ -226,7 +232,8 @@ public class SubspaceGameTests {
 		helper.succeedWhen(() -> helper.assertTrue(warden.distanceTo(pig) <= 30.0, "the Warden closed on the pig, " + warden.distanceTo(pig) + " blocks away"));
 	}
 
-	@GameTest(environment = "maple_flavored_gametest:subspace_burrow_far", maxTicks = 1100)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 1100)
 	public void aTargetKnownOnlyThroughTheSubspaceDoesntKeepTheWardenFromDiggingDown(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 
@@ -247,7 +254,8 @@ public class SubspaceGameTests {
 	// The Warden's hitbox reaches 0.45 blocks out, and vanilla's box 24 blocks past that. A player's hitbox reaches 0.3
 	// blocks back from where they stand, so a player 24.68 blocks out overlaps the box by 0.07, more than the 0.05 the
 	// Warden can shift within its pen. The centre of the block they stand in, 25 blocks out, lies outside the box.
-	@GameTest(environment = "maple_flavored_gametest:subspace_burrow_near", maxTicks = 1000)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 1000)
 	public void aTargetJustInsideVanillasAwarenessBoxKeepsTheWardenFromDiggingDown(GameTestHelper helper) {
 		SubspaceArena arena = SubspaceArena.cleared(helper);
 

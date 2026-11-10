@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** ready-for-human
 
 **Priority:** P2 (Medium)
 
@@ -124,13 +124,20 @@ A test that changes server-wide state gets a private batch by naming a unique te
 
 ## Checklist
 
-- [ ] 1. The accessor and invoker interfaces live in a package that imports nothing from the mod, and no feature package imports `mapleflavored.mixin`.
-- [ ] 2. One `survivalPlayer` exists, in `MockPlayers`, and no test creates vanilla's mock where it needs a Survival or damageable player.
+- [x] 1. The accessor and invoker interfaces live in a package that imports nothing from the mod, and no feature package imports `mapleflavored.mixin`.
+- [x] 2. One `survivalPlayer` exists, in `MockPlayers`, and no test creates vanilla's mock where it needs a Survival or damageable player.
 - [ ] 3. CI fails when committed datagen output differs from a fresh run, and when a GameTest class or mixin is missing from its list. A decision is recorded on whether CI starts a client.
-- [ ] 4. A test declares that it runs alone in its batch without a copied environment file, and `SubspaceArena.cleared` fails when its caller shares a batch.
-- [ ] 5. Loom is pinned to a release, the JDK path is out of the committed properties, and each version is stated once.
-- [ ] 6. Each feature exposes one registration call per side, and the entrypoints list every feature that registers anything.
-- [ ] 7. The Trade Rebalance decision is stated where a player or the mod's metadata can see it.
-- [ ] 8. `isDone`, the enchantment and book helpers and the loot roll helpers each exist once, and `SmokeGameTests` either checks something the others don't or is removed.
+- [x] 4. A test declares that it runs alone in its batch without a copied environment file, and `SubspaceArena.cleared` fails when its caller shares a batch.
+- [x] 5. Loom is pinned to a release, the JDK path is out of the committed properties, and each version is stated once.
+- [x] 6. Each feature exposes one registration call per side, and the entrypoints list every feature that registers anything.
+- [x] 7. The Trade Rebalance decision is stated where a player or the mod's metadata can see it.
+- [x] 8. `isDone`, the enchantment and book helpers and the loot roll helpers each exist once, and `SmokeGameTests` either checks something the others don't or is removed.
 - [ ] 9. The two drifted comments are corrected, Zephyr's levels have one authority, and Jackson has marked which of the listed values become game rules.
-- [ ] 10. One helper syncs a game rule to the client, `AlloyMining` and `WitherSubspaces` use it, and a test shows a synced value reaching a client-side read.
+- [x] 10. One helper syncs a game rule to the client, `AlloyMining` and `WitherSubspaces` use it, and a test shows a synced value reaching a client-side read.
+
+## Left for Jackson
+
+Boxes 3 and 9 stay open only for the decisions that are Jackson's. Everything else in them is done.
+
+- **3. Whether CI starts a client.** The datagen gate and the list gate (`gradlew checkWiring`) are in. No decision is recorded yet on running `runClientGameTest` in CI.
+- **9. Which listed values become game rules.** The two comments are corrected and Zephyr's levels are one list in `Zephyr.java`, with a GameTest holding `max_level` in `zephyr.json` to it. No value was converted.

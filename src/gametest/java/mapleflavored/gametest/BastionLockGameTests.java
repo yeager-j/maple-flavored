@@ -20,7 +20,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.monster.piglin.PiglinBrute;
@@ -91,7 +90,7 @@ public class BastionLockGameTests {
 		helper.assertValueEqual(keepers.size(), KEEPERS, "keepers alive");
 		helper.assertTrue(Locks.sentLocked(level, book), "the book is sent locked");
 
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		helper.assertTrue(!StructureBooks.take(player, book), "a locked book is refused");
 		helper.assertValueEqual(player.getInventory().countItem(Items.ENCHANTED_BOOK), 0, "books given");
@@ -146,7 +145,7 @@ public class BastionLockGameTests {
 		helper.assertValueEqual(BookLocks.remainingKeys(level, book), List.of(), "keepers left after the last is removed");
 		helper.assertTrue(!Locks.sentLocked(level, book), "the book is sent unlocked");
 
-		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+		ServerPlayer player = MockPlayers.survivalPlayerHolding(helper, Items.STONE);
 
 		helper.assertTrue(StructureBooks.take(player, book), "the unlocked book is taken");
 		helper.assertValueEqual(Books.takes(book).size(), 1, "takes");

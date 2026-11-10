@@ -1,5 +1,7 @@
 package mapleflavored.gametest;
 
+import static mapleflavored.gametest.TestItems.enchantment;
+
 import java.util.ArrayList;
 import java.util.List;
 import mapleflavored.alloys.Alloy;
@@ -54,8 +56,6 @@ public class IllagerBookDropGameTests {
 	// Enough kills that two rare books dropping together can't pass as never dropping together.
 	private static final int JOINT_KILLS = 40000;
 	private static final long SEED = 7L;
-	// A seeded rate must land within this many binomial standard deviations of the expected rate.
-	private static final double RATE_TOLERANCE = 4.0;
 	private static final double LOOTING_BONUS_PER_LEVEL = 0.2;
 	private static final BlockPos MOB_POS = new BlockPos(1, 1, 1);
 
@@ -264,10 +264,6 @@ public class IllagerBookDropGameTests {
 		return sword;
 	}
 
-	private static Holder<Enchantment> enchantment(GameTestHelper helper, ResourceKey<Enchantment> key) {
-		return helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
-	}
-
 	/** The mobs that drop books, each spawned standing still in the test structure. */
 	private enum Dropper {
 		VINDICATOR,
@@ -363,11 +359,9 @@ public class IllagerBookDropGameTests {
 		private void assertRateOfKillsDroppingAll(List<ResourceKey<Enchantment>> enchantments, double expected) {
 			List<Holder<Enchantment>> holders = enchantments.stream().map(key -> enchantment(helper, key)).toList();
 			long dropping = books.stream().filter(kill -> holders.stream().allMatch(holder -> dropped(kill, holder))).count();
-			double rate = (double) dropping / books.size();
-			double tolerance = RATE_TOLERANCE * Math.sqrt(expected * (1.0 - expected) / books.size());
-			String what = mob + " " + enchantments.stream().map(key -> key.identifier().getPath()).toList() + " rate " + rate;
+			String what = mob + " kills dropping " + enchantments.stream().map(key -> key.identifier().getPath()).toList();
 
-			helper.assertTrue(Math.abs(rate - expected) <= tolerance, what + " is within " + tolerance + " of " + expected);
+			LootRolls.assertRate(helper, what, (int) dropping, books.size(), expected);
 		}
 
 		private static boolean dropped(List<ItemStack> kill, Holder<Enchantment> enchantment) {

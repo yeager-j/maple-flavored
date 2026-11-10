@@ -222,7 +222,7 @@ public class OrdinaryStructureBookGameTests {
 
 		BlockPos book = inWater.orElseThrow();
 
-		helper.assertTrue(StructureBooks.take(helper.makeMockServerPlayerInLevel(), book), "the book can be taken");
+		helper.assertTrue(StructureBooks.take(MockPlayers.survivalPlayer(helper), book), "the book can be taken");
 		helper.assertTrue(level.getFluidState(book).is(Fluids.WATER), "taking it leaves water");
 		helper.succeed();
 	}
@@ -244,7 +244,7 @@ public class OrdinaryStructureBookGameTests {
 			helper.assertTrue(choices.containsAll(counts.keySet()), key.identifier() + " chose only from its list: " + counts);
 
 			for (ResourceKey<Enchantment> choice : choices) {
-				Books.assertCount(helper, key.identifier() + " " + choice.identifier(), counts.getOrDefault(choice, 0), CHOICE_PLANS, 1.0 / choices.size());
+				LootRolls.assertRate(helper, key.identifier() + " " + choice.identifier(), counts.getOrDefault(choice, 0), CHOICE_PLANS, 1.0 / choices.size());
 			}
 		}
 

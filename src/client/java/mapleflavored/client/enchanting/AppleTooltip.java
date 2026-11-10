@@ -14,7 +14,7 @@ public final class AppleTooltip {
 	}
 
 	/** Adds the effect lines to every enchanted golden apple's tooltip. Call once from client init. */
-	public static void register() {
+	static void register() {
 		ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> {
 			List<MobEffectInstance> effects = AppleEffect.stored(stack);
 

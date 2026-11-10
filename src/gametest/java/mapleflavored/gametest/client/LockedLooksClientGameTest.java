@@ -100,7 +100,7 @@ public class LockedLooksClientGameTest implements FabricClientGameTest {
 		}
 
 		lock.put("book", position(book));
-		lock.putString("kind", BookLocks.Kind.SPAWNERS.name());
+		lock.putString("kind", BookLocks.Kind.SPAWNERS.getSerializedName());
 		lock.put("keys", keys);
 		lock.put("done", doneKeys);
 

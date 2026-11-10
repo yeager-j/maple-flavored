@@ -12,13 +12,8 @@ import mapleflavored.gamerules.MapleGameRules;
 import mapleflavored.grounded.Grounded;
 import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
-import mapleflavored.loot.ChestBooks;
-import mapleflavored.loot.LootDiamonds;
-import mapleflavored.loot.LootEnchantments;
-import mapleflavored.loot.LootSubstitutions;
-import mapleflavored.loot.StructureChestRolls;
-import mapleflavored.mobs.GoneForGood;
-import mapleflavored.mobs.RaidWaves;
+import mapleflavored.loot.Loot;
+import mapleflavored.mobs.Mobs;
 import mapleflavored.reinforcement.Reinforcement;
 import mapleflavored.remnants.Remnants;
 import mapleflavored.spawners.Spawners;
@@ -42,10 +37,14 @@ public class MapleFlavored implements ModInitializer {
 		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 
+	/**
+	 * Each feature that registers anything has one call here. A feature that is absent is driven only by mixins, which
+	 * {@code maple_flavored.mixins.json} lists.
+	 */
 	@Override
 	public void onInitialize() {
 		MapleGameRules.register();
-		GoneForGood.register();
+		Mobs.register();
 		MapleTriggers.register();
 		Hearts.register();
 		MapleItems.register();
@@ -53,11 +52,7 @@ public class MapleFlavored implements ModInitializer {
 		Reinforcement.register();
 		BookTrade.register();
 		Remnants.register();
-		LootSubstitutions.register();
-		LootEnchantments.register();
-		LootDiamonds.register();
-		StructureChestRolls.register();
-		ChestBooks.register();
+		Loot.register();
 		Grounded.register();
 		Zephyr.register();
 		Enchanting.register();
@@ -70,7 +65,6 @@ public class MapleFlavored implements ModInitializer {
 		BossKillCredit.register();
 		ShriekerPulses.register();
 		BloodMoons.register();
-		RaidWaves.register();
 		DeepVariants.register();
 
 		LOGGER.info("Maple Flavored initialized");

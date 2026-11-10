@@ -164,10 +164,11 @@ public class AlloyCombatGameTests {
 		ServerPlayer player = wearing(helper, EquipmentSlot.FEET, AlloyGear.of(Alloy.ORICHALCUM, GearKind.BOOTS));
 		Vindicator vindicator = helper.spawn(EntityTypes.VINDICATOR, ILLAGER_POS);
 
-		vindicator.hurtServer(level, level.damageSources().playerAttack(player), 1.0F);
-
-		// The environment's anger lasts 60 ticks: long enough for the Vindicator to turn on the player first.
+		// The environment's anger lasts 60 ticks: long enough for the Vindicator to turn on the player first, once it
+		// ticks. Its chunk can take longer than that to start ticking entities, so the attack waits for its first tick.
 		helper.startSequence()
+			.thenWaitUntil(() -> helper.assertTrue(vindicator.tickCount > 0, "the Vindicator hasn't ticked yet"))
+			.thenExecute(() -> vindicator.hurtServer(level, level.damageSources().playerAttack(player), 1.0F))
 			.thenWaitUntil(() -> assertTargets(helper, vindicator, player))
 			.thenWaitUntil(() -> helper.assertTrue(vindicator.getTarget() == null, "the Vindicator still targets the player"))
 			.thenSucceed();

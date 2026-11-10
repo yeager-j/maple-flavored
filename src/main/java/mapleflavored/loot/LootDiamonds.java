@@ -33,7 +33,7 @@ public final class LootDiamonds {
 	}
 
 	/** Swaps the diamonds in every shard table's rolls from now on. Call once at mod initialization. */
-	public static void register() {
+	static void register() {
 		LootTableEvents.MODIFY_DROPS.register((table, context, drops) -> {
 			if (!givesShards(table)) return;
 

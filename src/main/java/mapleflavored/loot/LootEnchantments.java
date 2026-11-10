@@ -55,7 +55,7 @@ public final class LootEnchantments {
 	}
 
 	/** Applies the rules to every loot roll from now on. Call once at mod initialization. */
-	public static void register() {
+	static void register() {
 		// Nested tables run this again on their parent's pass, so every rule leaves an already-rewritten drop alone.
 		LootTableEvents.MODIFY_DROPS.register((table, context, drops) -> {
 			drops.replaceAll(drop -> rewrite(drop, table, context.getRandom()));

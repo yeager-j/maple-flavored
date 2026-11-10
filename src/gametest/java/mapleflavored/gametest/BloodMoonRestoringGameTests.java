@@ -261,7 +261,7 @@ public class BloodMoonRestoringGameTests {
 		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = Spots.of(helper, original);
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		site.putPlayer(player, 20);
 		original.kill(site.level());
@@ -284,7 +284,7 @@ public class BloodMoonRestoringGameTests {
 		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = Spots.of(helper, original);
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		site.putPlayer(player, 10);
 		original.kill(site.level());
@@ -309,7 +309,7 @@ public class BloodMoonRestoringGameTests {
 	public void missedBloodMoonsDontStack(GameTestHelper helper) {
 		Site site = Site.build(helper, 0, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
 
 		site.putPlayer(player, 10);
 		original.kill(site.level());
@@ -567,7 +567,8 @@ public class BloodMoonRestoringGameTests {
 	}
 
 	// Its own environment, since it changes the difficulty.
-	@GameTest(environment = "maple_flavored_gametest:restoring_peaceful", maxTicks = SITE_TICKS)
+	@RunsAlone
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
 	public void peacefulRestoresNoMobItRefusesAndDropsTheOnesItLoads(GameTestHelper helper) {
 		Site bruteSite = Site.build(helper, 1, Blocks.POLISHED_BLACKSTONE_BRICKS);
 		Site vindicatorSite = Site.build(helper, 2, Blocks.COBBLESTONE);

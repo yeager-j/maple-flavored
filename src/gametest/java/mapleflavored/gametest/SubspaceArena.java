@@ -45,7 +45,6 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
-import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
@@ -114,7 +113,8 @@ final class SubspaceArena {
 
 	/**
 	 * An arena for a test running alone in its batch, cleared of the players, mobs and Subspaces earlier batches left
-	 * behind, with its chunks kept loaded along a runway on its x axis.
+	 * behind, with its chunks kept loaded along a runway on its x axis. Fails a test that shares its batch, which
+	 * {@link RunsAlone} prevents.
 	 */
 	static SubspaceArena cleared(GameTestHelper helper) {
 		SubspaceArena arena = clearedWithoutRunway(helper);
@@ -129,6 +129,8 @@ final class SubspaceArena {
 	 * let other chunks unload.
 	 */
 	static SubspaceArena clearedWithoutRunway(GameTestHelper helper) {
+		TestBatches.assertRunsAlone(helper, "a cleared arena logs out every player and discards the mobs around it");
+
 		SubspaceArena arena = new SubspaceArena(helper);
 		PlayerList playerList = helper.getLevel().getServer().getPlayerList();
 
@@ -173,15 +175,6 @@ final class SubspaceArena {
 		helper.assertTrue(helper.getLevel().addFreshEntity(loaded), "the saved entity is added back");
 
 		return loaded;
-	}
-
-	/**
-	 * Moves the player as the server does, so the chunks around them load. A player who has moved is invulnerable until
-	 * their client's first movement arrives, which a mock never sends, so that wait is cleared.
-	 */
-	static void teleport(ServerPlayer player, Vec3 position) {
-		player.teleport(new TeleportTransition(player.level(), position, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING));
-		player.hasChangedDimension();
 	}
 
 	ServerLevel level() {
@@ -282,7 +275,7 @@ final class SubspaceArena {
 		Vec3 feet = at(offset);
 
 		level.setBlock(BlockPos.containing(feet).below(), FLOOR.defaultBlockState(), 3);
-		teleport(player, feet);
+		MockPlayers.teleport(player, player.level(), feet);
 	}
 
 	/** Lays a three-block-wide floor along the arena's x axis, from {@code fromX} to {@code toX} blocks out. */

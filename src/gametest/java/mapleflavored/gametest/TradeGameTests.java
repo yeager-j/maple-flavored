@@ -1,6 +1,8 @@
 package mapleflavored.gametest;
 
 import static mapleflavored.gametest.MockPlayers.survivalPlayer;
+import static mapleflavored.gametest.TestItems.book;
+import static mapleflavored.gametest.TestItems.enchantment;
 
 import java.util.HashSet;
 import java.util.List;
@@ -31,9 +33,6 @@ import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.ItemCost;
@@ -184,7 +183,7 @@ public class TradeGameTests {
 
 	@GameTest
 	public void theBookTradeIsNamedByItsDataNotByWhatItTrades(GameTestHelper helper) {
-		ItemStack levelThreeBook = book(helper, Enchantments.EFFICIENCY, 3);
+		ItemStack levelThreeBook = book(enchantment(helper, Enchantments.EFFICIENCY), 3);
 		MerchantOffer unmarked = new MerchantOffer(new ItemCost(Items.ENCHANTED_BOOK), new ItemStack(Items.EMERALD, 4), 12, 10, 0.0F);
 		MerchantOffer markedDiamonds = new MerchantOffer(new ItemCost(Items.ENCHANTED_BOOK), payingPerFind(Items.DIAMOND, 1), 12, 10, 0.0F);
 
@@ -212,7 +211,7 @@ public class TradeGameTests {
 
 	@GameTest
 	public void thePayoutNeverOutgrowsAStackWhateverTheListedPrice(GameTestHelper helper) {
-		ItemStack levelFiveBook = book(helper, Enchantments.SHARPNESS, 5);
+		ItemStack levelFiveBook = book(enchantment(helper, Enchantments.SHARPNESS), 5);
 		MerchantOffer fiveEmeralds = new MerchantOffer(new ItemCost(Items.ENCHANTED_BOOK), payingPerFind(Items.EMERALD, 5), 12, 10, 0.0F);
 		// 16 finds at 5 emeralds would be 80; the 12 finds that fit a stack pay 60.
 		int multiplier = BookTrade.multiplier(fiveEmeralds, levelFiveBook, ItemStack.EMPTY);
@@ -260,11 +259,11 @@ public class TradeGameTests {
 	public void theResultSlotPaysPerFindForAnyEnchantedBook(GameTestHelper helper) {
 		Trading trading = startTrading(helper);
 		List<Payout> payouts = List.of(
-			new Payout(book(helper, Enchantments.SHARPNESS, 1), 4),
-			new Payout(book(helper, Enchantments.MENDING, 1), 4),
-			new Payout(book(helper, Enchantments.PROTECTION, 2), 8),
-			new Payout(book(helper, Enchantments.EFFICIENCY, 4), 32),
-			new Payout(book(helper, Enchantments.SHARPNESS, 5), 64),
+			new Payout(book(enchantment(helper, Enchantments.SHARPNESS), 1), 4),
+			new Payout(book(enchantment(helper, Enchantments.MENDING), 1), 4),
+			new Payout(book(enchantment(helper, Enchantments.PROTECTION), 2), 8),
+			new Payout(book(enchantment(helper, Enchantments.EFFICIENCY), 4), 32),
+			new Payout(book(enchantment(helper, Enchantments.SHARPNESS), 5), 64),
 			new Payout(new ItemStack(Items.ENCHANTED_BOOK), 0)
 		);
 
@@ -284,7 +283,7 @@ public class TradeGameTests {
 		ServerPlayer player = trading.player();
 		Villager villager = trading.villager();
 
-		trading.menu().getSlot(0).set(book(helper, Enchantments.EFFICIENCY, 3));
+		trading.menu().getSlot(0).set(book(enchantment(helper, Enchantments.EFFICIENCY), 3));
 		trading.menu().clicked(2, 0, ContainerInput.QUICK_MOVE, player);
 
 		int emeralds = player.getInventory().countItem(Items.EMERALD);
@@ -315,7 +314,7 @@ public class TradeGameTests {
 	public void shiftClickingAPayoutThatDoesNotFitTakesNothing(GameTestHelper helper) {
 		Trading trading = startTrading(helper);
 		ServerPlayer player = trading.player();
-		ItemStack book = book(helper, Enchantments.SHARPNESS, 5);
+		ItemStack book = book(enchantment(helper, Enchantments.SHARPNESS), 5);
 
 		fillInventoryExceptLastSlot(player);
 		player.getInventory().setItem(LAST_INVENTORY_SLOT, new ItemStack(Items.EMERALD, 63));
@@ -400,12 +399,6 @@ public class TradeGameTests {
 		listed.set(BookTrade.PAYS_PER_FIND, Unit.INSTANCE);
 
 		return listed;
-	}
-
-	private static ItemStack book(GameTestHelper helper, ResourceKey<Enchantment> key, int level) {
-		Holder<Enchantment> enchantment = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
-
-		return EnchantmentHelper.createBook(new EnchantmentInstance(enchantment, level));
 	}
 
 	private record PlainGear(String trade, Item item, int price) {
