@@ -52,9 +52,9 @@ final class ForcedChunks {
 	 * its chunks ticking, however slow the machine.
 	 */
 	static void keepLoaded(GameTestHelper helper, ServerLevel level, Collection<ChunkPos> chunks) {
-		Set<SiteChunk> siteChunks = siteChunksOf(helper, level, chunks);
+		Set<SiteChunk> siteChunks = checkedSiteChunks(helper, level, chunks);
 
-		if (!siteChunks.isEmpty()) releasedWhenDone(helper).addAll(siteChunks);
+		if (!siteChunks.isEmpty()) trackedUntilDone(helper).addAll(siteChunks);
 
 		chunks.forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), true));
 		awaitEntityTicking(helper, level, chunks);
@@ -62,15 +62,15 @@ final class ForcedChunks {
 
 	/** Lets the chunks unload now, for a test of what unloading does. Fails the test wherever {@link #keepLoaded} would. */
 	static void letUnload(GameTestHelper helper, ServerLevel level, Collection<ChunkPos> chunks) {
-		Set<SiteChunk> siteChunks = siteChunksOf(helper, level, chunks);
+		Set<SiteChunk> siteChunks = checkedSiteChunks(helper, level, chunks);
 
-		if (!siteChunks.isEmpty()) releasedWhenDone(helper).removeAll(siteChunks);
+		if (!siteChunks.isEmpty()) trackedUntilDone(helper).removeAll(siteChunks);
 
 		chunks.forEach(chunk -> level.setChunkForced(chunk.x(), chunk.z(), false));
 	}
 
-	// The chunks among these that are on the test's sites.
-	private static Set<SiteChunk> siteChunksOf(GameTestHelper helper, ServerLevel level, Collection<ChunkPos> chunks) {
+	// The chunks among these that are on the test's sites. Fails the test if one is a chunk it may not keep loaded.
+	private static Set<SiteChunk> checkedSiteChunks(GameTestHelper helper, ServerLevel level, Collection<ChunkPos> chunks) {
 		TestSites sites = TestSites.of(helper);
 		Set<SiteChunk> siteChunks = new HashSet<>();
 
@@ -87,11 +87,17 @@ final class ForcedChunks {
 		return siteChunks;
 	}
 
-	// The site chunks the test keeps loaded, which are let go when it passes or fails.
-	private static Set<SiteChunk> releasedWhenDone(GameTestHelper helper) {
+	// The site chunks the test keeps loaded. The first call for a test starts tracking them, and they are let go when it
+	// passes or fails.
+	private static Set<SiteChunk> trackedUntilDone(GameTestHelper helper) {
 		GameTestInfo test = ((GameTestHelperAccessor) helper).maple$testInfo();
 
 		return SITE_CHUNKS.computeIfAbsent(test, started -> {
+			// Two runs of one test share its sites, so the first to end would let go of the other's chunks.
+			if (SITE_CHUNKS.keySet().stream().anyMatch(other -> other.id().equals(test.id()))) {
+				helper.fail("another run of this test is keeping its sites loaded");
+			}
+
 			test.addListener(new GameTestListener() {
 				@Override
 				public void testStructureLoaded(GameTestInfo info) {

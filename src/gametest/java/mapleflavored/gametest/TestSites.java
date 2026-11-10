@@ -19,7 +19,8 @@ import net.minecraft.world.level.ChunkPos;
  *
  * <p>A test's sites follow from its id alone, so they are the same on every run and every machine, and a structure
  * planned at one is too. Adding or renaming a test moves another test's sites only when the two ids land on the same
- * ground. Two runs of one test at the same time, as the runner's verify mode makes, share their sites.
+ * ground. Two runs of one test at the same time, as the runner's verify mode makes, share their sites, and
+ * {@link ForcedChunks} fails the second to keep one loaded.
  *
  * <p>Every site is past block x 15,040,000 in whichever level the test uses. The runner starts the test grid within
  * 14,999,992 blocks of the origin ({@code GameTestServer.startTests}), so the grid never reaches a site.

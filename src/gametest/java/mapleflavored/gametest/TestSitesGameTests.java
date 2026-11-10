@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.Rotation;
 /**
  * Every test has sites of its own off the test grid, the same whatever order the tests come in. A test's site chunks
  * are kept loaded and ticking entities from the moment it asks, and let go when it passes or fails. A test can't keep
- * another test's site loaded.
+ * another test's site loaded, and two runs of one test can't both keep its sites loaded.
  */
 public class TestSitesGameTests {
 	// Many more than there are tests, and enough that some land on the same region first.
@@ -113,11 +113,30 @@ public class TestSitesGameTests {
 		helper.fail("the test kept another test's site loaded");
 	}
 
-	// Keeps a site loaded for a second run of this test, which only this test drives, and ends that run.
+	@GameTest
+	public void twoRunsOfOneTestCantBothKeepItsSitesLoaded(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		List<ChunkPos> site = List.of(TestSites.of(helper).chunk(0));
+		GameTestInfo first = anotherRun(helper);
+
+		ForcedChunks.keepLoaded(new GameTestHelper(first), level, site);
+
+		try {
+			ForcedChunks.keepLoaded(new GameTestHelper(anotherRun(helper)), level, site);
+		} catch (GameTestAssertException refused) {
+			first.getListeners().forEach(listener -> listener.testPassed(first, null));
+			helper.succeed();
+
+			return;
+		}
+
+		helper.fail("a second run kept the first run's site loaded");
+	}
+
+	// Keeps a site loaded for another run of this test and ends that run.
 	private static void assertLetGoWhen(GameTestHelper helper, String ending, Consumer<GameTestInfo> end) {
 		ServerLevel level = helper.getLevel();
-		GameTestInfo running = ((GameTestHelperAccessor) helper).maple$testInfo();
-		GameTestInfo run = new GameTestInfo(running.getTestHolder(), Rotation.NONE, level, RetryOptions.noRetries());
+		GameTestInfo run = anotherRun(helper);
 		ChunkPos site = TestSites.of(helper).chunk(0);
 
 		ForcedChunks.keepLoaded(new GameTestHelper(run), level, List.of(site));
@@ -125,6 +144,13 @@ public class TestSitesGameTests {
 		helper.assertTrue(isForced(level, site), "the site is forced while its test runs");
 		end.accept(run);
 		helper.assertFalse(isForced(level, site), "the site is still forced once its test " + ending);
+	}
+
+	// A run of the helper's test that only the test itself drives.
+	private static GameTestInfo anotherRun(GameTestHelper helper) {
+		GameTestInfo running = ((GameTestHelperAccessor) helper).maple$testInfo();
+
+		return new GameTestInfo(running.getTestHolder(), Rotation.NONE, helper.getLevel(), RetryOptions.noRetries());
 	}
 
 	private static void assertRefused(GameTestHelper helper, Runnable asksForASite, String what) {

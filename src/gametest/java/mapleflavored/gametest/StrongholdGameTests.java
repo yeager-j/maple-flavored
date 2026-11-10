@@ -65,6 +65,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public class StrongholdGameTests {
 	private static final int LONE_ROOMS_Y = 100;
+	// Far enough apart that no two rooms touch, and near enough that they share the chunks loaded around them.
+	private static final int LONE_ROOM_CHUNKS_APART = 3;
 	private static final int LONE_ROOMS = 48;
 	// A south-facing portal room from here has a chunk corner holding only one lava trough: the box's west wall and the
 	// trough's three columns, where nothing can stand.
@@ -191,7 +193,7 @@ public class StrongholdGameTests {
 
 		// Each room's own randomness comes from where it is, so many rooms try many first choices of column.
 		for (int room = 0; room < LONE_ROOMS; room++) {
-			BlockPos foot = TestSites.of(helper).chunk(room).getBlockAt(LAVA_CORNER_FOOT_X, LONE_ROOMS_Y, LAVA_CORNER_FOOT_Z);
+			BlockPos foot = loneRoomChunk(helper, room).getBlockAt(LAVA_CORNER_FOOT_X, LONE_ROOMS_Y, LAVA_CORNER_FOOT_Z);
 			BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -4, -1, 0, 11, 8, 16, Direction.SOUTH);
 			StructurePiece portalRoom = new StrongholdPieces.PortalRoom(0, box, Direction.SOUTH);
 			StructureStart start = new StructureStart(stronghold, ChunkPos.containing(box.getCenter()), 0, new PiecesContainer(List.of(portalRoom)));
@@ -215,7 +217,7 @@ public class StrongholdGameTests {
 			boolean tall = room % 2 == 0;
 			boolean keeperRoom = room % 4 < 2;
 			Direction facing = FACINGS.get(room / 4 % FACINGS.size());
-			BlockPos foot = TestSites.of(helper).chunk(room).getBlockAt(0, LONE_ROOMS_Y, 0);
+			BlockPos foot = loneRoomChunk(helper, room).getBlockAt(0, LONE_ROOMS_Y, 0);
 			BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -4, -1, 0, 14, tall ? 11 : 6, 15, facing);
 			StructurePiece library = new StrongholdPieces.Library(0, RandomSource.create(room), box, facing);
 			List<AbstractIllager> guards = keeperRoom ? buildAloneAsKeeperRoom(level, library) : buildAlone(level, library);
@@ -244,7 +246,7 @@ public class StrongholdGameTests {
 
 		for (int room = 0; room < LONE_ROOMS; room++) {
 			Direction facing = FACINGS.get(room % FACINGS.size());
-			BlockPos foot = TestSites.of(helper).chunk(room).getBlockAt(0, LONE_ROOMS_Y, 0);
+			BlockPos foot = loneRoomChunk(helper, room).getBlockAt(0, LONE_ROOMS_Y, 0);
 			BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -1, -1, 0, 9, 5, 11, facing);
 			StructurePiece prison = new StrongholdPieces.PrisonHall(0, RandomSource.create(room), box, facing);
 			List<AbstractIllager> guards = buildAlone(level, prison);
@@ -484,6 +486,13 @@ public class StrongholdGameTests {
 				helper.assertTrue(restored.isPersistenceRequired(), "the Restored mob is persistent");
 			})
 			.thenSucceed();
+	}
+
+	// The chunk a room built on its own starts in: one of a line of chunks running from the test's first site.
+	private static ChunkPos loneRoomChunk(GameTestHelper helper, int room) {
+		ChunkPos first = TestSites.of(helper).chunk(0);
+
+		return new ChunkPos(first.x(), first.z() + room * LONE_ROOM_CHUNKS_APART);
 	}
 
 	// The fewest rooms from the room to any of the rooms the distances are from.
