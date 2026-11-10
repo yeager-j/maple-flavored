@@ -34,7 +34,7 @@ final class WitheredHearts {
 		MapleFlavored.id("withered_hearts"),
 		builder -> builder
 			.persistent(Codec.INT)
-			// The owner's client draws them as darkened hearts.
+			// The owner's client draws them as hollow hearts.
 			.syncWith(ByteBufCodecs.VAR_INT, AttachmentSyncPredicate.targetOnly())
 	);
 

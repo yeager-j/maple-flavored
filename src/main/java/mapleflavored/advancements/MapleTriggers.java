@@ -11,7 +11,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
  * {@code maple_flavored:<name>}. A trigger with conditions of a feature's own type lives with that feature.
  */
 public final class MapleTriggers {
-	/** A player's Withered Hearts all returned. */
+	/** One of a player's Withered Hearts returned. Fires once for each heart. */
 	public static final PlayerTrigger WITHERED_HEART_RECOVERED = register("withered_heart_recovered", new PlayerTrigger());
 
 	/** A player collected one of their own Remnants. */
