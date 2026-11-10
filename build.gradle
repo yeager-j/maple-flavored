@@ -98,9 +98,11 @@ abstract class CheckWiring extends DefaultTask {
 		File gameTests = new File(src, "gametest/java")
 		Map entrypoints = new groovy.json.JsonSlurper().parse(new File(src, "gametest/resources/fabric.mod.json")).entrypoints
 
-		problems += listDrift("the fabric-gametest entrypoints", entrypoints["fabric-gametest"] as Set, classesContaining(gameTests, "@GameTest"))
-		problems += listDrift("the fabric-client-gametest entrypoints", entrypoints["fabric-client-gametest"] as Set, classesContaining(gameTests, "implements FabricClientGameTest"))
+		problems += listDrift("the fabric-gametest entrypoints", entrypoints["fabric-gametest"] as Set, classesContaining(gameTests, ~/(?m)^\s*@GameTest\b/))
+		problems += listDrift("the fabric-client-gametest entrypoints", entrypoints["fabric-client-gametest"] as Set, classesContaining(gameTests, ~/implements FabricClientGameTest\b/))
 
+		problems += unusedEnvironments(new File(src, "gametest/resources/data/maple_flavored_gametest/test_environment"), gameTests)
+			.collect { "the test environment $it is named by no test or environment, so it can be deleted" }
 		problems += filesContaining(src, ~/import mapleflavored\.(client\.)?mixin\./, { !it.contains("/mixin/") })
 			.collect { "$it imports a mixin package; only accessors in mapleflavored.access may be imported" }
 		problems += filesContaining(new File(src, "main/java/mapleflavored/access"), ~/import mapleflavored\./, { true })
@@ -115,6 +117,15 @@ abstract class CheckWiring extends DefaultTask {
 		return (inSource - listed).collect { "$it is missing from $list, so it never runs" } + (listed - inSource).collect { "$list names $it, which doesn't exist" }
 	}
 
+	private static List<String> unusedEnvironments(File environments, File gameTests) {
+		StringBuilder namedIn = new StringBuilder()
+
+		gameTests.eachFileRecurse(groovy.io.FileType.FILES) { namedIn << it.text }
+		environments.eachFile { namedIn << it.text }
+
+		return environments.listFiles().collect { it.name - ".json" }.findAll { !namedIn.contains("\"maple_flavored_gametest:$it\"") }.sort()
+	}
+
 	private static Set<String> mixinsListed(File config) {
 		Map json = new groovy.json.JsonSlurper().parse(config)
 
@@ -125,11 +136,11 @@ abstract class CheckWiring extends DefaultTask {
 		return directory.listFiles().findAll { it.name.endsWith(".java") && it.name != "package-info.java" }.collect { it.name - ".java" } as Set
 	}
 
-	private static Set<String> classesContaining(File sourceRoot, String marker) {
+	private static Set<String> classesContaining(File sourceRoot, java.util.regex.Pattern marker) {
 		Set<String> classes = []
 
 		sourceRoot.eachFileRecurse(groovy.io.FileType.FILES) { file ->
-			if (file.name.endsWith(".java") && file.text.contains(marker)) {
+			if (file.name.endsWith(".java") && file.text =~ marker) {
 				classes << (sourceRoot.toPath().relativize(file.toPath()).toString().replace(File.separator, ".") - ".java")
 			}
 		}
