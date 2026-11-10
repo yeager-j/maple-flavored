@@ -1,5 +1,6 @@
 package mapleflavored.gametest;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -9,17 +10,19 @@ import java.util.stream.Collectors;
 import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyGear;
 import mapleflavored.alloys.GearKind;
-import mapleflavored.bloodmoons.BloodMoons;
 import mapleflavored.bloodmoons.Restorable;
 import mapleflavored.bloodmoons.RestoreSpot;
-import mapleflavored.bloodmoons.RestoreSpots;
 import mapleflavored.bloodmoons.Restoring;
+import mapleflavored.bloodmoons.RestoringAccess;
 import mapleflavored.mixin.StructurePieceInvoker;
+import mapleflavored.mobs.GoneForGood;
 import mapleflavored.strongholds.StrongholdIllagers;
 import mapleflavored.strongholds.StrongholdLayout;
+import mapleflavored.strongholds.StrongholdRouteGoal;
 import mapleflavored.strongholds.StrongholdRoutes;
 import mapleflavored.structurebooks.BookLocks;
 import mapleflavored.structurebooks.BookSpot;
+import mapleflavored.structurebooks.IllagerAlert;
 import mapleflavored.structurebooks.MobKeepers;
 import mapleflavored.structurebooks.StructureBookPiece;
 import mapleflavored.structurebooks.StructureBookRules;
@@ -27,15 +30,20 @@ import mapleflavored.structurebooks.StructureBooks;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -55,9 +63,13 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
+import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.minecraft.world.level.levelgen.structure.structures.StrongholdPieces;
 import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -84,6 +96,17 @@ public class StrongholdGameTests {
 	// Resistance V takes all damage.
 	private static final int FULL_RESISTANCE = 4;
 	private static final int KEEPER_PLANS = 8;
+	// The kinds of piece vanilla builds a Stronghold from in this version.
+	private static final int STRONGHOLD_PIECE_KINDS = 13;
+	// Vanilla plans a five-way crossing's side rooms this far up its side walls and this far along them, from its lowest
+	// corner. Facing north or west it swaps the two heights (StrongholdPieces.FiveCrossing.addChildren).
+	private static final int LOW_SIDE_ROOM_UP = 3;
+	private static final int HIGH_SIDE_ROOM_UP = 5;
+	private static final int LOW_SIDE_ROOM_ALONG = 1;
+	private static final int HIGH_SIDE_ROOM_ALONG = 7;
+	// Every way a crossing can have or lack each of its four side rooms.
+	private static final int SIDE_ROOM_PLANS = 16;
+	private static final String ATTACHMENTS = "fabric:attachments";
 	private static final Set<StructurePieceType> BIG_ROOMS = Set.of(
 		StructurePieceType.STRONGHOLD_LIBRARY,
 		StructurePieceType.STRONGHOLD_ROOM_CROSSING,
@@ -148,7 +171,7 @@ public class StrongholdGameTests {
 
 		for (AbstractIllager guard : guards) {
 			String which = "the " + guard.getType().toShortString() + " at " + guard.blockPosition();
-			Optional<RestoreSpot> spot = Restoring.spotOf(level.getServer(), guard);
+			Optional<RestoreSpot> spot = RestoringAccess.spotOf(level.getServer(), guard);
 
 			helper.assertTrue(GUARDS.contains(guard.getType()), which + " is a Vindicator, Pillager or Evoker");
 			helper.assertTrue(guard.isPersistenceRequired(), which + " is persistent");
@@ -222,7 +245,8 @@ public class StrongholdGameTests {
 		BoundingBox wholeRoom = new BoundingBox(box.minX(), level.getMinY(), box.minZ(), box.maxX(), level.getMaxY(), box.maxZ());
 
 		buildAlone(level, pieces).forEach(AbstractIllager::discard);
-		StrongholdIllagers.placeGuards(library, pieces, level, wholeRoom);
+		// As part of a Stronghold being built, which is the only time a piece gets guards.
+		Restoring.build(Optional.of(Restorable.STRONGHOLD), () -> StrongholdIllagers.placeGuards(library, pieces, level, wholeRoom));
 
 		List<AbstractIllager> evokers = level.getEntitiesOfClass(
 			AbstractIllager.class, AABB.of(box), guard -> guard.isAlive() && guard.getType() == EntityTypes.EVOKER
@@ -308,21 +332,129 @@ public class StrongholdGameTests {
 
 		for (StructurePiece room : rooms) {
 			BlockPos from = room.getBoundingBox().getCenter();
-			List<BlockPos> route = StrongholdRoutes.route(level, from, portalRoom);
+			StrongholdRoutes.Route found = StrongholdRoutes.route(level, from, portalRoom);
 			String which = "the route from the " + room.getType() + " at " + from;
 
-			helper.assertFalse(route.isEmpty(), which + " exists");
+			if (!(found instanceof StrongholdRoutes.Doorways(List<BlockPos> route))) throw helper.assertionException(which + " is " + found);
+
 			helper.assertTrue(onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM).getBoundingBox().isInside(route.getLast()), which + " ends in the portal room");
 
 			for (int step = 0; step < route.size() - 1; step++) {
-				int left = StrongholdRoutes.route(level, route.get(step), portalRoom).size();
+				int left = StrongholdRoutes.route(level, route.get(step), portalRoom).doorwaysToCross().orElse(LOST);
 
 				helper.assertValueEqual(left, route.size() - step - 1, "doorways left after step " + step + " of " + which);
 			}
 		}
 
-		helper.assertTrue(StrongholdRoutes.route(level, portalRoom, portalRoom).isEmpty(), "a route within one room is empty");
+		BlockPos outside = start.getBoundingBox().getCenter().atY(level.getMaxY() - 1);
+
+		helper.assertValueEqual(StrongholdRoutes.route(level, portalRoom, portalRoom), StrongholdRoutes.NoRoute.SAME_ROOM, "a route within one room");
+		helper.assertValueEqual(StrongholdRoutes.route(level, outside, portalRoom), StrongholdRoutes.NoRoute.NOT_IN_A_STRONGHOLD, "a route from outside the Stronghold");
+		helper.assertValueEqual(
+			StrongholdRoutes.route(level, portalRoom, outside),
+			StrongholdRoutes.NoRoute.NOT_IN_THE_SAME_STRONGHOLD,
+			"a route to somewhere outside the Stronghold"
+		);
+
+		walledIn(level, onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM));
+		helper.assertValueEqual(
+			StrongholdRoutes.route(level, rooms.getFirst().getBoundingBox().getCenter(), portalRoom),
+			StrongholdRoutes.NoRoute.NO_OPEN_ROUTE,
+			"a route to a portal room with every doorway walled up"
+		);
 		helper.succeed();
+	}
+
+	// Vanilla opens the side doorways of a crossing facing north or west where its other side rooms would be. A whole
+	// Stronghold only shows that when it happens to plan such a crossing, so each facing is built here with every plan.
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
+	public void aFiveWayCrossingOpensItsSideDoorwaysWhereItsSideRoomsAreInEveryFacing(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+
+		for (Direction facing : FACINGS) {
+			for (int plan = 0; plan < SIDE_ROOM_PLANS; plan++) {
+				SideRooms sideRooms = SideRooms.plan(plan);
+				BlockPos foot = loneRoomChunk(helper, FACINGS.indexOf(facing) * SIDE_ROOM_PLANS + plan).getBlockAt(0, LONE_ROOMS_Y, 0);
+				BoundingBox box = BoundingBox.orientBox(foot.getX(), foot.getY(), foot.getZ(), -4, -3, 0, 10, 9, 11, facing);
+				StructurePiece crossing = fiveCrossing(level, box, facing, sideRooms);
+
+				buildAlone(level, crossing);
+
+				for (boolean right : List.of(false, true)) {
+					for (boolean high : List.of(false, true)) {
+						BlockPos doorway = sideDoorway(crossing, right, high);
+						String which = "the " + (right ? "right " : "left ") + (high ? "high" : "low") + " side doorway at " + doorway
+							+ " of the crossing facing " + facing + " with " + sideRooms;
+
+						helper.assertValueEqual(level.getBlockState(doorway).isAir(), sideRooms.has(right, high), which + " is open");
+					}
+				}
+			}
+		}
+
+		helper.succeed();
+	}
+
+	@GameTest
+	public void everyKindOfPieceVanillaBuildsAStrongholdFromIsAStrongholdPiece(GameTestHelper helper) {
+		int kinds = 0;
+
+		for (Field field : StructurePieceType.class.getFields()) {
+			if (!field.getName().startsWith("STRONGHOLD_")) continue;
+
+			kinds++;
+			helper.assertTrue(StrongholdLayout.isStrongholdPiece(pieceType(field)), field.getName() + " is a Stronghold piece");
+		}
+
+		helper.assertValueEqual(kinds, STRONGHOLD_PIECE_KINDS, "kinds of Stronghold piece vanilla has");
+		helper.assertFalse(StrongholdLayout.isStrongholdPiece(StructurePieceType.MINE_SHAFT_CORRIDOR), "a Mineshaft corridor is a Stronghold piece");
+		helper.succeed();
+	}
+
+	// Every Illager that closes in to attack has the route goal, in a Stronghold or not.
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void aHunterOutsideAStrongholdSearchesForNoPath(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer player = MockPlayers.survivalPlayer(helper);
+		AbstractIllager hunter = huntingVindicator(helper, player, helper.absolutePos(new BlockPos(1, 1, 1)));
+
+		player.setPos(Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4, 1, 4))));
+		hunter.setTarget(player);
+		// A mob in the air searches for no path at all.
+		hunter.setOnGround(true);
+
+		helper.assertTrue(IllagerAlert.isHunting(hunter), "the Vindicator is hunting");
+		helper.assertValueEqual(
+			StrongholdRoutes.route(level, hunter.blockPosition(), player.blockPosition()),
+			StrongholdRoutes.NoRoute.NOT_IN_A_STRONGHOLD,
+			"the route for a hunter outside any Stronghold"
+		);
+		helper.assertFalse(new StrongholdRouteGoal(hunter).canUse(), "the route goal runs outside a Stronghold");
+		helper.assertTrue(hunter.getNavigation().getTargetPos() == null, "the route goal searched for a path to " + hunter.getNavigation().getTargetPos());
+
+		// A search would have shown: it leaves the navigation aimed at what it searched for.
+		searchFullPathTo(hunter, player);
+		helper.assertTrue(hunter.getNavigation().getTargetPos() != null, "a search for a path leaves the navigation aimed");
+		helper.succeed();
+	}
+
+	// A keeper dropped from its save leaves no death to count, as an Evoker's chunk loading in Peaceful does.
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = 400)
+	public void aKeeperEvokerWhoseSaveFailsToLoadUnlocksItsKey(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = BastionBookGameTests.placeRegistered(level, Structures.plan(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0)));
+		BlockPos book = Books.only(helper, start);
+		Mob keeper = MobKeepers.liveKeepers(level, book).getFirst();
+		BlockPos key = MobKeepers.keyOf(keeper).orElseThrow();
+		ValueInput savedKeeper = saved(level, keeper);
+
+		keeper.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+		helper.assertTrue(BookLocks.remainingKeys(level, book).contains(key), "a keeper that only unloaded still locks its key");
+		GoneForGood.failedToLoad(level, savedKeeper);
+
+		helper.startSequence()
+			.thenExecuteAfter(1, () -> helper.assertFalse(BookLocks.remainingKeys(level, book).contains(key), "a keeper that failed to load still locks its key"))
+			.thenSucceed();
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = CHASE_TICKS + 200)
@@ -483,12 +615,12 @@ public class StrongholdGameTests {
 		ServerLevel level = helper.getLevel();
 		StructureStart start = Structures.place(level, BuiltinStructures.STRONGHOLD, TestSites.of(helper).chunk(0));
 		AbstractIllager guard = illagersIn(level, start).getFirst();
-		RestoreSpot spot = Restoring.spotOf(level.getServer(), guard).orElseThrow();
+		RestoreSpot spot = Spots.of(helper, guard);
 		ChunkPos chunk = ChunkPos.containing(guard.blockPosition());
 
 		ForcedChunks.keepLoaded(helper, level, List.of(chunk));
 		guard.kill(level);
-		BloodMoons.RISEN.invoker().onRisen(level.getServer());
+		Spots.riseBloodMoon(helper);
 
 		helper.assertValueEqual(current(level, spot).state(), RestoreSpot.State.PENDING, "the spot as a Blood Moon rises");
 
@@ -505,6 +637,14 @@ public class StrongholdGameTests {
 				helper.assertTrue(restored.isPersistenceRequired(), "the Restored mob is persistent");
 			})
 			.thenSucceed();
+	}
+
+	private static StructurePieceType pieceType(Field field) {
+		try {
+			return (StructurePieceType) field.get(null);
+		} catch (IllegalAccessException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	// The chunk a room built on its own starts in: one of a line of chunks running from the test's first site.
@@ -532,24 +672,16 @@ public class StrongholdGameTests {
 
 	// How many doorways the hunter must cross to reach the spot: none in the same room, and LOST with no route there.
 	private static int doorwaysBetween(ServerLevel level, AbstractIllager hunter, BlockPos spot) {
-		List<BlockPos> route = StrongholdRoutes.route(level, hunter.blockPosition(), spot);
-
-		if (!route.isEmpty()) return route.size();
-
-		StructureStart stronghold = level.structureManager().getStructureWithPieceAt(spot, structure -> structure.is(BuiltinStructures.STRONGHOLD));
-		boolean sameRoom = stronghold.getPieces().stream()
-			.filter(StrongholdLayout::isStrongholdPiece)
-			.anyMatch(room -> room.getBoundingBox().isInside(spot) && room.getBoundingBox().isInside(hunter.blockPosition()));
-
-		return sameRoom ? 0 : LOST;
+		return StrongholdRoutes.route(level, hunter.blockPosition(), spot).doorwaysToCross().orElse(LOST);
 	}
 
 	// Whether the hunter is walking to the doorway into the next room on its way to the spot.
 	private static boolean headsForNextDoorway(ServerLevel level, AbstractIllager hunter, BlockPos spot) {
-		List<BlockPos> route = StrongholdRoutes.route(level, hunter.blockPosition(), spot);
 		BlockPos walkingTo = hunter.getNavigation().getTargetPos();
 
-		return !route.isEmpty() && walkingTo != null && walkingTo.distManhattan(route.getFirst()) <= 1;
+		return StrongholdRoutes.route(level, hunter.blockPosition(), spot) instanceof StrongholdRoutes.Doorways route
+			&& walkingTo != null
+			&& walkingTo.distManhattan(route.next()) <= 1;
 	}
 
 	// The living hunters still at least CLOSED_IN_DOORWAYS doorways from the spot, or with no route there.
@@ -660,6 +792,98 @@ public class StrongholdGameTests {
 	}
 
 	private static RestoreSpot current(ServerLevel level, RestoreSpot spot) {
-		return RestoreSpots.in(level).stream().filter(saved -> saved.id().equals(spot.id())).findFirst().orElseThrow();
+		return Spots.current(level, spot);
+	}
+
+	// Bricks up the whole shell of the room, doorways and all.
+	private static void walledIn(ServerLevel level, StructurePiece room) {
+		BoundingBox box = room.getBoundingBox();
+
+		for (BlockPos pos : BlockPos.betweenClosed(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ())) {
+			boolean shell = pos.getX() == box.minX() || pos.getX() == box.maxX() || pos.getZ() == box.minZ() || pos.getZ() == box.maxZ();
+
+			if (shell) level.setBlockAndUpdate(pos, Blocks.STONE_BRICKS.defaultBlockState());
+		}
+	}
+
+	// A five-way crossing with exactly the side rooms asked for. Vanilla draws them at random, and saves them.
+	private static StructurePiece fiveCrossing(ServerLevel level, BoundingBox box, Direction facing, SideRooms sideRooms) {
+		StructurePiece drawn = new StrongholdPieces.FiveCrossing(0, RandomSource.create(0L), box, facing);
+		CompoundTag saved = drawn.createTag(StructurePieceSerializationContext.fromLevel(level));
+
+		saved.putBoolean("leftLow", sideRooms.leftLow());
+		saved.putBoolean("leftHigh", sideRooms.leftHigh());
+		saved.putBoolean("rightLow", sideRooms.rightLow());
+		saved.putBoolean("rightHigh", sideRooms.rightHigh());
+
+		return new StrongholdPieces.FiveCrossing(saved);
+	}
+
+	// The middle of the doorway of a side room, in the crossing's wall, where vanilla plans the room: against the wall to
+	// the crossing's left or right, that far up from its lowest corner and that far along the wall.
+	private static BlockPos sideDoorway(StructurePiece crossing, boolean right, boolean high) {
+		BoundingBox box = crossing.getBoundingBox();
+		Direction facing = crossing.getOrientation();
+		boolean swapsHeights = facing == Direction.NORTH || facing == Direction.WEST;
+		int up = (high != swapsHeights ? HIGH_SIDE_ROOM_UP : LOW_SIDE_ROOM_UP) + 1;
+		int along = (high ? HIGH_SIDE_ROOM_ALONG : LOW_SIDE_ROOM_ALONG) + 1;
+
+		// A crossing facing north or south has its side rooms to the west and east; one facing west or east, to the north
+		// and south.
+		return facing.getAxis() == Direction.Axis.Z
+			? new BlockPos(right ? box.maxX() : box.minX(), box.minY() + up, box.minZ() + along)
+			: new BlockPos(box.minX() + along, box.minY() + up, right ? box.maxZ() : box.minZ());
+	}
+
+	// A Vindicator saved with a hunt for the player and loaded back, as one alerted by a taken book would be.
+	private static AbstractIllager huntingVindicator(GameTestHelper helper, ServerPlayer quarry, BlockPos feet) {
+		ServerLevel level = helper.getLevel();
+		Mob vindicator = EntityTypes.VINDICATOR.create(level, EntitySpawnReason.STRUCTURE);
+		TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+		CompoundTag hunt = new CompoundTag();
+		CompoundTag attachments = new CompoundTag();
+
+		vindicator.snapTo(Vec3.atBottomCenterOf(feet), 0.0F, 0.0F);
+		vindicator.save(output);
+
+		CompoundTag saved = output.buildResult();
+
+		hunt.putIntArray("quarry", UUIDUtil.uuidToIntArray(quarry.getUUID()));
+		hunt.putLong("until", level.getGameTime() + CHASE_TICKS);
+		hunt.putInt("quarry_deaths", 0);
+		attachments.put(Hunts.ILLAGER_HUNT.toString(), hunt);
+		saved.put(ATTACHMENTS, attachments);
+
+		Entity loaded = EntityType.loadEntityRecursive(
+			TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), saved),
+			level,
+			EntitySpawnReason.LOAD,
+			entity -> entity
+		);
+
+		helper.assertTrue(loaded instanceof AbstractIllager && level.addFreshEntity(loaded), "the hunting Vindicator loads");
+
+		return (AbstractIllager) loaded;
+	}
+
+	// The mob as its chunk would save it.
+	private static ValueInput saved(ServerLevel level, Mob mob) {
+		TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+
+		mob.save(output);
+
+		return TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), output.buildResult());
+	}
+
+	// Which of its four side rooms a five-way crossing has.
+	private record SideRooms(boolean leftLow, boolean leftHigh, boolean rightLow, boolean rightHigh) {
+		// Each of the 16 plans, by number.
+		static SideRooms plan(int plan) {
+			return new SideRooms((plan & 1) != 0, (plan & 2) != 0, (plan & 4) != 0, (plan & 8) != 0);
+		}
+
+		boolean has(boolean right, boolean high) {
+			return right ? (high ? rightHigh : rightLow) : (high ? leftHigh : leftLow);
+		}
 	}
 }

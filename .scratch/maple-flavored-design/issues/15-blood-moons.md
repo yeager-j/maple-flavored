@@ -16,7 +16,7 @@ Yes. A Blood Moon Restores structures' mobs, making Ancient Embers and Pith slow
 
 Blood Moons Restore mobs, never blocks or loot.
 
-- Bastions: Piglins, Piglin Brutes and Hoglins
+- Bastions: Piglin Brutes. Their Piglins and Hoglins aren't Restored (decided 2026-11-10): the Nether spawns more in Nether Wastes and Crimson Forests, and a Bastion arms its Piglins and keeps them from hunting its Hoglins in ways a Restored mob wouldn't have. A Bastion in a Soul Sand Valley, Warped Forest or Basalt Deltas gets neither back.
 - Ocean Monuments: Elder Guardians
 - End cities: Shulkers
 - Woodland mansions: Vindicators and Evokers

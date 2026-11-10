@@ -21,6 +21,7 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -46,7 +47,7 @@ import net.minecraft.world.level.saveddata.SavedDataType;
  * the locks is scheduled as soon as a mob's key is done.
  *
  * <p>A level that's Peaceful opens its Brute and Evoker locks for good. Peaceful has neither: it never spawns a keeper,
- * and drops a saved one as its chunk loads, both without a death to count.
+ * which leaves no death to count, and drops a saved one as its chunk loads.
  */
 public final class BookLocks extends SavedData {
 	private static final Codec<BookLocks> CODEC = Lock.CODEC.listOf().xmap(BookLocks::new, BookLocks::locks);
@@ -334,16 +335,16 @@ public final class BookLocks extends SavedData {
 	 * What locks a book. Each kind gives every answer the locks and the book need about its keys, so a kind can't be
 	 * added without them.
 	 */
-	public enum Kind {
+	public enum Kind implements StringRepresentable {
 		/** Blaze spawners, each done once Cleared. */
-		SPAWNERS(KeyForm.STRUCTURE_BLOCK, "block.maple_flavored.structure_book.locked") {
+		SPAWNERS("spawners", KeyForm.STRUCTURE_BLOCK, "block.maple_flavored.structure_book.locked") {
 			@Override
 			boolean isDoneInWorld(ServerLevel level, BlockPos key) {
 				return isChunkBuilt(level, key) && (!level.getBlockState(key).is(Blocks.SPAWNER) || Spawners.isCleared(level, key));
 			}
 		},
 		/** Keeper Piglin Brutes, keyed by where each spawned, each done once it's gone for good. */
-		BRUTES(KeyForm.KEEPER_MOB, "block.maple_flavored.structure_book.locked_by_keepers") {
+		BRUTES("brutes", KeyForm.KEEPER_MOB, "block.maple_flavored.structure_book.locked_by_keepers") {
 			@Override
 			boolean isDoneInWorld(ServerLevel level, BlockPos key) {
 				return false;
@@ -353,28 +354,37 @@ public final class BookLocks extends SavedData {
 		 * Keeper sculk shriekers, keyed by the origin of the sculk patch each stands at, each done once broken. A keeper
 		 * stands at its origin, or on the patch's catalyst just above it.
 		 */
-		SHRIEKERS(KeyForm.KEEPER_BLOCK, "block.maple_flavored.structure_book.locked_by_shriekers") {
+		SHRIEKERS("shriekers", KeyForm.KEEPER_BLOCK, "block.maple_flavored.structure_book.locked_by_shriekers") {
 			@Override
 			boolean isDoneInWorld(ServerLevel level, BlockPos key) {
 				return ShriekerKeepers.isGone(level, key);
 			}
 		},
 		/** A Stronghold's Evokers, keyed by the origin of the piece that placed each, each done once it's gone for good. */
-		EVOKERS(KeyForm.KEEPER_MOB, "block.maple_flavored.structure_book.locked_by_evokers") {
+		EVOKERS("evokers", KeyForm.KEEPER_MOB, "block.maple_flavored.structure_book.locked_by_evokers") {
 			@Override
 			boolean isDoneInWorld(ServerLevel level, BlockPos key) {
 				return false;
 			}
 		};
 
-		static final Codec<Kind> CODEC = Codec.STRING.xmap(Kind::valueOf, Kind::name);
+		/** Saves a kind by its name. An unknown name is an error, never an exception. */
+		static final Codec<Kind> CODEC = StringRepresentable.fromEnum(Kind::values);
 
+		private final String name;
 		private final KeyForm form;
 		private final String refusal;
 
-		Kind(KeyForm form, String refusal) {
+		Kind(String name, KeyForm form, String refusal) {
+			this.name = name;
 			this.form = form;
 			this.refusal = refusal;
+		}
+
+		/** The name the kind is saved under. It must never change once worlds hold locks. */
+		@Override
+		public String getSerializedName() {
+			return name;
 		}
 
 		/** What each key is. */

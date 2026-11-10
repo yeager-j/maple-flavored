@@ -1,7 +1,6 @@
 package mapleflavored.strongholds;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Optional;
 import mapleflavored.structurebooks.IllagerAlert;
 import net.minecraft.core.BlockPos;
@@ -19,6 +18,9 @@ import net.minecraft.world.level.pathfinder.Path;
  * a Stronghold is often a dead end in the room beneath the player. This goal heads instead for the next doorway on
  * {@link StrongholdRoutes#route the fewest doorways} to the player's room, and hands back to the Illager's own attack once
  * it can reach them. A crossbowman that can see the player shoots instead.
+ *
+ * <p>Every Illager that closes in to attack has this goal, wherever it lives. One that isn't in a Stronghold learns so
+ * from the route and searches for no path.
  */
 public final class StrongholdRouteGoal extends Goal {
 	// How often the hunter checks for a path to its quarry, and its next doorway, in ticks, on average. Each wait varies
@@ -93,14 +95,18 @@ public final class StrongholdRouteGoal extends Goal {
 
 		if (!(target instanceof Player quarry) || !IllagerAlert.isHunting(illager)) return Optional.empty();
 
+		// Before any path search: outside a Stronghold, in the quarry's room or cut off from it, there's no doorway to
+		// head for whatever the search would find.
+		StrongholdRoutes.Route route = StrongholdRoutes.route((ServerLevel) illager.level(), illager.blockPosition(), quarry.blockPosition());
+
+		if (!(route instanceof StrongholdRoutes.Doorways doorways)) return Optional.empty();
+
 		if (illager instanceof CrossbowAttackMob && illager.getSensing().hasLineOfSight(quarry)) return Optional.empty();
 
 		Path direct = illager.getNavigation().createPath(quarry, 0);
 
 		if (direct != null && direct.canReach()) return Optional.empty();
 
-		List<BlockPos> route = StrongholdRoutes.route((ServerLevel) illager.level(), illager.blockPosition(), quarry.blockPosition());
-
-		return route.stream().findFirst();
+		return Optional.of(doorways.next());
 	}
 }

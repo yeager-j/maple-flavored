@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import mapleflavored.bloodmoons.Restorable;
+import mapleflavored.bloodmoons.StructureMobs;
 import mapleflavored.mixin.StructurePieceInvoker;
 import mapleflavored.structurebooks.MobKeepers;
 import mapleflavored.structurebooks.StructureBookRules;
@@ -17,7 +17,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Util;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
@@ -26,14 +25,14 @@ import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
-import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * The Illagers that guard a Stronghold: Vindicators, Pillagers and Evokers, a fixed garrison per piece, placed as each
  * piece is built. Each stands where a Blood Moon can Restore it, on the Stronghold's Restore blocks with a clear 1×2×1
  * space, inside its piece's walls, so never in a doorway. A library's Evoker keeps to its upper walkway, or to the back
- * of a library without one, and a prison hall's guard to the hall, outside the cells.
+ * of a library without one, and a prison hall's guard to the hall, outside the cells. {@link StrongholdRooms} says which
+ * guards each kind of piece has.
  *
  * <p>The Evokers of three keeper rooms keep the Stronghold's book: the portal room,
  * and two big rooms, libraries, room crossings or prison halls, chosen when the Stronghold is planned to draw the player
@@ -50,54 +49,6 @@ public final class StrongholdIllagers {
 	// Seeds the garrison apart from the Stronghold's own randomness, so adding it changes no layout.
 	private static final int GARRISON_SALT = 0x5711A6;
 
-	private static final float CORRIDOR_CHANCE = 0.25F;
-	// Vanilla's test for a library with an upper walkway.
-	private static final int SHORT_LIBRARY_HEIGHT = 6;
-
-	// The ground floor of a piece: guards stand at the lowest open place in their column.
-	private static final int GROUND = 1;
-	// The feet of a guard on a tall library's upper walkway, over its oak plank floor.
-	private static final int LIBRARY_WALKWAY = 6;
-
-	private static final Area ANYWHERE = new Area((x, z) -> true, GROUND);
-	private static final Area PORTAL_ROOM_FLOOR = new Area((x, z) -> !portalRoomBlocked(x, z), GROUND);
-	private static final Area LIBRARY_FLOOR = new Area((x, z) -> !libraryBlocked(x, z), GROUND);
-	private static final Area LIBRARY_BACK = new Area((x, z) -> !libraryBlocked(x, z) && z >= 10, GROUND);
-	private static final Area LIBRARY_UPPER_WALKWAY = new Area(StrongholdIllagers::onLibraryWalkway, LIBRARY_WALKWAY);
-	// The hall the cells open onto, west of their bars.
-	private static final Area PRISON_HALL = new Area((x, z) -> x <= 3, GROUND);
-
-	private static final Garrison CORRIDOR = new Garrison(List.of(new Post(Guard.ROLL, ANYWHERE)), CORRIDOR_CHANCE);
-
-	// Every room's garrison, apart from a keeper room's Evoker. The portal room is always a keeper room.
-	private static final Map<StructurePieceType, Garrison> GARRISONS = Map.ofEntries(
-		always(
-			StructurePieceType.STRONGHOLD_PORTAL_ROOM,
-			new Post(Guard.EVOKER, PORTAL_ROOM_FLOOR),
-			new Post(Guard.VINDICATOR, PORTAL_ROOM_FLOOR),
-			new Post(Guard.VINDICATOR, PORTAL_ROOM_FLOOR)
-		),
-		always(StructurePieceType.STRONGHOLD_LIBRARY, new Post(Guard.VINDICATOR, LIBRARY_FLOOR)),
-		always(StructurePieceType.STRONGHOLD_ROOM_CROSSING, new Post(Guard.ROLL, ANYWHERE), new Post(Guard.ROLL, ANYWHERE)),
-		always(StructurePieceType.STRONGHOLD_PRISON_HALL, new Post(Guard.VINDICATOR, PRISON_HALL)),
-		always(StructurePieceType.STRONGHOLD_FIVE_CROSSING, new Post(Guard.ROLL, ANYWHERE)),
-		Map.entry(StructurePieceType.STRONGHOLD_CHEST_CORRIDOR, CORRIDOR),
-		Map.entry(StructurePieceType.STRONGHOLD_FILLER_CORRIDOR, CORRIDOR),
-		Map.entry(StructurePieceType.STRONGHOLD_STRAIGHT, CORRIDOR),
-		Map.entry(StructurePieceType.STRONGHOLD_LEFT_TURN, CORRIDOR),
-		Map.entry(StructurePieceType.STRONGHOLD_RIGHT_TURN, CORRIDOR),
-		Map.entry(StructurePieceType.STRONGHOLD_STAIRS_DOWN, CORRIDOR),
-		Map.entry(StructurePieceType.STRONGHOLD_STRAIGHT_STAIRS_DOWN, CORRIDOR)
-	);
-
-	// The big rooms that can be keeper rooms, and where in each its Evoker stands.
-	private static final Map<StructurePieceType, Function<StructurePiece, Area>> KEEPER_EVOKER_AREAS = Map.of(
-		StructurePieceType.STRONGHOLD_LIBRARY, StrongholdIllagers::libraryEvokerArea,
-		StructurePieceType.STRONGHOLD_ROOM_CROSSING, room -> ANYWHERE,
-		StructurePieceType.STRONGHOLD_PRISON_HALL, room -> PRISON_HALL
-	);
-	// The big rooms with an Evoker whether they're keeper rooms or not.
-	private static final Set<StructurePieceType> ALWAYS_EVOKER = Set.of(StructurePieceType.STRONGHOLD_LIBRARY);
 	private static final int FAR_KEEPERS = 2;
 
 	private StrongholdIllagers() {
@@ -113,12 +64,12 @@ public final class StrongholdIllagers {
 	 * room. Ties between equally far rooms are drawn from {@code random}.
 	 */
 	static List<StructurePiece> keeperRooms(List<StructurePiece> pieces, RandomSource random) {
-		Optional<StructurePiece> portalRoom = pieces.stream().filter(piece -> piece.getType() == StructurePieceType.STRONGHOLD_PORTAL_ROOM).findFirst();
+		Optional<StructurePiece> portalRoom = pieces.stream().filter(StrongholdRooms::isPortalRoom).findFirst();
 
 		if (portalRoom.isEmpty()) return List.of();
 
 		List<StructurePiece> rooms = pieces.stream().filter(StrongholdLayout::isStrongholdPiece).toList();
-		List<StructurePiece> bigRooms = new ArrayList<>(rooms.stream().filter(room -> KEEPER_EVOKER_AREAS.containsKey(room.getType())).toList());
+		List<StructurePiece> bigRooms = new ArrayList<>(rooms.stream().filter(StrongholdIllagers::canBeFarKeeperRoom).toList());
 		List<Map<StructurePiece, Integer>> roomsFromKeepers = new ArrayList<>(List.of(StrongholdRoutes.roomsApart(rooms, portalRoom.get())));
 		List<StructurePiece> keepers = new ArrayList<>(List.of(portalRoom.get()));
 
@@ -141,13 +92,16 @@ public final class StrongholdIllagers {
 
 	/**
 	 * Places the guards of a Stronghold piece that stand in the chunk being built, tagging a keeper room's Evoker as the
-	 * keeper the book names for that room. Call after the piece is built in each chunk; it does nothing for any other
-	 * piece, including the Stronghold's starting staircase. A keeper Evoker with no room has its key unlocked.
+	 * keeper the book names for that room. Call after every structure's piece is built in each chunk; it does nothing
+	 * unless a {@linkplain StrongholdLayout#isBuildingStronghold Stronghold is being built}, nor for a piece without a
+	 * garrison, such as the Stronghold's starting staircase. A keeper Evoker with no room has its key unlocked.
 	 *
 	 * @param pieces the Stronghold's pieces, whose book names its keeper rooms
 	 * @param chunkBox the part of the world the chunk build may change
 	 */
 	public static void placeGuards(StructurePiece piece, List<StructurePiece> pieces, WorldGenLevel level, BoundingBox chunkBox) {
+		if (!StrongholdLayout.isBuildingStronghold()) return;
+
 		Optional<MobKeepers.Keeper> roomsKeeper = MobKeepers.keeperPlacedBy(piece, pieces, level.getLevel().dimension());
 		boolean keeperRoom = roomsKeeper.isPresent();
 		Set<BlockPos> taken = new HashSet<>();
@@ -162,15 +116,17 @@ public final class StrongholdIllagers {
 				.filter(open -> !taken.contains(open))
 				.findFirst();
 			Optional<MobKeepers.Keeper> keeper = roomsKeeper.filter(unused -> guard.type() == EntityTypes.EVOKER);
+			Optional<Mob> mob = spot.flatMap(feet -> StructureMobs.setUp(level, guard.type(), Vec3.atBottomCenterOf(feet), true));
 
-			if (spot.isEmpty()) {
+			if (mob.isEmpty()) {
 				keeper.ifPresent(MobKeepers.Keeper::forgive);
 
 				continue;
 			}
 
 			taken.add(spot.get());
-			spawn(level, guard.type(), spot.get(), keeper);
+			keeper.ifPresent(tag -> tag.tag(mob.get()));
+			level.addFreshEntityWithPassengers(mob.get());
 		}
 	}
 
@@ -180,13 +136,11 @@ public final class StrongholdIllagers {
 	 * @param keeperRoom whether it's one of the Stronghold's keeper rooms, which gives a big room its Evoker
 	 */
 	static List<PlannedGuard> plan(StructurePiece piece, boolean keeperRoom, long seed) {
-		Garrison base = GARRISONS.get(piece.getType());
+		Optional<StrongholdRooms.Room> room = StrongholdRooms.of(piece);
 
-		if (base == null) return List.of();
+		if (room.isEmpty()) return List.of();
 
-		Function<StructurePiece, Area> evokerArea = KEEPER_EVOKER_AREAS.get(piece.getType());
-		boolean addsEvoker = evokerArea != null && (keeperRoom || ALWAYS_EVOKER.contains(piece.getType()));
-		Garrison garrison = addsEvoker ? base.withFirst(new Post(Guard.EVOKER, evokerArea.apply(piece))) : base;
+		StrongholdRooms.Garrison garrison = room.get().garrison(piece, keeperRoom);
 		BoundingBox box = piece.getBoundingBox();
 		WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
 
@@ -197,7 +151,7 @@ public final class StrongholdIllagers {
 		Set<Column> firstChoices = new HashSet<>();
 		List<PlannedGuard> guards = new ArrayList<>();
 
-		for (Post post : garrison.posts()) {
+		for (StrongholdRooms.Post post : garrison.posts()) {
 			EntityType<? extends Mob> type = post.guard().roll(random);
 			List<Column> columns = new ArrayList<>(openColumns(piece, post.area()));
 
@@ -211,15 +165,8 @@ public final class StrongholdIllagers {
 		return guards;
 	}
 
-	private static Map.Entry<StructurePieceType, Garrison> always(StructurePieceType type, Post... posts) {
-		return Map.entry(type, new Garrison(List.of(posts), 1.0F));
-	}
-
-	// A library's Evoker keeps to the upper walkway when there is one, and to the back of the room when there isn't.
-	private static Area libraryEvokerArea(StructurePiece library) {
-		boolean tall = library.getBoundingBox().getYSpan() > SHORT_LIBRARY_HEIGHT;
-
-		return tall ? LIBRARY_UPPER_WALKWAY : LIBRARY_BACK;
+	private static boolean canBeFarKeeperRoom(StructurePiece piece) {
+		return StrongholdRooms.of(piece).filter(StrongholdRooms.Room::canBeFarKeeperRoom).isPresent();
 	}
 
 	// The guard's first choice, then every other column in the same chunk, in shuffled order.
@@ -237,7 +184,7 @@ public final class StrongholdIllagers {
 	}
 
 	// Every column inside the piece's walls that's in the area.
-	private static List<Column> openColumns(StructurePiece piece, Area area) {
+	private static List<Column> openColumns(StructurePiece piece, StrongholdRooms.Area area) {
 		BoundingBox box = piece.getBoundingBox();
 		boolean alongX = piece.getOrientation() == null || piece.getOrientation().getAxis() == Direction.Axis.Z;
 		int width = alongX ? box.getXSpan() : box.getZSpan();
@@ -254,32 +201,6 @@ public final class StrongholdIllagers {
 		return columns;
 	}
 
-	// The lava troughs by the door, the End portal with its frame and lava pool, and the silverfish spawner on the stairs.
-	private static boolean portalRoomBlocked(int x, int z) {
-		boolean lavaTrough = (x == 1 || x == 9) && z <= 3;
-		boolean portal = x >= 3 && x <= 7 && z >= 8 && z <= 12;
-		boolean spawner = x == 5 && z == 6;
-
-		return lavaTrough || portal || spawner;
-	}
-
-	// The bookshelves along both walls and the shelves standing in rows between them.
-	private static boolean libraryBlocked(int x, int z) {
-		boolean wallShelf = x == 1 || x == 12;
-		boolean shelfRow = z % 2 == 1 && z >= 3 && z <= 11 && x >= 3 && x <= 10 && x != 5 && x != 8;
-
-		return wallShelf || shelfRow;
-	}
-
-	// The open edge of a tall library's walkway, between its wall shelves and its fence, clear of the ladder.
-	private static boolean onLibraryWalkway(int x, int z) {
-		boolean betweenShelves = x >= 2 && x <= 11;
-		boolean edge = x == 2 || x == 11 || z == 1 || z == 13;
-		boolean ladder = x == 10 && z == 13;
-
-		return betweenShelves && edge && !ladder;
-	}
-
 	// The lowest place in the column, from {@code lowestFeet} up inside the piece's walls, where a guard can stand and a
 	// Blood Moon could Restore it.
 	private static Optional<BlockPos> standingSpot(WorldGenLevel level, BoundingBox box, Column column, int lowestFeet) {
@@ -292,24 +213,6 @@ public final class StrongholdIllagers {
 		}
 
 		return Optional.empty();
-	}
-
-	// Set up as a Woodland Mansion sets up its Illagers.
-	private static void spawn(WorldGenLevel level, EntityType<? extends Mob> type, BlockPos feet, Optional<MobKeepers.Keeper> keeper) {
-		Mob mob = type.create(level.getLevel(), EntitySpawnReason.STRUCTURE);
-
-		if (mob == null) {
-			keeper.ifPresent(MobKeepers.Keeper::forgive);
-
-			return;
-		}
-
-		keeper.ifPresent(tag -> tag.tag(mob));
-
-		mob.setPersistenceRequired();
-		mob.snapTo(Vec3.atBottomCenterOf(feet), 0.0F, 0.0F);
-		mob.finalizeSpawn(level, level.getCurrentDifficultyAt(feet), EntitySpawnReason.STRUCTURE, null);
-		level.addFreshEntityWithPassengers(mob);
 	}
 
 	/**
@@ -330,51 +233,6 @@ public final class StrongholdIllagers {
 		boolean sameChunkAs(Column other) {
 			return SectionPos.blockToSectionCoord(x) == SectionPos.blockToSectionCoord(other.x)
 				&& SectionPos.blockToSectionCoord(z) == SectionPos.blockToSectionCoord(other.z);
-		}
-	}
-
-	/** The guards a piece places, all or none, with the chance it places them. */
-	private record Garrison(List<Post> posts, float chance) {
-		Garrison withFirst(Post post) {
-			List<Post> withPost = new ArrayList<>(List.of(post));
-
-			withPost.addAll(posts);
-
-			return new Garrison(List.copyOf(withPost), chance);
-		}
-	}
-
-	/** One guard of a garrison and the part of its piece it stands in. */
-	private record Post(Guard guard, Area area) {
-	}
-
-	/**
-	 * Where in a piece a guard may stand.
-	 *
-	 * @param columns the piece-local columns open to it
-	 * @param lowestFeet the lowest piece-local height its feet may stand at
-	 */
-	private record Area(LocalColumns columns, int lowestFeet) {
-	}
-
-	// A set of columns in a code-built piece's own coordinates.
-	@FunctionalInterface
-	private interface LocalColumns {
-		boolean test(int x, int z);
-	}
-
-	private enum Guard {
-		VINDICATOR,
-		EVOKER,
-		/** A Vindicator or a Pillager, 50/50. */
-		ROLL;
-
-		EntityType<? extends Mob> roll(WorldgenRandom random) {
-			return switch (this) {
-				case VINDICATOR -> EntityTypes.VINDICATOR;
-				case EVOKER -> EntityTypes.EVOKER;
-				case ROLL -> random.nextBoolean() ? EntityTypes.VINDICATOR : EntityTypes.PILLAGER;
-			};
 		}
 	}
 }

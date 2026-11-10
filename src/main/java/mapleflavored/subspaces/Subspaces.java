@@ -6,13 +6,12 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import mapleflavored.MapleFlavored;
+import mapleflavored.mobs.GoneForGood;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.MinecraftServer;
@@ -23,8 +22,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The Subspaces module: the areas bosses open around where they appear. Each {@link Subspace} lasts until its boss dies
- * or is removed for good, however long its boss stays unloaded, and its rules come from its record alone.
+ * The Subspaces module: the areas bosses open around where they appear. Each {@link Subspace} lasts until its boss is
+ * {@linkplain GoneForGood gone for good}, however long its boss stays unloaded, and its rules come from its record alone.
  *
  * <p>Every level keeps its own Subspaces, saved with the level and sent to the players in it.
  */
@@ -56,15 +55,12 @@ public final class Subspaces {
 
 	/** Registers the hooks that open and end Subspaces and apply their rules. Call once from mod init. */
 	public static void register() {
-		// A dying boss ends its Subspace the moment it dies; it's only removed once its death animation ends.
-		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-			if (entity.level() instanceof ServerLevel level) endOwnedBy(level.getServer(), entity.getUUID(), EndCause.BOSS_DIED);
-		});
-		// Removed without dying, such as a Warden digging down. Unloading has no reason, or one that doesn't destroy.
-		ServerEntityEvents.ENTITY_UNLOAD.register((entity, level) -> {
-			Entity.RemovalReason reason = entity.getRemovalReason();
+		// A dying boss ends its Subspace the moment it dies. One gone without dying, such as a Warden digging down, or one
+		// whose save fails to load, ends it as removed.
+		GoneForGood.EVENT.register((server, gone) -> {
+			EndCause cause = gone.cause() == GoneForGood.Cause.DIED ? EndCause.BOSS_DIED : EndCause.BOSS_REMOVED;
 
-			if (reason != null && reason.shouldDestroy()) endOwnedBy(level.getServer(), entity.getUUID(), EndCause.BOSS_REMOVED);
+			endOwnedBy(server, gone.uuid(), cause);
 		});
 		ServerTickEvents.END_SERVER_TICK.register(Subspaces::endAllWhilePeaceful);
 		WardenSubspaces.register();
@@ -194,7 +190,7 @@ public final class Subspaces {
 		/** Its boss died. The boss is still in its level, dying. */
 		BOSS_DIED,
 
-		/** Its boss was removed for good without dying, such as a Warden digging down. */
+		/** Its boss was removed for good without dying, such as a Warden digging down, or its save failed to load. */
 		BOSS_REMOVED,
 
 		/** Its level turned Peaceful, which never loads its boss again. */

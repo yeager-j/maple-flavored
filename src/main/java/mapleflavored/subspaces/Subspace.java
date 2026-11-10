@@ -7,6 +7,7 @@ import java.util.UUID;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -42,14 +43,27 @@ public record Subspace(UUID id, UUID boss, Kind kind, Vec3 centre, double radius
 	}
 
 	/** Which boss opened a Subspace, which decides its rules. */
-	public enum Kind {
+	public enum Kind implements StringRepresentable {
 		/** Darkness and Grounded for players inside, and its Warden is aware of everything inside. */
-		WARDEN,
+		WARDEN("warden"),
 
 		/** Withered Hearts can't return inside. It gives no effect of its own. */
-		WITHER;
+		WITHER("wither");
 
-		static final Codec<Kind> CODEC = Codec.STRING.xmap(Kind::valueOf, Kind::name);
-		static final StreamCodec<ByteBuf, Kind> STREAM_CODEC = ByteBufCodecs.STRING_UTF8.map(Kind::valueOf, Kind::name);
+		/** Saves a kind by its name. An unknown name is an error, never an exception. */
+		static final Codec<Kind> CODEC = StringRepresentable.fromEnum(Kind::values);
+		static final StreamCodec<ByteBuf, Kind> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
+
+		private final String name;
+
+		Kind(String name) {
+			this.name = name;
+		}
+
+		/** The name the kind is saved and sent under. It must never change once worlds hold Subspaces. */
+		@Override
+		public String getSerializedName() {
+			return name;
+		}
 	}
 }

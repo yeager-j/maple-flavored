@@ -1,19 +1,26 @@
 package mapleflavored.strongholds;
 
-import java.util.Set;
+import mapleflavored.bloodmoons.Restorable;
+import mapleflavored.bloodmoons.Restoring;
 import mapleflavored.mixin.StructurePieceInvoker;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 
 /**
- * How Stronghold pieces build, apart from vanilla.
+ * What a Stronghold is, and how its pieces build, apart from vanilla.
+ *
+ * <p>A Stronghold is the structure {@link Restorable#STRONGHOLD} names, the same one whose book and whose Illagers' hunt
+ * go by that name. Its pieces build as described here only as part of one: another structure made of the same kinds of
+ * piece, as a data pack can add, builds as vanilla's does and gets no guards.
  *
  * <p>Strongholds generate whole, as Trial Chambers do. Vanilla builds a Stronghold piece's shell only where there's no
  * air yet, so caves, Mineshafts and dungeons dug earlier leave holes in it. Here every piece builds its whole shell over
@@ -27,22 +34,6 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
  * the Stronghold in two. Here each side doorway opens where its room is, and the stray holes are bricked up.
  */
 public final class StrongholdLayout {
-	private static final Set<StructurePieceType> PIECES = Set.of(
-		StructurePieceType.STRONGHOLD_CHEST_CORRIDOR,
-		StructurePieceType.STRONGHOLD_FILLER_CORRIDOR,
-		StructurePieceType.STRONGHOLD_FIVE_CROSSING,
-		StructurePieceType.STRONGHOLD_LEFT_TURN,
-		StructurePieceType.STRONGHOLD_LIBRARY,
-		StructurePieceType.STRONGHOLD_PORTAL_ROOM,
-		StructurePieceType.STRONGHOLD_PRISON_HALL,
-		StructurePieceType.STRONGHOLD_RIGHT_TURN,
-		StructurePieceType.STRONGHOLD_ROOM_CROSSING,
-		StructurePieceType.STRONGHOLD_STAIRS_DOWN,
-		StructurePieceType.STRONGHOLD_START,
-		StructurePieceType.STRONGHOLD_STRAIGHT,
-		StructurePieceType.STRONGHOLD_STRAIGHT_STAIRS_DOWN
-	);
-
 	// A five-way crossing's side doorways, in its own coordinates: the lower one near its entrance and the upper one at the
 	// back, through each side wall.
 	private static final int LEFT_WALL = 0;
@@ -56,9 +47,19 @@ public final class StrongholdLayout {
 	private StrongholdLayout() {
 	}
 
+	/** Whether the structure is a Stronghold. */
+	public static boolean isStronghold(Holder<Structure> structure) {
+		return Restorable.STRONGHOLD.is(structure);
+	}
+
+	/** Whether this thread is building a chunk of a Stronghold right now. */
+	public static boolean isBuildingStronghold() {
+		return Restoring.isBuilding(Restorable.STRONGHOLD);
+	}
+
 	/**
-	 * Opens a five-way crossing's side doorways where its side rooms are, and bricks up the rest. Call after the crossing
-	 * is built in each chunk, with the side rooms it planned.
+	 * Opens a Stronghold's five-way crossing's side doorways where its side rooms are, and bricks up the rest. Call
+	 * after the crossing is built in each chunk, with the side rooms it planned.
 	 */
 	public static void realignFiveCrossingDoorways(
 		StructurePiece crossing,
@@ -72,7 +73,7 @@ public final class StrongholdLayout {
 		Direction facing = crossing.getOrientation();
 
 		// Facing south or east, vanilla lines its doorways up with its rooms.
-		if (facing != Direction.NORTH && facing != Direction.WEST) return;
+		if (!isBuildingStronghold() || (facing != Direction.NORTH && facing != Direction.WEST)) return;
 
 		// Facing north or west, each planned "low" room lands at the upper doorway and each "high" room at the lower one.
 		StructurePieceInvoker local = (StructurePieceInvoker) crossing;
@@ -91,23 +92,39 @@ public final class StrongholdLayout {
 		crossing.fillBox(level, chunkBox, wall, y, z, wall, top, back, block, block, false);
 	}
 
-	/** Whether the piece is one of vanilla's Stronghold rooms, corridors or stairs, rather than one this mod adds. */
+	/**
+	 * Whether the piece is one of the rooms, corridors or stairs vanilla builds a Stronghold from, rather than one this
+	 * mod adds. Sorts the pieces of a structure already known to be a Stronghold.
+	 */
 	public static boolean isStrongholdPiece(StructurePiece piece) {
-		return PIECES.contains(piece.getType());
+		return isStrongholdPiece(piece.getType());
+	}
+
+	/** Whether vanilla builds Strongholds from pieces of this type. */
+	public static boolean isStrongholdPiece(StructurePieceType type) {
+		return StrongholdRooms.isKind(type);
 	}
 
 	/**
-	 * Whether a box the piece fills skips positions that are already air. Never for a Stronghold piece; otherwise as the
-	 * piece asked.
+	 * Whether a box the piece fills skips positions that are already air. Never for a piece of a Stronghold being built;
+	 * otherwise as the piece asked.
 	 */
 	public static boolean skipsAir(StructurePiece piece, boolean skipAir) {
-		return skipAir && !isStrongholdPiece(piece);
+		return skipAir && !isBuiltInStronghold(piece);
 	}
 
-	/** The block the piece places where it asked for {@code state}: cave air for a Stronghold's doors and buttons. */
+	/**
+	 * The block the piece places where it asked for {@code state}: cave air for the doors and buttons of a Stronghold
+	 * being built.
+	 */
 	public static BlockState placed(StructurePiece piece, BlockState state) {
 		boolean doorway = state.getBlock() instanceof DoorBlock || state.getBlock() instanceof ButtonBlock;
 
-		return doorway && isStrongholdPiece(piece) ? Blocks.CAVE_AIR.defaultBlockState() : state;
+		return doorway && isBuiltInStronghold(piece) ? Blocks.CAVE_AIR.defaultBlockState() : state;
+	}
+
+	// The kind of piece is the cheaper test, and nearly every piece of every other structure fails it.
+	private static boolean isBuiltInStronghold(StructurePiece piece) {
+		return isStrongholdPiece(piece) && isBuildingStronghold();
 	}
 }

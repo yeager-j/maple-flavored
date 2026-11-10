@@ -12,7 +12,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
-import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
@@ -25,28 +24,32 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
  */
 public final class StrongholdRoutes {
 	// Which rooms each room's walls touch, by Stronghold. Fixed once planned, so worked out once; whether a doorway is
-	// open is read live. Server thread only.
+	// open is read live. Held only as long as the game holds the Stronghold. Server thread only.
 	private static final Map<StructureStart, Map<StructurePiece, List<Touching>>> TOUCHING = new WeakHashMap<>();
 
 	private StrongholdRoutes() {
 	}
 
 	/**
-	 * The way from {@code from} to {@code to} through the Stronghold they're both in: one spot per doorway, each just
-	 * inside the next room on the way, in order. Empty when they're in the same room, not both in the same Stronghold, or
-	 * no open route joins their rooms. Reads only loaded chunks: a doorway in an unloaded one is closed.
+	 * The way from {@code from} to {@code to} through the Stronghold they're both in, or why there's none. Reads only
+	 * loaded chunks: a doorway in an unloaded one is closed.
 	 */
-	public static List<BlockPos> route(ServerLevel level, BlockPos from, BlockPos to) {
-		StructureStart stronghold = level.structureManager().getStructureWithPieceAt(from, structure -> structure.is(BuiltinStructures.STRONGHOLD));
+	public static Route route(ServerLevel level, BlockPos from, BlockPos to) {
+		StructureStart stronghold = level.structureManager().getStructureWithPieceAt(from, StrongholdLayout::isStronghold);
 
-		if (!stronghold.isValid()) return List.of();
+		if (!stronghold.isValid()) return NoRoute.NOT_IN_A_STRONGHOLD;
 
 		List<StructurePiece> rooms = stronghold.getPieces().stream().filter(StrongholdLayout::isStrongholdPiece).toList();
-		Map<StructurePiece, List<Touching>> touching = TOUCHING.computeIfAbsent(stronghold, planned -> touchingRooms(rooms));
 		Optional<StructurePiece> start = roomAt(rooms, from);
 		Optional<StructurePiece> end = roomAt(rooms, to);
 
-		if (start.isEmpty() || end.isEmpty() || start.get() == end.get()) return List.of();
+		if (start.isEmpty()) return NoRoute.NOT_IN_A_STRONGHOLD;
+
+		if (end.isEmpty()) return NoRoute.NOT_IN_THE_SAME_STRONGHOLD;
+
+		if (start.get() == end.get()) return NoRoute.SAME_ROOM;
+
+		Map<StructurePiece, List<Touching>> touching = TOUCHING.computeIfAbsent(stronghold, planned -> touchingRooms(rooms));
 
 		return fewestDoorways(level, touching, start.get(), end.get());
 	}
@@ -94,7 +97,7 @@ public final class StrongholdRoutes {
 	}
 
 	// Breadth first, so the route found crosses the fewest doorways.
-	private static List<BlockPos> fewestDoorways(
+	private static Route fewestDoorways(
 		ServerLevel level,
 		Map<StructurePiece, List<Touching>> touching,
 		StructurePiece start,
@@ -108,7 +111,7 @@ public final class StrongholdRoutes {
 		while (!frontier.isEmpty()) {
 			StructurePiece room = frontier.poll();
 
-			if (room == end) return waypoints(stepsInto, start, end);
+			if (room == end) return new Doorways(waypoints(stepsInto, start, end));
 
 			for (Touching next : touching.get(room)) {
 				if (stepsInto.containsKey(next.room())) continue;
@@ -122,7 +125,7 @@ public final class StrongholdRoutes {
 			}
 		}
 
-		return List.of();
+		return NoRoute.NO_OPEN_ROUTE;
 	}
 
 	private static List<BlockPos> waypoints(Map<StructurePiece, Step> stepsInto, StructurePiece start, StructurePiece end) {
@@ -185,6 +188,51 @@ public final class StrongholdRoutes {
 	// The first of the {@code rooms}, in the order the Stronghold planned them, that holds {@code pos}.
 	private static Optional<StructurePiece> roomAt(List<StructurePiece> rooms, BlockPos pos) {
 		return rooms.stream().filter(room -> room.getBoundingBox().isInside(pos)).findFirst();
+	}
+
+	/** What {@link #route} found: the {@link Doorways} to walk through, or the reason there's {@link NoRoute}. */
+	public sealed interface Route {
+		/** How many doorways the way crosses, if there is a way: none within one room. */
+		default Optional<Integer> doorwaysToCross() {
+			return switch (this) {
+				case Doorways doorways -> Optional.of(doorways.waypoints().size());
+				case NoRoute none -> none == NoRoute.SAME_ROOM ? Optional.of(0) : Optional.empty();
+			};
+		}
+	}
+
+	/**
+	 * A way through one or more doorways.
+	 *
+	 * @param waypoints one spot per doorway, each just inside the next room on the way, in order, ending in the room
+	 *     {@code to} is in. Never empty.
+	 */
+	public record Doorways(List<BlockPos> waypoints) implements Route {
+		public Doorways {
+			if (waypoints.isEmpty()) throw new IllegalArgumentException("A route through doorways crosses at least one");
+
+			waypoints = List.copyOf(waypoints);
+		}
+
+		/** The spot just inside the first doorway to walk through. */
+		public BlockPos next() {
+			return waypoints.getFirst();
+		}
+	}
+
+	/** Why there's no doorway to walk through. */
+	public enum NoRoute implements Route {
+		/** {@code from} isn't in a room of any Stronghold, so nothing was searched. */
+		NOT_IN_A_STRONGHOLD,
+
+		/** {@code to} isn't in a room of the Stronghold {@code from} is in. */
+		NOT_IN_THE_SAME_STRONGHOLD,
+
+		/** Both are in the same room already. */
+		SAME_ROOM,
+
+		/** No chain of open doorways joins their rooms. */
+		NO_OPEN_ROUTE
 	}
 
 	// How the route enters a room: from which room, and the spot just inside it.

@@ -7,15 +7,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import mapleflavored.MapleFlavored;
+import mapleflavored.mobs.GoneForGood;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.entity.EntityTypeTest;
@@ -25,9 +24,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A structure's keeper mobs, whose deaths unlock its book: a Bastion's keeper Piglin Brutes and a Stronghold's Evokers.
- * Each is tagged as its piece places it, and counted once it's gone for good, however it goes: killed by anything,
- * converted, or removed as Peaceful removes monsters. A keeper that only unloads or changes dimension still counts as
- * alive.
+ * Each is tagged as its piece places it, and counted once it's {@linkplain GoneForGood gone for good}, however it
+ * goes: killed by anything, converted, removed as Peaceful removes monsters, or dropped as its save fails to load. A
+ * keeper that only unloads or changes dimension still counts as alive.
  *
  * <p>Code that spawns a keeper itself asks {@link #keeperPlacedBy} which keeper its piece places and tags the mob with
  * the answer. A keeper the game spawns from a template, as a Bastion's Brutes are, is tagged through {@link #build}.
@@ -45,11 +44,7 @@ public final class MobKeepers {
 	}
 
 	static void register() {
-		// A dying keeper counts the moment it dies; it's only removed once its death animation ends.
-		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-			if (entity.level() instanceof ServerLevel level) count(entity, level);
-		});
-		ServerEntityEvents.ENTITY_UNLOAD.register(MobKeepers::countIfGone);
+		GoneForGood.EVENT.register(MobKeepers::count);
 	}
 
 	/**
@@ -149,21 +144,13 @@ public final class MobKeepers {
 		return keeper == null ? new Sighting(Status.UNLOADED, key) : new Sighting(Status.ALIVE, keeper.blockPosition());
 	}
 
-	// Removed without dying, as by converting or Peaceful's removal of monsters. Counting a keeper twice changes nothing.
-	private static void countIfGone(Entity entity, ServerLevel level) {
-		Entity.RemovalReason reason = entity.getRemovalReason();
+	// Counting a keeper twice changes nothing.
+	private static void count(MinecraftServer server, GoneForGood.Gone gone) {
+		gone.attached(KEEPER).ifPresent(keeper -> {
+			ServerLevel bookLevel = server.getLevel(keeper.book().dimension());
 
-		if (reason != null && reason.shouldDestroy()) count(entity, level);
-	}
-
-	private static void count(Entity entity, ServerLevel level) {
-		Keeper keeper = entity.getAttached(KEEPER);
-
-		if (keeper == null) return;
-
-		ServerLevel bookLevel = level.getServer().getLevel(keeper.book().dimension());
-
-		if (bookLevel != null) BookLocks.markKeeperGone(bookLevel, keeper.book().pos(), keeper.key());
+			if (bookLevel != null) BookLocks.markKeeperGone(bookLevel, keeper.book().pos(), keeper.key());
+		});
 	}
 
 	/** How a keeper mob is. */

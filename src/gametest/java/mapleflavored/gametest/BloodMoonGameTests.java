@@ -4,8 +4,13 @@ import static mapleflavored.gametest.MockPlayers.playerReadingChat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import mapleflavored.bloodmoons.BloodMoonState;
 import mapleflavored.bloodmoons.BloodMoons;
+import mapleflavored.bloodmoons.Restorable;
+import mapleflavored.bloodmoons.RestoreSpot;
+import mapleflavored.bloodmoons.Restoring;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
@@ -24,14 +29,18 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.attribute.AmbientParticle;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.clock.WorldClocks;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * Blood Moon nights: which nights are Blood Moons, the spores in the air, the one chat message in every dimension, the
- * advancement for being in the Overworld as one rises, and announcing each Blood Moon once, across restarts and jumps in
- * time.
+ * advancement for being in the Overworld as one rises, announcing each Blood Moon once, across restarts and jumps in
+ * time, and telling Restoring that it rose.
  *
  * <p>Each test moves the Overworld clock itself, so it doesn't depend on time passing in the test server. Each has its
  * own environment, which puts it in a batch of its own and restores the clock afterwards. The Overworld remembers which
@@ -49,6 +58,14 @@ public class BloodMoonGameTests {
 	private static final int SETTLE_TICKS = 5;
 	private static final String MESSAGE = "chat.maple_flavored.blood_moon_rises";
 	private static final String ADVANCEMENT = "maple_flavored:adventure/blood_moon";
+	// In the air of the flat test world, where no block holds a spot, so a pending spot stays pending.
+	private static final int SPOT_Y = 100;
+	// How many Blood Moons have told their listeners they rose, in any test.
+	private static final AtomicInteger RISINGS = new AtomicInteger();
+
+	static {
+		BloodMoons.RISEN.register(server -> RISINGS.incrementAndGet());
+	}
 
 	// Its environment starts the clock at day 0, far from any Blood Moon, and the test sets the eve itself once its
 	// players are in. The clock runs while a test waits for its structure to load, which can take long enough to pass the
@@ -149,6 +166,42 @@ public class BloodMoonGameTests {
 				reloadBloodMoonState(helper.getLevel().getServer().overworld());
 			})
 			.thenExecuteAfter(SETTLE_TICKS, () -> helper.assertValueEqual(bloodMoonMessages(chat), 1L, "Blood Moon messages after a restart"))
+			.thenSucceed();
+	}
+
+	// The one test whose Blood Moon is the sky's own, so it reaches every spot in the level. Alone in its batch, no other
+	// test has a spot waiting on it. The other Restoring tests raise a Blood Moon over their own spots.
+	@GameTest(environment = "maple_flavored_gametest:blood_moon_restoring", maxTicks = 400)
+	public void aBloodMoonRisingInTheSkyMakesAnEmptySpotPending(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ChunkPos chunk = TestSites.of(helper).chunk(0);
+		BlockPos inTheAir = chunk.getMiddleBlockPosition(SPOT_Y);
+		Mob vindicator = EntityTypes.VINDICATOR.create(level, EntitySpawnReason.STRUCTURE);
+		int risenBefore = RISINGS.get();
+
+		ForcedChunks.keepLoaded(helper, level, List.of(chunk));
+		setTime(helper, bloodMoonDay(30), EVE);
+		vindicator.snapTo(Vec3.atBottomCenterOf(inTheAir), 0.0F, 0.0F);
+		Restoring.build(Optional.of(Restorable.WOODLAND_MANSION), () -> level.addFreshEntity(vindicator));
+
+		RestoreSpot spot = Spots.of(helper, vindicator);
+
+		vindicator.kill(level);
+		// Gone at once, so nothing is left of it in the chunk.
+		vindicator.discard();
+
+		helper.startSequence()
+			.thenExecuteAfter(SETTLE_TICKS, () -> {
+				helper.assertValueEqual(Spots.current(level, spot).state(), RestoreSpot.State.EMPTY, "the spot on the eve of a Blood Moon");
+				helper.assertValueEqual(RISINGS.get(), risenBefore, "Blood Moons risen by its eve");
+				setTime(helper, bloodMoonDay(30), EARLY_NIGHT);
+			})
+			.thenExecuteAfter(SETTLE_TICKS, () -> {
+				// It has no block to stand on, so it stays pending.
+				helper.assertValueEqual(Spots.current(level, spot).state(), RestoreSpot.State.PENDING, "the spot once the Blood Moon has risen");
+				helper.assertValueEqual(RISINGS.get(), risenBefore + 1, "Blood Moons risen that night");
+				ForcedChunks.letUnload(helper, level, List.of(chunk));
+			})
 			.thenSucceed();
 	}
 
