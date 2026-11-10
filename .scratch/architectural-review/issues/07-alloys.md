@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P2 (Medium)
 
@@ -95,9 +95,20 @@ A chance condition can't see the item it guards, so the exclusion is inferred fr
 
 ## Checklist
 
-- [ ] 1. `AlloySets` answers each full-set bonus as a question (fire immune, refuses an effect, jump factor and so on), and no mixin or other package names an Alloy constant for a set bonus.
-- [ ] 2. Everything that is a function of `Alloy.values()` is generated, or one test asserts each hand-written tag and advancement equals the enum's set.
-- [ ] 3. `PortalTrim` either has a real consumer and an asserting test, or is out of the shipped client path.
-- [ ] 4. A GameTest walks every loot table and fails on an excluded item in a mixed pool with an enchanted-bonus chance.
-- [ ] 5. `AlloyGear` exposes the parsed piece, and the set pieces are listed once.
-- [ ] 6. `AlloySetWornTrigger` lives with `alloys`, and Alloy items and blocks are registered by an explicit call, not by class loading.
+- [x] 1. `AlloySets` answers each full-set bonus as a question (fire immune, refuses an effect, jump factor and so on), and no mixin or other package names an Alloy constant for a set bonus.
+- [x] 2. Everything that is a function of `Alloy.values()` is generated, or one test asserts each hand-written tag and advancement equals the enum's set.
+- [x] 3. `PortalTrim` either has a real consumer and an asserting test, or is out of the shipped client path.
+- [x] 4. A GameTest walks every loot table and fails on an excluded item in a mixed pool with an enchanted-bonus chance.
+- [x] 5. `AlloyGear` exposes the parsed piece, and the set pieces are listed once.
+- [x] 6. `AlloySetWornTrigger` lives with `alloys`, and Alloy items and blocks are registered by an explicit call, not by class loading.
+
+## Comments
+
+Closed in one pull request. What each box means in the code:
+
+1. Each bonus is a question on `AlloySets` (`isFireImmune`, `refusesEffect`, `blockJumpFactor`, `blockSpeedFactor`, `ignoresFrost`, `walksOnPowderSnow`, `witheringInterval`, `damageAfterArmor`), and `wearsFullSet` is no longer public. `OrichalcumSave.trySave` checks the damage itself, and `AlloyMining.bedrockProgress` holds the bedrock branch.
+2. Datagen now writes the Alloy tags, `extra_enchantment_slot`, the `wear_every_alloy_set` advancement, the block and ingot models, the equipment assets, the block recipes and the block loot. Still by hand, because the enum can't derive them: what each Alloy is alloyed from (`recipe/<alloy>_ingot.json`, gated by `eachStorageBlockAndANetheriteIngotMakeItsAlloy`), textures and names.
+3. `PortalTrim` is removed with its shaders, mixin hook, mask textures and test. Jackson to confirm; `git checkout 1c1c21c -- <path>` restores any of it.
+4. `noLootTableSharesAnEnchantedChanceWithAnExcludedDrop` reads every loot table through `ExcludedDropScan`.
+5. `AlloyGear.pieceOf` and `AlloyGear.Piece` are public, and `AlloySets.PIECES` is the one list of set pieces.
+6. `AlloySetWornTrigger` is in `alloys`, registered by `AlloySets.register()`. `Alloy.register()` and `AlloyGear.register()` register the items and blocks. `Alloys`' own constants (the Ember and the Alloy Furnace) still register when the class loads, as every other registry holder in the mod does; ticket 12 owns the shared helper.

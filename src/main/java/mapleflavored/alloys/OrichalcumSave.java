@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityEvent;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.component.DeathProtection;
@@ -35,9 +37,11 @@ public final class OrichalcumSave {
 
 	/**
 	 * Saves the player from a lethal hit if they wear a full Orichalcum set and the save is ready, then starts its
-	 * recharge. Returns whether they were saved. Call only for a hit vanilla would let a Totem save.
+	 * recharge. Returns whether they were saved. Never saves from damage a Totem can't, such as the void.
 	 */
-	public static boolean trySave(ServerPlayer player) {
+	public static boolean trySave(ServerPlayer player, DamageSource killingDamage) {
+		if (killingDamage.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return false;
+
 		if (!isReady(player) || !AlloySets.wearsFullSet(player, Alloy.ORICHALCUM)) return false;
 
 		player.setHealth(1.0F);

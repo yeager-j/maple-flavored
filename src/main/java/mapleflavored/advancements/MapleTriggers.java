@@ -6,7 +6,10 @@ import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 
-/** The mod's advancement criteria triggers, used in advancement data as {@code maple_flavored:<name>}. */
+/**
+ * The mod's advancement criteria triggers that take no conditions, used in advancement data as
+ * {@code maple_flavored:<name>}. A trigger with conditions of a feature's own type lives with that feature.
+ */
 public final class MapleTriggers {
 	/** A player's Withered Hearts all returned. */
 	public static final PlayerTrigger WITHERED_HEART_RECOVERED = register("withered_heart_recovered", new PlayerTrigger());
@@ -49,9 +52,6 @@ public final class MapleTriggers {
 
 	/** A Blood Moon rose while the player was in the Overworld. */
 	public static final PlayerTrigger BLOOD_MOON_RISEN = register("blood_moon_risen", new PlayerTrigger());
-
-	/** A player put on the last piece of a full set of one Alloy. */
-	public static final AlloySetWornTrigger ALLOY_SET_WORN = register("alloy_set_worn", new AlloySetWornTrigger());
 
 	private MapleTriggers() {
 	}

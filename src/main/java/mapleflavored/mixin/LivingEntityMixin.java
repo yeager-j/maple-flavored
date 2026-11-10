@@ -3,17 +3,14 @@ package mapleflavored.mixin;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyDamage;
 import mapleflavored.alloys.AlloySets;
 import mapleflavored.alloys.ArmoredElytraFlight;
 import mapleflavored.alloys.OrichalcumSave;
 import mapleflavored.grounded.Grounded;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
@@ -47,38 +44,30 @@ public abstract class LivingEntityMixin {
 	}
 
 	@ModifyReturnValue(method = "canBeAffected", at = @At("RETURN"))
-	private boolean steelSetRefusesLevitation(boolean canBeAffected, MobEffectInstance effect) {
-		return canBeAffected && !(effect.is(MobEffects.LEVITATION) && AlloySets.wearsFullSet((LivingEntity) (Object) this, Alloy.STEEL));
+	private boolean alloySetRefusesEffect(boolean canBeAffected, MobEffectInstance effect) {
+		return canBeAffected && !AlloySets.refusesEffect((LivingEntity) (Object) this, effect);
 	}
 
 	@ModifyReturnValue(method = "getBlockSpeedFactor", at = @At("RETURN"))
-	private float shakudoSetIgnoresSlowBlocks(float speedFactor) {
-		if (!AlloySets.wearsFullSet((LivingEntity) (Object) this, Alloy.SHAKUDO)) return speedFactor;
-
-		return Math.max(speedFactor, 1.0F);
+	private float alloySetIgnoresSlowBlocks(float speedFactor) {
+		return AlloySets.blockSpeedFactor((LivingEntity) (Object) this, speedFactor);
 	}
 
 	// Vanilla removes the frost slowdown each tick before adding it back, so skipping the add clears it too.
 	@Inject(method = "tryAddFrost", at = @At("HEAD"), cancellable = true)
-	private void shakudoSetIgnoresFrost(CallbackInfo ci) {
-		if (AlloySets.wearsFullSet((LivingEntity) (Object) this, Alloy.SHAKUDO)) ci.cancel();
+	private void alloySetIgnoresFrost(CallbackInfo ci) {
+		if (AlloySets.ignoresFrost((LivingEntity) (Object) this)) ci.cancel();
 	}
 
-	// Armor sees the whole hit, so its durability and damage-dependent formula are vanilla's, and the pierced share
-	// can only add damage.
+	// Vanilla's armor runs on the whole hit, so its durability loss and damage-dependent formula stay vanilla's.
 	@WrapMethod(method = "getDamageAfterArmorAbsorb")
-	private float adamantSetPiercesArmor(DamageSource source, float damage, Operation<Float> original) {
-		float piercingShare = AlloySets.armorPiercingShare(source);
-		float afterArmor = original.call(source, damage);
-
-		return piercingShare * damage + (1.0F - piercingShare) * afterArmor;
+	private float alloySetPiercesArmor(DamageSource source, float damage, Operation<Float> original) {
+		return AlloySets.damageAfterArmor(source, damage, original.call(source, damage));
 	}
 
 	// Ahead of vanilla's hand-by-hand Totem check, so a ready set saves before a held Totem or Crystal Heart is used.
 	@Inject(method = "checkTotemDeathProtection", at = @At("HEAD"), cancellable = true)
 	private void orichalcumSetSavesFirst(DamageSource killingDamage, CallbackInfoReturnable<Boolean> cir) {
-		if (killingDamage.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
-
-		if ((Object) this instanceof ServerPlayer player && OrichalcumSave.trySave(player)) cir.setReturnValue(true);
+		if ((Object) this instanceof ServerPlayer player && OrichalcumSave.trySave(player, killingDamage)) cir.setReturnValue(true);
 	}
 }

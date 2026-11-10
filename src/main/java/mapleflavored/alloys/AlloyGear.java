@@ -12,7 +12,9 @@ import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTabOutput;
 import net.fabricmc.fabric.api.item.v1.DefaultItemComponentEvents;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlotGroup;
@@ -37,31 +39,32 @@ import net.minecraft.world.item.equipment.Equippable;
  * Alloy's chestplate for everything but flight ({@link ArmoredElytraFlight}).
  */
 public final class AlloyGear {
+	/** The five Alloys' Armored Elytras. */
+	public static final TagKey<Item> ARMORED_ELYTRAS_TAG = TagKey.create(Registries.ITEM, MapleFlavored.id("armored_elytras"));
+
 	private static final Map<Alloy, Map<GearKind, Item>> ITEMS = new EnumMap<>(Alloy.class);
 	private static final Map<Alloy, Item> ARMORED_ELYTRAS = new EnumMap<>(Alloy.class);
 	private static final Map<Item, Piece> PIECES = new HashMap<>();
 
-	static {
-		for (Alloy alloy : Alloy.values()) {
-			Map<GearKind, Item> items = new EnumMap<>(GearKind.class);
+	private AlloyGear() {
+	}
 
-			for (GearKind kind : GearKind.values()) {
-				Item item = registerItem(alloy, kind);
-
-				items.put(kind, item);
-				PIECES.put(item, new Piece(alloy, kind));
-			}
-
-			ITEMS.put(alloy, items);
-
-			Item armoredElytra = registerArmoredElytra(alloy);
-
-			ARMORED_ELYTRAS.put(alloy, armoredElytra);
-			PIECES.put(armoredElytra, new Piece(alloy, GearKind.CHESTPLATE));
+	/**
+	 * A piece of Alloy gear, read from its item. An Armored Elytra is its Alloy's chestplate.
+	 *
+	 * @param alloy the Alloy the item is gear of
+	 * @param kind the kind of gear the item is
+	 */
+	public record Piece(Alloy alloy, GearKind kind) {
+		/** Whether this is the Alloy's tool or weapon, which is the gear its tool traits apply to. */
+		public boolean isToolOf(Alloy alloy) {
+			return this.alloy == alloy && kind.isHeld();
 		}
 	}
 
-	private AlloyGear() {
+	/** The piece of Alloy gear the item is, or empty if it isn't Alloy gear. */
+	public static Optional<Piece> pieceOf(ItemInstance item) {
+		return Optional.ofNullable(PIECES.get(item.typeHolder().value()));
 	}
 
 	/** The Alloy's version of this kind of gear. */
@@ -82,11 +85,6 @@ public final class AlloyGear {
 	/** The Alloy the item is gear of, or empty if it isn't Alloy gear. An Armored Elytra is its Alloy's gear. */
 	public static Optional<Alloy> alloyOf(ItemInstance item) {
 		return pieceOf(item).map(Piece::alloy);
-	}
-
-	/** The kind of gear the stack is, or empty if it isn't Alloy gear. An Armored Elytra is a chestplate. */
-	public static Optional<GearKind> kindOf(ItemInstance item) {
-		return pieceOf(item).map(Piece::kind);
 	}
 
 	/** How many pieces of the Alloy's gear the entity wears in its armor slots, mob body armor included. */
@@ -110,8 +108,13 @@ public final class AlloyGear {
 		return (int) Math.min(scaledDamage, resultMaxDamage - 1);
 	}
 
-	/** Registers the gear's trait components and creative tab places. Call once from {@link Alloys#register()}. */
+	/**
+	 * Registers the gear, its trait components and its creative tab places. Call once from {@link Alloys#register()},
+	 * after the Alloys' ingots.
+	 */
 	static void register() {
+		for (Alloy alloy : Alloy.values()) registerGear(alloy);
+
 		DefaultItemComponentEvents.MODIFY.register(context ->
 			PIECES.forEach((item, piece) -> context.modify(item, components -> addTraits(components, piece)))
 		);
@@ -123,6 +126,24 @@ public final class AlloyGear {
 			Arrays.stream(Alloy.values()).map(alloy -> new ItemStack(armoredElytra(alloy))).toList(),
 			CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
 		));
+	}
+
+	private static void registerGear(Alloy alloy) {
+		Map<GearKind, Item> items = new EnumMap<>(GearKind.class);
+
+		for (GearKind kind : GearKind.values()) {
+			Item item = registerItem(alloy, kind);
+
+			items.put(kind, item);
+			PIECES.put(item, new Piece(alloy, kind));
+		}
+
+		ITEMS.put(alloy, items);
+
+		Item armoredElytra = registerArmoredElytra(alloy);
+
+		ARMORED_ELYTRAS.put(alloy, armoredElytra);
+		PIECES.put(armoredElytra, new Piece(alloy, GearKind.CHESTPLATE));
 	}
 
 	private static Item registerItem(Alloy alloy, GearKind kind) {
@@ -177,12 +198,5 @@ public final class AlloyGear {
 
 			output.insertAfter(kind.netheriteItem(), alloyVersions, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
 		}
-	}
-
-	private static Optional<Piece> pieceOf(ItemInstance item) {
-		return Optional.ofNullable(PIECES.get(item.typeHolder().value()));
-	}
-
-	private record Piece(Alloy alloy, GearKind kind) {
 	}
 }

@@ -2,7 +2,6 @@ package mapleflavored.client;
 
 import mapleflavored.alloys.Alloys;
 import mapleflavored.client.alloys.AlloyFurnaceScreen;
-import mapleflavored.client.alloys.PortalTrim;
 import mapleflavored.client.deepvariants.DeepCreeperRenderer;
 import mapleflavored.client.deepvariants.DeepSkeletonRenderer;
 import mapleflavored.client.deepvariants.DeepSpiderRenderer;
@@ -35,7 +34,6 @@ public class MapleFlavoredClient implements ClientModInitializer {
 		SpawnerHeatRenderer.register();
 		SubspaceShellRenderer.register();
 		WitherSubspaceLight.register();
-		PortalTrim.register();
 		DeepZombieRenderer.register();
 		DeepSkeletonRenderer.register();
 		DeepCreeperRenderer.register();

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "group": "adamant_ingot",
+  "ingredients": [
+    "maple_flavored:adamant_block"
+  ],
+  "result": {
+    "count": 9,
+    "id": "maple_flavored:adamant_ingot"
+  }
+}

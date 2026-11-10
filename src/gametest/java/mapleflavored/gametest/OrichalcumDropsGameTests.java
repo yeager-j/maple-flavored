@@ -33,12 +33,13 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Orichalcum tools add half a drop again to drops Fortune and Looting affect, at any enchantment level: half the count
  * a count function started with, or half a chance's unenchanted chance. Ancient Embers, Pith and enchanted books never
- * get it.
+ * get it, and no loot table guards one of them with a chance the bonus would raise.
  *
  * <p>The fixture tables in {@code maple_flavored_gametest:loot_table} start each counted drop at 10, so the bonus is a
  * whole 5 and the counts are exact.
  */
 public class OrichalcumDropsGameTests {
+	private static final String FIXTURE_NAMESPACE = "maple_flavored_gametest";
 	private static final int ROLLS = 200;
 	private static final int RATE_ROLLS = 2000;
 	private static final long SEED = 7L;
@@ -169,6 +170,28 @@ public class OrichalcumDropsGameTests {
 		helper.succeed();
 	}
 
+	@GameTest
+	public void theScanFindsAnExcludedDropSharingAnEnchantedChance(GameTestHelper helper) {
+		var registries = helper.getLevel().getServer().reloadableRegistries().lookup();
+
+		helper.assertValueEqual(ExcludedDropScan.leaks(registries, fixtureKey("orichalcum_looting_chance_mixed_pool")).size(), 1, "leaks in a mixed pool");
+		helper.assertValueEqual(ExcludedDropScan.leaks(registries, fixtureKey("orichalcum_looting_chance_ember_entry")).size(), 0, "leaks on an Ember's own entry");
+		helper.succeed();
+	}
+
+	// The test fixtures are skipped: some hold the forbidden shape on purpose.
+	@GameTest
+	public void noLootTableSharesAnEnchantedChanceWithAnExcludedDrop(GameTestHelper helper) {
+		var registries = helper.getLevel().getServer().reloadableRegistries().lookup();
+		List<String> leaks = registries.lookupOrThrow(Registries.LOOT_TABLE).listElementIds()
+			.filter(key -> !key.identifier().getNamespace().equals(FIXTURE_NAMESPACE))
+			.flatMap(key -> ExcludedDropScan.leaks(registries, key).stream())
+			.toList();
+
+		helper.assertValueEqual(leaks, List.of(), "excluded drops that would get Orichalcum's chance bonus");
+		helper.succeed();
+	}
+
 	private static ItemStack tool(Alloy alloy, GearKind kind) {
 		return new ItemStack(AlloyGear.of(alloy, kind));
 	}
@@ -242,9 +265,11 @@ public class OrichalcumDropsGameTests {
 	}
 
 	private static LootTable fixture(GameTestHelper helper, String name) {
-		ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath("maple_flavored_gametest", name));
+		return helper.getLevel().getServer().reloadableRegistries().getLootTable(fixtureKey(name));
+	}
 
-		return helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
+	private static ResourceKey<LootTable> fixtureKey(String name) {
+		return ResourceKey.create(Registries.LOOT_TABLE, Identifier.fromNamespaceAndPath(FIXTURE_NAMESPACE, name));
 	}
 
 	private static void assertNear(GameTestHelper helper, double rate, double expected, String what) {

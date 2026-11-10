@@ -5,7 +5,6 @@ import mapleflavored.alloys.AlloyMining;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class BlockBehaviourMixin {
 	@Inject(method = "getDestroyProgress", at = @At("HEAD"), cancellable = true)
 	private void breakBedrock(BlockState state, Player player, BlockGetter level, BlockPos pos, CallbackInfoReturnable<Float> callback) {
-		if (state.is(Blocks.BEDROCK) && AlloyMining.breaksBedrock(player)) callback.setReturnValue(AlloyMining.bedrockProgress(player.level()));
+		AlloyMining.bedrockProgress(player, state).ifPresent(callback::setReturnValue);
 	}
 
 	@ModifyExpressionValue(

@@ -1,0 +1,67 @@
+{
+  "parent": "maple_flavored:nether/smelt_alloy_ingot",
+  "criteria": {
+    "adamant_set": {
+      "conditions": {
+        "alloy": "adamant"
+      },
+      "trigger": "maple_flavored:alloy_set_worn"
+    },
+    "electrum_set": {
+      "conditions": {
+        "alloy": "electrum"
+      },
+      "trigger": "maple_flavored:alloy_set_worn"
+    },
+    "orichalcum_set": {
+      "conditions": {
+        "alloy": "orichalcum"
+      },
+      "trigger": "maple_flavored:alloy_set_worn"
+    },
+    "shakudo_set": {
+      "conditions": {
+        "alloy": "shakudo"
+      },
+      "trigger": "maple_flavored:alloy_set_worn"
+    },
+    "steel_set": {
+      "conditions": {
+        "alloy": "steel"
+      },
+      "trigger": "maple_flavored:alloy_set_worn"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.maple_flavored.nether.wear_every_alloy_set.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "id": "maple_flavored:adamant_chestplate"
+    },
+    "title": {
+      "translate": "advancements.maple_flavored.nether.wear_every_alloy_set.title"
+    }
+  },
+  "requirements": [
+    [
+      "steel_set"
+    ],
+    [
+      "electrum_set"
+    ],
+    [
+      "shakudo_set"
+    ],
+    [
+      "adamant_set"
+    ],
+    [
+      "orichalcum_set"
+    ]
+  ],
+  "rewards": {
+    "experience": 100
+  }
+}
