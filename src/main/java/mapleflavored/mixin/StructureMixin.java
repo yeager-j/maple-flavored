@@ -2,6 +2,7 @@ package mapleflavored.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
+import mapleflavored.structurebooks.BookLocks;
 import mapleflavored.structurebooks.StructureBookRules;
 import mapleflavored.structurebooks.TerrainPreview;
 import net.minecraft.core.Holder;
@@ -20,7 +21,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * Adds a structure's book to its pieces as they're planned, for world generation and {@code /place structure} alike.
+ * Adds a structure's book to its pieces as they're planned, and locks it, for world generation and
+ * {@code /place structure} alike.
  * Fabric has no event for structure planning.
  */
 @Mixin(Structure.class)
@@ -47,6 +49,10 @@ public abstract class StructureMixin {
 	) {
 		TerrainPreview terrain = TerrainPreview.of(chunkGenerator, biomeSource, climateSampler, randomState, heightAccessor);
 
-		return StructureBookRules.withBook(selected, pieces, seed, sourceChunkPos, dimension, terrain, structureTemplateManager);
+		PiecesContainer withBook = StructureBookRules.withBook(selected, pieces, seed, sourceChunkPos, terrain, structureTemplateManager);
+
+		BookLocks.plan(dimension, withBook.pieces());
+
+		return withBook;
 	}
 }

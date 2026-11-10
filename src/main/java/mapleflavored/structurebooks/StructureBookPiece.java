@@ -44,7 +44,9 @@ public class StructureBookPiece extends StructurePiece {
 	private static final String ANCHOR = "Anchor";
 	private static final String OFFSET = "Offset";
 	private static final String PLACEMENT = "Placement";
-	private static final String KEEPERS = "Keepers";
+	private static final String LOCK = "Lock";
+	// Saved before the piece saved its whole lock: a keeper lock's keys, without their kind.
+	private static final String LEGACY_KEEPERS = "Keepers";
 	// Saved before books could be placed other than floating: whether the book carved a pocket.
 	private static final String LEGACY_POCKET = "Pocket";
 	private static final Codec<ResourceKey<Enchantment>> ENCHANTMENT_CODEC = ResourceKey.codec(Registries.ENCHANTMENT);
@@ -55,6 +57,7 @@ public class StructureBookPiece extends StructurePiece {
 	private final int anchorIndex;
 	private final BlockPos offset;
 	private final StructureBookRule.Placement placement;
+	private final BookLocks.Keys lock;
 	private final List<BlockPos> keepers;
 	// Linked from the structure's pieces whenever they're gathered, so it's never saved.
 	private @Nullable StructurePiece anchor;
@@ -63,8 +66,7 @@ public class StructureBookPiece extends StructurePiece {
 	 * A book at {@code spot} that gives {@code enchantment} at level I, following the piece at {@code anchorIndex} in
 	 * the structure's pieces.
 	 *
-	 * @param keepers the origins of the pieces that place the keepers locking the book, Brutes, shriekers or Evokers, if
-	 * keepers lock it
+	 * @param lock what locks the book, {@link BookLocks.Keys#NONE} when nothing does
 	 */
 	StructureBookPiece(
 		BlockPos spot,
@@ -72,30 +74,31 @@ public class StructureBookPiece extends StructurePiece {
 		int anchorIndex,
 		StructurePiece anchor,
 		StructureBookRule.Placement placement,
-		List<BlockPos> keepers
+		BookLocks.Keys lock
 	) {
 		super(StructureBooks.PIECE, 0, new BoundingBox(spot));
 		this.enchantment = enchantment;
 		this.anchorIndex = anchorIndex;
 		this.offset = spot.subtract(originOf(anchor));
 		this.placement = placement;
-		this.keepers = List.copyOf(keepers);
+		this.lock = lock;
+		this.keepers = lock.kind().isKeeper() ? lock.positions() : List.of();
 	}
 
 	/**
 	 * A floating book at {@code spot}, as most structures' books are, following the piece at {@code anchorIndex} in the
 	 * structure's pieces.
 	 *
-	 * @param keepers the origins of the pieces that place the keepers locking the book, if keepers lock it
+	 * @param lock what locks the book, {@link BookLocks.Keys#NONE} when nothing does
 	 */
 	public static StructureBookPiece floating(
 		BlockPos spot,
 		ResourceKey<Enchantment> enchantment,
 		int anchorIndex,
 		StructurePiece anchor,
-		List<BlockPos> keepers
+		BookLocks.Keys lock
 	) {
-		return new StructureBookPiece(spot, enchantment, anchorIndex, anchor, StructureBookRule.Placement.OPEN, keepers);
+		return new StructureBookPiece(spot, enchantment, anchorIndex, anchor, StructureBookRule.Placement.OPEN, lock);
 	}
 
 	/** Loads a saved book piece. A book saved without an anchor stays at its saved spot. */
@@ -107,7 +110,13 @@ public class StructureBookPiece extends StructurePiece {
 		this.placement = tag.getString(PLACEMENT)
 			.map(StructureBookRule.Placement::valueOf)
 			.orElseGet(() -> tag.getBooleanOr(LEGACY_POCKET, true) ? StructureBookRule.Placement.POCKET : StructureBookRule.Placement.OPEN);
-		this.keepers = tag.read(KEEPERS, BlockPos.CODEC.listOf()).orElse(List.of());
+		this.lock = tag.read(LOCK, BookLocks.Keys.CODEC).orElse(BookLocks.Keys.NONE);
+		this.keepers = lock.kind().isKeeper() ? lock.positions() : tag.read(LEGACY_KEEPERS, BlockPos.CODEC.listOf()).orElse(List.of());
+	}
+
+	/** The structure's book among its pieces, if it holds one. */
+	public static Optional<StructureBookPiece> among(List<StructurePiece> pieces) {
+		return pieces.stream().filter(StructureBookPiece.class::isInstance).map(StructureBookPiece.class::cast).findFirst();
 	}
 
 	/** Hands each book among a structure's pieces the piece it follows. Call whenever the pieces are gathered. */
@@ -123,9 +132,14 @@ public class StructureBookPiece extends StructurePiece {
 
 	/** Where the book is, following its anchor's latest move. */
 	public BlockPos spot() {
-		if (anchor == null) return new BlockPos(boundingBox.minX(), boundingBox.minY(), boundingBox.minZ());
+		if (anchor == null) return plannedSpot();
 
 		return originOf(anchor).offset(offset);
+	}
+
+	/** Where the book was planned, before its anchor settled. A book's lock is found by this spot. */
+	public BlockPos plannedSpot() {
+		return new BlockPos(boundingBox.minX(), boundingBox.minY(), boundingBox.minZ());
 	}
 
 	/** The enchantment the book gives at level I. */
@@ -134,8 +148,16 @@ public class StructureBookPiece extends StructurePiece {
 	}
 
 	/**
+	 * What locks the book, as planned with its structure: {@link BookLocks.Keys#NONE} when nothing does, or when the piece
+	 * was saved before it saved its lock.
+	 */
+	public BookLocks.Keys lock() {
+		return lock;
+	}
+
+	/**
 	 * The origins of the pieces that place the keepers locking the book: Brutes for a Bastion, sculk patches for an
-	 * Ancient City. None when keepers don't lock it.
+	 * Ancient City, Evoker rooms for a Stronghold. None when keepers don't lock it.
 	 */
 	public List<BlockPos> keepers() {
 		return keepers;
@@ -156,7 +178,11 @@ public class StructureBookPiece extends StructurePiece {
 		tag.store(OFFSET, BlockPos.CODEC, offset);
 		tag.putString(PLACEMENT, placement.name());
 
-		if (!keepers.isEmpty()) tag.store(KEEPERS, BlockPos.CODEC.listOf(), keepers);
+		if (!lock.positions().isEmpty()) {
+			tag.store(LOCK, BookLocks.Keys.CODEC, lock);
+		} else if (!keepers.isEmpty()) {
+			tag.store(LEGACY_KEEPERS, BlockPos.CODEC.listOf(), keepers);
+		}
 	}
 
 	@Override

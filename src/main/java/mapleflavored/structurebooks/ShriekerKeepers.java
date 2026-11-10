@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 import mapleflavored.mixin.FeaturePoolElementAccessor;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -96,11 +95,17 @@ public final class ShriekerKeepers {
 	 * keeper isn't standing there or its chunk isn't loaded, which is never loaded to check.
 	 */
 	public static Optional<BlockPos> standingSpot(ServerLevel level, BlockPos key) {
-		if (level.getChunkSource().getChunkNow(SectionPos.blockToSectionCoord(key.getX()), SectionPos.blockToSectionCoord(key.getZ())) == null) {
-			return Optional.empty();
-		}
+		if (!BookLocks.isChunkBuilt(level, key)) return Optional.empty();
 
 		return Stream.of(key, key.above()).filter(spot -> isSummoningShrieker(level.getBlockState(spot))).findFirst();
+	}
+
+	/**
+	 * Whether the keeper with this key is known to be gone: its chunk is loaded and no keeper stands there. A keeper in
+	 * a chunk that isn't loaded isn't known to be gone, and the chunk is never loaded to check.
+	 */
+	static boolean isGone(ServerLevel level, BlockPos key) {
+		return BookLocks.isChunkBuilt(level, key) && standingSpot(level, key).isEmpty();
 	}
 
 	/** The origins of a city's sculk patches: the positions of its pieces that place one. */

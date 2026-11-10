@@ -136,7 +136,8 @@ public final class StructureBooks {
 	/**
 	 * Takes the structure book at {@code pos} for the player, as one action: the player gets its level I book, the
 	 * block is removed and {@link #TAKEN} fires. Refused, with nothing changed and no event, when there's no book with an
-	 * enchantment there, the book is locked or the player has no free inventory slot. A locked book shows the player
+	 * enchantment there, the book is locked or the player has no free inventory slot. The lock is checked against the
+	 * world first, so a key the world shows is done never keeps the book locked. A locked book shows the player
 	 * trails leading to the spawners still to be Cleared, the keeper Brutes still alive, which glow, or the keeper
 	 * shriekers still standing.
 	 *
@@ -150,7 +151,7 @@ public final class StructureBooks {
 
 		if (enchantment.isEmpty()) return false;
 
-		Optional<BookLocks.Lock> lock = BookLocks.lockAt(level, pos).filter(BookLocks.Lock::isLocked);
+		Optional<BookLocks.Lock> lock = BookLocks.lockCheckedAgainstWorld(level, pos).filter(BookLocks.Lock::isLocked);
 
 		if (lock.isPresent()) {
 			refuseLocked(player, level, pos, lock.get());

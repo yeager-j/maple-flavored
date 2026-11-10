@@ -284,7 +284,6 @@ public class BastionBookGameTests {
 			new PiecesContainer(withoutStableChests),
 			level.getSeed(),
 			planned.getChunkPos(),
-			level.dimension(),
 			terrain,
 			level.getStructureTemplateManager()
 		);

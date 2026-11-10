@@ -324,6 +324,29 @@ public class AncientCityBookGameTests {
 		helper.succeed();
 	}
 
+	// A keeper can go without the lock counting it: removed while its chunk was being generated, or broken just before a
+	// crash that saved its chunk and not the lock.
+	@GameTest(maxTicks = 400)
+	public void checkingALockCountsTheKeepersMissingFromLoadedChunksOnly(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart start = planWithKeepers(level, 10, MAX_KEEPERS);
+		BlockPos book = BastionBookGameTests.bookPieces(start).getFirst().spot();
+		List<BlockPos> keepers = BookLocks.remainingKeys(level, book);
+		BlockPos standing = keepers.get(0);
+		BlockPos missing = keepers.get(1);
+		BlockPos unloaded = keepers.get(2);
+
+		keepers.forEach(keeper -> helper.assertFalse(isChunkLoaded(level, keeper), "The chunk of the keeper at " + keeper + " is loaded"));
+		helper.assertValueEqual(remainingOnceChecked(level, book), keepers, "the keepers left with none of their chunks loaded");
+
+		placeKeeper(level, standing);
+		level.getChunk(missing);
+		helper.assertFalse(isChunkLoaded(level, unloaded), "The last keeper's chunk is loaded");
+		helper.assertValueEqual(BookLocks.remainingKeys(level, book), keepers, "the keepers left before the lock is checked");
+		helper.assertValueEqual(remainingOnceChecked(level, book), List.of(standing, unloaded), "the keepers left once the lock is checked");
+		helper.succeed();
+	}
+
 	@GameTest(maxTicks = 400)
 	public void aLockedBookCountsItsBrokenKeepersAndTakingItSummonsNothing(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -499,6 +522,14 @@ public class AncientCityBookGameTests {
 	private static void clearAround(ServerLevel level, BlockPos origin) {
 		BlockPos.betweenClosedStream(origin.offset(-2, 0, -2), origin.offset(2, 3, 2))
 			.forEach(pos -> level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS));
+	}
+
+	private static List<BlockPos> remainingOnceChecked(ServerLevel level, BlockPos book) {
+		return BookLocks.lockCheckedAgainstWorld(level, book).map(BookLocks.Lock::remainingKeys).orElseThrow();
+	}
+
+	private static boolean isChunkLoaded(ServerLevel level, BlockPos pos) {
+		return level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4) != null;
 	}
 
 	private static void placeKeeper(ServerLevel level, BlockPos spot) {

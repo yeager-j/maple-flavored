@@ -3,6 +3,7 @@ package mapleflavored.gametest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -36,6 +37,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.RandomState;
@@ -45,6 +47,7 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
+import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.structures.NetherFortressPieces;
 import org.jspecify.annotations.Nullable;
 
@@ -149,7 +152,6 @@ public class FortressBookGameTests {
 			new PiecesContainer(withoutEntrance),
 			level.getSeed(),
 			planned.getChunkPos(),
-			level.dimension(),
 			terrain,
 			level.getStructureTemplateManager()
 		);
@@ -157,6 +159,7 @@ public class FortressBookGameTests {
 
 		helper.assertTrue(startCrossing instanceof NetherFortressPieces.StartPiece, "the first piece is the start crossing");
 		helper.assertValueEqual(bookPiece(replanned).spot(), worldPos(startCrossing, START_CROSSING_BOOK), "the book's spot");
+		helper.assertValueEqual(BookLocks.lockAt(level, bookPiece(replanned).spot()), Optional.empty(), "the lock of a book that was only added to its pieces");
 		helper.succeed();
 	}
 
@@ -251,6 +254,102 @@ public class FortressBookGameTests {
 		ServerLifecycleEvents.BEFORE_SAVE.invoker().onBeforeSave(level.getServer(), false, false);
 
 		helper.assertTrue(savedBooks(level).contains(book), "the planned lock is in the saved locks");
+		helper.succeed();
+	}
+
+	// Worldgen that finishes while the chunks are saved plans its locks after the save has begun.
+	@GameTest(maxTicks = 400)
+	public void aLockPlannedDuringASaveIsRecordedAfterIt(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart planned = Structures.plan(level, BuiltinStructures.FORTRESS, farChunk(7, 0));
+		BlockPos book = bookPiece(planned).spot();
+
+		ServerLifecycleEvents.AFTER_SAVE.invoker().onAfterSave(level.getServer(), true, false);
+
+		helper.assertTrue(savedBooks(level).contains(book), "the planned lock is in the locks the level saves as it closes");
+		helper.succeed();
+	}
+
+	@GameTest(maxTicks = 400)
+	public void aSavedBookPieceKeepsItsWholeLock(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart planned = planFortress(level, 8, start -> true, "any fortress");
+		StructureBookPiece book = bookPiece(planned);
+		StructureBookPiece loaded = bookPiece(Structures.saveAndLoad(level, planned));
+		List<BlockPos> spawners = blazeSpawners(planned);
+
+		helper.assertValueEqual(book.lock(), new BookLocks.Keys(BookLocks.Kind.SPAWNERS, spawners), "the lock the planned piece carries");
+		helper.assertValueEqual(loaded.lock(), book.lock(), "the lock the loaded piece carries");
+		helper.assertValueEqual(loaded.keepers(), List.of(), "the keepers of a book that spawners lock");
+
+		// Saved before the piece saved its lock: a keeper lock's keys alone, which must still place its keepers.
+		StructurePieceSerializationContext context = StructurePieceSerializationContext.fromLevel(level);
+		CompoundTag legacy = book.createTag(context);
+
+		legacy.remove("Lock");
+		legacy.store("Keepers", BlockPos.CODEC.listOf(), spawners);
+
+		StructureBookPiece old = new StructureBookPiece(legacy);
+
+		helper.assertValueEqual(old.keepers(), spawners, "the keepers of a piece saved before locks");
+		helper.assertValueEqual(old.lock(), BookLocks.Keys.NONE, "the lock of a piece saved before locks");
+		helper.assertValueEqual(
+			old.createTag(context).read("Keepers", BlockPos.CODEC.listOf()),
+			Optional.of(spawners),
+			"the keepers saved again"
+		);
+		helper.succeed();
+	}
+
+	// A crash can save a fortress's chunks without its lock: chunks are written as they change, the locks only on a save.
+	@GameTest(maxTicks = 400)
+	public void aLockMissingFromTheSavedLocksIsPlannedAgainFromItsSavedFortress(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart planned = planFortress(level, 9, start -> true, "any fortress");
+		BlockPos book = bookPiece(planned).spot();
+		BookLocks.Lock lock = BookLocks.lockAt(level, book).orElseThrow();
+
+		Structures.chunks(planned).forEach(chunk -> Structures.build(level, planned, chunk));
+		forgetLock(level, book);
+		helper.assertValueEqual(BookLocks.lockAt(level, book), Optional.empty(), "the forgotten lock of a fortress no chunk holds");
+
+		Structures.register(level, planned);
+		forgetLock(level, book);
+		helper.assertTrue(!savedBooks(level).contains(book), "the lock is missing from the saved locks");
+		helper.assertValueEqual(sentLocked(level, book), true, "the book is sent locked");
+		helper.assertValueEqual(BookLocks.lockAt(level, book), Optional.of(lock), "the lock planned again");
+		helper.assertTrue(savedBooks(level).contains(book), "the lock planned again is saved");
+
+		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+
+		helper.assertTrue(!StructureBooks.take(player, book), "the book is refused");
+		helper.succeed();
+	}
+
+	// The same crash can save a spawner Cleared or removed without the lock having counted it.
+	@GameTest(maxTicks = 400)
+	public void aTakeCountsTheSpawnersTheLockMissedBeingClearedOrRemoved(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		StructureStart planned = planFortress(level, 10, start -> blazeSpawners(start).size() == 2, "a fortress with two Blaze spawners");
+		BlockPos book = bookPiece(planned).spot();
+		List<BlockPos> spawners = blazeSpawners(planned);
+		BlockPos standing = spawners.get(0);
+		BlockPos removed = spawners.get(1);
+		ServerPlayer player = SpawnerGameTests.survivalPlayer(helper, Items.STONE);
+
+		Structures.chunks(planned).forEach(chunk -> Structures.build(level, planned, chunk));
+		Structures.register(level, planned);
+		level.setBlockAndUpdate(removed, Blocks.AIR.defaultBlockState());
+		helper.assertValueEqual(BookLocks.remainingKeys(level, book), spawners, "the spawners left with one removed unseen");
+
+		helper.assertTrue(!StructureBooks.take(player, book), "the book is refused with a spawner standing");
+		helper.assertValueEqual(BookLocks.remainingKeys(level, book), List.of(standing), "the spawners left after the refused take");
+
+		clear(helper, standing);
+		forgetLock(level, book);
+		helper.assertValueEqual(BookLocks.remainingKeys(level, book), spawners, "the spawners left once the lock is planned again");
+
+		helper.assertTrue(StructureBooks.take(player, book), "the book is taken with one spawner Cleared and one gone");
 		helper.succeed();
 	}
 
@@ -366,6 +465,16 @@ public class FortressBookGameTests {
 		return ((ListTag) savedBookLocks(level)).stream()
 			.map(lock -> BlockPos.CODEC.parse(ops, ((CompoundTag) lock).get("book")).getOrThrow())
 			.toList();
+	}
+
+	// Loads the level's locks back without the book's, as a restart after a crash that saved the book's structure and not
+	// its lock would. Nothing the locks counted for the book is kept.
+	private static void forgetLock(ServerLevel level, BlockPos book) {
+		RegistryOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+		ListTag saved = (ListTag) savedBookLocks(level);
+
+		saved.removeIf(lock -> BlockPos.CODEC.parse(ops, ((CompoundTag) lock).get("book")).getOrThrow().equals(book));
+		level.getDataStorage().set(BookLocks.TYPE, BookLocks.TYPE.codec().parse(ops, saved).getOrThrow());
 	}
 
 	// Saves the level's locks and loads them back in their place, as a restart would.
