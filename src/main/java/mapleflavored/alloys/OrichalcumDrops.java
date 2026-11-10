@@ -32,7 +32,8 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>A chance condition can't see the drop it guards, so it skips the bonus only where its place shows the drop is
  * excluded: on a pool whose every entry is an excluded item, or on an excluded item's own entry. An excluded drop's
- * Looting chance must sit in one of those places; on a pool shared with other items it would get the bonus.
+ * Looting chance must sit in one of those places; on a pool shared with other items it would get the bonus. A GameTest
+ * reads every loot table and fails on one that breaks this.
  */
 public final class OrichalcumDrops {
 	private static final TagKey<Item> NO_BONUS = TagKey.create(Registries.ITEM, MapleFlavored.id("no_orichalcum_bonus"));
@@ -118,6 +119,6 @@ public final class OrichalcumDrops {
 
 		if (!fortuneOrLooting || heldItem == null) return false;
 
-		return AlloyGear.alloyOf(heldItem).orElse(null) == Alloy.ORICHALCUM && AlloyGear.kindOf(heldItem).map(GearKind::isHeld).orElse(false);
+		return AlloyGear.pieceOf(heldItem).filter(piece -> piece.isToolOf(Alloy.ORICHALCUM)).isPresent();
 	}
 }

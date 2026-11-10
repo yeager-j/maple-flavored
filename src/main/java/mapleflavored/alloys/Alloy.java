@@ -1,12 +1,14 @@
 package mapleflavored.alloys;
 
 import com.mojang.serialization.Codec;
+import java.util.Objects;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The five Alloys. Each is made in an Alloy Furnace from a Netherite Ingot and one storage block, and has its own ingot,
@@ -32,16 +34,22 @@ public enum Alloy implements StringRepresentable {
 	private static final float BLOCK_BLAST_RESISTANCE = 1200.0F;
 
 	private final String path;
+	private final MapColor color;
 	private final AlloyTraits traits;
-	private final Item ingot;
-	private final Block block;
+	private @Nullable Item ingot;
+	private @Nullable Block block;
 
 	Alloy(String name, MapColor color, AlloyTraits traits) {
 		this.path = name;
+		this.color = color;
 		this.traits = traits;
-		ingot = Alloys.registerItem(name + "_ingot", Item::new, new Item.Properties().fireResistant());
+	}
+
+	/** Registers this Alloy's ingot and block. Call once from {@link Alloys#register()}. */
+	void register() {
+		ingot = Alloys.registerItem(path + "_ingot", Item::new, new Item.Properties().fireResistant());
 		block = Alloys.registerBlock(
-			name + "_block",
+			path + "_block",
 			Block::new,
 			BlockBehaviour.Properties.of()
 				.mapColor(color)
@@ -67,13 +75,13 @@ public enum Alloy implements StringRepresentable {
 		return traits;
 	}
 
-	/** This Alloy's ingot. */
+	/** This Alloy's ingot. Throws before {@link Alloys#register()} has run. */
 	public Item ingot() {
-		return ingot;
+		return Objects.requireNonNull(ingot, "Alloys.register() hasn't run");
 	}
 
-	/** This Alloy's storage block, which works as a beacon base. */
+	/** This Alloy's storage block, which works as a beacon base. Throws before {@link Alloys#register()} has run. */
 	public Block block() {
-		return block;
+		return Objects.requireNonNull(block, "Alloys.register() hasn't run");
 	}
 }

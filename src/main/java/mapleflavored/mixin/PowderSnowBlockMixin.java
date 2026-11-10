@@ -1,7 +1,6 @@
 package mapleflavored.mixin;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloySets;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.PowderSnowBlock;
@@ -15,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(PowderSnowBlock.class)
 public abstract class PowderSnowBlockMixin {
 	@ModifyReturnValue(method = "canEntityWalkOnPowderSnow", at = @At("RETURN"))
-	private static boolean shakudoSetWalksOnPowderSnow(boolean canWalk, Entity entity) {
-		return canWalk || AlloySets.wearsFullSet(entity, Alloy.SHAKUDO);
+	private static boolean alloySetWalksOnPowderSnow(boolean canWalk, Entity entity) {
+		return canWalk || AlloySets.walksOnPowderSnow(entity);
 	}
 }

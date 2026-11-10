@@ -1,10 +1,10 @@
 package mapleflavored.mobs;
 
+import mapleflavored.deepvariants.OverworldDepths;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 
 /**
@@ -12,8 +12,6 @@ import net.minecraft.world.level.ServerLevelAccessor;
  * are safer. Spawners, spawn eggs and commands are unaffected, so creeper farms keep working.
  */
 public final class CreeperSpawns {
-	private static final int LOWEST_SURFACE_Y = 63;
-
 	private CreeperSpawns() {
 	}
 
@@ -21,9 +19,6 @@ public final class CreeperSpawns {
 	public static boolean allowed(EntityType<?> type, ServerLevelAccessor level, EntitySpawnReason reason, BlockPos pos) {
 		boolean natural = reason == EntitySpawnReason.NATURAL || reason == EntitySpawnReason.CHUNK_GENERATION;
 
-		return type != EntityTypes.CREEPER
-			|| !natural
-			|| level.getLevel().dimension() != Level.OVERWORLD
-			|| pos.getY() < LOWEST_SURFACE_Y;
+		return type != EntityTypes.CREEPER || !natural || !OverworldDepths.isSurface(level.getLevel(), pos.getY());
 	}
 }

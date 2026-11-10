@@ -101,6 +101,7 @@ public class DeepVariantGameTests {
 	private static final int SHIELD_COOLDOWN_TICKS = 100;
 	private static final float LEVEL_ONE_DAMAGE_BONUS = 2.5F;
 	private static final int MONSTER_XP = 5;
+	private static final int LOWEST_SURFACE_Y = 63;
 	private static final int XP_ROLLS = 50;
 	private static final int BLINDNESS_TICKS = 60;
 	private static final int MAX_JOCKEY_ATTEMPTS = 3_000;
@@ -340,7 +341,7 @@ public class DeepVariantGameTests {
 			}
 
 			helper.assertValueEqual(base.getExperienceReward(level, killer), MONSTER_XP, baseType.toShortString() + "'s XP");
-			helper.assertValueEqual(deep.getExperienceReward(level, killer), DeepVariants.XP_MULTIPLIER * MONSTER_XP, deepType.toShortString() + "'s XP");
+			helper.assertValueEqual(deep.getExperienceReward(level, killer), 2 * MONSTER_XP, deepType.toShortString() + "'s XP");
 			deep.discard();
 			base.discard();
 		}
@@ -358,7 +359,7 @@ public class DeepVariantGameTests {
 		for (int roll = 0; roll < XP_ROLLS; roll++) {
 			int xp = archer.getExperienceReward(level, killer);
 
-			helper.assertTrue(xp % DeepVariants.XP_MULTIPLIER == 0, "a Deep Skeleton's XP " + xp + " is doubled");
+			helper.assertTrue(xp % 2 == 0, "a Deep Skeleton's XP " + xp + " is doubled");
 			helper.assertTrue(xp >= 2 * (MONSTER_XP + 1) && xp <= 2 * (MONSTER_XP + 3), "a Deep Skeleton's XP " + xp + " is twice an armed skeleton's");
 		}
 
@@ -378,6 +379,24 @@ public class DeepVariantGameTests {
 			Map.of(Attributes.MAX_HEALTH, 24.0, Attributes.ATTACK_DAMAGE, 4.0, Attributes.JUMP_STRENGTH, 0.85, Attributes.FALL_DAMAGE_MULTIPLIER, 0.0)
 		);
 		assertStats(helper, spawnNaturally(helper, DeepVariants.DEEP_CREEPER), Map.of(Attributes.MAX_HEALTH, 20.0, Attributes.ATTACK_DAMAGE, 2.0));
+		helper.succeed();
+	}
+
+	// Natural Deep Creepers are all below Y 0, so only an egg or a command puts one where a creeper's health is lower.
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void aDeepCreeperSpawnedAtTheSurfaceHasASurfaceCreepersHealth(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos inTest = helper.absolutePos(MOB_POS);
+		Creeper creeper = DeepVariants.DEEP_CREEPER.create(level, EntitySpawnReason.SPAWN_ITEM_USE);
+
+		creeper.snapTo(Vec3.atBottomCenterOf(inTest.atY(LOWEST_SURFACE_Y)));
+		creeper.setPersistenceRequired();
+		level.addFreshEntityWithPassengers(creeper);
+		// Moved into the test so its cleanup removes the mob.
+		creeper.snapTo(Vec3.atBottomCenterOf(inTest));
+
+		// A creeper's health on Normal, where vanilla's is 20.
+		assertStats(helper, creeper, Map.of(Attributes.MAX_HEALTH, 16.0));
 		helper.succeed();
 	}
 

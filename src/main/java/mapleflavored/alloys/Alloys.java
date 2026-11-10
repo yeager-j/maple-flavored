@@ -12,6 +12,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
@@ -38,6 +39,9 @@ public final class Alloys {
 	// A blast furnace's hardness and light while lit.
 	private static final float FURNACE_HARDNESS = 3.5F;
 	private static final int LIT_LIGHT = 13;
+
+	/** The five Alloys' ingots. */
+	public static final TagKey<Item> ALLOY_INGOTS = TagKey.create(Registries.ITEM, MapleFlavored.id("alloy_ingots"));
 
 	/** The Alloy Furnace's fuel, dropped by Piglin Brutes that a player kills. One makes one Alloy ingot. */
 	public static final Item ANCIENT_EMBER = registerItem(
@@ -94,6 +98,7 @@ public final class Alloys {
 	public static void register() {
 		List<Alloy> alloys = Arrays.asList(Alloy.values());
 
+		alloys.forEach(Alloy::register);
 		AlloyGear.register();
 		AlloyMining.register();
 		IllagerNeutrality.register();

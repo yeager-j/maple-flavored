@@ -3,7 +3,6 @@ package mapleflavored.hearts;
 import com.mojang.serialization.Codec;
 import mapleflavored.MapleFlavored;
 import mapleflavored.advancements.MapleTriggers;
-import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloySets;
 import mapleflavored.subspaces.WitherSubspaces;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
@@ -26,7 +25,6 @@ import net.minecraft.world.level.Level;
  */
 final class WitheredHearts {
 	private static final int WITHERING_INTERVAL_TICKS = 5 * 20;
-	private static final int ELECTRUM_WITHERING_INTERVAL_TICKS = 10 * 20;
 	private static final int RECOVERY_INTERVAL_TICKS = 10 * 20;
 	private static final int FEWEST_USABLE_HEARTS = 1;
 
@@ -108,7 +106,7 @@ final class WitheredHearts {
 	}
 
 	private static int witheringInterval(ServerPlayer player) {
-		return AlloySets.wearsFullSet(player, Alloy.ELECTRUM) ? ELECTRUM_WITHERING_INTERVAL_TICKS : WITHERING_INTERVAL_TICKS;
+		return AlloySets.witheringInterval(player, WITHERING_INTERVAL_TICKS);
 	}
 
 	// Checks the stored count, not the clamped one, so recovery still runs to clear hearts hidden by low Max Hearts.

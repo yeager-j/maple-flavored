@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "group": "orichalcum_ingot",
+  "ingredients": [
+    "maple_flavored:orichalcum_block"
+  ],
+  "result": {
+    "count": 9,
+    "id": "maple_flavored:orichalcum_ingot"
+  }
+}

@@ -37,7 +37,6 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.Heightmap;
 import org.jspecify.annotations.Nullable;
@@ -51,7 +50,7 @@ public final class DeepVariants {
 	/** How many times its base mob's vanilla XP a Deep variant drops. */
 	public static final int XP_MULTIPLIER = 2;
 
-	private static final int DEEP_BELOW_Y = 0;
+
 	/** The Deep Zombie: a zombie whose hits disable shields. */
 	public static final EntityType<DeepZombie> DEEP_ZOMBIE = registerEntityType(
 		"deep_zombie",
@@ -101,8 +100,8 @@ public final class DeepVariants {
 		EntityTypes.SPIDER, DEEP_SPIDER
 	);
 	private static final Map<EntityType<? extends Mob>, EntityType<? extends Mob>> BASE_BY_DEEP = inverse(DEEP_BY_BASE);
-	// A Deep Creeper's threat is its fixed explosion power, so it keeps its base mob's health and damage.
-	private static final Set<EntityType<? extends Mob>> BASES_WITH_VANILLA_STATS = Set.of(EntityTypes.CREEPER);
+	// A Deep Creeper's threat is its fixed explosion power, so it spawns with exactly its base mob's stats.
+	private static final Set<EntityType<? extends Mob>> BASES_WITH_UNCHANGED_STATS = Set.of(EntityTypes.CREEPER);
 
 	private DeepVariants() {
 	}
@@ -133,7 +132,7 @@ public final class DeepVariants {
 	public static NaturalSpawn naturalSpawn(EntityType<?> picked, ServerLevel level, BlockPos pos, @Nullable SpawnGroupData groupData) {
 		EntityType<? extends Mob> deep = DEEP_BY_BASE.get(picked);
 
-		if (deep == null || !isDeep(level, pos)) return new NaturalSpawn(picked, groupData);
+		if (deep == null || !OverworldDepths.isDeep(level, pos.getY())) return new NaturalSpawn(picked, groupData);
 
 		SpawnGroupData aged = needsZombieAge(picked, groupData) ? rollZombieAge(level.getRandom()) : groupData;
 
@@ -141,16 +140,21 @@ public final class DeepVariants {
 	}
 
 	/**
-	 * A Deep variant's health and damage base values from the game rules, as percentages of {@code base}'s vanilla
-	 * values. Damage is left out for a base mob without an attack attribute, and both for the Deep Creeper, which keeps
-	 * its base mob's.
+	 * The attribute base values the Deep variant of {@code base} spawns with, given {@code baseMobStats}: the values
+	 * its base mob would spawn with at the same spot. An attribute in neither keeps the entity type's default.
+	 *
+	 * <p>The Deep Creeper takes its base mob's values unchanged. Every other Deep variant takes them with its health
+	 * and attack damage replaced by the game rules' percentages of {@code base}'s vanilla values; damage is left out
+	 * for a base mob without an attack attribute. {@link #damageMultiplier} reads the attack damage written here.
 	 */
-	public static Map<Holder<Attribute>, Double> spawnStats(EntityType<? extends Mob> base, GameRules rules) {
-		if (BASES_WITH_VANILLA_STATS.contains(base)) return Map.of();
+	public static Map<Holder<Attribute>, Double> spawnStats(EntityType<? extends Mob> base, Map<Holder<Attribute>, Double> baseMobStats, GameRules rules) {
+		if (BASES_WITH_UNCHANGED_STATS.contains(base)) return baseMobStats;
 
 		AttributeSupplier vanilla = DefaultAttributes.getSupplier(base);
-		Map<Holder<Attribute>, Double> stats = new HashMap<>();
+		Map<Holder<Attribute>, Double> stats = new HashMap<>(baseMobStats);
 
+		// The base mob's own damage goes even when the rule has none to put in its place.
+		stats.remove(Attributes.ATTACK_DAMAGE);
 		stats.put(Attributes.MAX_HEALTH, percentOf(vanilla.getBaseValue(Attributes.MAX_HEALTH), rules.get(MapleGameRules.DEEP_VARIANT_HEALTH_PERCENT)));
 
 		if (vanilla.hasAttribute(Attributes.ATTACK_DAMAGE)) {
@@ -161,8 +165,9 @@ public final class DeepVariants {
 	}
 
 	/**
-	 * How many times its base mob's vanilla damage {@code deep} deals, as set by the damage rule when it spawned. Scale
-	 * damage the attack attribute doesn't cover, such as arrows, by this. 1 for a mob that isn't a Deep variant.
+	 * How many times its base mob's vanilla damage {@code deep} deals, as set by the damage rule when it spawned: the
+	 * attack damage {@link #spawnStats} gave it, over vanilla's. Scale damage the attack attribute doesn't cover, such
+	 * as arrows, by this. 1 for a mob that isn't a Deep variant.
 	 */
 	public static double damageMultiplier(Mob deep) {
 		Optional<EntityType<? extends Mob>> base = baseOf(deep.getType());
@@ -177,10 +182,6 @@ public final class DeepVariants {
 	/** The skeleton type that rides {@code spider} when it spawns as a jockey: a Deep Skeleton for a Deep Spider. */
 	public static EntityType<? extends Skeleton> jockeyRider(Spider spider) {
 		return spider.getType() == DEEP_SPIDER ? DEEP_SKELETON : EntityTypes.SKELETON;
-	}
-
-	private static boolean isDeep(ServerLevel level, BlockPos pos) {
-		return level.dimension() == Level.OVERWORLD && pos.getY() < DEEP_BELOW_Y;
 	}
 
 	// A zombie group's age is rolled once, by its first member.

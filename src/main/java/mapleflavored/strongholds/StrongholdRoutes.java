@@ -2,7 +2,6 @@ package mapleflavored.strongholds;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +20,8 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
  * Routes through a Stronghold room by room. A Stronghold's pieces sit wall to wall, and two pieces join where a doorway
  * opens through both walls. A route is the fewest doorways from one piece to another, found by reading the blocks, so a
  * doorway the player walls up closes it.
+ *
+ * <p>Vanilla's rooms can overlap. A spot inside several rooms is in the one the Stronghold planned first.
  */
 public final class StrongholdRoutes {
 	// Which rooms each room's walls touch, by Stronghold. Fixed once planned, so worked out once; whether a doorway is
@@ -40,9 +41,10 @@ public final class StrongholdRoutes {
 
 		if (!stronghold.isValid()) return List.of();
 
-		Map<StructurePiece, List<Touching>> touching = TOUCHING.computeIfAbsent(stronghold, StrongholdRoutes::touchingRooms);
-		Optional<StructurePiece> start = roomAt(touching.keySet(), from);
-		Optional<StructurePiece> end = roomAt(touching.keySet(), to);
+		List<StructurePiece> rooms = stronghold.getPieces().stream().filter(StrongholdLayout::isStrongholdPiece).toList();
+		Map<StructurePiece, List<Touching>> touching = TOUCHING.computeIfAbsent(stronghold, planned -> touchingRooms(rooms));
+		Optional<StructurePiece> start = roomAt(rooms, from);
+		Optional<StructurePiece> end = roomAt(rooms, to);
 
 		if (start.isEmpty() || end.isEmpty() || start.get() == end.get()) return List.of();
 
@@ -71,10 +73,6 @@ public final class StrongholdRoutes {
 		}
 
 		return apart;
-	}
-
-	private static Map<StructurePiece, List<Touching>> touchingRooms(StructureStart stronghold) {
-		return touchingRooms(stronghold.getPieces().stream().filter(StrongholdLayout::isStrongholdPiece).toList());
 	}
 
 	private static Map<StructurePiece, List<Touching>> touchingRooms(List<StructurePiece> rooms) {
@@ -184,7 +182,8 @@ public final class StrongholdRoutes {
 		return level.hasChunkAt(feet) && level.getBlockState(feet).isAir() && level.getBlockState(feet.above()).isAir();
 	}
 
-	private static Optional<StructurePiece> roomAt(Collection<StructurePiece> rooms, BlockPos pos) {
+	// The first of the {@code rooms}, in the order the Stronghold planned them, that holds {@code pos}.
+	private static Optional<StructurePiece> roomAt(List<StructurePiece> rooms, BlockPos pos) {
 		return rooms.stream().filter(room -> room.getBoundingBox().isInside(pos)).findFirst();
 	}
 

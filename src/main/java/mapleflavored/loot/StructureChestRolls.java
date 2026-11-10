@@ -19,8 +19,11 @@ import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntPr
 import net.minecraft.world.level.storage.loot.providers.number.ints.UniformGenerator;
 
 /**
- * Gives dangerous structures' chests, and each ominous vault opening, their own rolls for Crystal Hearts and Pith.
- * Every roll is a pool of its own, added after the table's vanilla pools, so the table's other loot is unchanged.
+ * Gives structure chests, and each ominous vault opening, their own rolls for Crystal Hearts and Pith. Every roll is a
+ * pool of its own, added after the table's vanilla pools, so the table's other loot is unchanged.
+ *
+ * <p>Only tables left as vanilla's are listed. A table Maple ships its own file for declares its rolls there: the
+ * Bastion's treasure, hoglin stable and other chests.
  */
 public final class StructureChestRolls {
 	/** One extra pool: 1 to {@code most} of {@code item}, at even odds per count, with probability {@code chance}. */
@@ -42,17 +45,11 @@ public final class StructureChestRolls {
 		}
 	}
 
-	/** Pith at the rate every Bastion chest but the treasure room's gets. */
-	private static final Roll BASTION_PITH = Roll.one(MapleItems.PITH, 0.05f);
-
 	/** The extra rolls, by the vanilla table they join. */
 	private static final Map<ResourceKey<LootTable>, List<Roll>> ROLLS = Map.ofEntries(
 		Map.entry(BuiltInLootTables.ANCIENT_CITY, List.of(Roll.one(MapleItems.CRYSTAL_HEART, 0.09f), Roll.one(MapleItems.PITH, 0.18f))),
 		Map.entry(BuiltInLootTables.STRONGHOLD_CORRIDOR, List.of(Roll.one(MapleItems.CRYSTAL_HEART, 0.125f), Roll.one(MapleItems.PITH, 0.06f))),
-		Map.entry(BuiltInLootTables.BASTION_TREASURE, List.of(Roll.one(MapleItems.CRYSTAL_HEART, 0.25f), Roll.one(MapleItems.PITH, 0.05f))),
-		Map.entry(BuiltInLootTables.BASTION_OTHER, List.of(BASTION_PITH)),
-		Map.entry(BuiltInLootTables.BASTION_BRIDGE, List.of(BASTION_PITH)),
-		Map.entry(BuiltInLootTables.BASTION_HOGLIN_STABLE, List.of(BASTION_PITH)),
+		Map.entry(BuiltInLootTables.BASTION_BRIDGE, List.of(Roll.one(MapleItems.PITH, 0.05f))),
 		Map.entry(BuiltInLootTables.WOODLAND_MANSION, List.of(Roll.one(MapleItems.CRYSTAL_HEART, 0.125f))),
 		Map.entry(BuiltInLootTables.SIMPLE_DUNGEON, List.of(Roll.one(MapleItems.PITH, 0.05f))),
 		Map.entry(BuiltInLootTables.ABANDONED_MINESHAFT, List.of(Roll.one(MapleItems.PITH, 0.05f))),
@@ -70,7 +67,6 @@ public final class StructureChestRolls {
 
 	/** Adds the rolls to their tables on every data load. Call once at mod initialization. */
 	public static void register() {
-		// Runs for data pack replacements too, so the Bastion and vault tables Maple overrides still get their rolls.
 		LootTableEvents.MODIFY.register((key, table, source, registries) ->
 			ROLLS.getOrDefault(key, List.of()).forEach(roll -> table.withPool(roll.pool()))
 		);
