@@ -7,7 +7,6 @@ import mapleflavored.advancements.MapleTriggers;
 import mapleflavored.effects.CreakingTrails;
 import mapleflavored.items.MapleItems;
 import mapleflavored.mixin.BaseSpawnerAccessor;
-import mapleflavored.structurebooks.StructureBooks;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -29,7 +28,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.BaseSpawner;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -49,9 +47,10 @@ import org.jspecify.annotations.Nullable;
 /**
  * The Spawners module: normal spawners ignore light, and can't be broken or blown up until they are Cleared by the
  * deaths of their own mobs. Until then they spawn twice as fast and glow hot, cooling a little with each of those
- * deaths. Breaking a Cleared spawner gives 1 Pith, and the book it holds, if any.
+ * deaths. Breaking a Cleared spawner gives 1 Pith, and the extra drop it holds, if any.
  *
- * <p>Trial spawners are left vanilla. Each spawner's state is a {@link SpawnerClearing} on its block entity.
+ * <p>Trial spawners and spawner minecarts are left vanilla. Each spawner's state is a {@link SpawnerClearing} on its
+ * block entity, and clients see a {@link SpawnerView} of it.
  */
 public final class Spawners {
 	private static final ResourceKey<LootTable> SPAWNER_LOOT = Blocks.SPAWNER.getLootTable().orElseThrow();
@@ -84,19 +83,22 @@ public final class Spawners {
 		LootTableEvents.MODIFY_DROPS.register(Spawners::addClearedDrops);
 	}
 
-	/** Whether the block at {@code pos} is a Cleared spawner. Works on the client too, from the state it was sent. */
+	/** Whether the block at {@code pos} is a Cleared spawner. Works on the client too, from the view it was sent. */
 	public static boolean isCleared(BlockGetter level, BlockPos pos) {
-		return clearing(level.getBlockEntity(pos)).map(SpawnerClearing::isCleared).orElse(false);
+		return level.getBlockEntity(pos) instanceof ClearableSpawner spawner && spawner.maple_flavored$view().cleared();
 	}
 
-	/** The Clearing of the spawner at {@code pos}, or empty when there's no normal spawner there. */
+	/**
+	 * The Clearing of the spawner at {@code pos}, or empty when there's no normal spawner there. Server only: a client's
+	 * copy is never sent it and stays unstarted, so client code asks {@link #isCleared} or reads the spawner's view.
+	 */
 	public static Optional<SpawnerClearing> clearing(BlockGetter level, BlockPos pos) {
 		return clearing(level.getBlockEntity(pos));
 	}
 
-	/** Makes the spawner drop a level I book of {@code enchantment} with its Pith, once Cleared and broken. */
-	public static void holdBook(SpawnerBlockEntity spawner, Holder<Enchantment> enchantment) {
-		clearingOf(spawner).holdBook(enchantment);
+	/** Makes the spawner drop a copy of {@code drop} with its Pith, once Cleared and broken. */
+	public static void holdDrop(SpawnerBlockEntity spawner, ItemStack drop) {
+		clearingOf(spawner).holdDrop(drop);
 		spawner.setChanged();
 	}
 
@@ -118,6 +120,14 @@ public final class Spawners {
 	 */
 	public static int spawnDelay(Level level, BlockPos pos, BaseSpawner spawner, int vanillaDelay) {
 		return blockClearing(level, pos, spawner).map(clearing -> clearing.spawnDelay(vanillaDelay)).orElse(vanillaDelay);
+	}
+
+	/**
+	 * Whether the spawner at {@code pos} spawns its mobs whatever the light: a spawner block does, and a spawner
+	 * minecart keeps vanilla's light rules.
+	 */
+	public static boolean ignoresLight(Level level, BlockPos pos, BaseSpawner spawner) {
+		return blockClearing(level, pos, spawner).isPresent();
 	}
 
 	/** Where the spawner block that spawned {@code entity} is, if one did. */
@@ -224,7 +234,7 @@ public final class Spawners {
 		if (clearing.isEmpty() || !clearing.get().isCleared()) return;
 
 		drops.add(new ItemStack(MapleItems.PITH));
-		clearing.get().heldBook().ifPresent(book -> drops.add(StructureBooks.levelOneBook(book)));
+		clearing.get().heldDrop().ifPresent(drops::add);
 	}
 
 	// Saves the change and sends it to clients, which draw the glow and predict whether the spawner can be mined.

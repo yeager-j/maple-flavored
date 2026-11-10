@@ -36,8 +36,12 @@ public class BookLootGameTests {
 	private static final Map<ContextKeySet, Set<ResourceKey<Enchantment>>> BOOKS_BY_TABLE_TYPE = Map.of(
 		LootContextParamSets.CHEST, Set.of(),
 		LootContextParamSets.PIGLIN_BARTER, Set.of(),
-		LootContextParamSets.VAULT, OMINOUS_VAULT_BOOKS,
 		LootContextParamSets.FISHING, FISHING_BOOKS
+	);
+	// The ominous vault's opening and the rare table it nests are chest tables, and the only ones with books.
+	private static final Set<ResourceKey<LootTable>> OMINOUS_VAULT_TABLES = Set.of(
+		BuiltInLootTables.TRIAL_CHAMBERS_REWARD_OMINOUS,
+		BuiltInLootTables.TRIAL_CHAMBERS_REWARD_OMINOUS_RARE
 	);
 	private static final int SWEEP_ROLLS = 50;
 	// A seeded rate must land within this many binomial standard deviations of the expected rate.
@@ -49,7 +53,9 @@ public class BookLootGameTests {
 		int swept = 0;
 
 		for (Holder.Reference<LootTable> table : tables) {
-			Set<ResourceKey<Enchantment>> allowedBooks = BOOKS_BY_TABLE_TYPE.get(table.value().getParamSet());
+			Set<ResourceKey<Enchantment>> allowedBooks = OMINOUS_VAULT_TABLES.contains(table.key())
+				? OMINOUS_VAULT_BOOKS
+				: BOOKS_BY_TABLE_TYPE.get(table.value().getParamSet());
 
 			if (allowedBooks == null) continue;
 
@@ -71,7 +77,7 @@ public class BookLootGameTests {
 			swept++;
 		}
 
-		// Every vanilla chest table, plus the vault, fishing and barter tables.
+		// Every vanilla chest table, the vault's among them, plus the fishing and barter tables.
 		helper.assertTrue(swept > 60, "swept " + swept + " tables");
 		helper.succeed();
 	}
@@ -115,6 +121,18 @@ public class BookLootGameTests {
 		helper.assertTrue(diamonds.stream().allMatch(diamond -> diamond.getCount() == 1), "every diamond stack is 1");
 		assertRate(helper, "ominous vault diamonds", diamonds.size(), rolls, 2.0 / 29.0);
 		assertSeenAndPlain(helper, rare, Items.CROSSBOW, Items.DIAMOND_AXE, Items.DIAMOND_CHESTPLATE);
+		helper.succeed();
+	}
+
+	// Vanilla declares both as chest tables. A table that kept its books by its declared type would lose them here.
+	@GameTest
+	public void theOminousVaultTablesAreChestTables(GameTestHelper helper) {
+		for (ResourceKey<LootTable> key : OMINOUS_VAULT_TABLES) {
+			LootTable table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
+
+			helper.assertValueEqual(table.getParamSet(), LootContextParamSets.CHEST, key.identifier() + "'s type");
+		}
+
 		helper.succeed();
 	}
 

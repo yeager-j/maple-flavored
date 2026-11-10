@@ -25,7 +25,6 @@
 		"EntityCollisionContextMixin",
 		"EntityMixin",
 		"EntityTypeMixin",
-		"EntitySpawnReasonMixin",
 		"FeaturePoolElementAccessor",
 		"FireworkRocketEntityMixin",
 		"FiveCrossingMixin",

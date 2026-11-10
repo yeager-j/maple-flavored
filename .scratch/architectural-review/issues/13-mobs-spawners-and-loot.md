@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P2 (Medium)
 
@@ -139,12 +139,12 @@ The halved delay and the death marking both go through `Spawners`, which exclude
 
 ## Checklist
 
-- [ ] 1. One production table says which books and gear each loot table type keeps. The ominous vault tables don't depend on their `type` field for it, and Maple's overrides no longer declare loot that Java erases.
-- [ ] 2. The client receives a spawner view with the share remaining and Cleared, not the save format, and doesn't compute the requirement.
-- [ ] 3. One place names the Overworld's depth bands, and `CommonMobs`, `CreeperSpawns` and `DeepVariants` read it.
-- [ ] 4. A spawner holds an opaque extra drop, and `spawners` no longer imports `structurebooks`.
-- [ ] 5. Each replaced table gets its Pith and Crystal Heart rolls from one author, `abandoned_mineshaft` has one danger class, and `LootDiamonds` names tables by key.
-- [ ] 6. One class assembles a Deep variant's stats, and a summoned Deep Creeper above Y 63 has a creeper's health.
-- [ ] 7. The light rule goes through `Spawners` and applies to the same spawners as the other rules.
-- [ ] 8. The Wither Skeleton's attack is a row in `CommonMobs`, and the mixin only gives the sword.
-- [ ] 9. `StructureChestGameTests` rolls through `LootRolls`, and the Deep variant XP test expects a literal.
+- [x] 1. One production table says which books and gear each loot table type keeps. The ominous vault tables don't depend on their `type` field for it, and Maple's overrides no longer declare loot that Java erases.
+- [x] 2. The client receives a spawner view with the share remaining and Cleared, not the save format, and doesn't compute the requirement.
+- [x] 3. One place names the Overworld's depth bands, and `CommonMobs`, `CreeperSpawns` and `DeepVariants` read it.
+- [x] 4. A spawner holds an opaque extra drop, and `spawners` no longer imports `structurebooks`.
+- [x] 5. Each replaced table gets its Pith and Crystal Heart rolls from one author, `abandoned_mineshaft` has one danger class, and `LootDiamonds` names tables by key.
+- [x] 6. One class assembles a Deep variant's stats, and a summoned Deep Creeper above Y 63 has a creeper's health.
+- [x] 7. The light rule goes through `Spawners` and applies to the same spawners as the other rules.
+- [x] 8. The Wither Skeleton's attack is a row in `CommonMobs`, and the mixin only gives the sword.
+- [x] 9. `StructureChestGameTests` rolls through `LootRolls`, and the Deep variant XP test expects a literal.

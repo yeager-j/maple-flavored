@@ -6,12 +6,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import mapleflavored.spawners.ClearableSpawner;
 import mapleflavored.spawners.SpawnerClearing;
+import mapleflavored.spawners.SpawnerView;
 import mapleflavored.spawners.Spawners;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -25,6 +27,7 @@ import net.minecraft.world.entity.ConversionParams;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.vehicle.minecart.MinecartSpawner;
 import net.minecraft.world.entity.monster.zombie.Drowned;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.Item;
@@ -32,19 +35,24 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * Normal spawners ignore light, can't be mined or blown up until Cleared by their own mobs' deaths (12, plus 2 per
- * additional player), and drop 1 Pith when a Cleared one is broken with a pickaxe.
+ * additional player), and drop 1 Pith when a Cleared one is broken with a pickaxe. Spawner minecarts stay vanilla.
  */
 public class SpawnerGameTests {
 	private static final BlockPos SPAWNER = new BlockPos(3, 2, 3);
@@ -97,6 +105,24 @@ public class SpawnerGameTests {
 
 			helper.assertValueEqual(Spawners.spawnedBy(zombies.getFirst()).orElse(null), origin, "the zombie's spawner");
 		});
+	}
+
+	@GameTest
+	public void onlyASpawnerBlockIgnoresLight(GameTestHelper helper) {
+		SpawnerBlockEntity block = placeSpawner(helper, SPAWNER, new CompoundTag());
+		MinecartSpawner minecart = helper.spawn(EntityTypes.SPAWNER_MINECART, SECOND_SPAWNER);
+
+		helper.assertTrue(Spawners.ignoresLight(helper.getLevel(), block.getBlockPos(), block.getSpawner()), "a spawner block ignores light");
+		helper.assertFalse(
+			Spawners.ignoresLight(helper.getLevel(), minecart.blockPosition(), minecart.getSpawner()),
+			"a spawner minecart ignores light"
+		);
+		// A minecart rolling over a spawner block is still a minecart.
+		helper.assertFalse(
+			Spawners.ignoresLight(helper.getLevel(), block.getBlockPos(), minecart.getSpawner()),
+			"a spawner minecart over a spawner block ignores light"
+		);
+		helper.succeed();
 	}
 
 	@GameTest(maxTicks = 60)
@@ -174,19 +200,19 @@ public class SpawnerGameTests {
 		Spawners.recordPlayersInRange(helper.getLevel(), spawner.getBlockPos(), spawner);
 
 		helper.assertValueEqual(clearing(spawner).requirement(), 12, "a solo requirement");
-		helper.assertValueEqual(clearing(spawner).remainingShare(), 1.0F, "share to go before any death");
+		helper.assertValueEqual(clearing(spawner).view().remainingShare(), 1.0F, "share to go before any death");
 
 		killMarkedMobs(helper, spawner, 1);
-		helper.assertValueEqual(clearing(spawner).remainingShare(), 11.0F / 12.0F, "share to go after 1 death");
+		helper.assertValueEqual(clearing(spawner).view().remainingShare(), 11.0F / 12.0F, "share to go after 1 death");
 
 		killMarkedMobs(helper, spawner, 10);
-		helper.assertValueEqual(clearing(spawner).remainingShare(), 1.0F / 12.0F, "share to go after 11 deaths");
+		helper.assertValueEqual(clearing(spawner).view().remainingShare(), 1.0F / 12.0F, "share to go after 11 deaths");
 		helper.assertFalse(clearing(spawner).isCleared(), "11 deaths don't Clear it");
 		helper.assertValueEqual(clearsAt(spawner), 0, "Cleared events before");
 
 		killMarkedMobs(helper, spawner, 1);
 		helper.assertTrue(clearing(spawner).isCleared(), "the 12th death Clears it");
-		helper.assertValueEqual(clearing(spawner).remainingShare(), 0.0F, "a Cleared spawner has no glow left");
+		helper.assertValueEqual(clearing(spawner).view().remainingShare(), 0.0F, "a Cleared spawner has no glow left");
 		helper.assertValueEqual(clearsAt(spawner), 1, "Cleared events after the 12th death");
 
 		killMarkedMobs(helper, spawner, 3);
@@ -211,7 +237,7 @@ public class SpawnerGameTests {
 		helper.assertValueEqual(clearing(spawner).requirement(), 16, "the requirement for 3 players");
 
 		killMarkedMobs(helper, spawner, 4);
-		helper.assertValueEqual(clearing(spawner).remainingShare(), 0.75F, "share to go after 4 of 16 deaths");
+		helper.assertValueEqual(clearing(spawner).view().remainingShare(), 0.75F, "share to go after 4 of 16 deaths");
 
 		Vec3 farAway = centre.add(0.0, 50.0, 0.0);
 
@@ -304,26 +330,85 @@ public class SpawnerGameTests {
 	}
 
 	@GameTest
-	public void aSpawnersClearingSurvivesSavingAndReachesTheClient(GameTestHelper helper) {
+	public void aClearedSpawnerDropsACopyOfTheDropItHolds(GameTestHelper helper) {
+		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
+		ServerPlayer player = survivalPlayer(helper, Items.DIAMOND_PICKAXE);
+
+		Spawners.holdDrop(spawner, new ItemStack(Items.NAME_TAG, 3));
+		killMarkedMobs(helper, spawner, 12);
+		player.gameMode.destroyBlock(spawner.getBlockPos());
+
+		helper.assertValueEqual(droppedAt(helper, SPAWNER), List.of("1 maple_flavored:pith", "3 minecraft:name_tag"), "drops");
+		helper.succeed();
+	}
+
+	// Saves from before the held drop could be any item named only the enchantment of a level I book.
+	@GameTest
+	public void aSpawnerSavedWithABookStillHoldsIt(GameTestHelper helper) {
 		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
 		ServerLevel level = helper.getLevel();
+		CompoundTag saved = spawner.saveWithFullMetadata(level.registryAccess());
+		CompoundTag oldClearing = new CompoundTag();
+
+		oldClearing.putString("book", "minecraft:smite");
+		saved.put("maple_flavored:clearing", oldClearing);
+
+		SpawnerBlockEntity loaded = (SpawnerBlockEntity) BlockEntity.loadStatic(spawner.getBlockPos(), spawner.getBlockState(), saved, level.registryAccess());
+		ItemStack held = clearing(loaded).heldDrop().orElse(ItemStack.EMPTY);
 		Holder<Enchantment> smite = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SMITE);
+
+		helper.assertValueEqual(held.getItem(), Items.ENCHANTED_BOOK, "the held drop");
+		helper.assertValueEqual(held.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).getLevel(smite), 1, "its Smite level");
+		helper.succeed();
+	}
+
+	// A save can't hold deaths at the requirement without Cleared, so loading one makes it Cleared.
+	@GameTest
+	public void aSpawnerSavedWithItsRequirementMetLoadsCleared(GameTestHelper helper) {
+		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
+		ServerLevel level = helper.getLevel();
+		CompoundTag saved = spawner.saveWithFullMetadata(level.registryAccess());
+		CompoundTag met = new CompoundTag();
+
+		met.putInt("deaths", 12);
+		saved.put("maple_flavored:clearing", met);
+
+		SpawnerBlockEntity loaded = (SpawnerBlockEntity) BlockEntity.loadStatic(spawner.getBlockPos(), spawner.getBlockState(), saved, level.registryAccess());
+
+		helper.assertValueEqual(view(loaded), new SpawnerView(0.0F, true), "the loaded spawner's view");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void aSpawnersClearingSurvivesSavingAndOnlyItsViewReachesTheClient(GameTestHelper helper) {
+		SpawnerBlockEntity spawner = placeSpawner(helper, SPAWNER, new CompoundTag());
+		ServerLevel level = helper.getLevel();
 
 		playerAt(helper, Vec3.atCenterOf(spawner.getBlockPos()).add(1.0, 0.0, 0.0));
 		Spawners.recordPlayersInRange(level, spawner.getBlockPos(), spawner);
-		Spawners.holdBook(spawner, smite);
-		killMarkedMobs(helper, spawner, 5);
+		Spawners.holdDrop(spawner, new ItemStack(Items.NAME_TAG, 3));
+		killMarkedMobs(helper, spawner, 3);
 
 		CompoundTag saved = spawner.saveWithFullMetadata(level.registryAccess());
 		BlockEntity loaded = BlockEntity.loadStatic(spawner.getBlockPos(), spawner.getBlockState(), saved, level.registryAccess());
-		SpawnerBlockEntity onClient = new SpawnerBlockEntity(spawner.getBlockPos(), spawner.getBlockState());
-
-		onClient.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), spawner.getUpdateTag(level.registryAccess())));
 
 		assertSameClearing(helper, clearing((SpawnerBlockEntity) loaded), clearing(spawner), "after a save");
-		assertSameClearing(helper, clearing(onClient), clearing(spawner), "in the update tag");
 
-		killMarkedMobs(helper, spawner, 7);
+		SpawnerBlockEntity onClient = asSentToAClient(level, spawner);
+
+		// 9 of 12 deaths to go. The client is given that, and none of what it was worked out from.
+		helper.assertValueEqual(view(onClient), new SpawnerView(0.75F, false), "the view sent to a client");
+		helper.assertValueEqual(clearing(onClient).deaths(), 0, "deaths sent to a client");
+		helper.assertValueEqual(clearing(onClient).playerCount(), 0, "players sent to a client");
+		helper.assertTrue(clearing(onClient).heldDrop().isEmpty(), "no held drop is sent to a client");
+		helper.assertFalse(Spawners.isCleared(onlyBlockEntity(onClient), onClient.getBlockPos()), "a client can't mine it yet");
+
+		killMarkedMobs(helper, spawner, 9);
+
+		SpawnerBlockEntity clearedOnClient = asSentToAClient(level, spawner);
+
+		helper.assertValueEqual(view(clearedOnClient), new SpawnerView(0.0F, true), "the view sent to a client once Cleared");
+		helper.assertTrue(Spawners.isCleared(onlyBlockEntity(clearedOnClient), clearedOnClient.getBlockPos()), "a client can mine it once Cleared");
 
 		SpawnerBlockEntity reloaded = (SpawnerBlockEntity) BlockEntity.loadStatic(
 			spawner.getBlockPos(), spawner.getBlockState(), spawner.saveWithFullMetadata(level.registryAccess()), level.registryAccess()
@@ -366,6 +451,49 @@ public class SpawnerGameTests {
 
 	static SpawnerClearing clearing(SpawnerBlockEntity spawner) {
 		return ((ClearableSpawner) spawner).maple_flavored$clearing();
+	}
+
+	private static SpawnerView view(SpawnerBlockEntity spawner) {
+		return ((ClearableSpawner) spawner).maple_flavored$view();
+	}
+
+	// A client's copy of the spawner: a new block entity that has loaded only the update tag.
+	private static SpawnerBlockEntity asSentToAClient(ServerLevel level, SpawnerBlockEntity spawner) {
+		SpawnerBlockEntity onClient = new SpawnerBlockEntity(spawner.getBlockPos(), spawner.getBlockState());
+
+		onClient.loadWithComponents(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), spawner.getUpdateTag(level.registryAccess())));
+
+		return onClient;
+	}
+
+	// A world holding nothing but {@code blockEntity}, as a client's world holds its copy.
+	private static BlockGetter onlyBlockEntity(BlockEntity blockEntity) {
+		return new BlockGetter() {
+			@Override
+			public BlockEntity getBlockEntity(BlockPos pos) {
+				return pos.equals(blockEntity.getBlockPos()) ? blockEntity : null;
+			}
+
+			@Override
+			public BlockState getBlockState(BlockPos pos) {
+				return pos.equals(blockEntity.getBlockPos()) ? blockEntity.getBlockState() : Blocks.AIR.defaultBlockState();
+			}
+
+			@Override
+			public FluidState getFluidState(BlockPos pos) {
+				return Fluids.EMPTY.defaultFluidState();
+			}
+
+			@Override
+			public int getHeight() {
+				return 0;
+			}
+
+			@Override
+			public int getMinY() {
+				return 0;
+			}
+		};
 	}
 
 	/** Each item entity near {@code relative}, as its count and item id, such as {@code "1 maple_flavored:pith"}. */
@@ -430,6 +558,9 @@ public class SpawnerGameTests {
 		helper.assertValueEqual(actual.deaths(), expected.deaths(), "deaths " + when);
 		helper.assertValueEqual(actual.playerCount(), expected.playerCount(), "players " + when);
 		helper.assertValueEqual(actual.isCleared(), expected.isCleared(), "Cleared " + when);
-		helper.assertValueEqual(actual.heldBook(), expected.heldBook(), "held book " + when);
+		helper.assertTrue(
+			ItemStack.matches(actual.heldDrop().orElse(ItemStack.EMPTY), expected.heldDrop().orElse(ItemStack.EMPTY)),
+			"held drop " + when
+		);
 	}
 }

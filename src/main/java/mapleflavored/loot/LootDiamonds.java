@@ -1,17 +1,14 @@
 package mapleflavored.loot;
 
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootTable;
 
 /**
@@ -20,17 +17,17 @@ import net.minecraft.world.level.storage.loot.LootTable;
  */
 public final class LootDiamonds {
 	/** The tables whose diamonds become shards, one for one. Every other table keeps whole diamonds. */
-	private static final Set<ResourceKey<LootTable>> SHARD_TABLES = Stream.of(
-		"chests/buried_treasure",
-		"chests/shipwreck_treasure",
-		"chests/desert_pyramid",
-		"archaeology/desert_pyramid",
-		"chests/abandoned_camp_secret_chest",
-		"chests/abandoned_mineshaft",
-		"chests/trial_chambers/intersection",
-		"chests/trial_chambers/intersection_barrel",
-		"pots/trial_chambers/corridor"
-	).map(path -> ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace(path))).collect(Collectors.toUnmodifiableSet());
+	private static final Set<ResourceKey<LootTable>> SHARD_TABLES = Set.of(
+		BuiltInLootTables.BURIED_TREASURE,
+		BuiltInLootTables.SHIPWRECK_TREASURE,
+		BuiltInLootTables.DESERT_PYRAMID,
+		BuiltInLootTables.DESERT_PYRAMID_ARCHAEOLOGY,
+		BuiltInLootTables.ABANDONED_CAMP_SECRET_CHEST,
+		BuiltInLootTables.ABANDONED_MINESHAFT,
+		BuiltInLootTables.TRIAL_CHAMBERS_INTERSECTION,
+		BuiltInLootTables.TRIAL_CHAMBERS_INTERSECTION_BARREL,
+		BuiltInLootTables.TRIAL_CHAMBERS_CORRIDOR_POT
+	);
 
 	private LootDiamonds() {
 	}

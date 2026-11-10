@@ -83,7 +83,7 @@ public class DungeonGameTests {
 			);
 
 			SpawnerBlockEntity spawner = (SpawnerBlockEntity) level.getBlockEntity(origin);
-			Optional<Holder<Enchantment>> book = Spawners.clearing(level, origin).flatMap(clearing -> clearing.heldBook());
+			Optional<Holder<Enchantment>> book = heldBook(level, origin);
 
 			EntityType<?> mob = spawnedMob(level, spawner);
 			ResourceKey<Enchantment> expectedBook = mob == EntityTypes.SPIDER ? Enchantments.BANE_OF_ARTHROPODS : Enchantments.SMITE;
@@ -147,7 +147,7 @@ public class DungeonGameTests {
 		helper.assertValueEqual(spawners.size(), 1, "cave spider spawners in the corridor");
 
 		SpawnerBlockEntity spawner = spawners.getFirst();
-		Optional<Holder<Enchantment>> book = Spawners.clearing(level, spawner.getBlockPos()).flatMap(clearing -> clearing.heldBook());
+		Optional<Holder<Enchantment>> book = heldBook(level, spawner.getBlockPos());
 
 		helper.assertValueEqual(spawnedMob(level, spawner), EntityTypes.CAVE_SPIDER, "the Mineshaft spawner's mob");
 		helper.assertTrue(book.isPresent() && book.get().is(Enchantments.BANE_OF_ARTHROPODS), "the cave spider spawner holds Bane of Arthropods");
@@ -221,6 +221,14 @@ public class DungeonGameTests {
 		}
 
 		throw new IllegalStateException("no spider corridor in " + MINESHAFT_PLANS + " planned Mineshafts");
+	}
+
+	// The enchantment of the book the spawner holds as its extra drop.
+	private static Optional<Holder<Enchantment>> heldBook(ServerLevel level, BlockPos pos) {
+		return Spawners.clearing(level, pos)
+			.flatMap(clearing -> clearing.heldDrop())
+			.filter(drop -> drop.is(Items.ENCHANTED_BOOK))
+			.flatMap(drop -> drop.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).keySet().stream().findFirst());
 	}
 
 	private static EntityType<?> spawnedMob(ServerLevel level, SpawnerBlockEntity spawner) {

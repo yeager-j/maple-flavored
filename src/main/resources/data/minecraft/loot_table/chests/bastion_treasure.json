@@ -59,115 +59,79 @@
         },
         {
           "type": "minecraft:item",
-          "modifier": [
-            {
-              "type": "minecraft:set_damage",
-              "damage": {
-                "type": "minecraft:uniform",
-                "max": 1.0,
-                "min": 0.8
-              }
-            },
-            {
-              "type": "minecraft:enchant_randomly",
-              "options": "#minecraft:on_random_loot"
+          "modifier": {
+            "type": "minecraft:set_damage",
+            "damage": {
+              "type": "minecraft:uniform",
+              "max": 1.0,
+              "min": 0.8
             }
-          ],
+          },
           "name": "minecraft:diamond_sword",
           "weight": 6
         },
         {
           "type": "minecraft:item",
-          "modifier": [
-            {
-              "type": "minecraft:set_damage",
-              "damage": {
-                "type": "minecraft:uniform",
-                "max": 1.0,
-                "min": 0.8
-              }
-            },
-            {
-              "type": "minecraft:enchant_randomly",
-              "options": "#minecraft:on_random_loot"
+          "modifier": {
+            "type": "minecraft:set_damage",
+            "damage": {
+              "type": "minecraft:uniform",
+              "max": 1.0,
+              "min": 0.8
             }
-          ],
+          },
           "name": "minecraft:diamond_spear",
           "weight": 6
         },
         {
           "type": "minecraft:item",
-          "modifier": [
-            {
-              "type": "minecraft:set_damage",
-              "damage": {
-                "type": "minecraft:uniform",
-                "max": 1.0,
-                "min": 0.8
-              }
-            },
-            {
-              "type": "minecraft:enchant_randomly",
-              "options": "#minecraft:on_random_loot"
+          "modifier": {
+            "type": "minecraft:set_damage",
+            "damage": {
+              "type": "minecraft:uniform",
+              "max": 1.0,
+              "min": 0.8
             }
-          ],
+          },
           "name": "minecraft:diamond_chestplate",
           "weight": 6
         },
         {
           "type": "minecraft:item",
-          "modifier": [
-            {
-              "type": "minecraft:set_damage",
-              "damage": {
-                "type": "minecraft:uniform",
-                "max": 1.0,
-                "min": 0.8
-              }
-            },
-            {
-              "type": "minecraft:enchant_randomly",
-              "options": "#minecraft:on_random_loot"
+          "modifier": {
+            "type": "minecraft:set_damage",
+            "damage": {
+              "type": "minecraft:uniform",
+              "max": 1.0,
+              "min": 0.8
             }
-          ],
+          },
           "name": "minecraft:diamond_helmet",
           "weight": 6
         },
         {
           "type": "minecraft:item",
-          "modifier": [
-            {
-              "type": "minecraft:set_damage",
-              "damage": {
-                "type": "minecraft:uniform",
-                "max": 1.0,
-                "min": 0.8
-              }
-            },
-            {
-              "type": "minecraft:enchant_randomly",
-              "options": "#minecraft:on_random_loot"
+          "modifier": {
+            "type": "minecraft:set_damage",
+            "damage": {
+              "type": "minecraft:uniform",
+              "max": 1.0,
+              "min": 0.8
             }
-          ],
+          },
           "name": "minecraft:diamond_leggings",
           "weight": 6
         },
         {
           "type": "minecraft:item",
-          "modifier": [
-            {
-              "type": "minecraft:set_damage",
-              "damage": {
-                "type": "minecraft:uniform",
-                "max": 1.0,
-                "min": 0.8
-              }
-            },
-            {
-              "type": "minecraft:enchant_randomly",
-              "options": "#minecraft:on_random_loot"
+          "modifier": {
+            "type": "minecraft:set_damage",
+            "damage": {
+              "type": "minecraft:uniform",
+              "max": 1.0,
+              "min": 0.8
             }
-          ],
+          },
           "name": "minecraft:diamond_boots",
           "weight": 6
         },
@@ -220,7 +184,7 @@
             "type": "minecraft:set_count",
             "count": 1
           },
-          "name": "minecraft:enchanted_golden_apple",
+          "name": "minecraft:golden_apple",
           "weight": 2
         }
       ],
@@ -361,6 +325,32 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:netherite_upgrade_smithing_template"
+        }
+      ],
+      "rolls": 1
+    },
+    {
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.25
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "maple_flavored:crystal_heart"
+        }
+      ],
+      "rolls": 1
+    },
+    {
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.05
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "maple_flavored:pith"
         }
       ],
       "rolls": 1
