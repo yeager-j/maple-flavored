@@ -6,9 +6,9 @@
     "P": "maple_flavored:pith"
   },
   "pattern": [
-    "DDD",
+    "D D",
     "DPD",
-    "DDD"
+    " D "
   ],
   "result": {
     "id": "maple_flavored:crystal_heart"

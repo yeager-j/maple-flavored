@@ -61,7 +61,7 @@ Some rewards demand more than finding the building:
 - **Nether Fortresses.** The book unlocks once you've dealt with ever Blaze spawner in the structure.
 - **Ancient Cities.** The book is locked until three keeper shriekers near the city's edge are broken. The city keeps you Grounded, unable to fly, until the book is taken. A held Echo Shard lets you hear nearby shriekers pulse, even through walls.
 
-Fishing gives Luck of the Sea and Lure books, Trial Chamber ominous vaults give the Mace's books, and bosses drop their own. Every other enchanted book is removed from loot, with each chest entry replaced by a diamond, and all found equipment is plain. Librarians buy surplus enchanted books instead of selling them, paying emeralds and experience.
+Fishing gives Luck of the Sea and Lure books, Trial Chamber ominous vaults give the Mace's books, and bosses drop their own. Every other enchanted book is removed from loot, with each chest entry replaced by a diamond (or a Diamond Shard in safe chests), and all found equipment is plain. Librarians buy surplus enchanted books instead of selling them, paying emeralds and experience.
 
 Details: [Structures](../.scratch/maple-flavored-design/issues/14-structures.md), [Stronghold Illagers](../.scratch/maple-flavored-design/issues/18-stronghold-illagers.md), [Illager book drops](../.scratch/maple-flavored-design/issues/19-illager-book-drops.md) and [Librarian book trades](../.scratch/maple-flavored-design/issues/20-librarian-book-trades.md).
 
@@ -69,7 +69,7 @@ Details: [Structures](../.scratch/maple-flavored-design/issues/14-structures.md)
 
 Normal spawners ignore light and spawn twice as fast until they are **Cleared** by defeating twelve of their mobs, plus two more for each additional player who approached. Any death counts, including traps and lava. Until then a spawner cannot be broken or blown up, and a forcefield around it shrinks as the count rises. Once Cleared, it spawns at vanilla's pace and stays Cleared, so you can keep it for a farm or break it for **Pith**. Dungeon and cave spider spawners also hold an enchanted book that drops with the Pith. Dungeons are more common, and trial spawners are unchanged.
 
-Pith is the rare material behind health and Netherite. It comes from broken spawners, Elder Guardians, Evokers, Piglin Brutes, guarded chests, and a Nether Star, which crafts into nine. A Crystal Heart is eight diamonds around one Pith, and a Netherite Ingot needs four Pith in place of gold.
+Pith is the rare material behind health and Netherite. It comes from broken spawners, Elder Guardians, Evokers, Piglin Brutes, guarded chests, and a Nether Star, which crafts into nine. A Crystal Heart is five diamonds and one Pith in a heart shape, and a Netherite Ingot needs four Pith in place of gold.
 
 Details: [Structures](../.scratch/maple-flavored-design/issues/14-structures.md).
 
@@ -98,6 +98,8 @@ Gold tools, weapons and armor gain an extra Enchantment Slot. Chainmail gains a 
 Zombies on Normal and Hard are fast and frail and step up a full block. Skeletons, creepers, baby zombies and several other mobs have less health, so fights are dangerous without being long. Husks become slow, armored brutes, and Wither Skeletons swing Netherite swords. Creepers spawn naturally only below Y 63 in the Overworld. Mobs drop their gear without its enchantments.
 
 Below Y 0, natural spawns of adult zombies, skeletons, creepers and spiders become **Deep variants**, spider jockeys included. Each has half again its base mob's health and hits twice as hard, and each has a threat of its own: Deep Zombies disable a raised shield as an axe does, Deep Skeletons spot players from twice as far and shoot Slowness arrows, Deep Creepers keep a creeper's health but explode as hard as TNT, and Deep Spiders' bites blind. Each looks like deepslate, drops its base mob's loot and twice its XP. Spawners, spawn eggs and structures still make the ordinary mob, so farms are unaffected and a player in copper gear thinks twice about caving deep.
+
+Diamond ore drops a **Diamond Shard**, and four craft a diamond, so a diamond set takes about four times the mining, whether you explore big caves or branch mine. Safe, early loot such as buried treasure, shipwrecks, mineshafts and desert pyramids gives shards too, while dangerous structures keep whole diamonds.
 
 Details: [Early equipment](../.scratch/maple-flavored-design/issues/07-early-game-tiers.md) and [Mob changes](../.scratch/maple-flavored-design/issues/05-mob-changes.md).
 

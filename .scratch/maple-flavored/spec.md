@@ -46,7 +46,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 17. As a player at 30 Max Hearts, I want a Crystal Heart to be refused without being used up, so that I never waste one.
 18. As a player, I want a Crystal Heart in either hand to save me from a lethal hit like a Totem of Undying, so that I choose between more health and a safety net.
 19. As a player, I want a Crystal Heart or Totem save not to count as a death, so that it costs me no hearts and no XP.
-20. As a player, I want to craft a Crystal Heart from 8 diamonds around 1 Pith, so that mining and dangerous fights both feed my health.
+20. As a player, I want to craft a Crystal Heart from 5 diamonds and 1 Pith in a heart shape, so that mining and dangerous fights both feed my health.
 21. As a player, I want a Crystal Heart for my first Elder Guardian kill, my first Wither kill and Free the End, so that each boss rewards my health once.
 22. As a player, I want a Crystal Heart for surviving a Warden until it digs back down or dies, so that sneaking past it is a real win.
 23. As a member of a group, I want every nearby player to get boss credit, so that we can fight bosses together.
@@ -100,7 +100,10 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 65. As a player, I want the Ender Dragon to drop a Zephyr book and the Wither a Blight book every kill, so that repeating those fights stays worthwhile.
 66. As a player who fishes, I want fishing to give only Luck of the Sea and Lure books, so that fishing books come from fishing.
 67. As a player, I want ominous vaults to give the Mace's books, so that Trial Chambers stay worth raiding.
-68. As a player, I want every other enchanted-book chest entry replaced by 1 diamond, so that chests still feel worth opening.
+68. As a player, I want every other enchanted-book chest entry replaced by 1 diamond, or 1 Diamond Shard where that chest's diamonds are shards, so that chests still feel worth opening.
+68a. As a miner, I want diamond ore to drop a Diamond Shard, and 4 shards to craft 1 diamond, so that a full diamond set takes about four times the mining by every route: big caves, small tunnels and branch mines.
+68b. As an explorer, I want dangerous structures to keep whole diamonds while safe, early sources give Diamond Shards, so that a diamond from loot is worth the most where it was earned.
+68c. As a player, I want Diamonds! to wait for my first whole diamond, not my first shard, so that the Milestone marks a real diamond.
 69. As a player, I want gear from chests, fishing, trades and bartering to be plain, so that enchantments come only from the Library.
 70. As a player, I want gear a mob spawned with to drop without enchantments, so that mobs are never an enchantment source.
 71. As a player, I want gear a mob picked up from me to drop unchanged, so that I get my own gear back.
@@ -184,7 +187,7 @@ Every rule below is fixed. Every number is a starting value that playtesting can
 133. As a player, I want Reinforcement to carry through smithing upgrades and between Alloys, stack with trims and Adamant, and work on enchanted armor, so that it is never wasted.
 134. As a player, I want a "Reinforced" tooltip line and chainmail drawn beneath my worn armor, showing through its gaps, so that I can see which pieces are Reinforced.
 135. As a player, I want to buy the Reinforcement template from a Master Armorer for 32 emeralds, so that Reinforcement is an early reward for earning villagers.
-136. As a player, I want to copy the template with 7 diamonds and a block of iron, so that I don't need a trade for every piece.
+136. As a player, I want to copy the template with 7 Diamond Shards and a block of iron, so that I don't need a trade for every piece.
 137. As a player, I want chainmail to stay uncraftable, so that its mob drops, chests and Armorer trades keep a use.
 
 ### Netherite and Alloys
@@ -333,7 +336,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 - Withered Hearts: one forms every 5 seconds under the Wither effect (10 with a full Electrum set), down to 1 usable heart. The timer starts when the effect starts and resets whenever the effect ends, so a single short exposure withers nothing. Re-applying Wither while it lasts (such as repeated Blight hits) keeps the effect, and the timer, running; check that vanilla's effect refresh already does this. The interval follows the armor worn at each moment, so swapping Electrum on or off changes it straight away. Timer progress is saved through logout. While the player has no Wither effect, is not in the Nether and is not inside any Wither Subspace, one returns every 10 seconds, empty, whatever armor they wear. That recovery timer starts once all three hold and resets whenever any stops holding, so it never carries over between visits; its progress is saved through logout. Stored hearts that a Max Hearts drop hides are cleared as soon as recovery can run. Getting a Withered Heart back is granted when the first one returns. Death clears them all at once. They persist through logout and sync to the client for darkened rendering.
 - Interface: read Max Hearts, usable hearts and Heart Floor; add a Max Heart (refused at 30); a death hook; a lethal-hit hook.
 
-**Crystal Heart and Pith items.** Crystal Heart is a registered item, consumed over about 1.6 seconds for +1 Max Heart, refused at the cap without being used. Held in either hand it saves from a lethal hit with the Totem's effects and is used without adding a heart. Pith is a registered item. Recipes: Crystal Heart is 8 diamonds around 1 Pith. Nether Star crafts into 9 Pith, with no reverse recipe.
+**Crystal Heart and Pith items.** Crystal Heart is a registered item, consumed over about 1.6 seconds for +1 Max Heart, refused at the cap without being used. Held in either hand it saves from a lethal hit with the Totem's effects and is used without adding a heart. Pith is a registered item. Recipes: Crystal Heart is 5 diamonds and 1 Pith in the shield recipe's shape, with the Pith in the centre (`D D`, `DPD`, ` D `). Nether Star crafts into 9 Pith, with no reverse recipe.
 
 **Remnants.** A registered entity owned by one player.
 - Created on death holding all of the player's XP points. A death at 0 XP creates none.
@@ -474,7 +477,7 @@ Each module below hides its rules behind a small interface. Other modules call t
 
 **Early tiers.** Stone tool recipes are removed, including the stone spear. A wooden pickaxe mines copper ore, deepslate copper ore and raw copper blocks through vanilla's tool tags. Everything else at stone tier needs copper or better. Trades, chest loot and the Bonus Chest give copper tools in place of stone tools. Gold tools, weapons and armor get the extra Enchantment Slot. Golden horse armor is unaffected.
 
-**Reinforcement.** A registered Reinforcement template item and smithing recipe type. Template plus armor piece plus any chainmail piece gives the Reinforced piece, marked by an item component that adds +1 armor toughness. Once per piece. It accepts every armor piece including the turtle helmet and Armored Elytra, and refuses plain Elytra, carved pumpkins, heads and mob armor. The component carries through every smithing upgrade. It works on enchanted armor. The client shows a "Reinforced" tooltip line and draws chainmail beneath the worn armor's own layers, so it shows only through the armor's gaps. The template copies with 7 diamonds and a block of iron into 2. A Master Armorer sells it for 32 emeralds. It is in no loot.
+**Reinforcement.** A registered Reinforcement template item and smithing recipe type. Template plus armor piece plus any chainmail piece gives the Reinforced piece, marked by an item component that adds +1 armor toughness. Once per piece. It accepts every armor piece including the turtle helmet and Armored Elytra, and refuses plain Elytra, carved pumpkins, heads and mob armor. The component carries through every smithing upgrade. It works on enchanted armor. The client shows a "Reinforced" tooltip line and draws chainmail beneath the worn armor's own layers, so it shows only through the armor's gaps. The template copies with 7 Diamond Shards and a block of iron into 2. A Master Armorer sells it for 32 emeralds. It is in no loot.
 
 **Villages and villagers.** Worldgen and entity changes. Village structure set uses spacing 80 and separation 50. Every village generates as vanilla's zombie variant, from its biome's zombie town centres only, so it is decayed, spawns zombie villagers and has no iron golems. Hay bales (piles and barn hay) and every brewing stand are removed from village pieces. The igloo basement villager is a zombie villager. Natural zombie villagers and conversion stay vanilla.
 
@@ -482,9 +485,11 @@ Each module below hides its rules behind a small interface. Other modules call t
 
 **Loot and worldgen data.**
 - Every enchanted book from any source (structure books, mob and boss drops, fishing and ominous vaults) holds exactly one enchantment at level I.
-- Enchanted books leave every other loot table. Each chest entry becomes 1 diamond. Ominous vaults keep only Breach, Density and Wind Burst books. Fishing's book entry becomes Luck of the Sea and Lure books.
+- Enchanted books leave every other loot table. Each chest entry becomes 1 diamond, or 1 Diamond Shard in the shard tables below. Ominous vaults keep only Breach, Density and Wind Burst books. Fishing's book entry becomes Luck of the Sea and Lure books.
 - All gear in loot is plain. Enchanted golden apples in loot become golden apples. Stone tools in loot become copper.
 - Village chests lose diamonds, obsidian and iron gear, with no replacements.
+- The Diamond Shard is a registered item, in the Ingredients tab just before the diamond. Diamond ore and deepslate diamond ore drop 1 shard where vanilla drops 1 diamond, with vanilla's Fortune bonus, explosion decay and XP, and Silk Touch still drops the ore. Smelting or blasting either ore gives 1 shard. 4 shards craft 1 diamond, shapeless, a recipe unlocked by the first shard. Shards get the Orichalcum drop bonus.
+- Shard tables give 1 Diamond Shard for each diamond they would give, book diamonds included: buried treasure, shipwreck treasure, the desert pyramid's chests and suspicious sand, the abandoned camp's secret chest, abandoned mineshafts, and the trial chambers' intersection chests, barrels and corridor pots. Every other table keeps whole diamonds: Bastions, End Cities, Nether Fortresses, Strongholds, Ancient Cities, Woodland Mansions, Jungle Temples, trial chamber vaults, dungeons, pillager outposts and big ocean ruins.
 - New chest rolls, one item per success unless noted: Ancient City Crystal Heart 9%, Pith 18%; Stronghold corridor 12.5%, 6%; Bastion treasure 25%, 5%; other Bastion chests Pith 5%; Woodland Mansion Crystal Heart 12.5%; Dungeon Pith 5%; Mineshaft Pith 5%; ominous vault Pith 10% per opening; End City Crystal Heart 15%, Pith 50% giving 1 or 2.
 - Bastion chests that hold ancient debris (treasure, other and hoglin stable) also hold Ancient Embers: each ancient debris entry gets an Ancient Ember entry beside it, in the same pool with the same count and weight. The bridge chest has no debris and gets no Embers.
 - Dungeons: 15 placement attempts per chunk above Y 0 and 8 below, each with a single spawner. A dungeon whose spawner sits below Y 0 holds the Deep variant of the zombie, skeleton or spider vanilla chose, and its book follows that mob as before. Every other spawner keeps its mob at any depth.

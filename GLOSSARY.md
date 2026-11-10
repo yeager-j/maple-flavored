@@ -44,6 +44,10 @@ The block that smelts a Netherite Ingot and a storage block into an Alloy ingot,
 The Alloy Furnace's fuel, dropped by Piglin Brutes when a player kills them and found in Bastion chests alongside ancient debris. One makes one Alloy ingot.
 _Avoid_: Brute Ember
 
+**Diamond Shard**:
+What diamond ore drops, and what safe, early loot gives in place of a diamond. Four craft one diamond.
+_Avoid_: Diamond piece, diamond fragment
+
 **Armored Elytra**:
 An Alloy chestplate permanently combined with an Elytra at a Smithing Table, one per Alloy. It counts as that Alloy's chestplate for armor, traits, enchanting, repairs and set bonuses, and glides worse than a plain Elytra.
 
@@ -62,7 +66,7 @@ Said of an armor piece given +1 armor toughness by smithing it with chainmail an
 _Avoid_: Plated, chained
 
 **Reinforcement template**:
-The smithing template that Reinforces an armor piece with a chainmail piece. Master Armorers sell it, and 7 diamonds and a block of iron copy one into 2. It is in no loot.
+The smithing template that Reinforces an armor piece with a chainmail piece. Master Armorers sell it, and 7 Diamond Shards and a block of iron copy one into 2. It is in no loot.
 _Avoid_: Chainmail template, reinforcement upgrade
 
 ### World

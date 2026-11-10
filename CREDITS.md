@@ -7,7 +7,7 @@ Maple Flavored is inspired by these projects. Neither author is involved in or e
 
 ## Reused designs
 
-- The Crystal Heart recipe (8 diamonds around 1 Pith) and the Nether Star recipe (1 Nether Star into 9 Pith) come from Matcha Flavoured by Klei (`dp/data/matcha/recipe/crafting/crystal_heart.json`, where Pith is a renamed turtle scute).
+- The idea of a Crystal Heart recipe from diamonds around 1 Pith, which Maple makes 5 diamonds in a heart shape where Matcha Flavoured uses 8, and the Nether Star recipe (1 Nether Star into 9 Pith) come from Matcha Flavoured by Klei (`dp/data/matcha/recipe/crafting/crystal_heart.json`, where Pith is a renamed turtle scute).
 - Zephyr, a boots enchantment that gives a double jump, comes from Matcha Flavoured by Klei (`data/matcha/enchantment/zephyr.json`). Maple keeps the name and the double jump, and its own code adds the per-level heights and the Clutch. Matcha's sneak jump and slow falling are left out.
 - Village spacing 80 and separation 50, which makes villages about 5.5 times rarer, comes from Matcha Flavoured by Klei (`dp/data/minecraft/worldgen/structure_set/villages.json`), at commit `71c6e65`.
 - Dungeon frequency, 15 placement attempts per chunk above Y 0 and 8 below, comes from Matcha Flavoured by Klei (`dp/data/minecraft/worldgen/placed_feature/monster_room.json` and `monster_room_deep.json`).
@@ -21,6 +21,7 @@ Each reused asset is listed with its original path, its author, and whether it w
 - `assets/maple_flavored/textures/font/broken_heart.png`: the broken heart glyph (`\uE010`) cut from Matcha Flavoured's `MF_resourcepack/assets/minecraft/textures/font/custom_emojis.png` by Klei, at commit `0f196bd`. Changed only by cropping it to its own 8 × 8 image.
 - `assets/maple_flavored/textures/item/crystal_heart.png`: Matcha Flavoured's `assets/matcha/textures/item/heart_container.png` by Klei, from the 1.12.8-beta mod jar. Unchanged.
 - `assets/maple_flavored/textures/item/pith.png`: Matcha Flavoured's Pith, `assets/minecraft/textures/item/turtle_scute.png` by Klei, from the 1.12.8-beta mod jar. Unchanged.
+- `assets/maple_flavored/textures/item/diamond_shard.png`: Minecraft's `assets/minecraft/textures/item/amethyst_shard.png` by Mojang Studios, recoloured with the palette of Minecraft's `assets/minecraft/textures/item/diamond.png`, matched shade for shade by brightness.
 
 - `assets/maple_flavored/textures/environment/subspace_shell.png`: Minecraft's `assets/minecraft/textures/environment/end_sky.png` by Mojang Studios, recoloured sculk teal by Jackson Yeager.
 - The Alloy textures are all Matcha Flavoured's Netherite art by Klei, at commit `71c6e65`, which Maple uses as Electrum. For Steel, Shakudo, Adamant and Orichalcum, Jackson Yeager recoloured only the gold trim: silver for Steel, rose copper for Shakudo, diamond blue for Adamant (from Minecraft's `assets/minecraft/textures/item/diamond.png` by Mojang Studios) and emerald green for Orichalcum (from Minecraft's `assets/minecraft/textures/item/emerald.png`). The sources, under `assets/maple_flavored/` and with `{alloy}` standing for each of `steel`, `electrum`, `shakudo`, `adamant` and `orichalcum`, are:

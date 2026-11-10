@@ -29,4 +29,4 @@ Spec: the Maple Flavored spec in this folder, user story 193f and the Deep Cores
 ## Comments
 
 
-Closed on 2026-11-10: Deep Cores were dropped before they were built. Diamond scarcity (ticket 61) takes their place. The reasons are in the last comment of `.scratch/maple-flavored-design/issues/21-deep-caves.md`. The template stays in the repo, unused.
+Closed on 2026-11-10: Deep Cores were dropped before they were built. Diamond scarcity (ticket 61) takes their place. The reasons are in the last comment of `.scratch/maple-flavored-design/issues/21-deep-caves.md`. The template was deleted with ticket 61; it is in git history before that.

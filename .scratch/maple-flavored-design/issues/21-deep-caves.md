@@ -203,4 +203,4 @@ Reversal (2026-11-10):
   - Beating a core permanently changes a region, which sits badly with design rule 3.
 - Diamond scarcity replaces them: an ore drops a piece, and 4 craft 1 diamond, as Netherite scrap does. It slows every route to diamonds, branch mining included. It's ticket 61 in the build tracker.
 - The book moves are undone, since Fortune leaving the Woodland Mansion was their only cause. Fortune is back in Woodland Mansions, Looting in Jungle Temples, Thorns in the Bastion's hoglin stables and Knockback on Ravagers. "What Raids give in place of Knockback" is no longer open.
-- Jackson's Deep Core template is still in `src/main/resources/data/maple_flavored/structure/deep_core.nbt`, unused.
+- Jackson's Deep Core template, `src/main/resources/data/maple_flavored/structure/deep_core.nbt`, was deleted with ticket 61. It is in git history if Deep Cores come back.

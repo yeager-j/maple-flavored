@@ -13,11 +13,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 
 /**
  * Keeps loot from skipping the Library. Every loot roll, from any table, is rewritten by the type the table declares:
- * a chest's enchanted book becomes 1 diamond, every other enchanted book holds one enchantment at level I, and gear
+ * a chest's enchanted book becomes 1 diamond (a Diamond Shard where {@link LootDiamonds} says so), every other enchanted book holds one enchantment at level I, and gear
  * from chests, vaults, fishing and bartering is plain.
  */
 public final class LootEnchantments {
@@ -37,9 +38,7 @@ public final class LootEnchantments {
 	public static void register() {
 		// Nested tables run this again on their parent's pass, so every rule leaves an already-rewritten drop alone.
 		LootTableEvents.MODIFY_DROPS.register((table, context, drops) -> {
-			ContextKeySet tableType = table.value().getParamSet();
-
-			drops.replaceAll(drop -> rewrite(drop, tableType, context.getRandom()));
+			drops.replaceAll(drop -> rewrite(drop, table, context.getRandom()));
 		});
 	}
 
@@ -54,9 +53,11 @@ public final class LootEnchantments {
 		return plain;
 	}
 
-	private static ItemStack rewrite(ItemStack drop, ContextKeySet tableType, RandomSource random) {
+	private static ItemStack rewrite(ItemStack drop, Holder<LootTable> table, RandomSource random) {
+		ContextKeySet tableType = table.value().getParamSet();
+
 		if (drop.is(Items.ENCHANTED_BOOK)) {
-			return tableType == LootContextParamSets.CHEST ? new ItemStack(Items.DIAMOND) : levelOne(drop, random);
+			return tableType == LootContextParamSets.CHEST ? new ItemStack(LootDiamonds.diamondFor(table)) : levelOne(drop, random);
 		}
 
 		return PLAIN_GEAR_TABLES.contains(tableType) ? plain(drop) : drop;
