@@ -291,12 +291,7 @@ public class StrongholdGameTests {
 			helper.assertTrue(onlyPiece(start, StructurePieceType.STRONGHOLD_PORTAL_ROOM).getBoundingBox().isInside(route.getLast()), which + " ends in the portal room");
 
 			for (int step = 0; step < route.size() - 1; step++) {
-				BlockPos waypoint = route.get(step);
-
-				// Vanilla's rooms can overlap, and a spot inside two of them is routed from either one.
-				if (strongholdPieces.stream().filter(piece -> piece.getBoundingBox().isInside(waypoint)).count() > 1) continue;
-
-				int left = StrongholdRoutes.route(level, waypoint, portalRoom).size();
+				int left = StrongholdRoutes.route(level, route.get(step), portalRoom).size();
 
 				helper.assertValueEqual(left, route.size() - step - 1, "doorways left after step " + step + " of " + which);
 			}
