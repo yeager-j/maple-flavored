@@ -14,6 +14,7 @@
 			"mapleflavored.gametest.CrystalHeartGameTests",
 			"mapleflavored.gametest.WitheredHeartsGameTests",
 			"mapleflavored.gametest.RemnantsGameTests",
+			"mapleflavored.gametest.ExperiencePointsGameTests",
 			"mapleflavored.gametest.CopperToolsGameTests",
 			"mapleflavored.gametest.AnvilGameTests",
 			"mapleflavored.gametest.WorkstationGameTests",
@@ -66,7 +67,8 @@
 			"mapleflavored.gametest.client.BloodMoonSkyClientGameTest",
 			"mapleflavored.gametest.client.ArmoredElytraClientGameTest",
 			"mapleflavored.gametest.client.ReinforcementClientGameTest",
-			"mapleflavored.gametest.client.LockedLooksClientGameTest"
+			"mapleflavored.gametest.client.LockedLooksClientGameTest",
+			"mapleflavored.gametest.client.WitheredHeartsClientGameTest"
 		]
 	},
 	"mixins": [

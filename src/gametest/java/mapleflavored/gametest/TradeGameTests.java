@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import mapleflavored.gametest.mixin.ExperienceOrbAccessor;
+import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import mapleflavored.reinforcement.Reinforcement;
 import mapleflavored.trades.BookTrade;
@@ -58,7 +59,7 @@ public class TradeGameTests {
 	// The last of the 36 main inventory slots, which the merchant menu lists last.
 	private static final int LAST_INVENTORY_SLOT = 35;
 	private static final Set<Item> NEVER_SOLD = Set.of(
-		Items.ENCHANTED_BOOK, Items.DIAMOND, MapleItems.PITH, MapleItems.CRYSTAL_HEART,
+		Items.ENCHANTED_BOOK, Items.DIAMOND, MapleItems.PITH, Hearts.CRYSTAL_HEART,
 		Items.STONE_AXE, Items.STONE_SHOVEL, Items.STONE_PICKAXE, Items.STONE_HOE, Items.STONE_SWORD
 	);
 	// Vanilla's enchanted gear trades, now plain at their base price.

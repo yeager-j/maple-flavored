@@ -4,7 +4,6 @@ import java.util.List;
 import mapleflavored.MapleFlavored;
 import mapleflavored.grounded.Grounded;
 import mapleflavored.hearts.Hearts;
-import mapleflavored.items.MapleItems;
 import mapleflavored.subspaces.Subspace;
 import mapleflavored.subspaces.Subspaces;
 import mapleflavored.subspaces.WitherSubspaces;
@@ -258,7 +257,7 @@ public class WitherGameTests {
 
 		for (ServerPlayer player : inside) {
 			helper.assertTrue(isDone(helper, player, KILL_ADVANCEMENT), "Kill the Wither is granted inside");
-			helper.assertValueEqual(player.getInventory().countItem(MapleItems.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
+			helper.assertValueEqual(player.getInventory().countItem(Hearts.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
 		}
 
 		helper.assertFalse(isDone(helper, outside, KILL_ADVANCEMENT), "Kill the Wither is granted outside");

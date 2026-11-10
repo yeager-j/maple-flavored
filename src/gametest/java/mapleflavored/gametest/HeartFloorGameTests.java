@@ -2,8 +2,10 @@ package mapleflavored.gametest;
 
 import static mapleflavored.gametest.MockPlayers.assertMaxHearts;
 import static mapleflavored.gametest.MockPlayers.dieAndRespawn;
+import static mapleflavored.gametest.MockPlayers.inHardcore;
 import static mapleflavored.gametest.MockPlayers.playerReadingChat;
 import static mapleflavored.gametest.MockPlayers.playerWithMaxHearts;
+import static mapleflavored.gametest.MockPlayers.respawn;
 import static mapleflavored.gametest.MockPlayers.runCommand;
 
 import java.util.ArrayList;
@@ -18,6 +20,7 @@ import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -39,11 +42,11 @@ public class HeartFloorGameTests {
 	public void eachMilestoneLowersTheHeartFloorOnNormal(GameTestHelper helper) {
 		ServerPlayer player = playerWithMaxHearts(helper, 10);
 
-		helper.assertValueEqual(Hearts.heartFloor(player), 10, "Heart Floor with no Milestones");
+		helper.assertValueEqual(heartFloor(player), 10, "Heart Floor with no Milestones");
 
 		for (int held = 1; held <= MILESTONES.size(); held++) {
 			grant(helper, player, MILESTONES.get(held - 1));
-			helper.assertValueEqual(Hearts.heartFloor(player), 10 - held, "Heart Floor with " + held + " Milestones");
+			helper.assertValueEqual(heartFloor(player), 10 - held, "Heart Floor with " + held + " Milestones");
 		}
 
 		helper.succeed();
@@ -71,7 +74,7 @@ public class HeartFloorGameTests {
 		grant(helper, player, MILESTONES.getFirst());
 		grant(helper, player, MILESTONES.getFirst());
 
-		helper.assertValueEqual(Hearts.heartFloor(player), 9, "Heart Floor");
+		helper.assertValueEqual(heartFloor(player), 9, "Heart Floor");
 		helper.succeed();
 	}
 
@@ -83,7 +86,7 @@ public class HeartFloorGameTests {
 		grant(helper, player, MILESTONES.get(1));
 		revoke(helper, player, MILESTONES.get(0));
 
-		helper.assertValueEqual(Hearts.heartFloor(player), 9, "Heart Floor after revoking one of two Milestones");
+		helper.assertValueEqual(heartFloor(player), 9, "Heart Floor after revoking one of two Milestones");
 		helper.succeed();
 	}
 
@@ -96,7 +99,7 @@ public class HeartFloorGameTests {
 		player.inventoryMenu.broadcastChanges();
 
 		helper.assertTrue(isDone(helper, player, MILESTONES.getFirst()), "the copper ingot Milestone is granted");
-		helper.assertValueEqual(Hearts.heartFloor(player), 9, "Heart Floor");
+		helper.assertValueEqual(heartFloor(player), 9, "Heart Floor");
 		helper.succeed();
 	}
 
@@ -177,12 +180,69 @@ public class HeartFloorGameTests {
 
 		ServerPlayer respawned = dieAndRespawn(helper, player);
 
-		helper.assertValueEqual(Hearts.heartFloor(respawned), 7, "Heart Floor after the revoke");
+		helper.assertValueEqual(heartFloor(respawned), 7, "Heart Floor after the revoke");
 		assertMaxHearts(helper, respawned, 6);
 		helper.succeed();
 	}
 
-	// Stands in for a world switched to Easy: GameTests in one environment share a level, so none changes its difficulty.
+	// The switch and the switch back happen in one tick: GameTests in one environment share a level, so no other test
+	// may see a difficulty its environment didn't set.
+	@GameTest(environment = "maple_flavored_gametest:easy")
+	public void chatAnnouncesTheHeartFloorADifficultySwitchLowers(GameTestHelper helper) {
+		List<Component> chat = new ArrayList<>();
+		ServerPlayer player = playerReadingChat(helper, chat);
+		var server = helper.getLevel().getServer();
+
+		grantMilestones(helper, player, 2);
+		helper.assertValueEqual(announcedHeartFloors(chat), List.of(), "announced Heart Floors on Easy");
+
+		try {
+			server.setDifficulty(Difficulty.NORMAL, true);
+			helper.assertValueEqual(heartFloor(player), 8, "Heart Floor on Normal");
+		} finally {
+			server.setDifficulty(Difficulty.EASY, true);
+		}
+
+		helper.assertValueEqual(heartFloor(player), 10, "Heart Floor back on Easy");
+		helper.assertValueEqual(announcedHeartFloors(chat), List.of("8"), "announced Heart Floors after switching to Normal and back");
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal")
+	public void hardcoreHasNoHeartFloorAndAnnouncesNone(GameTestHelper helper) {
+		List<Component> chat = new ArrayList<>();
+		ServerPlayer player = playerReadingChat(helper, chat);
+
+		inHardcore(helper, () -> {
+			grant(helper, player, MILESTONES.get(0));
+			helper.assertTrue(Hearts.heartFloor(player).isEmpty(), "Hardcore has no Heart Floor");
+		});
+
+		helper.assertValueEqual(announcedHeartFloors(chat), List.of(), "announced Heart Floors in Hardcore");
+
+		// Outside Hardcore the same player is told, which shows the silence came from Hardcore.
+		grant(helper, player, MILESTONES.get(1));
+
+		helper.assertValueEqual(announcedHeartFloors(chat), List.of("8"), "announced Heart Floors outside Hardcore");
+		helper.succeed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:hard")
+	public void deathInHardcoreCostsNoMaxHearts(GameTestHelper helper) {
+		ServerPlayer player = playerWithMaxHearts(helper, 13);
+
+		inHardcore(helper, () -> player.kill(player.level()));
+
+		ServerPlayer respawned = respawn(player);
+
+		assertMaxHearts(helper, respawned, 13);
+
+		// Outside Hardcore the same death costs 2 on Hard, which shows Hardcore is what spared them.
+		assertMaxHearts(helper, dieAndRespawn(helper, respawned), 11);
+		helper.succeed();
+	}
+
+	// Stands in for a world switched to Easy while a player is below their floor.
 	@GameTest(environment = "maple_flavored_gametest:easy")
 	public void deathBelowTheHeartFloorOnEasyCostsNothing(GameTestHelper helper) {
 		ServerPlayer player = playerWithMaxHearts(helper, 10);
@@ -201,8 +261,12 @@ public class HeartFloorGameTests {
 
 		grantMilestones(helper, player, MILESTONES.size());
 
-		helper.assertValueEqual(Hearts.heartFloor(player), heartFloor, "Heart Floor with every Milestone");
+		helper.assertValueEqual(heartFloor(player), heartFloor, "Heart Floor with every Milestone");
 		helper.succeed();
+	}
+
+	private static int heartFloor(ServerPlayer player) {
+		return Hearts.heartFloor(player).orElseThrow();
 	}
 
 	private static List<String> announcedHeartFloors(List<Component> chat) {

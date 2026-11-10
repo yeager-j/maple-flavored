@@ -3,6 +3,7 @@ package mapleflavored.gametest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.Holder;
@@ -51,9 +52,9 @@ public class StructureChestGameTests {
 			List<List<ItemStack>> rolls = rollMany(helper, odds.table(), ROLLS);
 			boolean endCity = odds.table().equals(BuiltInLootTables.END_CITY_TREASURE);
 
-			assertRate(helper, name + " Crystal Hearts", rollsWith(rolls, MapleItems.CRYSTAL_HEART), odds.crystalHeart());
+			assertRate(helper, name + " Crystal Hearts", rollsWith(rolls, Hearts.CRYSTAL_HEART), odds.crystalHeart());
 			assertRate(helper, name + " Pith", rollsWith(rolls, MapleItems.PITH), odds.pith());
-			assertCounts(helper, name + " Crystal Heart", rolls, MapleItems.CRYSTAL_HEART, Set.of(1));
+			assertCounts(helper, name + " Crystal Heart", rolls, Hearts.CRYSTAL_HEART, Set.of(1));
 			// An End City success gives 1 or 2 Pith; every other is one item.
 			assertCounts(helper, name + " Pith", rolls, MapleItems.PITH, endCity ? Set.of(1, 2) : Set.of(1));
 		}
@@ -75,7 +76,7 @@ public class StructureChestGameTests {
 
 			for (List<ItemStack> roll : rollMany(helper, table.key(), SWEEP_ROLLS)) {
 				for (ItemStack drop : roll) {
-					helper.assertFalse(drop.is(MapleItems.CRYSTAL_HEART) || drop.is(MapleItems.PITH), name + " gave " + drop);
+					helper.assertFalse(drop.is(Hearts.CRYSTAL_HEART) || drop.is(MapleItems.PITH), name + " gave " + drop);
 				}
 			}
 

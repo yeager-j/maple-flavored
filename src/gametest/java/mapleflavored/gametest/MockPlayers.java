@@ -23,7 +23,9 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.TagValueInput;
 
 /** Mock players for GameTests, with the steps to give them Max Hearts, run commands as them and kill them. */
-final class MockPlayers {
+public final class MockPlayers {
+	private static boolean inHardcore;
+
 	private MockPlayers() {
 	}
 
@@ -150,6 +152,11 @@ final class MockPlayers {
 	static ServerPlayer dieAndRespawn(GameTestHelper helper, ServerPlayer player) {
 		player.kill(player.level());
 
+		return respawn(player);
+	}
+
+	/** Respawns a dead player and returns the player in their place, loaded so it can die again. */
+	static ServerPlayer respawn(ServerPlayer player) {
 		// Respawns the way a client asks to, which also ends the wait for the respawned client that death starts.
 		player.connection.handleClientCommand(new ServerboundClientCommandPacket(ServerboundClientCommandPacket.Action.PERFORM_RESPAWN));
 
@@ -158,6 +165,27 @@ final class MockPlayers {
 		finishLoading(respawned);
 
 		return respawned;
+	}
+
+	/**
+	 * Runs {@code body} with the test world in Hardcore, then puts the world back. GameTests share their world, so
+	 * nothing in {@code body} may wait for a later tick, and no player may respawn in it: a Hardcore respawn changes
+	 * the world's game rules.
+	 */
+	static void inHardcore(GameTestHelper helper, Runnable body) {
+		inHardcore = true;
+
+		try {
+			helper.assertTrue(helper.getLevel().getServer().isHardcore(), "the world is Hardcore");
+			body.run();
+		} finally {
+			inHardcore = false;
+		}
+	}
+
+	/** Whether a test is inside {@link #inHardcore}, which the test server's Hardcore answer follows. */
+	public static boolean isInHardcore() {
+		return inHardcore;
 	}
 
 	/** Logs the player out and back in, returning the player loaded from their saved data into the test's level. */

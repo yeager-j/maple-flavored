@@ -2,6 +2,7 @@ package mapleflavored.remnants;
 
 import java.util.UUID;
 import mapleflavored.advancements.MapleTriggers;
+import mapleflavored.experience.ExperiencePoints;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
@@ -149,7 +150,7 @@ public final class Remnant extends Entity {
 	}
 
 	private void collect(ServerPlayer owner, int points) {
-		owner.giveExperiencePoints(points);
+		ExperiencePoints.add(owner, points);
 		MapleTriggers.REMNANT_COLLECTED.trigger(owner);
 		discard();
 	}

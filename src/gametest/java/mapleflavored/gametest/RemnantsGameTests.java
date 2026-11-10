@@ -8,8 +8,9 @@ import static mapleflavored.gametest.MockPlayers.runCommand;
 
 import java.util.List;
 import java.util.Optional;
+import mapleflavored.experience.ExperiencePoints;
 import mapleflavored.gamerules.MapleGameRules;
-import mapleflavored.items.MapleItems;
+import mapleflavored.hearts.Hearts;
 import mapleflavored.remnants.Remnant;
 import mapleflavored.remnants.Remnants;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -45,7 +46,8 @@ import net.minecraft.world.phys.Vec3;
  * Remnants: death drops all XP as a Remnant only its owner can see and collect, which waits through logouts and
  * unloads, shrinks with each later death and moves to safe ground when the death spot can't be reached.
  *
- * <p>Mock players start with no XP, so {@code totalExperience} after collecting counts exactly the points collected.
+ * <p>Mock players start with no XP, so their points after collecting are exactly the points collected. Points are read
+ * from level and progress, which is what a player sees and spends.
  */
 public class RemnantsGameTests {
 	private static final String COLLECT_ADVANCEMENT = "maple_flavored:adventure/collect_remnant";
@@ -63,12 +65,12 @@ public class RemnantsGameTests {
 		ServerPlayer respawned = dieAndRespawn(helper, player);
 		Remnant remnant = onlyRemnant(helper);
 
-		helper.assertValueEqual(respawned.totalExperience, 0, "XP after respawn");
+		helper.assertValueEqual(ExperiencePoints.total(respawned), 0, "XP after respawn");
 		helper.assertValueEqual(respawned.experienceLevel, 0, "level after respawn");
 		helper.assertValueEqual(remnant.blockPosition(), helper.absolutePos(DEATH_SPOT), "the Remnant's spot");
 
 		collect(helper, respawned, remnant, () -> {
-			helper.assertValueEqual(respawned.totalExperience, 100, "XP collected");
+			helper.assertValueEqual(ExperiencePoints.total(respawned), 100, "XP collected");
 			helper.assertTrue(isDone(helper, respawned, COLLECT_ADVANCEMENT), "collecting grants the advancement");
 		});
 	}
@@ -84,7 +86,7 @@ public class RemnantsGameTests {
 
 		ServerPlayer respawned = dieAndRespawn(helper, player);
 
-		collect(helper, respawned, onlyRemnant(helper), () -> helper.assertValueEqual(respawned.totalExperience, 2930, "XP collected"));
+		collect(helper, respawned, onlyRemnant(helper), () -> helper.assertValueEqual(ExperiencePoints.total(respawned), 2930, "XP collected"));
 	}
 
 	@GameTest
@@ -110,12 +112,34 @@ public class RemnantsGameTests {
 		helper.startSequence()
 			.thenWaitUntil(() -> helper.assertFalse(level16.isAlive(), "the first Remnant was collected"))
 			.thenExecute(() -> {
-				helper.assertValueEqual(afterSecondDeath.totalExperience, 281, "XP from the first Remnant");
+				helper.assertValueEqual(ExperiencePoints.total(afterSecondDeath), 281, "XP from the first Remnant");
 				moveOnto(afterSecondDeath, level31);
 			})
 			.thenWaitUntil(() -> helper.assertFalse(level31.isAlive(), "the second Remnant was collected"))
-			.thenExecute(() -> helper.assertValueEqual(afterSecondDeath.totalExperience, 281 + 1507, "XP from both Remnants"))
+			.thenExecute(() -> helper.assertValueEqual(ExperiencePoints.total(afterSecondDeath), 281 + 1507, "XP from both Remnants"))
 			.thenSucceed();
+	}
+
+	@GameTest
+	public void collectingARemnantLandsExactlyOnLevelThirty(GameTestHelper helper) {
+		ServerPlayer player = playerWithXp(helper, 0);
+
+		// Level 29 is 1,288 points, so the Remnant holds 1,385.
+		runCommand(helper, player, "xp set @s 29 levels");
+		runCommand(helper, player, "xp set @s 97 points");
+		standAt(helper, player, DEATH_SPOT);
+
+		ServerPlayer respawned = dieAndRespawn(helper, player);
+
+		// Level 1 is 7 points, and 10 + 1,385 is the 1,395 of level 30, where the first Enchantment Slot opens. Added
+		// level by level in floats, as vanilla adds XP, these points stop a rounding error short, at level 29.
+		runCommand(helper, respawned, "xp set @s 1 levels");
+		runCommand(helper, respawned, "xp set @s 3 points");
+
+		collect(helper, respawned, onlyRemnant(helper), () -> {
+			helper.assertValueEqual(respawned.experienceLevel, 30, "level after collecting");
+			helper.assertValueEqual(respawned.experienceProgress, 0.0F, "progress after collecting");
+		});
 	}
 
 	@GameTest(environment = "maple_flavored_gametest:keep_inventory_off")
@@ -126,7 +150,7 @@ public class RemnantsGameTests {
 
 		ServerPlayer respawned = dieAndRespawn(helper, player);
 
-		helper.assertValueEqual(respawned.totalExperience, 0, "XP after respawn");
+		helper.assertValueEqual(ExperiencePoints.total(respawned), 0, "XP after respawn");
 		helper.assertValueEqual(helper.getEntities(Remnants.REMNANT).size(), 1, "Remnants");
 		helper.assertEntityNotPresent(EntityTypes.EXPERIENCE_ORB);
 		helper.succeed();
@@ -149,12 +173,12 @@ public class RemnantsGameTests {
 
 		helper.startSequence()
 			.thenExecuteAfter(WAIT_TICKS, () -> {
-				helper.assertValueEqual(other.totalExperience, 0, "the other player's XP");
+				helper.assertValueEqual(ExperiencePoints.total(other), 0, "the other player's XP");
 				helper.assertTrue(remnant.isAlive(), "the Remnant is still there");
 				moveOnto(respawned, remnant);
 			})
 			.thenWaitUntil(() -> helper.assertFalse(remnant.isAlive(), "the owner collected the Remnant"))
-			.thenExecute(() -> helper.assertValueEqual(respawned.totalExperience, 100, "XP collected"))
+			.thenExecute(() -> helper.assertValueEqual(ExperiencePoints.total(respawned), 100, "XP collected"))
 			.thenSucceed();
 	}
 
@@ -176,7 +200,7 @@ public class RemnantsGameTests {
 
 	@GameTest(environment = "maple_flavored_gametest:normal")
 	public void aCrystalHeartSaveMakesNoRemnant(GameTestHelper helper) {
-		assertSaveMakesNoRemnant(helper, MapleItems.CRYSTAL_HEART);
+		assertSaveMakesNoRemnant(helper, Hearts.CRYSTAL_HEART);
 	}
 
 	@GameTest
@@ -193,7 +217,7 @@ public class RemnantsGameTests {
 
 		ServerPlayer respawned = dieAndRespawn(helper, player);
 
-		helper.assertValueEqual(respawned.totalExperience, 100, "XP after respawn");
+		helper.assertValueEqual(ExperiencePoints.total(respawned), 100, "XP after respawn");
 		helper.assertValueEqual(respawned.experienceLevel, 7, "level after respawn");
 		helper.assertEntityNotPresent(Remnants.REMNANT);
 		helper.succeed();
@@ -208,7 +232,7 @@ public class RemnantsGameTests {
 
 		ServerPlayer respawned = dieAndRespawn(helper, player);
 
-		helper.assertValueEqual(respawned.totalExperience, 100, "XP after respawn");
+		helper.assertValueEqual(ExperiencePoints.total(respawned), 100, "XP after respawn");
 		helper.assertFalse(respawned.getInventory().contains(new ItemStack(Items.DIAMOND)), "the diamond is dropped");
 		helper.assertEntityNotPresent(Remnants.REMNANT);
 		helper.assertEntityNotPresent(EntityTypes.EXPERIENCE_ORB);
@@ -237,11 +261,11 @@ public class RemnantsGameTests {
 		helper.startSequence()
 			.thenWaitUntil(() -> helper.assertFalse(older.isAlive(), "the older Remnant was collected"))
 			.thenExecute(() -> {
-				helper.assertValueEqual(afterThirdDeath.totalExperience, 4, "XP from the older Remnant");
+				helper.assertValueEqual(ExperiencePoints.total(afterThirdDeath), 4, "XP from the older Remnant");
 				moveOnto(afterThirdDeath, newer);
 			})
 			.thenWaitUntil(() -> helper.assertFalse(newer.isAlive(), "the newer Remnant was collected"))
-			.thenExecute(() -> helper.assertValueEqual(afterThirdDeath.totalExperience, 4 + 8, "XP from both Remnants"))
+			.thenExecute(() -> helper.assertValueEqual(ExperiencePoints.total(afterThirdDeath), 4 + 8, "XP from both Remnants"))
 			.thenSucceed();
 	}
 
@@ -261,7 +285,7 @@ public class RemnantsGameTests {
 		Remnant reloaded = load(helper, savedRemnant);
 
 		// 100 points, then 80% rounded down after each of the 2 later deaths.
-		collect(helper, afterSecondDeath, reloaded, () -> helper.assertValueEqual(afterSecondDeath.totalExperience, 64, "XP collected"));
+		collect(helper, afterSecondDeath, reloaded, () -> helper.assertValueEqual(ExperiencePoints.total(afterSecondDeath), 64, "XP collected"));
 	}
 
 	@GameTest(maxTicks = 100)
@@ -381,7 +405,7 @@ public class RemnantsGameTests {
 
 				// Back at the respawn point, the owner collects the Remnant as soon as it arrives there.
 				helper.startSequence()
-					.thenWaitUntil(() -> helper.assertValueEqual(loggedIn.totalExperience, 100, "XP collected at the respawn point"))
+					.thenWaitUntil(() -> helper.assertValueEqual(ExperiencePoints.total(loggedIn), 100, "XP collected at the respawn point"))
 					.thenSucceed();
 			});
 	}
@@ -418,7 +442,7 @@ public class RemnantsGameTests {
 		player.hurtServer(helper.getLevel(), helper.getLevel().damageSources().generic(), 1000.0F);
 
 		helper.assertTrue(player.isAlive(), "the player is saved");
-		helper.assertValueEqual(player.totalExperience, 100, "XP after the save");
+		helper.assertValueEqual(ExperiencePoints.total(player), 100, "XP after the save");
 		helper.assertEntityNotPresent(Remnants.REMNANT);
 		helper.succeed();
 	}

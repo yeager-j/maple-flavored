@@ -18,7 +18,6 @@ import net.minecraft.stats.Stats;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
@@ -55,7 +54,7 @@ public final class Remnants {
 		});
 		// Death takes the XP away when Keep XP is off, so whatever the dead player still holds is theirs to keep.
 		ServerPlayerEvents.COPY_FROM.register((oldPlayer, newPlayer, alive) -> {
-			if (!alive) copyXp(oldPlayer, newPlayer);
+			if (!alive) ExperiencePoints.copy(oldPlayer, newPlayer);
 		});
 		SolidGround.register();
 		PendingRemnants.register();
@@ -81,7 +80,7 @@ public final class Remnants {
 
 		int points = ExperiencePoints.total(player);
 
-		takeAllXp(player);
+		ExperiencePoints.clear(player);
 
 		if (points == 0) return;
 
@@ -111,18 +110,6 @@ public final class Remnants {
 		TeleportTransition respawn = player.findRespawnPositionAndUseSpawnBlock(false, TeleportTransition.DO_NOTHING);
 
 		return new Placement(respawn.newLevel(), respawn.position(), true);
-	}
-
-	private static void takeAllXp(Player player) {
-		player.experienceLevel = 0;
-		player.experienceProgress = 0.0F;
-		player.totalExperience = 0;
-	}
-
-	private static void copyXp(Player from, Player to) {
-		to.experienceLevel = from.experienceLevel;
-		to.experienceProgress = from.experienceProgress;
-		to.totalExperience = from.totalExperience;
 	}
 
 	/** Where a Remnant goes, and whether that is somewhere other than its owner's death spot. */

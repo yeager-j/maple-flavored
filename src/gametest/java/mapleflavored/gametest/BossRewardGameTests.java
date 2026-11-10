@@ -2,6 +2,7 @@ package mapleflavored.gametest;
 
 import java.util.List;
 import mapleflavored.MapleFlavored;
+import mapleflavored.hearts.Hearts;
 import mapleflavored.items.MapleItems;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.advancements.AdvancementHolder;
@@ -80,7 +81,7 @@ public class BossRewardGameTests {
 
 		for (ServerPlayer player : List.of(atRange, creative)) {
 			helper.assertTrue(isDone(helper, player, ELDER_GUARDIAN_ADVANCEMENT), "the Elder Guardian kill is granted within 64 blocks");
-			helper.assertValueEqual(player.getInventory().countItem(MapleItems.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
+			helper.assertValueEqual(player.getInventory().countItem(Hearts.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
 		}
 
 		helper.assertFalse(isDone(helper, pastRange, ELDER_GUARDIAN_ADVANCEMENT), "the Elder Guardian kill is granted 65 blocks out");
@@ -150,7 +151,7 @@ public class BossRewardGameTests {
 
 		for (ServerPlayer player : inFight) {
 			helper.assertTrue(isDone(helper, player, FREE_THE_END), "Free the End is granted in the fight's range");
-			helper.assertValueEqual(player.getInventory().countItem(MapleItems.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
+			helper.assertValueEqual(player.getInventory().countItem(Hearts.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
 		}
 
 		helper.assertFalse(isDone(helper, pastFight, FREE_THE_END), "Free the End is granted past the fight's range");
@@ -186,7 +187,7 @@ public class BossRewardGameTests {
 
 		for (ServerPlayer player : near) {
 			helper.assertTrue(isDone(helper, player, SNEAK_100), "Sneak 100 is granted within 50 blocks of the Warden");
-			helper.assertValueEqual(player.getInventory().countItem(MapleItems.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
+			helper.assertValueEqual(player.getInventory().countItem(Hearts.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
 		}
 
 		helper.assertFalse(isDone(helper, far, SNEAK_100), "Sneak 100 is granted 70 blocks from the Warden");
@@ -227,7 +228,7 @@ public class BossRewardGameTests {
 			helper.assertTrue(warden.isRemoved(), "the Warden dug down");
 			helper.assertValueEqual(warden.getRemovalReason(), Entity.RemovalReason.DISCARDED, "how the Warden was removed");
 			helper.assertTrue(isDone(helper, near, SNEAK_100), "Sneak 100 is granted 40 blocks from the Warden");
-			helper.assertValueEqual(near.getInventory().countItem(MapleItems.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
+			helper.assertValueEqual(near.getInventory().countItem(Hearts.CRYSTAL_HEART), 1, "Crystal Hearts rewarded");
 			helper.assertFalse(isDone(helper, far, SNEAK_100), "Sneak 100 is granted 51 blocks from the Warden");
 		});
 	}

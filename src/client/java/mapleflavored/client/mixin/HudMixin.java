@@ -4,13 +4,10 @@ import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import mapleflavored.hearts.Hearts;
+import mapleflavored.client.hearts.WitheredHeartsHud;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Hud;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,45 +15,26 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-/**
- * Draws the player's Withered Hearts as hollow empty hearts, after their usable hearts and before
- * any absorption hearts.
- */
+/** The health bar shows the player's Withered Hearts, drawn by {@link WitheredHeartsHud}. */
 @Mixin(Hud.class)
 abstract class HudMixin {
-	private static final int HEART_SIZE = 9;
-	// The middle of the empty heart, left out of a withered slot so the heart is hollow: just the outline and a
-	// one-pixel rim. One string per row of the 9 × 9 heart.
-	private static final String[] HOLLOW = {
-		".........",
-		".........",
-		"..##.##..",
-		"..#####..",
-		"..#####..",
-		"...###...",
-		"....#....",
-		".........",
-		"........."
-	};
-
-	// Max health only covers usable hearts. Widening it here, before vanilla compares it with remembered health,
-	// makes room for withered slots in the row count, the armor bar's height and the heart containers.
+	// Widened here, before vanilla compares max health with remembered health, so the withered slots count towards the
+	// row count, the armor bar's height and the heart containers.
 	@WrapOperation(
 		method = "extractPlayerHealth",
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;getAttributeValue(Lnet/minecraft/core/Holder;)D")
 	)
 	private double makeRoomForWitheredHearts(Player player, Holder<Attribute> attribute, Operation<Double> original) {
-		return original.call(player, attribute) + Hearts.witheredHearts(player) * 2.0;
+		return WitheredHeartsHud.maxHealthWithWitheredSlots(player, original.call(player, attribute));
 	}
 
-	// Health remembered from before a heart withered would otherwise blink in that heart's slot.
 	@ModifyVariable(method = "extractHearts", at = @At("HEAD"), argsOnly = true, name = "oldHealth")
 	private int keepRememberedHealthToUsableHearts(int oldHealth, @Local(argsOnly = true) Player player) {
-		return Math.min(oldHealth, Mth.ceil(player.getMaxHealth()));
+		return WitheredHeartsHud.rememberedHealthWithinUsableHearts(player, oldHealth);
 	}
 
-	// Replaces the empty heart vanilla draws under every heart. Health never fills a withered slot, so it is all
-	// vanilla would draw there.
+	// Stands in for the empty heart vanilla draws under every heart. Health never fills a withered slot, so that is
+	// all vanilla would draw there.
 	@WrapWithCondition(
 		method = "extractHearts",
 		at = @At(
@@ -77,40 +55,6 @@ abstract class HudMixin {
 		@Local(argsOnly = true) Player player,
 		@Local(name = "containerIndex") int containerIndex
 	) {
-		int usableHearts = Mth.ceil(player.getMaxHealth() / 2.0F);
-		boolean withered = containerIndex >= usableHearts && containerIndex < usableHearts + Hearts.witheredHearts(player);
-
-		if (!withered) return true;
-
-		drawHollowed(graphics, emptyHeartSprite(isHardcore, blinks), xo, yo);
-
-		return false;
-	}
-
-	private static Identifier emptyHeartSprite(boolean isHardcore, boolean blinks) {
-		String sprite = isHardcore ? "hud/heart/container_hardcore" : "hud/heart/container";
-
-		return Identifier.withDefaultNamespace(blinks ? sprite + "_blinking" : sprite);
-	}
-
-	// Draws each row of the sprite in runs that skip the hollow's pixels, leaving them transparent.
-	private static void drawHollowed(GuiGraphicsExtractor graphics, Identifier sprite, int x, int y) {
-		for (int row = 0; row < HEART_SIZE; row++) {
-			int runStart = 0;
-
-			for (int column = 0; column <= HEART_SIZE; column++) {
-				boolean runEnds = column == HEART_SIZE || HOLLOW[row].charAt(column) == '#';
-
-				if (!runEnds) continue;
-
-				if (column > runStart) {
-					graphics.blitSprite(
-						RenderPipelines.GUI_TEXTURED, sprite, HEART_SIZE, HEART_SIZE, runStart, row, x + runStart, y + row, column - runStart, 1
-					);
-				}
-
-				runStart = column + 1;
-			}
-		}
+		return !WitheredHeartsHud.drawWitheredSlot(graphics, player, containerIndex, xo, yo, isHardcore, blinks);
 	}
 }
