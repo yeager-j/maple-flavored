@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.RegistryOps;
@@ -63,6 +64,9 @@ import net.minecraft.world.phys.Vec3;
  *
  * <p>Blood Moons rise through {@link BloodMoons#RISEN}, which makes every empty spot pending, including other tests'.
  * So a test checks a spot's state in the same tick as the change it's checking.
+ *
+ * <p>A crash is a level whose saved spots are older than its chunks. Tests share the level's spots, so a test makes one
+ * by putting back only its own spot as it was saved earlier, or by dropping it.
  */
 public class BloodMoonRestoringGameTests {
 	// Each site sits in the middle of its own chunk, far from everything else.
@@ -346,21 +350,23 @@ public class BloodMoonRestoringGameTests {
 		Site site = Site.build(helper, 10, Blocks.COBBLESTONE);
 		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
 		RestoreSpot spot = spotOf(helper, original);
-		Entity reloaded = reloaded(site.level(), original);
-
-		helper.assertValueEqual(spotOf(helper, reloaded).id(), spot.id(), "the reloaded mob's spot");
 
 		helper.startSequence()
-			.thenWaitUntil(() -> site.assertReady(helper))
+			.thenExecuteAfter(1, site::letUnload)
+			.thenWaitUntil(() -> helper.assertFalse(site.isLoaded(), "the site's chunk is loaded"))
 			.thenExecute(() -> {
-				// Its chunk unloads, as far as Restoring can tell, until the saved copy comes back in its place.
-				original.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
 				riseBloodMoon(helper);
 				helper.assertValueEqual(stateOf(helper, spot), RestoreSpot.State.OCCUPIED, "the spot of an unloaded mob");
+				site.keepLoaded();
 			})
+			.thenWaitUntil(() -> site.assertMobs(helper, 1, "mobs loaded back with the site"))
 			.thenExecuteAfter(RETRY_WAIT, () -> {
-				site.assertMobs(helper, 0, "mobs Restored over an unloaded mob");
-				site.level().addFreshEntity(reloaded);
+				site.assertMobs(helper, 1, "mobs a retry after the original loaded back");
+
+				Mob reloaded = site.mobs().getFirst();
+
+				helper.assertValueEqual(reloaded.getUUID(), original.getUUID(), "the mob that loaded back");
+				helper.assertValueEqual(spotOf(helper, reloaded).id(), spot.id(), "the reloaded mob's spot");
 				reloaded.kill(site.level());
 				helper.assertValueEqual(stateOf(helper, spot), RestoreSpot.State.EMPTY, "the spot once the reloaded mob died");
 				site.release();
@@ -390,6 +396,171 @@ public class BloodMoonRestoringGameTests {
 			.thenWaitUntil(() -> site.assertMobs(helper, 1, "mobs Restored once the chunk loaded"))
 			.thenExecute(site::release)
 			.thenSucceed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
+	public void aSpotACrashLeftOccupiedEmptiesWhenItsChunkLoadsAndIsRestored(GameTestHelper helper) {
+		Site site = Site.build(helper, 16, Blocks.COBBLESTONE);
+		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
+		RestoreSpot spot = spotOf(helper, original);
+		Tag savedWhileOccupied = savedSpots(site.level()).get(indexOf(site.level(), spot)).copy();
+
+		original.kill(site.level());
+		// Gone at once, so the chunk doesn't save it dying.
+		original.discard();
+
+		helper.startSequence()
+			.thenExecuteAfter(1, site::release)
+			.thenWaitUntil(() -> helper.assertFalse(site.isLoaded(), "the site's chunk is loaded"))
+			.thenExecute(() -> {
+				ListTag saved = savedSpots(site.level());
+
+				saved.set(indexOf(site.level(), spot), savedWhileOccupied);
+				loadSpots(site.level(), saved);
+				riseBloodMoon(helper);
+				helper.assertValueEqual(current(site.level(), spot), spot, "the spot the crash left, through a Blood Moon");
+				site.keepLoaded();
+			})
+			.thenWaitUntil(() -> helper.assertTrue(current(site.level(), spot).occupant().isEmpty(), "the spot has let go of its dead mob"))
+			.thenExecute(() -> riseBloodMoon(helper))
+			.thenWaitUntil(() -> site.assertMobs(helper, 1, "mobs Restored after the crash"))
+			.thenExecute(site::release)
+			.thenSucceed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
+	public void aMobSavedInAnotherChunkKeepsItsSpotWhenTheSpotsChunkLoads(GameTestHelper helper) {
+		Site site = Site.build(helper, 17, Blocks.COBBLESTONE);
+		Site elsewhere = Site.build(helper, 18, Blocks.COBBLESTONE);
+		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
+		RestoreSpot spot = spotOf(helper, original);
+
+		original.setNoAi(true);
+		original.teleportTo(elsewhere.feet().x, elsewhere.feet().y, elsewhere.feet().z);
+
+		helper.startSequence()
+			.thenExecuteAfter(1, () -> {
+				site.release();
+				elsewhere.letUnload();
+			})
+			.thenWaitUntil(() -> helper.assertFalse(site.isLoaded() || elsewhere.isLoaded(), "a site's chunk is loaded"))
+			.thenExecute(site::keepLoaded)
+			.thenWaitUntil(() -> site.assertReady(helper))
+			.thenExecuteAfter(RETRY_WAIT, () -> {
+				helper.assertFalse(elsewhere.isLoaded(), "the chunk the mob is saved in loaded");
+				helper.assertValueEqual(stateOf(helper, spot), RestoreSpot.State.OCCUPIED, "the spot of a mob saved in another chunk");
+				site.release();
+				elsewhere.keepLoaded();
+			})
+			.thenWaitUntil(() -> elsewhere.assertMobs(helper, 1, "mobs where the original was saved"))
+			.thenExecute(elsewhere::release)
+			.thenSucceed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
+	public void aSavedMobWhoseSpotWasNeverSavedGetsItBack(GameTestHelper helper) {
+		Site site = Site.build(helper, 19, Blocks.COBBLESTONE);
+		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
+		RestoreSpot spot = spotOf(helper, original);
+		Entity reloaded = reloaded(site.level(), original);
+
+		helper.startSequence()
+			.thenWaitUntil(() -> site.assertReady(helper))
+			.thenExecute(() -> {
+				ListTag saved = savedSpots(site.level());
+
+				// Its chunk unloads, as far as Restoring can tell, and the saved copy comes back to spots without its own.
+				original.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+				saved.remove(indexOf(site.level(), spot));
+				loadSpots(site.level(), saved);
+				helper.assertTrue(Restoring.spotOf(site.level().getServer(), reloaded).isEmpty(), "the spot is still saved");
+
+				site.level().addFreshEntity(reloaded);
+				helper.assertValueEqual(spotOf(helper, reloaded), spot, "the spot of a mob that loaded without one saved");
+				site.release();
+			})
+			.thenSucceed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
+	public void aSavedMobThatFailsToLoadLeavesTheSpotThatWasNeverSavedEmpty(GameTestHelper helper) {
+		Site site = Site.build(helper, 21, Blocks.COBBLESTONE);
+		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
+		RestoreSpot spot = spotOf(helper, original);
+		ValueInput savedOriginal = saved(site.level(), original);
+		ListTag saved = savedSpots(site.level());
+
+		original.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+		saved.remove(indexOf(site.level(), spot));
+		loadSpots(site.level(), saved);
+		// As Peaceful refuses a saved Vindicator.
+		Restoring.dropIfOccupant(savedOriginal);
+
+		helper.startSequence()
+			.thenExecuteAfter(1, () -> {
+				helper.assertTrue(indexOf(site.level(), spot) >= 0, "the spot of a mob that failed to load is recorded");
+				helper.assertValueEqual(current(site.level(), spot).position(), spot.position(), "where the spot was recorded");
+				helper.assertTrue(current(site.level(), spot).occupant().isEmpty(), "the spot of a mob that never loaded is empty");
+				riseBloodMoon(helper);
+			})
+			.thenWaitUntil(() -> site.assertMobs(helper, 1, "mobs Restored to the spot"))
+			.thenExecute(site::release)
+			.thenSucceed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
+	public void aRestoredMobKeepsTheSpotACrashLeftWithItsDeadPredecessor(GameTestHelper helper) {
+		Site site = Site.build(helper, 22, Blocks.COBBLESTONE);
+		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
+		RestoreSpot spot = spotOf(helper, original);
+		Tag savedWithOriginal = savedSpots(site.level()).get(indexOf(site.level(), spot)).copy();
+
+		original.kill(site.level());
+		original.discard();
+		riseBloodMoon(helper);
+
+		helper.startSequence()
+			.thenWaitUntil(() -> site.assertMobs(helper, 1, "Restored mobs"))
+			.thenExecute(() -> {
+				Mob restored = site.mobs().getFirst();
+				Entity reloaded = reloaded(site.level(), restored);
+				ListTag saved = savedSpots(site.level());
+
+				// The Restored mob's chunk reached the disk, and the spots that say it holds the spot didn't.
+				restored.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+				saved.set(indexOf(site.level(), spot), savedWithOriginal);
+				loadSpots(site.level(), saved);
+				site.level().addFreshEntity(reloaded);
+
+				helper.assertValueEqual(current(site.level(), spot).occupant(), Optional.of(reloaded.getUUID()), "the spot's occupant");
+				helper.assertValueEqual(spotOf(helper, reloaded).id(), spot.id(), "the Restored mob's spot");
+				riseBloodMoon(helper);
+			})
+			.thenExecuteAfter(RETRY_WAIT, () -> {
+				site.assertMobs(helper, 1, "mobs a Blood Moon and a retry later");
+				site.release();
+			})
+			.thenSucceed();
+	}
+
+	@GameTest(environment = "maple_flavored_gametest:normal", maxTicks = SITE_TICKS)
+	public void aMobTheLevelRefusesLeavesNoSpot(GameTestHelper helper) {
+		Site site = Site.build(helper, 20, Blocks.COBBLESTONE);
+		Mob original = site.placeOriginal(Restorable.WOODLAND_MANSION, EntityTypes.VINDICATOR);
+		Mob refused = EntityTypes.VINDICATOR.create(site.level(), EntitySpawnReason.STRUCTURE);
+		int spots = RestoreSpots.in(site.level()).size();
+
+		// The level refuses a second entity with a UUID it already holds.
+		refused.setUUID(original.getUUID());
+		refused.snapTo(site.feet().x, site.feet().y, site.feet().z, 0.0F, 0.0F);
+		Restoring.build(
+			Optional.of(Restorable.WOODLAND_MANSION),
+			() -> helper.assertFalse(site.level().addFreshEntity(refused), "the level took a second mob with the same UUID")
+		);
+
+		helper.assertValueEqual(RestoreSpots.in(site.level()).size(), spots, "spots after a structure's mob was refused");
+		site.release();
+		helper.succeed();
 	}
 
 	// Its own environment, since it changes the difficulty.
@@ -570,11 +741,27 @@ public class BloodMoonRestoringGameTests {
 
 	// Saves the level's spots and loads them back in their place, as a restart would.
 	private static void reloadSpots(ServerLevel level) {
+		loadSpots(level, savedSpots(level));
+	}
+
+	// The level's spots as it would save them now, in the order of {@link RestoreSpots#in}.
+	private static ListTag savedSpots(ServerLevel level) {
 		RegistryOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
 		RestoreSpots live = level.getDataStorage().computeIfAbsent(RestoreSpots.TYPE);
-		Tag saved = RestoreSpots.TYPE.codec().encodeStart(ops, live).getOrThrow();
+
+		return (ListTag) RestoreSpots.TYPE.codec().encodeStart(ops, live).getOrThrow();
+	}
+
+	// Loads saved spots in place of the level's, as a restart would.
+	private static void loadSpots(ServerLevel level, ListTag saved) {
+		RegistryOps<Tag> ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
 
 		level.getDataStorage().set(RestoreSpots.TYPE, RestoreSpots.TYPE.codec().parse(ops, saved).getOrThrow());
+	}
+
+	// Where the spot is among the level's spots, saved or not.
+	private static int indexOf(ServerLevel level, RestoreSpot spot) {
+		return RestoreSpots.in(level).stream().map(RestoreSpot::id).toList().indexOf(spot.id());
 	}
 
 	/**
@@ -648,6 +835,11 @@ public class BloodMoonRestoringGameTests {
 		/** Removes the site's mobs and lets its chunk unload. */
 		void release() {
 			mobs().forEach(Entity::discard);
+			letUnload();
+		}
+
+		/** Lets the site's chunk unload with its mobs in it. */
+		void letUnload() {
 			level.setChunkForced(floor.getX() >> 4, floor.getZ() >> 4, false);
 		}
 	}

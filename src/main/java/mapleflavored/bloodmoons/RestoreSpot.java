@@ -21,6 +21,8 @@ import net.minecraft.world.phys.Vec3;
  * @param type the mob the spot first rolled, and the one it Restores
  * @param persistent whether the original never despawned, which the Restored mob keeps
  * @param occupant the mob holding the spot, while {@link State#OCCUPIED}
+ * @param occupantChunk the chunk of the spot's level the occupant is saved in, packed, where that's known: not while
+ *     it's in another dimension or saved with a player, nor for a spot saved before chunks were recorded
  */
 public record RestoreSpot(
 	UUID id,
@@ -29,7 +31,8 @@ public record RestoreSpot(
 	EntityType<?> type,
 	boolean persistent,
 	State state,
-	Optional<UUID> occupant
+	Optional<UUID> occupant,
+	Optional<Long> occupantChunk
 ) {
 	static final Codec<RestoreSpot> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 		UUIDUtil.CODEC.fieldOf("id").forGetter(RestoreSpot::id),
@@ -38,12 +41,13 @@ public record RestoreSpot(
 		BuiltInRegistries.ENTITY_TYPE.byNameCodec().fieldOf("type").forGetter(RestoreSpot::type),
 		Codec.BOOL.fieldOf("persistent").forGetter(RestoreSpot::persistent),
 		State.CODEC.fieldOf("state").forGetter(RestoreSpot::state),
-		UUIDUtil.CODEC.optionalFieldOf("occupant").forGetter(RestoreSpot::occupant)
+		UUIDUtil.CODEC.optionalFieldOf("occupant").forGetter(RestoreSpot::occupant),
+		Codec.LONG.optionalFieldOf("occupant_chunk").forGetter(RestoreSpot::occupantChunk)
 	).apply(instance, RestoreSpot::new));
 
-	/** A new spot held by the mob {@code occupant}, which a structure just placed. */
+	/** A new spot for the mob {@code occupant}, which a structure is placing. */
 	static RestoreSpot occupiedBy(UUID occupant, Vec3 position, Restorable structure, EntityType<?> type, boolean persistent) {
-		return new RestoreSpot(UUID.randomUUID(), position, structure, type, persistent, State.OCCUPIED, Optional.of(occupant));
+		return new RestoreSpot(UUID.randomUUID(), position, structure, type, persistent, State.OCCUPIED, Optional.of(occupant), Optional.empty());
 	}
 
 	/** The chunk the spot is in, packed. */
@@ -51,16 +55,17 @@ public record RestoreSpot(
 		return ChunkPos.pack(BlockPos.containing(position));
 	}
 
-	RestoreSpot filledBy(UUID mob) {
-		return new RestoreSpot(id, position, structure, type, persistent, State.OCCUPIED, Optional.of(mob));
+	/** The spot held by {@code mob}, which is saved in {@code chunk}. */
+	RestoreSpot filledBy(UUID mob, Optional<Long> chunk) {
+		return new RestoreSpot(id, position, structure, type, persistent, State.OCCUPIED, Optional.of(mob), chunk);
 	}
 
 	RestoreSpot emptied() {
-		return new RestoreSpot(id, position, structure, type, persistent, State.EMPTY, Optional.empty());
+		return new RestoreSpot(id, position, structure, type, persistent, State.EMPTY, Optional.empty(), Optional.empty());
 	}
 
 	RestoreSpot madePending() {
-		return new RestoreSpot(id, position, structure, type, persistent, State.PENDING, Optional.empty());
+		return new RestoreSpot(id, position, structure, type, persistent, State.PENDING, Optional.empty(), Optional.empty());
 	}
 
 	/** Whether a spot holds a mob, waits for a Blood Moon, or waits to fill. */

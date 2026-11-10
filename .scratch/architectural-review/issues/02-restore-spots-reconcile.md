@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P1 (High)
 
@@ -33,16 +33,27 @@ Vanilla stores a chunk's entities when the chunk unloads (`PersistentEntitySecti
 
 The failure is silent and permanent. A mob that wandered off legitimately keeps its spot, so "the occupant isn't in its home chunk" can't be used as evidence that it is gone.
 
-## Open decisions
+## Decisions
 
-- **Which side is the authority.** These are suggestions from the merge, not from the reviewer:
-  - Make the mob's tag carry everything a spot needs, so spots can be rebuilt from loaded mobs and a tag with no spot plans one.
-  - Or keep the spot as the authority and, at each Blood Moon, treat an `OCCUPIED` spot as empty when its occupant can be shown not to exist.
+Claude made these calls; Jackson has not reviewed them.
+
+- **The mob is the authority for whether its spot is held.** `RestoreSpots` keeps the list of spots and the Empty and Pending cycle. Neither of the merge's two suggestions was enough alone, so the fix uses both: the tag carries the whole spot, and an Occupied spot is emptied when its occupant can be shown not to exist.
+- **A living mob that loads holds the spot it carries.** If the level has no such spot, it is recorded from the tag. If the spot is Empty or Pending, or names a mob no level holds, the mob takes it. If a loaded mob holds it, the mob drops its tag. A saved mob that fails to load, as in Peaceful, has a missing spot recorded Empty.
+- **Generation only tags the mob.** The spot is recorded when the mob first loads into the level, by the same rule that repairs a crash. The static queue of planned spots is gone, and a refused `addFreshEntity` leaves no spot because the mob never loads.
+- **Absence is evidence only in the chunk the occupant was saved in.** A spot records that chunk. While that chunk's entities are loaded and no level holds the occupant, loaded or hidden, the spot is emptied and waits for the next Blood Moon. This is checked on the retry, every 100 ticks, since a chunk that comes back before it finished unloading raises no load event. A mob that wandered off was saved in another chunk, so the spot's own chunk loading without it proves nothing.
+- **The saved chunk is recorded at both moments vanilla writes entities.** When a mob unloads somewhere new, the chunk is recorded and the spots are saved at the end of that tick (`SavedDataStorage.scheduleSave`, as ticket 01 does). Before every autosave, each loaded occupant's chunk is refreshed; `ServerLevel.save` writes saved data before entities.
+- **The chunk is unknown, and the spot is never emptied for absence,** while the occupant is in another dimension or is saved with a player it rides with.
+
+What is not covered:
+
+- **A crash between a chunk unload's entity write and the spots' write**, when the mob had changed chunk since the spots were last saved. The old chunk loads without the mob and the spot is emptied wrongly. If the mob loads before a Blood Moon refills the spot, it takes the spot back. Otherwise the structure gets one extra mob and the wanderer loses its tag.
+- **Spots and mobs saved before this change.** Their spots have no saved chunk until the occupant next loads, and their tags can't record a missing spot. A spot already orphaned by an earlier crash stays Occupied.
+- **A spot a crash left Occupied is noticed when its chunk next loads**, not at the Blood Moon itself. It is Restored by the first Blood Moon after that.
 
 ## Checklist
 
-- [ ] The decision above is made and recorded here.
-- [ ] A spot left `OCCUPIED` by a crash after its mob died is Restored by a later Blood Moon.
-- [ ] A structure mob saved with a tag whose spot was never saved gets a spot.
-- [ ] A refused `addFreshEntity` leaves no spot behind.
-- [ ] GameTests cover the first two cases by reloading `RestoreSpots` from an older saved state after the world has changed.
+- [x] The decision above is made and recorded here.
+- [x] A spot left `OCCUPIED` by a crash after its mob died is Restored by a later Blood Moon.
+- [x] A structure mob saved with a tag whose spot was never saved gets a spot.
+- [x] A refused `addFreshEntity` leaves no spot behind.
+- [x] GameTests cover the first two cases by reloading `RestoreSpots` from an older saved state after the world has changed.
