@@ -196,6 +196,21 @@ public class TradeGameTests {
 	}
 
 	@GameTest
+	public void aBookTradeSavedBeforeItsMarkerExistedIsMarkedOnLoad(GameTestHelper helper) {
+		MerchantOffer savedBookTrade = new MerchantOffer(new ItemCost(Items.ENCHANTED_BOOK), new ItemStack(Items.EMERALD, 4), 12, 10, 0.0F);
+		MerchantOffer paperTrade = new MerchantOffer(new ItemCost(Items.PAPER, 24), new ItemStack(Items.EMERALD), 16, 2, 0.05F);
+		MerchantOffers saved = new MerchantOffers();
+
+		saved.add(savedBookTrade);
+		saved.add(paperTrade);
+		BookTrade.markSavedOffers(saved);
+
+		helper.assertTrue(BookTrade.isBookTrade(savedBookTrade), "a saved book trade is the book trade once loaded");
+		helper.assertFalse(BookTrade.isBookTrade(paperTrade), "a saved paper trade is the book trade once loaded");
+		helper.succeed();
+	}
+
+	@GameTest
 	public void thePayoutNeverOutgrowsAStackWhateverTheListedPrice(GameTestHelper helper) {
 		ItemStack levelFiveBook = book(helper, Enchantments.SHARPNESS, 5);
 		MerchantOffer fiveEmeralds = new MerchantOffer(new ItemCost(Items.ENCHANTED_BOOK), payingPerFind(Items.EMERALD, 5), 12, 10, 0.0F);

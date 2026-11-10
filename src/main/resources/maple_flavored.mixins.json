@@ -5,6 +5,7 @@
 	"mixins": [
 		"AbstractArrowAccessor",
 		"AbstractIllagerMixin",
+		"AbstractVillagerMixin",
 		"AnvilMenuMixin",
 		"ApplyBonusCountMixin",
 		"BaseSpawnerAccessor",

@@ -10,9 +10,11 @@ import net.minecraft.util.Unit;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
 
 /**
  * The Novice Librarian's trade that buys any enchanted book and pays per find the book holds. A level n enchantment is
@@ -49,6 +51,18 @@ public final class BookTrade {
 	/** Whether the offer is the book trade. */
 	public static boolean isBookTrade(MerchantOffer offer) {
 		return offer.getResult().has(PAYS_PER_FIND);
+	}
+
+	/**
+	 * Marks the book trade among offers saved before {@link #PAYS_PER_FIND} existed, when the trade was known by taking
+	 * an enchanted book and paying emeralds. Offers made since carry the marker from the trade's data.
+	 */
+	public static void markSavedOffers(MerchantOffers offers) {
+		for (MerchantOffer offer : offers) {
+			boolean savedBookTrade = offer.getBaseCostA().is(Items.ENCHANTED_BOOK) && offer.getResult().is(Items.EMERALD);
+
+			if (savedBookTrade) offer.getResult().set(PAYS_PER_FIND, Unit.INSTANCE);
+		}
 	}
 
 	/**
