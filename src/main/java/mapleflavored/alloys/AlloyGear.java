@@ -5,6 +5,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import mapleflavored.MapleFlavored;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
@@ -29,6 +30,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.item.equipment.Equippable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Alloy gear: an Alloy version of every Netherite item, made at a Smithing Table from the Netherite item, or another
@@ -37,6 +39,9 @@ import net.minecraft.world.item.equipment.Equippable;
  *
  * <p>Each Alloy also has an Armored Elytra: its chestplate, smithed with an Elytra, that glides. It counts as that
  * Alloy's chestplate for everything but flight ({@link ArmoredElytraFlight}).
+ *
+ * <p>The gear exists once {@link Alloys#register()} has run. Before that no item is a piece, and asking for an Alloy's
+ * gear fails.
  */
 public final class AlloyGear {
 	/** The five Alloys' Armored Elytras. */
@@ -69,12 +74,12 @@ public final class AlloyGear {
 
 	/** The Alloy's version of this kind of gear. */
 	public static Item of(Alloy alloy, GearKind kind) {
-		return ITEMS.get(alloy).get(kind);
+		return registered(ITEMS.get(alloy)).get(kind);
 	}
 
 	/** The Alloy's Armored Elytra. */
 	public static Item armoredElytra(Alloy alloy) {
-		return ARMORED_ELYTRAS.get(alloy);
+		return registered(ARMORED_ELYTRAS.get(alloy));
 	}
 
 	/** Whether the item is an Armored Elytra, of any Alloy. */
@@ -126,6 +131,10 @@ public final class AlloyGear {
 			Arrays.stream(Alloy.values()).map(alloy -> new ItemStack(armoredElytra(alloy))).toList(),
 			CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
 		));
+	}
+
+	private static <T> T registered(@Nullable T gear) {
+		return Objects.requireNonNull(gear, "Alloys.register() hasn't run");
 	}
 
 	private static void registerGear(Alloy alloy) {

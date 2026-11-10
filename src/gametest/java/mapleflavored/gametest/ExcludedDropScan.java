@@ -79,7 +79,7 @@ final class ExcludedDropScan {
 				if (leaks) leaks(entry.get("name").getAsString(), where);
 			}
 			case "minecraft:alternatives", "minecraft:group", "minecraft:sequence" -> {
-				boolean chance = chanceAbove || conditionsHaveChance(entry);
+				boolean chance = chanceAbove || conditionsHaveChance(entry) || functionsHaveChance(entry);
 
 				for (JsonElement child : array(entry, "children")) scanEntry(child.getAsJsonObject(), chance, where);
 			}
