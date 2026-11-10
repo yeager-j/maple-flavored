@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P2 (Medium)
 
@@ -82,11 +82,24 @@ The deadline has two stores. `sb/IllagerAlert.java:84-85` writes the same end ti
 - `recordPlanned` re-enters itself through `markKeeperGone` and `of` (`sb/BookLocks.java:167-171`, `:98`, `:147`).
 - `ShriekerKeepers.choose` compares `Math.hypot` and `atan2` results at exact thresholds that feed a seeded pick (`sb/ShriekerKeepers.java:67-76`, `:193-200`). An integer squared distance would be exact.
 
+## Decisions
+
+Claude made these while implementing; Jackson has not reviewed them.
+
+- **Findings against `main` after tickets 01, 08 and 13.** Finding 1 held, with its sites moved: ticket 08 had put the piece-side checks in `StructureBookPiece`. Findings 2, 3 and 4 held as written. Finding 5 held in a changed form: ticket 03's `TestSites` had already replaced the bare row numbers, and the helpers and the two workarounds were still there. Finding 6 held as written.
+- **A kind's answers come from its key form.** `BookLocks.Kind` takes a `KeyForm` (`STRUCTURE_BLOCK`, `KEEPER_BLOCK`, `KEEPER_MOB`) and its refusal message, and implements its own world check. Whether keys are keepers, are found by position, open in Peaceful or are known done only by the lock are exhaustive switches over the form, so `BRUTES` and `EVOKERS` share one set of answers.
+- **A lock with no keys is recorded.** `Keys.NONE` is gone. A book piece holds an `Optional<Keys>`: empty when nothing locks the book, and present with no positions when its structure looked for keys and found none. The second is saved with the piece, recorded in `BookLocks` as a lock that never locks, and reported by `/keepers`. Nothing changes in play. A piece with any lock stays at its planned spot, where before only one with at least one key did; the four structures with locks never settle.
+- **`/keepers` lists Brutes and Evokers.** A keeper mob is alive, gone for good, or not loaded, in which case the line gives where it was placed. The command's messages no longer say "Ancient City".
+- **The hunt rule is `structurebooks/Hunt.java`.** It owns the ten minutes, the death rule, the range bonus and the sweep of a structure's mobs. `PiglinAnger` keeps the Piglin's anger memory and `IllagerAlert` keeps its target goal. Which structures wake is still a constant in each of those two.
+- **`IllagerNeutrality` asks `IllagerAlert` whether a hunt is on.** `calm` and the `anger` overload that took a duration are removed with their test. `alloys` now imports `structurebooks`, and `structurebooks` no longer imports `alloys`.
+- **Legacy save forms are removed, under Jackson's 2026-11-10 decision recorded in ticket 08.** `BookLocks.Lock` saves `kind`, `keys` and `done`; the old `spawners` and `cleared` names and the default kind are gone with their test. A hunt's `quarry_deaths` is required. A world saved before this loses its recorded locks, which are planned again from each book's structure; a keeper mob killed before then is not counted.
+- **Keeper directions use `StrictMath`.** Distances are compared as whole blocks squared. Directions still need `atan2`, so they go through `StrictMath`, which gives every platform the same result for the seeded pick.
+
 ## Checklist
 
-- [ ] 1. Each lock kind carries its own answers, no predicate is defined by negation, and adding a kind fails to compile until every answer is given.
-- [ ] 2. One hunt rule owns the duration, the death rule and the range. `IllagerNeutrality` asks whether a hunt is on and stores no deadline of its own.
-- [ ] 3. `ShriekerKeepers` returns one keeper status (standing, broken, unloaded, missing), and `KeepersCommand` reads it without its own chunk check.
-- [ ] 4. "No lock" and "a lock that found no keepers" are different values, and `/keepers` can show the second.
-- [ ] 5. Lock tests can't see each other's locks, the lock helpers exist once, `aCityWithoutABookGroundsNobody` has a control, and the unloaded-keeper and clock-expiry cases are tested.
-- [ ] 6. `/keepers` covers every Keeper, `recordPlanned` doesn't re-enter itself, and `choose` compares integer distances.
+- [x] 1. Each lock kind carries its own answers, no predicate is defined by negation, and adding a kind fails to compile until every answer is given.
+- [x] 2. One hunt rule owns the duration, the death rule and the range. `IllagerNeutrality` asks whether a hunt is on and stores no deadline of its own.
+- [x] 3. `ShriekerKeepers` returns one keeper status (standing, broken, unloaded, missing), and `KeepersCommand` reads it without its own chunk check.
+- [x] 4. "No lock" and "a lock that found no keepers" are different values, and `/keepers` can show the second.
+- [x] 5. Lock tests can't see each other's locks, the lock helpers exist once, `aCityWithoutABookGroundsNobody` has a control, and the unloaded-keeper and clock-expiry cases are tested.
+- [x] 6. `/keepers` covers every Keeper, `recordPlanned` doesn't re-enter itself, and `choose` compares integer distances.

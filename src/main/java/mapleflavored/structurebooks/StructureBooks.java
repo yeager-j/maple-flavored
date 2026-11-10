@@ -1,6 +1,5 @@
 package mapleflavored.structurebooks;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -183,42 +182,31 @@ public final class StructureBooks {
 	private static void refuseLocked(ServerPlayer player, ServerLevel level, BlockPos book, BookLocks.Lock lock) {
 		List<BlockPos> remaining = lock.remainingKeys();
 		int done = lock.keys().size() - remaining.size();
-		String message = switch (lock.kind()) {
-			case SPAWNERS -> "block.maple_flavored.structure_book.locked";
-			case BRUTES -> "block.maple_flavored.structure_book.locked_by_keepers";
-			case EVOKERS -> "block.maple_flavored.structure_book.locked_by_evokers";
-			case SHRIEKERS -> "block.maple_flavored.structure_book.locked_by_shriekers";
-		};
 
-		player.sendOverlayMessage(Component.translatable(message, done, lock.keys().size()));
+		player.sendOverlayMessage(Component.translatable(lock.kind().refusal(), done, lock.keys().size()));
 		level.playSound(null, book, SoundEvents.VAULT_INSERT_ITEM_FAIL, SoundSource.BLOCKS, 1.0F, 1.0F);
 
-		switch (lock.kind()) {
-			case SPAWNERS, SHRIEKERS -> remaining.forEach(key -> CreakingTrails.show(level, book, key, TRAIL_COLOR));
-			case BRUTES, EVOKERS -> pointOutKeepers(level, book, remaining);
-		}
+		List<BlockPos> trailEnds = switch (lock.kind().form()) {
+			case STRUCTURE_BLOCK, KEEPER_BLOCK -> remaining;
+			case KEEPER_MOB -> pointOutKeepers(level, book, remaining);
+		};
+
+		trailEnds.forEach(end -> CreakingTrails.show(level, book, end, TRAIL_COLOR));
 	}
 
-	// Each remaining keeper here glows and gets trails; one that isn't loaded gets trails to where it spawned.
-	private static void pointOutKeepers(ServerLevel level, BlockPos book, List<BlockPos> remaining) {
-		Map<BlockPos, Mob> liveByKey = new HashMap<>();
+	// Makes each remaining keeper that's here glow, and returns where each is: one that isn't loaded, where it spawned.
+	private static List<BlockPos> pointOutKeepers(ServerLevel level, BlockPos book, List<BlockPos> remaining) {
+		Map<BlockPos, Mob> liveByKey = MobKeepers.liveKeepersByKey(level, book);
 
-		for (Mob keeper : MobKeepers.liveKeepers(level, book)) {
-			MobKeepers.keyOf(keeper).filter(remaining::contains).ifPresent(key -> liveByKey.put(key, keeper));
-		}
-
-		for (BlockPos key : remaining) {
+		return remaining.stream().map(key -> {
 			Mob keeper = liveByKey.get(key);
 
-			if (keeper == null) {
-				CreakingTrails.show(level, book, key, TRAIL_COLOR);
-
-				continue;
-			}
+			if (keeper == null) return key;
 
 			keeper.addEffect(new MobEffectInstance(MobEffects.GLOWING, KEEPER_GLOW_TICKS));
-			CreakingTrails.show(level, book, keeper.blockPosition(), TRAIL_COLOR);
-		}
+
+			return keeper.blockPosition();
+		}).toList();
 	}
 
 	/**

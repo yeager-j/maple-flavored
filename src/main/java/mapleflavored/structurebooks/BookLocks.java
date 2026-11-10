@@ -2,6 +2,7 @@ package mapleflavored.structurebooks;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +33,8 @@ import net.minecraft.world.level.saveddata.SavedDataType;
  * all of its keys are done; a book with no lock here was never locked. The Nether Fortress's book is locked by the Blaze
  * spawners its fortress generated with, each done once Cleared; a Bastion's by its keeper Brutes and a Stronghold's by
  * its Evokers, each done once it's gone for good; and an Ancient City's by its keeper shriekers, each done once broken.
- * A keeper its structure couldn't place is done from the start.
+ * A keeper its structure couldn't place is done from the start. A structure that looked for keys and found none, as an
+ * Ancient City with no sculk patch far enough out, still has a lock here: one with no keys, which never locks its book.
  *
  * <p>A lock is planned with its structure and recorded here before any read, whether or not the book's chunk has been
  * built. The structure's book piece saves what locks the book, so a lock missing here, as after a crash that saved the
@@ -62,7 +64,7 @@ public final class BookLocks extends SavedData {
 	private static final Queue<Forgiven> FORGIVEN = new ConcurrentLinkedQueue<>();
 
 	private final Map<BlockPos, Lock> locksByBook = new HashMap<>();
-	// The books locked by blocks, Blaze spawners and keeper shriekers, by each key's position.
+	// The books whose keys are found again by position, Blaze spawners and keeper shriekers, by each key's position.
 	private final Map<BlockPos, BlockPos> booksByBlockKey = new HashMap<>();
 	// The books with no lock here whose structures have been asked for one. Never saved: each is asked once a session.
 	private final Set<BlockPos> booksWithoutPlannedLock = new HashSet<>();
@@ -92,16 +94,17 @@ public final class BookLocks extends SavedData {
 
 	/**
 	 * Locks the book among a structure's planned pieces until every key its piece saves is done. Safe to call from any
-	 * thread. Planning the same book again never resets its done keys, and a book with no keys stays unlocked.
+	 * thread. Planning the same book again never resets its done keys. A book whose piece saves no lock gets none, and
+	 * one whose lock has no keys gets a lock that's never locked.
 	 *
 	 * @param dimension the dimension the structure is planned in
 	 */
 	public static void plan(ResourceKey<Level> dimension, List<StructurePiece> pieces) {
 		Optional<StructureBookPiece> book = StructureBookPiece.among(pieces);
 
-		if (book.isEmpty() || book.get().lock().positions().isEmpty()) return;
+		if (book.isEmpty() || book.get().lock().isEmpty()) return;
 
-		PLANNED.add(new Planned(dimension, book.get().plannedSpot(), book.get().lock()));
+		PLANNED.add(new Planned(dimension, book.get().plannedSpot(), book.get().lock().get()));
 	}
 
 	/**
@@ -110,12 +113,7 @@ public final class BookLocks extends SavedData {
 	 * @param level the book's level
 	 */
 	static void markKeeperGone(ServerLevel level, BlockPos book, BlockPos key) {
-		BookLocks locks = of(level);
-		Optional<Lock> lock = locks.lockOrPlanAgain(level, book);
-
-		if (lock.isEmpty() || !lock.get().kind().isMob() || !lock.get().keys().contains(key) || lock.get().done().contains(key)) return;
-
-		locks.markDone(level, book, key);
+		of(level).countKeeperGone(level, book, key);
 	}
 
 	/** Marks the key of a keeper mob its structure couldn't place done. Safe to call from any thread. */
@@ -130,17 +128,17 @@ public final class BookLocks extends SavedData {
 	 * @param level the keeper's level, which is its book's
 	 */
 	static void markShriekerBroken(ServerLevel level, BlockPos key) {
-		BookLocks locks = of(level);
-		Lock lock = Optional.ofNullable(locks.booksByBlockKey.get(key)).map(locks.locksByBook::get).orElse(null);
-
-		if (lock == null || lock.kind() != Kind.SHRIEKERS || lock.done().contains(key)) return;
-
-		locks.markDone(level, lock.book(), key);
+		of(level).countBlockKeyDone(level, key, Kind.SHRIEKERS);
 	}
 
 	/** Every lock of the kind in the level, locked or not. */
 	public static List<Lock> locksOf(ServerLevel level, Kind kind) {
 		return of(level).locksByBook.values().stream().filter(lock -> lock.kind() == kind).toList();
+	}
+
+	/** Every lock in the level whose keys are keepers, locked or not, a lock that found no keepers included. */
+	public static List<Lock> keeperLocks(ServerLevel level) {
+		return of(level).locksByBook.values().stream().filter(lock -> lock.kind().isKeeper()).toList();
 	}
 
 	/** Whether the book at {@code book} can't be taken yet. Reads the lock as {@link #lockAt} does. */
@@ -189,7 +187,7 @@ public final class BookLocks extends SavedData {
 		if (lock.isEmpty()) return lock;
 
 		lock.get().remainingKeys().stream()
-			.filter(key -> isDoneInWorld(level, lock.get().kind(), key))
+			.filter(key -> lock.get().kind().isDoneInWorld(level, key))
 			.forEach(key -> locks.markDone(level, book, key));
 
 		return Optional.of(locks.locksByBook.get(book));
@@ -202,6 +200,13 @@ public final class BookLocks extends SavedData {
 	}
 
 	private static void recordPlanned(MinecraftServer server) {
+		// A keeper is forgiven after its lock was planned, so every lock these need is already waiting to be recorded.
+		List<Forgiven> forgivenSoFar = new ArrayList<>();
+
+		for (Forgiven forgiven = FORGIVEN.poll(); forgiven != null; forgiven = FORGIVEN.poll()) {
+			forgivenSoFar.add(forgiven);
+		}
+
 		for (Planned planned = PLANNED.poll(); planned != null; planned = PLANNED.poll()) {
 			ServerLevel level = server.getLevel(planned.dimension());
 
@@ -216,10 +221,12 @@ public final class BookLocks extends SavedData {
 			locks.setDirty();
 		}
 
-		for (Forgiven forgiven = FORGIVEN.poll(); forgiven != null; forgiven = FORGIVEN.poll()) {
+		for (Forgiven forgiven : forgivenSoFar) {
 			ServerLevel level = server.getLevel(forgiven.book().dimension());
 
-			if (level != null) markKeeperGone(level, forgiven.book().pos(), forgiven.key());
+			if (level == null) continue;
+
+			level.getDataStorage().computeIfAbsent(TYPE).countKeeperGone(level, forgiven.book().pos(), forgiven.key());
 		}
 	}
 
@@ -229,31 +236,18 @@ public final class BookLocks extends SavedData {
 
 			if (locks == null || level.getDifficulty() != Difficulty.PEACEFUL) continue;
 
-			List<Lock> lockedByMobs = locks.locksByBook.values().stream()
-				.filter(lock -> lock.kind().isMob() && lock.isLocked())
+			List<Lock> opened = locks.locksByBook.values().stream()
+				.filter(lock -> lock.kind().opensInPeaceful() && lock.isLocked())
 				.toList();
 
-			for (Lock lock : lockedByMobs) {
+			for (Lock lock : opened) {
 				lock.remainingKeys().forEach(key -> locks.markDone(level, lock.book(), key));
 			}
 		}
 	}
 
 	private static void countCleared(ServerLevel level, BlockPos spawner) {
-		BookLocks locks = of(level);
-		BlockPos book = locks.booksByBlockKey.get(spawner);
-
-		if (book == null || locks.locksByBook.get(book).kind() != Kind.SPAWNERS) return;
-
-		locks.markDone(level, book, spawner);
-	}
-
-	private static boolean isDoneInWorld(ServerLevel level, Kind kind, BlockPos key) {
-		return switch (kind) {
-			case SPAWNERS -> isChunkBuilt(level, key) && (!level.getBlockState(key).is(Blocks.SPAWNER) || Spawners.isCleared(level, key));
-			case SHRIEKERS -> ShriekerKeepers.isGone(level, key);
-			case BRUTES, EVOKERS -> false;
-		};
+		of(level).countBlockKeyDone(level, spawner, Kind.SPAWNERS);
 	}
 
 	/**
@@ -262,6 +256,24 @@ public final class BookLocks extends SavedData {
 	 */
 	static boolean isChunkBuilt(ServerLevel level, BlockPos pos) {
 		return level.getChunkSource().getChunkNow(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())) != null;
+	}
+
+	// Counts the block at the key done for the book it locks, if it's a key of the kind.
+	private void countBlockKeyDone(ServerLevel level, BlockPos key, Kind kind) {
+		Lock lock = Optional.ofNullable(booksByBlockKey.get(key)).map(locksByBook::get).orElse(null);
+
+		if (lock == null || lock.kind() != kind || lock.done().contains(key)) return;
+
+		markDone(level, lock.book(), key);
+	}
+
+	private void countKeeperGone(ServerLevel level, BlockPos book, BlockPos key) {
+		Optional<Lock> lock = lockOrPlanAgain(level, book);
+
+		if (lock.isEmpty() || lock.get().kind().form() != KeyForm.KEEPER_MOB) return;
+		if (!lock.get().keys().contains(key) || lock.get().done().contains(key)) return;
+
+		markDone(level, book, key);
 	}
 
 	// The book's lock. A book with none asks its saved structure for the lock its piece saves, once.
@@ -288,9 +300,10 @@ public final class BookLocks extends SavedData {
 
 		return level.structureManager().startsForStructure(sectionX, sectionZ, structure -> true).stream()
 			.flatMap(start -> StructureBookPiece.among(start.getPieces()).stream())
-			.filter(piece -> piece.plannedSpot().equals(book) && !piece.lock().positions().isEmpty())
+			.filter(piece -> piece.plannedSpot().equals(book))
 			.findFirst()
-			.map(piece -> new Lock(book, piece.lock().kind(), piece.lock().positions(), Set.of()));
+			.flatMap(StructureBookPiece::lock)
+			.map(keys -> new Lock(book, keys.kind(), keys.positions(), Set.of()));
 	}
 
 	private void markDone(ServerLevel level, BlockPos book, BlockPos key) {
@@ -299,9 +312,9 @@ public final class BookLocks extends SavedData {
 		put(withKey);
 		setDirty();
 
-		// Nothing else can say a keeper mob is gone, so its key doesn't wait for the next autosave, which the keeper's
-		// own chunk can reach the disk before.
-		if (withKey.kind().isMob()) level.getDataStorage().scheduleSave();
+		// Nothing else can say such a key is done, so it doesn't wait for the next autosave, which the keeper's own chunk
+		// can reach the disk before.
+		if (withKey.kind().isKnownDoneOnlyByTheLock()) level.getDataStorage().scheduleSave();
 
 		// An unloaded book is sent with what's left of its lock when its chunk is.
 		if (level.isLoaded(book)) StructureBooks.showKeyDone(level, book);
@@ -314,33 +327,67 @@ public final class BookLocks extends SavedData {
 	private void put(Lock lock) {
 		locksByBook.put(lock.book(), lock);
 
-		if (lock.kind().isBlock()) lock.keys().forEach(key -> booksByBlockKey.put(key, lock.book()));
+		if (lock.kind().isFoundByPosition()) lock.keys().forEach(key -> booksByBlockKey.put(key, lock.book()));
 	}
 
-	/** What locks a book, and when one of its keys is done. */
+	/**
+	 * What locks a book. Each kind gives every answer the locks and the book need about its keys, so a kind can't be
+	 * added without them.
+	 */
 	public enum Kind {
 		/** Blaze spawners, each done once Cleared. */
-		SPAWNERS,
+		SPAWNERS(KeyForm.STRUCTURE_BLOCK, "block.maple_flavored.structure_book.locked") {
+			@Override
+			boolean isDoneInWorld(ServerLevel level, BlockPos key) {
+				return isChunkBuilt(level, key) && (!level.getBlockState(key).is(Blocks.SPAWNER) || Spawners.isCleared(level, key));
+			}
+		},
 		/** Keeper Piglin Brutes, keyed by where each spawned, each done once it's gone for good. */
-		BRUTES,
+		BRUTES(KeyForm.KEEPER_MOB, "block.maple_flavored.structure_book.locked_by_keepers") {
+			@Override
+			boolean isDoneInWorld(ServerLevel level, BlockPos key) {
+				return false;
+			}
+		},
 		/**
 		 * Keeper sculk shriekers, keyed by the origin of the sculk patch each stands at, each done once broken. A keeper
 		 * stands at its origin, or on the patch's catalyst just above it.
 		 */
-		SHRIEKERS,
+		SHRIEKERS(KeyForm.KEEPER_BLOCK, "block.maple_flavored.structure_book.locked_by_shriekers") {
+			@Override
+			boolean isDoneInWorld(ServerLevel level, BlockPos key) {
+				return ShriekerKeepers.isGone(level, key);
+			}
+		},
 		/** A Stronghold's Evokers, keyed by the origin of the piece that placed each, each done once it's gone for good. */
-		EVOKERS;
+		EVOKERS(KeyForm.KEEPER_MOB, "block.maple_flavored.structure_book.locked_by_evokers") {
+			@Override
+			boolean isDoneInWorld(ServerLevel level, BlockPos key) {
+				return false;
+			}
+		};
 
 		static final Codec<Kind> CODEC = Codec.STRING.xmap(Kind::valueOf, Kind::name);
 
-		/** Whether each key is a block at the key's position, found again by that position when it changes. */
-		boolean isBlock() {
-			return !isMob();
+		private final KeyForm form;
+		private final String refusal;
+
+		Kind(KeyForm form, String refusal) {
+			this.form = form;
+			this.refusal = refusal;
 		}
 
-		/** Whether each key is a keeper mob, which counts itself once it's gone for good. */
-		boolean isMob() {
-			return this == BRUTES || this == EVOKERS;
+		/** What each key is. */
+		public KeyForm form() {
+			return form;
+		}
+
+		/**
+		 * The translation key of the message a player gets when the book is refused. It takes the count of keys done and
+		 * the count of keys in all.
+		 */
+		public String refusal() {
+			return refusal;
 		}
 
 		/**
@@ -348,19 +395,60 @@ public final class BookLocks extends SavedData {
 		 * building the piece can find them.
 		 */
 		public boolean isKeeper() {
-			return this != SPAWNERS;
+			return switch (form) {
+				case STRUCTURE_BLOCK -> false;
+				case KEEPER_BLOCK, KEEPER_MOB -> true;
+			};
 		}
+
+		/** Whether a key is found again by its position when the block there changes. */
+		boolean isFoundByPosition() {
+			return switch (form) {
+				case STRUCTURE_BLOCK, KEEPER_BLOCK -> true;
+				case KEEPER_MOB -> false;
+			};
+		}
+
+		/** Whether a Peaceful level opens the lock for good, since it has none of the mobs that are the keys. */
+		boolean opensInPeaceful() {
+			return switch (form) {
+				case STRUCTURE_BLOCK, KEEPER_BLOCK -> false;
+				case KEEPER_MOB -> true;
+			};
+		}
+
+		/** Whether only the locks can say a key is done, since the world never shows it. */
+		boolean isKnownDoneOnlyByTheLock() {
+			return switch (form) {
+				case STRUCTURE_BLOCK, KEEPER_BLOCK -> false;
+				case KEEPER_MOB -> true;
+			};
+		}
+
+		/**
+		 * Whether the world shows the key is done. Only reads a chunk that's already loaded and fully generated. Never
+		 * true for a key only the locks can say is done.
+		 */
+		abstract boolean isDoneInWorld(ServerLevel level, BlockPos key);
+	}
+
+	/** What a key is, which decides how it's found again and who can say it's done. */
+	public enum KeyForm {
+		/** A block the structure generates anyway, at the key's position. */
+		STRUCTURE_BLOCK,
+		/** A keeper block, placed for the lock at or just above the key's position. */
+		KEEPER_BLOCK,
+		/** A keeper mob, which counts itself once it's gone for good. One that isn't there may have wandered off. */
+		KEEPER_MOB
 	}
 
 	/**
-	 * What a planned book's lock is made of. No positions means the book isn't locked.
+	 * What a planned book's lock is made of. With no positions, its structure looked for keys of the kind and found
+	 * none, so the book isn't locked.
 	 *
 	 * @param positions each key's position, in planned order
 	 */
 	public record Keys(Kind kind, List<BlockPos> positions) {
-		/** Locks nothing. */
-		public static final Keys NONE = new Keys(Kind.SPAWNERS, List.of());
-
 		static final Codec<Keys> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 			Kind.CODEC.fieldOf("kind").forGetter(Keys::kind),
 			BlockPos.CODEC.listOf().fieldOf("keys").forGetter(Keys::positions)
@@ -372,7 +460,7 @@ public final class BookLocks extends SavedData {
 	}
 
 	/**
-	 * One locked book.
+	 * One book's lock. A lock with no keys is one whose structure found none to plan, and never locks its book.
 	 *
 	 * @param book where the book is
 	 * @param kind what its keys are
@@ -380,12 +468,11 @@ public final class BookLocks extends SavedData {
 	 * @param done the keys among them that are done
 	 */
 	public record Lock(BlockPos book, Kind kind, List<BlockPos> keys, Set<BlockPos> done) {
-		// Saved before Brute locks, as spawners and their Cleared set, so those names and the default kind stay.
 		static final Codec<Lock> CODEC = RecordCodecBuilder.create(instance -> instance.group(
 			BlockPos.CODEC.fieldOf("book").forGetter(Lock::book),
-			Kind.CODEC.optionalFieldOf("kind", Kind.SPAWNERS).forGetter(Lock::kind),
-			BlockPos.CODEC.listOf().fieldOf("spawners").forGetter(Lock::keys),
-			BlockPos.CODEC.listOf().xmap(Set::copyOf, List::copyOf).fieldOf("cleared").forGetter(Lock::done)
+			Kind.CODEC.fieldOf("kind").forGetter(Lock::kind),
+			BlockPos.CODEC.listOf().fieldOf("keys").forGetter(Lock::keys),
+			BlockPos.CODEC.listOf().xmap(Set::copyOf, List::copyOf).fieldOf("done").forGetter(Lock::done)
 		).apply(instance, Lock::new));
 
 		public Lock {

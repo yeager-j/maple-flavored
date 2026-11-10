@@ -606,7 +606,7 @@ public class StrongholdGameTests {
 		BookSpot aboveTheRoom = new BookSpot(room, new BlockPos(box.getCenter().getX(), box.maxY() + 3, box.getCenter().getZ()));
 		BookLocks.Keys lock = new BookLocks.Keys(BookLocks.Kind.EVOKERS, List.of(MobKeepers.roomKey(room)));
 
-		return List.of(room, new StructureBookPiece(List.of(room), aboveTheRoom, Enchantments.UNBREAKING, lock));
+		return List.of(room, new StructureBookPiece(List.of(room), aboveTheRoom, Enchantments.UNBREAKING, Optional.of(lock)));
 	}
 
 	private static List<AbstractIllager> buildAlone(ServerLevel level, List<StructurePiece> pieces) {

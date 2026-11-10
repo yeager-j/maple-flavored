@@ -55,19 +55,19 @@ public final class StructureBookRules {
 	private static final StructureBookRule NETHER_FORTRESS = new StructureBookRule(
 		List.of(Enchantments.FIRE_PROTECTION),
 		StructureBookSpots::netherFortress,
-		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.SPAWNERS, FortressBlazeSpawners.spawners(pieces))
+		(pieces, book, random) -> Optional.of(new BookLocks.Keys(BookLocks.Kind.SPAWNERS, FortressBlazeSpawners.spawners(pieces)))
 	);
 	private static final StructureBookRule END_CITY = ordinary(List.of(Enchantments.FEATHER_FALLING), StructureBookSpots::endCity);
 	private static final StructureBookRule ANCIENT_CITY = new StructureBookRule(
 		List.of(Enchantments.SWIFT_SNEAK),
 		StructureBookSpots::ancientCity,
-		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.SHRIEKERS, ShriekerKeepers.choose(book, ShriekerKeepers.origins(pieces), random))
+		(pieces, book, random) -> Optional.of(new BookLocks.Keys(BookLocks.Kind.SHRIEKERS, ShriekerKeepers.choose(book, ShriekerKeepers.origins(pieces), random)))
 	);
 	private static final StructureBookRule WOODLAND_MANSION = ordinary(List.of(Enchantments.FORTUNE), StructureBookSpots::woodlandMansion);
 	private static final StructureBookRule STRONGHOLD = new StructureBookRule(
 		List.of(Enchantments.UNBREAKING),
 		StructureBookSpots::stronghold,
-		(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.EVOKERS, strongholdKeeperKeys(pieces, random))
+		(pieces, book, random) -> Optional.of(new BookLocks.Keys(BookLocks.Kind.EVOKERS, strongholdKeeperKeys(pieces, random)))
 	);
 	private static final StructureBookRule TRAIL_RUINS = ordinary(List.of(Enchantments.SILK_TOUCH), StructureBookSpots::trailRuins);
 
@@ -149,7 +149,7 @@ public final class StructureBookRules {
 		if (spot.isEmpty()) return pieces;
 
 		ResourceKey<Enchantment> enchantment = rule.get().chooseEnchantment(random);
-		BookLocks.Keys keys = rule.get().lock().keys(pieces.pieces(), spot.get().pos(), random);
+		Optional<BookLocks.Keys> keys = rule.get().lock().keys(pieces.pieces(), spot.get().pos(), random);
 		StructureBookPiece book = new StructureBookPiece(pieces.pieces(), spot.get(), enchantment, keys);
 
 		return new PiecesContainer(Stream.concat(pieces.pieces().stream(), Stream.of(book)).toList());
@@ -210,7 +210,7 @@ public final class StructureBookRules {
 		return new StructureBookRule(
 			List.of(enchantment),
 			spot,
-			(pieces, book, random) -> new BookLocks.Keys(BookLocks.Kind.BRUTES, StructureBookSpots.bastionKeepers(pieces, random))
+			(pieces, book, random) -> Optional.of(new BookLocks.Keys(BookLocks.Kind.BRUTES, StructureBookSpots.bastionKeepers(pieces, random)))
 		);
 	}
 

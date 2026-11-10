@@ -5,8 +5,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 import mapleflavored.structurebooks.BookSpot;
@@ -70,13 +68,8 @@ public class StructureBookGameTests {
 	private static final int CORRIDOR_SUPPORT = 2;
 	private static final int MAIN_INVENTORY_SLOTS = Inventory.INVENTORY_SIZE;
 
-	// Fabric events can't be unregistered, so one listener records every take for the tests, by absolute position.
-	private static final Map<BlockPos, List<Holder<Enchantment>>> TAKES = new ConcurrentHashMap<>();
-
 	static {
-		StructureBooks.TAKEN.register((player, level, pos, enchantment) ->
-			TAKES.computeIfAbsent(pos.immutable(), unused -> new CopyOnWriteArrayList<>()).add(enchantment)
-		);
+		Books.recordTakes();
 	}
 
 	@GameTest
@@ -177,7 +170,7 @@ public class StructureBookGameTests {
 
 		helper.assertValueEqual(booksIn(player), List.of(Map.of(Enchantments.EFFICIENCY, 1)), "books in the inventory");
 		helper.assertTrue(level.getBlockState(book).isAir(), "the book's block is gone");
-		helper.assertValueEqual(takenEnchantments(book), List.of(Enchantments.EFFICIENCY), "taken events");
+		helper.assertValueEqual(Books.takes(book), List.of(Enchantments.EFFICIENCY), "taken events");
 		helper.succeed();
 	}
 
@@ -199,7 +192,7 @@ public class StructureBookGameTests {
 		}
 
 		helper.assertTrue(level.getBlockState(book).is(StructureBooks.BLOCK), "the refused book is still there");
-		helper.assertValueEqual(takenEnchantments(book), List.of(), "taken events after a refusal");
+		helper.assertValueEqual(Books.takes(book), List.of(), "taken events after a refusal");
 
 		// The held dirt stays in hand: holding an item still takes the book.
 		inventory.setItem(MAIN_INVENTORY_SLOTS - 1, ItemStack.EMPTY);
@@ -208,7 +201,7 @@ public class StructureBookGameTests {
 		helper.assertValueEqual(booksIn(player), List.of(Map.of(Enchantments.EFFICIENCY, 1)), "books in the inventory");
 		helper.assertTrue(ItemStack.matches(player.getMainHandItem(), new ItemStack(Items.DIRT)), "the held dirt is kept");
 		helper.assertTrue(level.getBlockState(book).isAir(), "the book's block is gone");
-		helper.assertValueEqual(takenEnchantments(book), List.of(Enchantments.EFFICIENCY), "taken events");
+		helper.assertValueEqual(Books.takes(book), List.of(Enchantments.EFFICIENCY), "taken events");
 		helper.succeed();
 	}
 
@@ -368,7 +361,7 @@ public class StructureBookGameTests {
 
 		helper.assertBlockPresent(StructureBooks.BLOCK, BOOK_POS);
 		helper.assertBlockPresent(Blocks.STONE, BOOK_POS.above());
-		helper.assertValueEqual(takenEnchantments(book), List.of(), "taken events");
+		helper.assertValueEqual(Books.takes(book), List.of(), "taken events");
 		helper.succeed();
 	}
 
@@ -442,7 +435,7 @@ public class StructureBookGameTests {
 		helper.assertFalse(StructureBooks.take(player, book), "A blank book was taken");
 		helper.assertBlockPresent(Blocks.AIR, BOOK_POS);
 		helper.assertValueEqual(booksIn(player), List.of(), "the books a blank book gave");
-		helper.assertValueEqual(takenEnchantments(book), List.of(), "the takes a blank book fired");
+		helper.assertValueEqual(Books.takes(book), List.of(), "the takes a blank book fired");
 		helper.succeed();
 	}
 
@@ -493,9 +486,5 @@ public class StructureBookGameTests {
 		}
 
 		return books;
-	}
-
-	private static List<ResourceKey<Enchantment>> takenEnchantments(BlockPos pos) {
-		return TAKES.getOrDefault(pos, List.of()).stream().map(enchantment -> enchantment.unwrapKey().orElseThrow()).toList();
 	}
 }
