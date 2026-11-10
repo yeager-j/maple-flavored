@@ -423,8 +423,9 @@ public class DeepVariantGameTests {
 	public void aDeepSkeletonsArrowGivesAStraysSlowness(GameTestHelper helper) {
 		Skeleton deepArcher = archer(helper, DeepVariants.DEEP_SKELETON, new BlockPos(1, 2, 1));
 		AbstractSkeleton strayArcher = archer(helper, EntityTypes.STRAY, new BlockPos(5, 2, 1));
-		Mob deepTarget = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(1, 2, 5));
-		Mob strayTarget = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(5, 2, 5));
+		// Two blocks from its archer, where a skeleton's random aim can't miss.
+		Mob deepTarget = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(1, 2, 3));
+		Mob strayTarget = helper.spawnWithNoFreeWill(EntityTypes.ZOMBIE, new BlockPos(5, 2, 3));
 
 		deepArcher.performRangedAttack(deepTarget, ARROW_POWER);
 		strayArcher.performRangedAttack(strayTarget, ARROW_POWER);
@@ -602,8 +603,10 @@ public class DeepVariantGameTests {
 		return mobs;
 	}
 
+	// Counts adults only: a pack of zombies is all babies or all adults, so one pack of babies would otherwise be enough
+	// zombies with no adult among them.
 	private static boolean hasEnoughOfEach(List<Mob> mobs) {
-		return BASES.stream().allMatch(base -> mobs.stream().filter(mob -> baseKind(mob.getType()) == base).count() >= WANTED_PER_KIND);
+		return BASES.stream().allMatch(base -> mobs.stream().filter(mob -> baseKind(mob.getType()) == base && !mob.isBaby()).count() >= WANTED_PER_KIND);
 	}
 
 	// The base mob a Deep variant stands in for, or the type itself.

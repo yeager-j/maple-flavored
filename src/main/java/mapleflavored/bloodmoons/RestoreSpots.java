@@ -7,22 +7,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import mapleflavored.MapleFlavored;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
-/**
- * Every Restore spot in a level, by id and by chunk. Spots are planned on worldgen threads with {@link #plan} and
- * recorded here by the server thread before any read.
- */
+/** Every Restore spot in a level, by id and by chunk. Server thread only. */
 public final class RestoreSpots extends SavedData {
 	private static final Codec<RestoreSpots> CODEC = RestoreSpot.CODEC.listOf().xmap(RestoreSpots::new, RestoreSpots::all);
 
@@ -30,14 +22,10 @@ public final class RestoreSpots extends SavedData {
 	// Fabric skips data fixing for a null fix type.
 	public static final SavedDataType<RestoreSpots> TYPE = new SavedDataType<>(MapleFlavored.id("restore_spots"), RestoreSpots::new, CODEC, null);
 
-	// Worldgen threads can't touch saved data. Their spots wait here until the server thread records them, which it does
-	// each tick, before every save and before any read. The save matters at shutdown: the server finishes its worldgen
-	// after its last tick, and saves those chunks with their tagged mobs.
-	private static final Queue<Planned> PLANNED = new ConcurrentLinkedQueue<>();
-
 	private final Map<UUID, RestoreSpot> spotsById = new LinkedHashMap<>();
 	private final Map<Long, Set<UUID>> spotsByChunk = new HashMap<>();
 	private final Set<UUID> pending = new HashSet<>();
+	private boolean savesSoon;
 
 	private RestoreSpots() {
 	}
@@ -46,35 +34,8 @@ public final class RestoreSpots extends SavedData {
 		spots.forEach(this::put);
 	}
 
-	/** Records a spot a structure just placed in {@code dimension}. Safe to call from any thread. */
-	static void plan(ResourceKey<Level> dimension, RestoreSpot spot) {
-		PLANNED.add(new Planned(dimension, spot));
-	}
-
-	/** Forgets spots planned for a world that's no longer running. */
-	static void forgetPlanned() {
-		PLANNED.clear();
-	}
-
-	/** Records every planned spot in its level. */
-	static void recordPlanned(MinecraftServer server) {
-		for (Planned planned = PLANNED.poll(); planned != null; planned = PLANNED.poll()) {
-			ServerLevel level = server.getLevel(planned.dimension());
-
-			// A dimension removed since, such as a datapack's, has no structure to Restore.
-			if (level == null) continue;
-
-			RestoreSpots spots = level.getDataStorage().computeIfAbsent(TYPE);
-
-			spots.put(planned.spot());
-			spots.setDirty();
-		}
-	}
-
-	/** The level's spots, with every planned spot recorded. */
+	/** The level's spots. */
 	static RestoreSpots of(ServerLevel level) {
-		recordPlanned(level.getServer());
-
 		return level.getDataStorage().computeIfAbsent(TYPE);
 	}
 
@@ -100,6 +61,11 @@ public final class RestoreSpots extends SavedData {
 		return pending.stream().map(spotsById::get).toList();
 	}
 
+	/** Every occupied spot. */
+	List<RestoreSpot> occupied() {
+		return spotsById.values().stream().filter(spot -> spot.state() == RestoreSpot.State.OCCUPIED).toList();
+	}
+
 	/** Every empty spot. */
 	List<RestoreSpot> empty() {
 		return spotsById.values().stream().filter(spot -> spot.state() == RestoreSpot.State.EMPTY).toList();
@@ -109,6 +75,20 @@ public final class RestoreSpots extends SavedData {
 	void update(RestoreSpot spot) {
 		put(spot);
 		setDirty();
+	}
+
+	/** Asks for the spots to be saved at the end of this tick, ahead of the next autosave. */
+	void saveSoon() {
+		savesSoon = true;
+	}
+
+	/** Whether a save was asked for since this was last called. */
+	boolean takeSaveSoon() {
+		boolean asked = savesSoon;
+
+		savesSoon = false;
+
+		return asked;
 	}
 
 	private void put(RestoreSpot spot) {
@@ -124,8 +104,5 @@ public final class RestoreSpots extends SavedData {
 
 	private List<RestoreSpot> all() {
 		return List.copyOf(spotsById.values());
-	}
-
-	private record Planned(ResourceKey<Level> dimension, RestoreSpot spot) {
 	}
 }

@@ -65,6 +65,7 @@
 		"SculkShriekerBlockEntityMixin",
 		"SculkSpreaderChargeCursorMixin",
 		"ServerGamePacketListenerImplMixin",
+		"ServerLevelEntityManagerAccessor",
 		"ServerLevelMixin",
 		"ServerPlayerMixin",
 		"SinglePoolElementAccessor",
