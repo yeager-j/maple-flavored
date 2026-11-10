@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** needs-triage
+**Status:** done
 
 **Priority:** P2 (Medium)
 
@@ -117,10 +117,10 @@ Citations:
 
 ## Checklist
 
-- [ ] 1. `AnvilResults` returns one classification (rename, combine books, repair, refused with a reason, nothing), and both `compute` and the screen read it. A GameTest asserts the refusal reason.
-- [ ] 2. `TradeMultiplierHolder` and the villager field are gone, and the multiplier lives no longer than the trade.
-- [ ] 3. The book trade is identified once, not by shape, and its cap is derived from the offer.
-- [ ] 4. One place says what a material upgrade is, and the smithing menu learns the refusal reason without re-running the rule.
-- [ ] 5. `MaterialUnits` answers "is this the Material unit of that item" directly, and the wolf armor case is checked in game.
-- [ ] 6. `fullRepairUnits` has one rule for ingot-repaired gear, and its recipe scan runs once per recipe reload.
-- [ ] 7. One authority decides what can be Reinforced, and an item that can't gain toughness can't take a template.
+- [x] 1. `AnvilResults` returns one classification (rename, combine books, repair, refused with a reason, nothing), and both `compute` and the screen read it. A GameTest asserts the refusal reason.
+- [x] 2. `TradeMultiplierHolder` and the villager field are gone, and the multiplier lives no longer than the trade.
+- [x] 3. The book trade is identified once, not by shape, and its cap is derived from the offer.
+- [x] 4. One place says what a material upgrade is, and the smithing menu learns the refusal reason without re-running the rule.
+- [x] 5. `MaterialUnits` answers "is this the Material unit of that item" directly, and the wolf armor case is checked in game.
+- [x] 6. `fullRepairUnits` has one rule for ingot-repaired gear, and its recipe scan runs once per recipe reload.
+- [x] 7. One authority decides what can be Reinforced, and an item that can't gain toughness can't take a template.

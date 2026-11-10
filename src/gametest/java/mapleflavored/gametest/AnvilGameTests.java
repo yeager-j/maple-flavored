@@ -1,10 +1,12 @@
 package mapleflavored.gametest;
 
 import java.util.List;
+import java.util.Optional;
 import mapleflavored.alloys.Alloy;
 import mapleflavored.alloys.AlloyGear;
 import mapleflavored.alloys.GearKind;
-import mapleflavored.anvil.AnvilResults;
+import mapleflavored.anvil.AnvilRefusalMenu;
+import mapleflavored.anvil.AnvilResults.Refused;
 import mapleflavored.materialunits.MaterialUnits;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -280,7 +282,7 @@ public class AnvilGameTests {
 	}
 
 	@GameTest
-	public void enchantingAttemptsAreToldApartFromOtherRefusals(GameTestHelper helper) {
+	public void theAnvilTellsItsScreenWhyItRefuses(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 		Holder<Enchantment> efficiency = enchantment(helper, Enchantments.EFFICIENCY);
 		ItemStack enchantedPickaxe = damaged(Items.IRON_PICKAXE);
@@ -289,29 +291,38 @@ public class AnvilGameTests {
 		enchantedPickaxe.enchant(efficiency, 1);
 		otherEnchantedPickaxe.enchant(efficiency, 2);
 
-		// The screen picks its error tooltip from this; each case also makes no result.
-		assertEnchantingAttempt(helper, new ItemStack(Items.DIAMOND_SWORD), book(sharpness, 1), true, "a book on gear");
-		assertEnchantingAttempt(helper, enchantedPickaxe, otherEnchantedPickaxe, true, "two enchanted pickaxes");
-		assertEnchantingAttempt(helper, damaged(Items.IRON_PICKAXE), enchantedPickaxe, true, "an enchanted pickaxe on a plain one");
-		assertEnchantingAttempt(helper, new ItemStack(Items.GOLDEN_APPLE), book(sharpness, 1), true, "a book on a golden apple");
-		assertEnchantingAttempt(helper, damaged(Items.IRON_PICKAXE), damaged(Items.IRON_PICKAXE), false, "two plain pickaxes");
-		assertEnchantingAttempt(helper, book(sharpness, 1), book(sharpness, 2), false, "mismatched books");
-		assertEnchantingAttempt(helper, new ItemStack(Items.BOOK), book(sharpness, 1), false, "an enchanted book on a plain book");
-		assertEnchantingAttempt(helper, damaged(Items.IRON_PICKAXE), new ItemStack(Items.DIAMOND), false, "the wrong material");
+		assertRefusal(helper, new ItemStack(Items.DIAMOND_SWORD), book(sharpness, 1), Refused.ENCHANTS_AT_TABLE, "a book on gear");
+		assertRefusal(helper, enchantedPickaxe, otherEnchantedPickaxe, Refused.ENCHANTS_AT_TABLE, "two enchanted pickaxes");
+		assertRefusal(helper, damaged(Items.IRON_PICKAXE), enchantedPickaxe, Refused.ENCHANTS_AT_TABLE, "an enchanted pickaxe on a plain one");
+		assertRefusal(helper, new ItemStack(Items.GOLDEN_APPLE), book(sharpness, 1), Refused.ENCHANTS_AT_TABLE, "a book on a golden apple");
+		assertRefusal(helper, damaged(Items.IRON_PICKAXE), damaged(Items.IRON_PICKAXE), Refused.WRONG_MATERIAL, "two plain pickaxes");
+		assertRefusal(helper, damaged(Items.IRON_PICKAXE), new ItemStack(Items.DIAMOND), Refused.WRONG_MATERIAL, "a diamond on an iron pickaxe");
+		assertRefusal(helper, damaged(Items.BOW), new ItemStack(Items.STICK), Refused.WRONG_MATERIAL, "a stick on a bow");
+		assertRefusal(helper, book(sharpness, 1), book(sharpness, 2), Refused.MISMATCHED_BOOKS, "books of different levels");
+		assertRefusal(helper, book(sharpness, 5), book(sharpness, 5), Refused.MAXIMUM_LEVEL, "two max-level books");
 		helper.succeed();
 	}
 
 	@GameTest
-	public void wrongRepairMaterialsAreToldApartFromOtherRefusals(GameTestHelper helper) {
+	public void theAnvilRefusesNothingItWasNotAskedToDo(GameTestHelper helper) {
 		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
 
-		// The screen picks its error tooltip from this; each case also makes no result.
-		assertWrongMaterial(helper, damaged(Items.IRON_PICKAXE), damaged(Items.IRON_PICKAXE), true, "two plain pickaxes");
-		assertWrongMaterial(helper, damaged(Items.IRON_PICKAXE), new ItemStack(Items.DIAMOND), true, "a diamond on an iron pickaxe");
-		assertWrongMaterial(helper, damaged(Items.BOW), new ItemStack(Items.STICK), true, "a stick on a bow");
-		assertWrongMaterial(helper, damaged(Items.IRON_PICKAXE), book(sharpness, 1), false, "a book on a pickaxe");
-		assertWrongMaterial(helper, new ItemStack(Items.IRON_PICKAXE), new ItemStack(Items.DIAMOND), false, "an undamaged pickaxe");
-		assertWrongMaterial(helper, book(sharpness, 1), book(sharpness, 2), false, "mismatched books");
+		assertNoRefusal(helper, ItemStack.EMPTY, ItemStack.EMPTY, "an empty anvil");
+		assertNoRefusal(helper, new ItemStack(Items.IRON_SWORD), ItemStack.EMPTY, "an item with no new name");
+		assertNoRefusal(helper, new ItemStack(Items.IRON_PICKAXE), new ItemStack(Items.DIAMOND), "an undamaged pickaxe");
+		assertNoRefusal(helper, new ItemStack(Items.BOOK), book(sharpness, 1), "an enchanted book on a plain book");
+		assertNoRefusal(helper, damaged(Items.IRON_PICKAXE), new ItemStack(Items.IRON_INGOT), "a repair");
+		assertNoRefusal(helper, book(sharpness, 1), book(sharpness, 1), "a book combine");
+		helper.succeed();
+	}
+
+	// Wolf armor has a material unit but takes no enchantment, so the table doesn't enchant it.
+	@GameTest
+	public void aBookOnAnItemTheTableDoesNotEnchantIsNotAnEnchantingAttempt(GameTestHelper helper) {
+		Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
+
+		assertRefusal(helper, damaged(Items.WOLF_ARMOR), book(sharpness, 1), Refused.WRONG_MATERIAL, "a book on damaged wolf armor");
+		assertNoRefusal(helper, new ItemStack(Items.WOLF_ARMOR), book(sharpness, 1), "a book on undamaged wolf armor");
 		helper.succeed();
 	}
 
@@ -330,13 +341,12 @@ public class AnvilGameTests {
 	@GameTest
 	public void materialUnitsCoverGoldenApplesButNotBooks(GameTestHelper helper) {
 		for (Item apple : List.of(Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE)) {
-			var material = MaterialUnits.materialOf(new ItemStack(apple)).orElseThrow();
-
-			helper.assertTrue(material.test(new ItemStack(Items.GOLD_BLOCK)), apple + " takes a block of gold");
-			helper.assertFalse(material.test(new ItemStack(Items.GOLD_INGOT)), apple + " takes a gold ingot");
+			helper.assertTrue(MaterialUnits.isMaterialOf(new ItemStack(apple), new ItemStack(Items.GOLD_BLOCK)), apple + " takes a block of gold");
+			helper.assertFalse(MaterialUnits.isMaterialOf(new ItemStack(apple), new ItemStack(Items.GOLD_INGOT)), apple + " takes a gold ingot");
 		}
 
-		helper.assertTrue(MaterialUnits.materialOf(new ItemStack(Items.BOOK)).isEmpty(), "a book has a material");
+		helper.assertFalse(MaterialUnits.hasMaterial(new ItemStack(Items.BOOK)), "a book has a material");
+		helper.assertFalse(MaterialUnits.isMaterialOf(new ItemStack(Items.BOOK), new ItemStack(Items.PAPER)), "a book takes paper");
 		helper.succeed();
 	}
 
@@ -361,14 +371,26 @@ public class AnvilGameTests {
 		helper.succeed();
 	}
 
-	private static void assertEnchantingAttempt(GameTestHelper helper, ItemStack input, ItemStack addition, boolean expected, String label) {
-		helper.assertValueEqual(AnvilResults.triesToEnchant(input, addition), expected, label + " tries to enchant");
-		assertNoResult(helper, input, addition, label);
+	private static void assertRefusal(GameTestHelper helper, ItemStack input, ItemStack addition, Refused expected, String label) {
+		helper.assertValueEqual(refusal(helper, input, addition), Optional.of(expected), label + " refusal");
 	}
 
-	private static void assertWrongMaterial(GameTestHelper helper, ItemStack input, ItemStack addition, boolean expected, String label) {
-		helper.assertValueEqual(AnvilResults.offersWrongMaterial(input, addition), expected, label + " offers the wrong material");
-		assertNoResult(helper, input, addition, label);
+	private static void assertNoRefusal(GameTestHelper helper, ItemStack input, ItemStack addition, String label) {
+		helper.assertValueEqual(refusal(helper, input, addition), Optional.<Refused>empty(), label + " refusal");
+	}
+
+	/** What the anvil's menu syncs to its screen as the reason it refuses these slots. */
+	private static Optional<Refused> refusal(GameTestHelper helper, ItemStack input, ItemStack addition) {
+		AnvilMenu anvil = anvil(helper, survivalPlayer(helper));
+
+		anvil.getSlot(AnvilMenu.INPUT_SLOT).set(input);
+		anvil.getSlot(AnvilMenu.ADDITIONAL_SLOT).set(addition);
+
+		Optional<Refused> refusal = ((AnvilRefusalMenu) anvil).mapleflavored$refusal();
+
+		if (refusal.isPresent()) helper.assertTrue(anvil.getSlot(AnvilMenu.RESULT_SLOT).getItem().isEmpty(), "a refused anvil makes a result");
+
+		return refusal;
 	}
 
 	// The server has no translations for the mod's names, so names are checked by their translation key.

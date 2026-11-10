@@ -25,6 +25,7 @@ import mapleflavored.spawners.Spawners;
 import mapleflavored.strongholds.StrongholdIllagers;
 import mapleflavored.structurebooks.StructureBooks;
 import mapleflavored.subspaces.Subspaces;
+import mapleflavored.trades.BookTrade;
 import mapleflavored.wardensummoning.WardenSummoning;
 import mapleflavored.zephyr.Zephyr;
 import net.fabricmc.api.ModInitializer;
@@ -50,6 +51,7 @@ public class MapleFlavored implements ModInitializer {
 		MapleItems.register();
 		Alloys.register();
 		Reinforcement.register();
+		BookTrade.register();
 		Remnants.register();
 		LootSubstitutions.register();
 		LootEnchantments.register();

@@ -11,8 +11,6 @@ import net.minecraft.world.inventory.ItemCombinerMenuSlotDefinition;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.SmithingRecipeInput;
-import net.minecraft.world.item.crafting.SmithingTransformRecipe;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -50,11 +48,7 @@ public abstract class SmithingMenuMixin extends ItemCombinerMenu implements Upgr
 		if (!(level instanceof ServerLevel)) return;
 
 		RecipeHolder<?> matched = resultSlots.getRecipeUsed();
-		boolean refused = matched != null
-			&& matched.value() instanceof SmithingTransformRecipe
-			&& MaterialUpgrades.refuses(new SmithingRecipeInput(
-				inputSlots.getItem(SmithingMenu.TEMPLATE_SLOT), inputSlots.getItem(SmithingMenu.BASE_SLOT), inputSlots.getItem(SmithingMenu.ADDITIONAL_SLOT)
-			));
+		boolean refused = matched != null && MaterialUpgrades.refused(matched.value(), resultSlots.getItem(0));
 
 		refusedEnchantedInput.set(refused ? 1 : 0);
 	}

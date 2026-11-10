@@ -3,6 +3,7 @@ package mapleflavored.client.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import java.util.Optional;
+import mapleflavored.anvil.AnvilRefusalMenu;
 import mapleflavored.anvil.AnvilResults;
 import mapleflavored.materialunits.MaterialUnits;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -12,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AnvilMenu;
-import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,8 +21,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * The anvil's cost line reads in XP points, since the menu's cost is in points, and is never "Too Expensive". A free
- * repair shows no line. Hovering the error icon explains two refusals: trying to enchant an item points the player to
- * the Enchanting Table, and offering a damaged item the wrong material names the right one.
+ * repair shows no line. Hovering the error icon explains two of the refusals the server synced: trying to enchant an
+ * item points the player to the Enchanting Table, and offering a damaged item the wrong material names the right one.
  */
 @Mixin(AnvilScreen.class)
 abstract class AnvilScreenMixin extends ItemCombinerScreen<AnvilMenu> {
@@ -79,18 +79,18 @@ abstract class AnvilScreenMixin extends ItemCombinerScreen<AnvilMenu> {
 
 		if (!showsError || !hoversError) return;
 
-		refusalReason().ifPresent(reason -> graphics.setTooltipForNextFrame(font, font.split(reason, TOOLTIP_WIDTH), mouseX, mouseY));
+		((AnvilRefusalMenu) menu).mapleflavored$refusal()
+			.flatMap(this::explanation)
+			.ifPresent(reason -> graphics.setTooltipForNextFrame(font, font.split(reason, TOOLTIP_WIDTH), mouseX, mouseY));
 	}
 
 	@Unique
-	private Optional<Component> refusalReason() {
-		ItemStack input = menu.getSlot(AnvilMenu.INPUT_SLOT).getItem();
-		ItemStack addition = menu.getSlot(AnvilMenu.ADDITIONAL_SLOT).getItem();
-
-		if (AnvilResults.triesToEnchant(input, addition)) return Optional.of(ENCHANTING_ERROR_TOOLTIP);
-		if (!AnvilResults.offersWrongMaterial(input, addition)) return Optional.empty();
-
-		return MaterialUnits.materialName(input)
-			.map(material -> Component.translatable("container.maple_flavored.anvil.repair_error_tooltip", material));
+	private Optional<Component> explanation(AnvilResults.Refused refusal) {
+		return switch (refusal) {
+			case ENCHANTS_AT_TABLE -> Optional.of(ENCHANTING_ERROR_TOOLTIP);
+			case WRONG_MATERIAL -> MaterialUnits.materialName(menu.getSlot(AnvilMenu.INPUT_SLOT).getItem())
+				.map(material -> Component.translatable("container.maple_flavored.anvil.repair_error_tooltip", material));
+			case MISMATCHED_BOOKS, MAXIMUM_LEVEL -> Optional.empty();
+		};
 	}
 }

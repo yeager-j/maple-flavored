@@ -24,10 +24,7 @@ abstract class MerchantContainerMixin {
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/trading/MerchantOffer;assemble()Lnet/minecraft/world/item/ItemStack;")
 	)
 	private ItemStack payPerFind(MerchantOffer offer, Operation<ItemStack> original) {
-		ItemStack result = original.call(offer);
-		int multiplier = BookTrade.multiplier(offer, getItem(0), getItem(1));
-
-		return multiplier == 0 ? ItemStack.EMPTY : result.copyWithCount(result.getCount() * multiplier);
+		return BookTrade.payout(original.call(offer), BookTrade.multiplier(offer, getItem(0), getItem(1)));
 	}
 
 	@WrapOperation(method = "updateSellItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/trading/MerchantOffer;getXp()I"))
